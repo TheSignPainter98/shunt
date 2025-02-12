@@ -1,0 +1,137 @@
+local *
+
+import ArgParser, Subcommand, Param, Flag from require 'clap'
+
+FILE_DIVIDER = (os.getenv? 'GOO_DIVIDER') ?? 'XXX---XXX===fdhsavcuyxio4321vdcp1234nhuvd---XXX===XXX'
+
+main = (args) ->
+  args, ok = parse_args args
+  if not ok
+    return
+
+  if ball_args = args.ball
+    ball ball_args
+  if splat_args = args.splat
+    splat splat_args
+
+parse_args = (args) ->
+  parser = with ArgParser 'goo'
+    \version '1.0'
+    \description 'an archiving utility'
+    \add with Subcommand 'ball'
+      \description 'create the given archive with the specified files'
+      \add with Param 'archive'
+        \description 'the archive to extract files from'
+      \add with Param 'dir'
+        \description 'the directory to archive'
+      \add with Flag 'only'
+        \takes_param!
+        \default nil
+        \description 'only archive files matching the given glob'
+    \add with Subcommand 'splat'
+      \description 'extract from the given archive'
+      \add with Param 'archive'
+        \description 'the archive to extract files from'
+  parser\parse args
+
+ball = (ball_args) ->
+  try
+    if not fs.isDir ball_args.dir
+      error "cannot archive directory #{ball_args.dir}"
+    paths = file_paths_in ball_args.dir
+
+    archive_file, err = io.open ball_args.archive, 'w+'
+    if not archive_file?
+      error "cannot open #{archive_file}: #{err}"
+
+    for path in *paths
+      if ball_args.only?
+        if not (path\match ball_args.only)?
+          continue
+
+      -- print "archiving #{path}..."
+      archive_file\write path .. '\n'
+      for line in io.lines path
+        if line == FILE_DIVIDER
+          error "cannot put #{path} into archive: file divider found"
+        archive_file\write line .. '\n'
+      archive_file\write FILE_DIVIDER .. '\n'
+
+    archive_file\close!
+  catch err
+    os.remove ball_args.archive
+    print err
+
+file_paths_in = (dir, ret={}) ->
+  with ret
+    for name in *fs.list dir
+      path = fs.combine dir, name
+      if fs.isDir path
+        file_paths_in path, ret
+      else
+        ret[] = path
+
+splat = (splat_args) ->
+  files = {}
+
+  try
+    scanning_header = true
+    current_file = nil
+    for line in io.lines splat_args.archive
+      if line == FILE_DIVIDER
+        scanning_header = true
+        continue
+
+      if scanning_header
+        if current_file?
+          current_file\close!
+
+        for i = 1, #line
+          if '/' != line\sub i, i
+            continue
+          parent_dir = line\sub 0, i
+          if not fs.exists parent_dir
+            fs.makeDir parent_dir
+
+        current_file, err = io.open line, 'w+'
+        files[] = line
+        -- print "extracting #{line}..."
+        if not current_file?
+          error "cannot open '#{line}': #{err}"
+        scanning_header = false
+        continue
+
+      current_file\write line .. '\n'
+  catch err
+    for file in *files
+      os.remove file
+
+if not _G.fs?
+  _G.fs =
+    list: (dir) ->
+      ret = {}
+      with io.popen "ls -1 '#{dir}'"
+        ret = [ file for file in \lines! ]
+        \close!
+      ret
+
+    combine: (path1, path2) ->
+      "#{path1}/#{path2}" -- Good enough.
+
+    isDir: (path) ->
+      local resp
+      with io.popen "[ -d '#{path}' ] && echo true || echo false"
+        resp = \read '*a'
+        \close!
+      (resp\match 'true')?
+
+    exists: (path) ->
+      handle = io.open path, 'r'
+      if handle?
+        handle\close!
+      handle?
+
+    makeDir: (path) ->
+      os.execute "mkdir '#{path}'"
+
+main {...}
