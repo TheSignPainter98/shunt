@@ -1,0 +1,34 @@
+#!/usr/bin/sfdp
+digraph {
+	label = "controller state machine"
+	bgcolor = black // 313244
+	color = white
+	node [
+		color = white
+		fontcolor = white
+		fillcolor = white
+	]
+	edge [
+		color = white
+		fontcolor = white
+	]
+
+	init[shape=point]
+	init -> waiting
+
+	waiting -> gathering_network_info [label="starting_epoch(epoch)"]
+	waiting -> gathering_stockpile_info [label="gather_stockpile_info()"]
+
+	gathering_network_info -> analysing_network_info [label="analyse_network_info()"]
+	gathering_network_info -> waiting [color=red, label="failed_to_gather_network_info()"]
+
+	gathering_stockpile_info -> analysing_network_info [label="analyse_network_info()"]
+	gathering_stockpile_info -> waiting [color=red, label="failed_to_gather_network_info()"]
+
+	analysing_network_info -> planning_routes [label="stockpiles_low(stockpiles)"]
+	analysing_network_info -> waiting [label="stockpiles_healthy()"]
+
+	planning_routes -> scheduling_trains [label="schedule_trains(train_assignments)"]
+
+	scheduling_trains -> waiting [label="scheduled_trains()"]
+}

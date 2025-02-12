@@ -1,0 +1,75 @@
+#!/usr/bin/sfdp
+digraph {
+	label = "station state machine"
+	bgcolor = black
+	color = white
+	node [
+		color = white
+		fontcolor = white
+		fillcolor = white
+	]
+	edge [
+		color = white
+		fontcolor = white
+	]
+	levels = 3
+
+	init[shape=point]
+	init -> waiting
+
+	waiting -> checking_stockpile [label="stockpile_requested(epoch)"]
+	waiting -> gathering_info [label="info_requested(epoch)"]
+	waiting -> scheduling_train [label="schedule_requested(schedule)"]
+
+	checking_stockpile -> reporting_stockpile [label="report_stockpile(epoch)"]
+	checking_stockpile -> reporting_invalid_stockpile [color=red, label="report_stockpile_invalid(epoch)"]
+
+	reporting_stockpile -> waiting [label="stockpile_reported(epoch)"]
+
+	reporting_invalid_stockpile -> waiting [label="invalid_stockpile_reported(epoch)"]
+
+	gathering_info -> reporting_info [label="info_gathered(epoch, info)"]
+	gathering_info -> reporting_info_gathering_failed [color=red, label="info_gathering_failed(epoch)"]
+
+	reporting_info -> waiting [label="info_reported()"]
+
+	reporting_info_gathering_failed -> waiting [label="info_gathering_failure_reported()"]
+
+	scheduling_train -> reporting_train_scheduled [label="train_scheduled(train, schedule)"]
+	scheduling_train -> reporting_train_schedule_failed [color=red, label="train_schedule_failed(train, schedule)"]
+
+	reporting_train_scheduled -> waiting [label="train_scheduled_reported()"]
+
+	reporting_train_schedule_failed -> waiting [label="train_schedule_failure_reported()"]
+
+	// TODO(kcza): detect train status!
+}
+// digraph {
+// 	init[shape=point]
+// 	init -> waiting
+// 	waiting -> {
+// 		check_stockpile [label="check_stockpile()"]
+// 		train_enroute [label="train_enroute()"]
+// 	}
+//
+// 	check_stockpile -> notify_server_stockpile [label="stockpile_at_threshold()"]
+// 	check_stockpile -> invalid_stockpile [color=red, label="stockpile_inaccessible()"]
+//
+// 	invalid_stockpile -> check_stockpile [label="check_stockpile()"]
+// 	invalid_stockpile -> invalid_stockpile [color=red, label="stockpile_inaccessible()"]
+//
+// 	notify_server_stockpile -> waiting [label="notify_server(stockpile)"]
+// 	notify_server_stockpile -> waiting [color=red, label="notify_server()"]
+//
+// 	train_enroute -> train_arrived [label="train_arrived()"]
+// 	train_enroute -> waiting [color=red, label="train_lost()"]
+//
+// 	train_arrived -> notify_server_train_arrived [label="notify_server(train_arrived)"]
+// 	train_arrived -> waiting [color=red, label="train_lost()"]
+//
+// 	notify_server_train_arrived -> notify_server_train_left
+// 	notify_server_train_arrived -> waiting [color=red]
+//
+// 	notify_server_train_left -> waiting
+// 	notify_server_train_left -> waiting [color=red]
+// }

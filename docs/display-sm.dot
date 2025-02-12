@@ -1,0 +1,28 @@
+#!/usr/bin/dot
+digraph {
+	label = "display state machine"
+	bgcolor = black
+	color = white
+	node [
+		color = white
+		fontcolor = white
+		fillcolor = white
+	]
+	edge [
+		color = white
+		fontcolor = white
+	]
+	levels = 3
+
+	init[shape=point]
+	init -> waiting
+
+	waiting -> emitting_heartbeat [label="heartbeat_timeout()"]
+	waiting -> updating_output [label="receive(state)"]
+
+	emitting_heartbeat -> waiting [label="heartbeat_emitted()"]
+	emitting_heartbeat -> emitting_heartbeat [color=red, label="heartbeat_emission_failed()"]
+
+	updating_output -> waiting [label="output_updated()"]
+	updating_output -> waiting [color=red, label="output_update_failed()"]
+}
