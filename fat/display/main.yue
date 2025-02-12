@@ -1,0 +1,13 @@
+import Param, Subcommand from require 'clap'
+
+export subcommand = with Subcommand 'display'
+  \description 'display system status'
+  \add with Param 'what'
+    \description 'what to display'
+    \options
+      * 'trains'
+      * 'stations'
+      * 'throughput'
+
+export main = (args, global_args) ->
+  print "hello, display! Displaying: #{args.what}"

@@ -1,0 +1,19 @@
+local *
+
+import ArgParser, Flag from require 'clap'
+
+export class Args
+  @parse: (args) =>
+    arg_parser = @_arg_parser!
+    arg_parser\parse args
+
+  @_arg_parser: =>
+    ret = with ArgParser 'fat'
+      \version '0.1'
+      \description 'an automatic cargo router'
+      \add with Flag 'no-install'
+        \description 'skip installing startup script'
+    ret\add subcommand 'display'
+    ret
+
+subcommand = (name) -> (require "fat.#{name}.main").subcommand

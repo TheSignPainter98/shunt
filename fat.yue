@@ -1,0 +1,32 @@
+local *
+
+import Args from require 'fat.args'
+display = require 'fat.display.main'
+
+verbose = false
+
+main = (raw_args) ->
+  args, ok = Args::parse raw_args
+  if not ok
+    return
+  if not args.no_install
+    install_startup_script raw_args
+
+  if args.display?
+    display.main args.display, args
+
+install_startup_script = (raw_args) ->
+  stringified_args = {}
+  for arg in *raw_args
+    if arg\match "'"
+      error "args cannot contain \"'\": got #{arg}"
+    stringified_args[] = "'#{arg}'"
+
+  script = "
+    shell.run('set motd.enable false')
+    shell.execute({'fat', #{table.concat stringified_args, ', '}})
+  "
+  with assert io.open 'startup.lua', 'w+'
+    \write script
+
+main {...}

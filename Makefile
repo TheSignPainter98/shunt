@@ -1,4 +1,6 @@
 DIAGRAMS = $(shell ls docs/*.dot | sed 's/\.dot$$/.svg/')
+SOURCES = $(wildcard *.yue)
+OBJECTS = $(patsubst %.yue,%.lua,$(SOURCES))
 
 GRAPHVIZ_TOOL = sfdp
 
@@ -12,6 +14,9 @@ all: $(DIAGRAMS) fat.lua
 docs/%.svg: docs/%.dot Makefile
 	./$< $(GRAPHVIZ_OPTS) -Tsvg >$@
 
+fat.lua: $(SOURCES)
+	yue .
+
 clean:
-	$(RM) $(DIAGRAMS)
+	$(RM) $(DIAGRAMS) $(OBJECTS) startup.lua
 .PHONY: clean
