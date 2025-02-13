@@ -4,10 +4,17 @@ import ArgParser, Subcommand, Param, Flag from require 'clap'
 
 FILE_DIVIDER = (os.getenv? 'GOO_DIVIDER') ?? 'XXX---XXX===fdhsavcuyxio4321vdcp1234nhuvd---XXX===XXX'
 
+local log
+
 main = (args) ->
   args, ok = parse_args args
   if not ok
     return
+
+  log = if args.verbose
+    print
+  else
+    ->
 
   if ball_args = args.ball
     ball ball_args
@@ -18,6 +25,8 @@ parse_args = (args) ->
   parser = with ArgParser 'goo'
     \version '1.0'
     \description 'an archiving utility'
+    \add with Flag 'verbose'
+      \description 'output verbosely'
     \add with Subcommand 'ball'
       \description 'create the given archive with the specified files'
       \add with Param 'archive'
@@ -54,7 +63,7 @@ ball = (ball_args) ->
       error "cannot open #{archive_file}: #{err}"
 
     for path in *paths
-      -- print "archiving #{path}..."
+      log "archiving #{path}..."
       archive_file\write path .. '\n'
       for line in io.lines path
         if line == FILE_DIVIDER
@@ -106,7 +115,7 @@ splat = (splat_args) ->
 
         current_file, err = io.open line, 'w+'
         files[] = line
-        -- print "extracting #{line}..."
+        log "extracting #{line}..."
         if not current_file?
           error "cannot open '#{line}': #{err}"
         scanning_header = false
