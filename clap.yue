@@ -447,8 +447,8 @@ export class Subcommand
         [] = ''
         [] = 'Flags:'
 
-        longest_local_flag_repr_len = math.max unpack [ #p\_long_repr! for p in *@_flags ]
-        longest_global_flag_repr_len = math.max unpack [ #p\_long_repr! for p in *@_global_flags! ]
+        longest_local_flag_repr_len = math.max 0, unpack [ #p\_long_repr! for p in *@_flags ]
+        longest_global_flag_repr_len = math.max 0, unpack [ #p\_long_repr! for p in *@_global_flags! ]
         longest_flag_repr_len = math.max longest_local_flag_repr_len, longest_global_flag_repr_len
         for flag in *@_sorted_flags!
           repr = flag\_long_repr!
