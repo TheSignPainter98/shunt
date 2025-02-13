@@ -1,0 +1,17 @@
+local *
+
+main = (args) ->
+  count = 0
+  while true
+    count += 1
+    shell.run 'clear'
+    print "[starting (#{count})]"
+    succ = shell.execute unpack args
+    success_marker = if succ
+      "ok"
+    else
+      "failed"
+    print "[done #{success_marker}]"
+    os.sleep 7
+
+main {...}
