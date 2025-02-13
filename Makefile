@@ -15,7 +15,7 @@ docs/%.svg: docs/%.dot Makefile
 	./$< $(GRAPHVIZ_OPTS) -Tsvg >$@
 
 fat.lua: $(SOURCES)
-	yue --target=5.1 .
+	yue -l --target=5.1 .
 
 fat.goo: ./goo.lua $(OBJECTS)
 	$(LUA) $< ball $@ '*.lua'
