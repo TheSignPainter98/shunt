@@ -18,8 +18,10 @@ main = (args) ->
 
   if ball_args = args.ball
     ball ball_args
-  if splat_args = args.splat
+  else if splat_args = args.splat
     splat splat_args
+  else if list_args = args.list
+    list list_args
 
 parse_args = (args) ->
   parser = with ArgParser 'goo'
@@ -38,6 +40,10 @@ parse_args = (args) ->
       \description 'extract an archive'
       \add with Param 'archive'
         \description 'the archive to extract files from'
+    \add with Subcommand 'list'
+      \description 'list files in an archive'
+      \add with Param 'archive'
+        \description 'the archive to list files from'
   parser\parse args
 
 ball = (ball_args) ->
@@ -132,39 +138,58 @@ splat = (splat_args) ->
       catch err
         print err
 
-if not _G.fs?
-  _G.fs =
-    list: (dir) ->
-      ret = {}
-      with io.popen "ls -1 '#{dir}'"
-        ret = [ file for file in \lines! ]
-        \close!
-      ret
+list = (list_args) ->
+  try
+    scanning_header = true
+    file_divider = nil
+    for line in io.lines list_args.archive
+      if not file_divider?
+        file_divider = line
+        continue
 
-    find: (pattern) ->
-      ret = {}
-      with io.popen "bash -c \"ls -1 #{pattern} 2>/dev/null\""
-        ret = [ path for path in \lines! when #path != 0 ]
-        \close!
-      ret
+      if line == file_divider
+        scanning_header = true
+        continue
 
-    combine: (path1, path2) ->
-      "#{path1}/#{path2}" -- Good enough.
+      if scanning_header
+        print line
+        scanning_header = false
+  catch err
+    print err
 
-    isDir: (path) ->
-      local resp
-      with io.popen "[ -d '#{path}' ] && echo true || echo false"
-        resp = \read '*a'
-        \close!
-      (resp\match 'true')?
+_G.fs ??= {
+  list: (dir) ->
+    ret = {}
+    with io.popen "ls -1 '#{dir}'"
+      ret = [ file for file in \lines! ]
+      \close!
+    ret
 
-    exists: (path) ->
-      handle = io.open path, 'r'
-      if handle?
-        handle\close!
-      handle?
+  find: (pattern) ->
+    ret = {}
+    with io.popen "bash -c \"ls -1 #{pattern} 2>/dev/null\""
+      ret = [ path for path in \lines! when #path != 0 ]
+      \close!
+    ret
 
-    makeDir: (path) ->
-      os.execute "mkdir '#{path}'"
+  combine: (path1, path2) ->
+    "#{path1}/#{path2}" -- Good enough.
+
+  isDir: (path) ->
+    local resp
+    with io.popen "[ -d '#{path}' ] && echo true || echo false"
+      resp = \read '*a'
+      \close!
+    (resp\match 'true')?
+
+  exists: (path) ->
+    handle = io.open path, 'r'
+    if handle?
+      handle\close!
+    handle?
+
+  makeDir: (path) ->
+    os.execute "mkdir '#{path}'"
+}
 
 main {...}
