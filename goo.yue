@@ -34,10 +34,6 @@ parse_args = (args) ->
         \description 'the archive to extract files from'
       \add with Param 'pattern'
         \description 'directory or filter for archived files'
-      \add with Flag 'only'
-        \takes_param!
-        \default nil
-        \description 'only archive files matching the given glob'
     \add with Subcommand 'splat'
       \description 'extract an archive'
       \add with Param 'archive'
