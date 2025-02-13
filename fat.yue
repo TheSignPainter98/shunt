@@ -1,6 +1,6 @@
 local *
 
-import Args from require 'fat.args'
+import Args from 'fat.args'
 display = require 'fat.display.main'
 
 verbose = false
