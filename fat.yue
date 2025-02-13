@@ -1,6 +1,6 @@
 local *
 
-import Args from 'fat.args'
+import Args from require 'fat.args'
 display = require 'fat.display.main'
 
 verbose = false
@@ -12,7 +12,7 @@ main = (raw_args) ->
   if not args.no_install
     install_startup_script raw_args
 
-  spam ->
+  spam args.no_reattempt, ->
     if args.display?
       display.main args.display, args
 
@@ -30,14 +30,29 @@ install_startup_script = (raw_args) ->
   with assert io.open 'startup.lua', 'w+'
     \write script
 
-spam = (fn) ->
+spam = (no_reattempt, fn) ->
+  if no_reattempt
+    fn!
+    return
+
+  attempt = 1
   done = false
   while not done
+    attempt += 1
     try
       fn!
       done = true
     catch err
       print err
-      os.sleep 1
+      print "[failed]"
+      sleep 1
+      print "[attempt #{attempt}]"
+      term?.clear!
+
+sleep = (n_secs) ->
+  if os.sleep?
+    os.sleep n_secs
+  else
+    os.execute "sleep #{n_secs}s"
 
 main {...}

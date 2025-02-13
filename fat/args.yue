@@ -8,12 +8,17 @@ export class Args
     arg_parser\parse args
 
   @_arg_parser: =>
-    ret = with ArgParser 'fat'
+    with ArgParser 'fat'
       \version '0.1'
       \description 'an automatic cargo router'
       \add with Flag 'no-install'
         \description 'skip installing startup script'
-    ret\add subcommand 'display'
-    ret
+        \global!
+      \add with Flag 'fragile'
+        \description 'exit on failure, rather than reattempting'
+        \short nil
+        \dest 'no_reattempt'
+        \global!
+      \add subcommand 'display'
 
 subcommand = (name) -> (require "fat.#{name}.main").subcommand
