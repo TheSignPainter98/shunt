@@ -22,8 +22,8 @@ parse_args = (args) ->
       \description 'create the given archive with the specified files'
       \add with Param 'archive'
         \description 'the archive to extract files from'
-      \add with Param 'dir'
-        \description 'the directory to archive'
+      \add with Param 'pattern'
+        \description 'directory or filter for archived files'
       \add with Flag 'only'
         \takes_param!
         \default nil
@@ -36,19 +36,24 @@ parse_args = (args) ->
 
 ball = (ball_args) ->
   try
-    if not fs.isDir ball_args.dir
-      error "cannot archive directory #{ball_args.dir}"
-    paths = file_paths_in ball_args.dir
+    paths = do
+      pattern = ball_args.pattern
+      pattern_is_glob = pattern\match '[*?]'
+      if pattern_is_glob
+        if ball_args.pattern\match '/'
+          fs.find pattern
+        else
+          file_paths_in '.', pattern
+      else if fs.isDir pattern
+        file_paths_in pattern
+      else
+        error "cannot archive directory #{ball_args.dir}"
 
     archive_file, err = io.open ball_args.archive, 'w+'
     if not archive_file?
       error "cannot open #{archive_file}: #{err}"
 
     for path in *paths
-      if ball_args.only?
-        if not (path\match ball_args.only)?
-          continue
-
       -- print "archiving #{path}..."
       archive_file\write path .. '\n'
       for line in io.lines path
@@ -62,14 +67,20 @@ ball = (ball_args) ->
     os.remove ball_args.archive
     print err
 
-file_paths_in = (dir, ret={}) ->
+file_paths_in = (dir, name_pattern=nil, ret={}) ->
   with ret
+    if name_pattern?
+      for name in *fs.find fs.combine dir, name_pattern
+        if fs.isDir name
+          continue
+        [] = name
+
     for name in *fs.list dir
       path = fs.combine dir, name
       if fs.isDir path
-        file_paths_in path, ret
-      else
-        ret[] = path
+        file_paths_in path, name_pattern, ret
+      else if not name_pattern?
+        [] = path
 
 splat = (splat_args) ->
   files = {}
@@ -112,6 +123,13 @@ if not _G.fs?
       ret = {}
       with io.popen "ls -1 '#{dir}'"
         ret = [ file for file in \lines! ]
+        \close!
+      ret
+
+    find: (pattern) ->
+      ret = {}
+      with io.popen "bash -c \"ls -1 #{pattern} 2>/dev/null\""
+        ret = [ path for path in \lines! when #path != 0 ]
         \close!
       ret
 
