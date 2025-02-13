@@ -1,7 +1,7 @@
 LUA = luajit
 
 DIAGRAMS = $(shell ls docs/*.dot | sed 's/\.dot$$/.svg/')
-SOURCES = $(wildcard *.yue)
+SOURCES = $(shell find -name '*.yue')
 OBJECTS = $(patsubst %.yue,%.lua,$(SOURCES))
 
 NODE_FONTNAME = C059
