@@ -3,7 +3,35 @@ local Flag -- `local *` does not cover exports
 local Param -- `local *` does not cover exports
 local Subcommand -- `local *` does not cover exports
 
-unpack = unpack ?? table.unpack
+unpack ??= table.unpack ?? (tab) ->
+  -- Rough fallback for luajit.
+  {e1, e2, e3, e4, e5, e5, e6, e7, e8, e9, e10, limit} = tab
+  switch #tab
+    when 0
+      return
+    when 1
+      return e1
+    when 2
+      return e1, e2
+    when 3
+      return e1, e2, e3
+    when 4
+      return e1, e2, e3, e4
+    when 5
+      return e1, e2, e3, e4, e5
+    when 6
+      return e1, e2, e3, e4, e5, e6
+    when 7
+      return e1, e2, e3, e4, e5, e6, e7
+    when 8
+      return e1, e2, e3, e4, e5, e6, e7, e8
+    when 9
+      return e1, e2, e3, e4, e5, e6, e7, e8, e9
+    when 10
+      return e1, e2, e3, e4, e5, e6, e7, e8, e9, e10
+  if limit?
+    error 'cannot unpack table: too many values to unpack'
+  return e1, e2, e3, e4, e5, e5, e6, e7, e8, e9, e10, limit
 
 EXIT = <tostring>: => "<exit>"
 SELF = <tostring>: => '<self>'
@@ -80,6 +108,7 @@ export class Param
 
 export class Subcommand
   new: (@_name) =>
+    @_parent_command = nil
     @_dest = @_name\gsub '-', '_'
     @_version = nil
     @_flags = {}
@@ -99,6 +128,7 @@ export class Subcommand
       when 'Param'
         @_params[] = arg
       when 'Subcommand'
+        arg._parent_command = @
         @_subcommands[] = arg
       else
         error "cannot use a #{type arg} as an arg"
@@ -352,8 +382,6 @@ export class Subcommand
           if #parents > 0
             [] = ' '
           [] = "#{@_name} - #{@_description}"
-      import pretty_print from require 'cc.pretty'
-      pretty_print parents
 
       [] = ''
       [] = @_usage_message parents
@@ -419,7 +447,9 @@ export class Subcommand
         [] = ''
         [] = 'Flags:'
 
-        longest_flag_repr_len = math.max unpack [ #p\_long_repr! for p in *@_flags ]
+        longest_local_flag_repr_len = math.max unpack [ #p\_long_repr! for p in *@_flags ]
+        longest_global_flag_repr_len = math.max unpack [ #p\_long_repr! for p in *@_global_flags! ]
+        longest_flag_repr_len = math.max longest_local_flag_repr_len, longest_global_flag_repr_len
         for flag in *@_sorted_flags!
           repr = flag\_long_repr!
           if description = flag._description
@@ -431,12 +461,22 @@ export class Subcommand
     table.concat lines, '\n'
 
   _sorted_flags: =>
-    ret = [ flag for flag in *@_flags ]
+    ret = { ...@_flags, ...@_global_flags!}
     table.sort ret, (flag1, flag2) ->
       name1 = (flag1._short or flag1._long)\match '[^-]+$'
       name2 = (flag2._short or flag2._long)\match '[^-]+$'
       name1 < name2
     ret
+
+  _global_flags: =>
+    with {}
+      if @_parent_command?
+        root = @
+        while root._parent_command?
+          root = root._parent_command
+        for flag in *root._flags
+          if flag._global
+            [] = flag
 
   _version_message: (parents={}) =>
     parts = {...parents, @_name}
