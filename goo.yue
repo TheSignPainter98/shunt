@@ -36,6 +36,8 @@ parse_args = (args) ->
         \description 'the archive to extract files from'
       \add with Param 'pattern'
         \description 'directory or filter for archived files'
+      \add with Flag 'append'
+        \description 'append to existing archive'
     \add with Subcommand 'splat'
       \description 'extract an archive'
       \add with Param 'archive'
@@ -61,7 +63,8 @@ ball = (ball_args) ->
       else
         error "cannot archive directory #{ball_args.dir}"
 
-    archive_file, err = io.open ball_args.archive, 'w+'
+    file_mode = ball_args.append and 'a' or 'w+'
+    archive_file, err = io.open ball_args.archive, file_mode
     if not archive_file?
       error "cannot open #{archive_file}: #{err}"
 
