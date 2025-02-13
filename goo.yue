@@ -27,6 +27,7 @@ parse_args = (args) ->
     \description 'an archiving utility'
     \add with Flag 'verbose'
       \description 'output verbosely'
+      \global!
     \add with Subcommand 'ball'
       \description 'create an archive'
       \add with Param 'archive'

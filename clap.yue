@@ -19,6 +19,7 @@ export class Flag
       '--' .. @_name\gsub ' ', '-'
     else
       nil
+    @_global = false
     @_required = false
     @_description = nil
     @_options = nil
@@ -30,6 +31,8 @@ export class Flag
   required: =>
     @_required = true
     @
+  global: =>
+    @_global = true
   description: (@_description) => @
   options: (@_options) => @
   transform: (@_transform) => @
@@ -105,19 +108,30 @@ export class Subcommand
     @
   description: (@_description) => @
 
-  _parse: (args, parents={}) =>
-    ret = with {}
+  _parse: (args, global_flags, global_values={}, parents={}) =>
+    if #parents != 0
       for flag in *@_flags
+        if flag._global
+          return nil, "cannot declare #{flag} as global: not in root parser"
+
+    ret = with <index>: global_values
+      for flag in *@_flags
+        if flag._global
+          continue -- Handled elsewhere.
         [flag._dest] = flag._default
       for param in *@_params
         [param._dest] = param._default
 
     flag_map = with {}
-      for flag in *@_flags
+      declare = (flag) ->
         if flag._short
           [flag._short] = flag
         if flag._long
           [flag._long] = flag
+      for flag in *global_flags
+        declare flag
+      for flag in *@_flags
+        declare flag
 
     subcommand_map = { sc._name, sc for sc in *@_subcommands }
 
@@ -130,7 +144,7 @@ export class Subcommand
         flag = flag_map[arg]
         if not flag?
           return nil, "unknown flag #{arg}"
-        ret[flag._dest] = if not flag._takes_param
+        flag_value = if not flag._takes_param
           true
         else
           i += 1
@@ -145,6 +159,11 @@ export class Subcommand
             transformed
           else
             flag_arg
+        
+        if flag._global
+          ret.<index>[flag._dest] = flag_value
+        else
+          ret[flag._dest] = flag_value
       else if param = @_params[curr_param]
         ret[param._dest] = if transform = param._transform
           transformed, err = transform arg
@@ -156,7 +175,7 @@ export class Subcommand
         curr_param += 1
       else if command = subcommand_map[arg]
         parents[] = @_name
-        subcommand_ret, err = command\_parse [ a for a in *args[i+1,] ], parents
+        subcommand_ret, err = command\_parse [ a for a in *args[i+1,] ], global_flags, global_values, parents
         if err?
           return nil, err
         ret[command._dest] = subcommand_ret
@@ -441,7 +460,11 @@ export class ArgParser extends Subcommand
       print err
       return nil, false
 
-    ret, err = @_parse args
+    global_flags = [ flag for flag in *@_flags when flag._global]
+    global_values = with {}
+      for global_flag in *global_flags
+        [global_flag._dest] = global_flag._default
+    ret, err = @_parse args, global_flags, global_values
     if err?
       if err == EXIT
         return nil, false
