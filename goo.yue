@@ -2,7 +2,7 @@ local *
 
 import ArgParser, Subcommand, Param, Flag from require 'clap'
 
-FILE_DIVIDER = (os.getenv? 'GOO_DIVIDER') ?? 'XXX---XXX===fdhsavcuyxio4321vdcp1234nhuvd---XXX===XXX'
+DEFAULT_FILE_DIVIDER = (os.getenv? 'GOO_DIVIDER') ?? 'XXX---XXX===fdhsavcuyxio4321vdcp1234nhuvd---XXX===XXX'
 
 local log
 
@@ -64,13 +64,13 @@ ball = (ball_args) ->
       error "cannot open #{archive_file}: #{err}"
 
     for path in *paths
+      archive_file\write DEFAULT_FILE_DIVIDER .. '\n'
       log "archiving #{path}..."
       archive_file\write path .. '\n'
       for line in io.lines path
-        if line == FILE_DIVIDER
+        if line == DEFAULT_FILE_DIVIDER
           error "cannot put #{path} into archive: file divider found"
         archive_file\write line .. '\n'
-      archive_file\write FILE_DIVIDER .. '\n'
 
     archive_file\close!
   catch err
@@ -98,8 +98,13 @@ splat = (splat_args) ->
   try
     scanning_header = true
     current_file = nil
+    file_divider = nil
     for line in io.lines splat_args.archive
-      if line == FILE_DIVIDER
+      if not file_divider?
+        file_divider = line
+        continue
+
+      if line == file_divider
         scanning_header = true
         continue
 
