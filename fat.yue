@@ -12,8 +12,9 @@ main = (raw_args) ->
   if not args.no_install
     install_startup_script raw_args
 
-  if args.display?
-    display.main args.display, args
+  spam ->
+    if args.display?
+      display.main args.display, args
 
 install_startup_script = (raw_args) ->
   stringified_args = {}
@@ -28,5 +29,15 @@ install_startup_script = (raw_args) ->
   "
   with assert io.open 'startup.lua', 'w+'
     \write script
+
+spam = (fn) ->
+  done = false
+  while not done
+    try
+      fn!
+      done = true
+    catch err
+      print err
+      os.sleep 1
 
 main {...}
