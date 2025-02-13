@@ -28,7 +28,7 @@ parse_args = (args) ->
     \add with Flag 'verbose'
       \description 'output verbosely'
     \add with Subcommand 'ball'
-      \description 'create the given archive with the specified files'
+      \description 'create an archive'
       \add with Param 'archive'
         \description 'the archive to extract files from'
       \add with Param 'pattern'
@@ -38,7 +38,7 @@ parse_args = (args) ->
         \default nil
         \description 'only archive files matching the given glob'
     \add with Subcommand 'splat'
-      \description 'extract from the given archive'
+      \description 'extract an archive'
       \add with Param 'archive'
         \description 'the archive to extract files from'
   parser\parse args
