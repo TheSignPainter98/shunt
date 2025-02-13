@@ -124,8 +124,12 @@ splat = (splat_args) ->
 
       current_file\write line .. '\n'
   catch err
+    print err
     for file in *files
-      os.remove file
+      try
+        os.remove file
+      catch err
+        print err
 
 if not _G.fs?
   _G.fs =
