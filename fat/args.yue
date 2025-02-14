@@ -19,6 +19,13 @@ export class Args
         \short nil
         \dest 'no_reattempt'
         \global!
+      \add with Flag 'test'
+        \description 'run tests'
+        \short nil
+        \global!
+      \add with Flag 'verbose'
+        \description 'log verbosely'
+        \global!
       \add subcommand 'display'
 
 subcommand = (name) -> (require "fat.#{name}.main").subcommand

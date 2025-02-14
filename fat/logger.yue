@@ -1,0 +1,10 @@
+local *
+
+verbose = false
+
+export set_log_verbosity = (v) ->
+  verbose = v
+
+export log = (fn) ->
+  if verbose
+    print fn!

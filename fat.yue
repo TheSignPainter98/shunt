@@ -2,12 +2,17 @@ local *
 
 import Args from require 'fat.args'
 display = require 'fat.display.main'
-
-verbose = false
+ledger = require 'fat.ledger.main'
+import run_tests from require 'spec'
+import log, set_log_verbosity from require 'fat.logger'
 
 main = (raw_args) ->
   args, ok = Args::parse raw_args
   if not ok
+    return
+  set_log_verbosity args.verbose
+  if args.test
+    run_tests!
     return
   if not args.no_install
     install_startup_script raw_args

@@ -1,0 +1,93 @@
+local *
+
+import log from require 'fat.logger'
+
+specs = {}
+failed = false
+
+export spec = (fn) ->
+  specs[] = fn
+
+root_spec = nil
+current_spec = nil
+current_spec_kind = 'describe'
+export describe = (what, fn) ->
+  spec_section 'describe', what, fn
+
+export it = (what, fn) ->
+  spec_section 'it', what, fn
+
+spec_section = (kind, what, fn) ->
+  if not root_spec?
+    root_spec = Spec::root!
+  if not current_spec?
+    current_spec = root_spec
+
+  if current_spec.kind != 'describe'
+    error "cannot use `#{kind}` in `#{current_spec.kind}` spec"
+
+  switch kind
+    when 'describe'
+      parent_spec = current_spec
+
+      current_spec = Spec kind, what, parent_spec
+      fn!
+
+      parent_spec\add_child current_spec
+      current_spec = parent_spec
+    when 'it'
+      current_spec\add_child Test what, fn, current_spec
+
+export assert = {
+  eq: (a, b) ->
+    if a != b
+      error "assertion failed: #{a} != #{b}"
+}
+
+class Spec
+  @root: =>
+    Spec 'describe', nil, nil
+
+  new: (@kind, @name, @parent) =>
+    @children = {}
+
+  add_child: (child) =>
+    @children[] = child
+
+  desc: =>
+    parts = with {@name}
+      spec = @parent
+      while spec?
+        [] = spec.name
+        spec = spec.parent
+    for i = 1, #parts
+      parts[i] = parts[#parts - i + 1]
+    table.concat parts, ' '
+
+  test: =>
+    log ->
+      if @name?
+        "testing #{@desc!}..."
+      else
+        "running test suite..."
+    for child in *@children
+      child\test!
+
+class Test
+  new: (@name, @assertions_fn, @spec) =>
+
+  test: =>
+    try
+      @assertions_fn!
+    catch err
+      print "FAIL: #{@spec\desc!} #{@name}:\n\t#{err}"
+
+export run_tests = ->
+  -- Gather specs
+  for spec_fn in *specs
+    spec_fn!
+
+  root_spec?\test!
+
+  if failed
+    error "some checks failed"
