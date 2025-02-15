@@ -145,11 +145,6 @@ export class Subcommand
   description: (@_description) => @
 
   _parse: (args, global_flags, global_values={}, parents={}) =>
-    if #parents != 0
-      for flag in *@_flags
-        if flag._global
-          return nil, "cannot declare #{flag} as global: not in root parser"
-
     ret = with <index>: global_values
       for flag in *@_flags
         if flag._global
@@ -314,7 +309,7 @@ export class Subcommand
         \description 'print version'
         \short nil
 
-  _validate_spec: =>
+  _validate_spec: (is_root=true) =>
     if #@_params > 0 and #@_subcommands > 0
       return "cannot have both parameters and subcommands in command #{@_name}"
 
@@ -326,6 +321,12 @@ export class Subcommand
           [flag._short] = true
         if flag._long
           [flag._long] = true
+
+    if not is_root
+      for flag in *@_flags
+        if flag._global
+          return "cannot declare #{flag._name} as global: not in root command"
+
 
     arg_dests = { flag._dest, true for flag in *@_flags }
     remainder_capturer = nil
@@ -349,8 +350,11 @@ export class Subcommand
         return "duplicate subcommand name: #{dest}"
       arg_dests[dest] = true
 
-      if err = subcommand\_validate_spec!
+      if err = subcommand\_validate_spec false
         return err
+
+    if #@_params > 0 and #@_subcommands > 0
+      return "command cannot have both params and subcommands"
 
     nil
 
