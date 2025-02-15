@@ -94,6 +94,7 @@ export class Param
     @_description = nil
     @_options = nil
     @_transform = nil
+    @_capture_remainder = false
 
   dest: (@_dest) => @
   arg_name: (@_arg_name) => @
@@ -103,8 +104,13 @@ export class Param
   description: (@_description) => @
   options: (@_options) => @
   transform: (@_transform) => @
+  capture_remainder: => @_capture_remainder = true
 
-  _repr: => @_arg_name or @_name
+  _repr: =>
+    name = @_arg_name or @_name
+    if not @_capture_remainder
+      return name
+    "#{name}..."
 
 export class Subcommand
   new: (@_name) =>
@@ -150,7 +156,10 @@ export class Subcommand
           continue -- Handled elsewhere.
         [flag._dest] = flag._default
       for param in *@_params
-        [param._dest] = param._default
+        [param._dest] = if param._capture_remainder
+          {}
+        else
+          param._default
 
     flag_map = with {}
       declare = (flag) ->
@@ -189,20 +198,24 @@ export class Subcommand
             transformed
           else
             flag_arg
-        
+
         if flag._global
           ret.<index>[flag._dest] = flag_value
         else
           ret[flag._dest] = flag_value
       else if param = @_params[curr_param]
-        ret[param._dest] = if transform = param._transform
+        arg_value = if transform = param._transform
           transformed, err = transform arg
           if err?
             return nil, "failed to parse #{arg}: #{err}"
           transformed
         else
           arg
-        curr_param += 1
+        if param._capture_remainder
+          ret[param._dest][] = arg_value
+        else
+          ret[param._dest] = arg_value
+          curr_param += 1
       else if command = subcommand_map[arg]
         parents[] = @_name
         subcommand_ret, err = command\_parse [ a for a in *args[i+1,] ], global_flags, global_values, parents
@@ -315,11 +328,20 @@ export class Subcommand
           [flag._long] = true
 
     arg_dests = { flag._dest, true for flag in *@_flags }
+    remainder_capturer = nil
     for param in *@_params
       dest = param._dest
       if arg_dests[dest]
         return "duplicate parameter name: #{dest}"
       arg_dests[dest] = true
+
+      if param._capture_remainder
+        if remainder_capturer?
+          return "parameters '#{remainder_capturer._name}' and '#{param._name}' both capture remainder args"
+        remainder_capturer = param
+
+        if param._default
+          return "capture-remainder does not support a default"
 
     for subcommand in *@_subcommands
       dest = subcommand._dest
