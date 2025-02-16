@@ -1,0 +1,119 @@
+local *
+
+import ArgParser, Flag, Param from require 'clap'
+import spec, run_tests from require 'spec'
+
+main = (args) ->
+  args, ok = parse_args args
+  if not ok
+    return
+  if args.test
+    run_tests!
+    return
+
+  non_entrypoint_paths = [ path for path in *args.files when path != args.entry_point ]
+
+  collation_opts = include_line_comments: not args.no_line_nums
+  collated = collate args.entry_point, non_entrypoint_paths, collation_opts
+
+  output_path = args.output ?? args.entry_point\gsub '%.lua$', ''
+  output_file = io.open output_path, 'w+'
+  if not output_file
+    error "cannot open #{output_file}"
+  output_file\write collated
+  output_file\close!
+
+parse_args = (args) ->
+  parser = with ArgParser 'pack'
+    \version '1.0'
+    \description 'a linker for lua'
+    \add with Flag 'output'
+      \description 'output binary name'
+      \default nil
+    \add with Flag 'test'
+      \description 'run tests'
+      \short nil
+    \add with Flag 'no-line-nums'
+      \description "don't add line numbers"
+      \short nil
+    \add with Param 'entry-point'
+      \description 'entry point'
+    \add with Param 'files'
+      \description 'files to link together'
+      \capture_remainder!
+  parser\parse args
+
+collate = (entry_point_path, non_entrypoint_paths, opts) ->
+  { :include_line_comments } = opts
+
+  collated_lines = {}
+  for path in *non_entrypoint_paths
+    collate_file path, collated_lines, preload: true, :include_line_comments
+  collate_file entry_point_path, collated_lines, preload: false, :include_line_comments
+  collated_lines[] = ''
+
+  table.concat collated_lines, '\n'
+
+collate_file = (path, ret, opts) ->
+  { :preload, :include_line_comments } = opts
+  with ret
+    if preload
+      [] = "package.preload['#{module_name path}'] = function(...)"
+    lineno = 0
+    for line in io.lines path
+      lineno += 1
+      [] = if include_line_comments
+        "#{line} -- #{path}:#{lineno}"
+      else
+        line
+    if preload
+      [] = "end"
+
+module_name = (path) ->
+  if not path\match '%.lua$'
+    error "cannot generate module name of #{path}: not a lua file"
+  (path\sub 1, -#".lua" - 1)\gsub '/', '.'
+
+_G.fs ??= {
+  find: (pattern) ->
+    ret = {}
+    with io.popen "bash -c \"ls -1 #{pattern} 2>/dev/null\""
+      ret = [ path for path in \lines! when #path != 0 ]
+      \close!
+    ret
+
+  isDir: (path) ->
+    local resp
+    with io.popen "[ -d '#{path}' ] && echo true || echo false"
+      resp = \read '*a'
+      \close!
+    (resp\match 'true')?
+
+  exists: (path) ->
+    handle = io.open path, 'r'
+    if handle?
+      handle\close!
+    handle?
+}
+
+spec ->
+  import describe, it from require 'spec'
+
+  describe 'module_name', ->
+    it 'rejects non-lua files', ->
+      local err
+      try
+        module_name 'main.rs'
+      catch err2
+        err = err2
+      assert err, 'expected an error'
+
+    it 'handles simple names', ->
+      name = module_name 'foo.lua'
+      assert name == 'foo', "got #{name}"
+
+    it 'handles nested names', ->
+      name = module_name 'foo/bar/baz.lua'
+      assert name == 'foo.bar.baz', "got #{name}"
+
+main {...}
