@@ -24,7 +24,7 @@ main = (args) ->
   output_file\close!
 
 parse_args = (args) ->
-  parser = with ArgParser 'pack'
+  parser = with ArgParser 'bundle'
     \version '1.0'
     \description 'a linker for lua'
     \add with Flag 'output'
