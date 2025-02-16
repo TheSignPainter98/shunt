@@ -4,17 +4,15 @@ import ArgParser, Subcommand, Param, Flag from require 'clap'
 
 DEFAULT_FILE_DIVIDER = (os.getenv? 'GOO_DIVIDER') ?? 'XXX---XXX===fdhsavcuyxio4321vdcp1234nhuvd---XXX===XXX'
 
-local log
+log = (...) -> -- Ignore.
 
 main = (args) ->
   args, ok = parse_args args
   if not ok
     return
 
-  log = if args.verbose
-    print
-  else
-    ->
+  if args.verbose
+    log = print
 
   if ball_args = args.ball
     ball ball_args
