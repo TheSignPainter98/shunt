@@ -26,6 +26,5 @@ export class Args
       \add with Flag 'verbose'
         \description 'log verbosely'
         \global!
-      \add subcommand 'display'
-
-subcommand = (name) -> (require "fat.#{name}.main").subcommand
+      \add (require 'fat.display.main').subcommand
+      \add (require 'fat.ledger.main').subcommand
