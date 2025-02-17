@@ -2,13 +2,13 @@ local *
 
 import log from require 'fat.logger'
 
-specs = nil
+spec_fns = nil
 failed = false
 
 export spec = (fn) ->
-  if not specs?
-    specs = {}
-  specs[] = fn
+  if not spec_fns?
+    spec_fns = {}
+  spec_fns[] = fn
 
 root_spec = nil
 current_spec = nil
@@ -39,18 +39,6 @@ declare_spec_section = (kind, what, fn) ->
       current_spec = parent_spec
     when 'it'
       current_spec\add_child Test what, fn, current_spec
-
-class ItRun
-  new: =>
-    @failures = {}
-
-  fail: (cause, message) =>
-    if message?
-      @failures[] = "#{message}: #{cause}"
-    else
-      @failures[] = cause
-
-current_it_run = nil
 
 class Spec
   @root: =>
@@ -83,32 +71,282 @@ class Spec
     for child in *@children
       child\test!
 
+FATAL_TEST_ERROR_MARKER = 'INTERNAL ERROR: FATAL TEST ERROR'
+
 class Test
   new: (@name, @assertions_fn, @spec) =>
 
-  @test_failure_header_output: false
+  @output_test_failure_header: true
+  @current_run_failures: {}
 
   test: =>
-    current_it_run = ItRun!
+    @@current_run_failures = {}
     try
       @assertions_fn!
     catch err
-      current_it_run\fail "error thrown: #{err}"
+      if not err\match FATAL_TEST_ERROR_MARKER
+        Test::fail "caught error: #{err}"
 
-    if #current_it_run.failures > 0
-      if not @@test_failure_header_output
-        print 'SOME TESTS FAILED:'
-        @@test_failure_header_output = true
-      print "* #{@spec\desc!} #{@name}:"
-      for failure in *current_it_run.failures
-        print "  * #{failure}"
+    if #@@current_run_failures == 0
+      return
 
+    if @@output_test_failure_header
+      print 'SOME TESTS FAILED:'
+      @@output_test_failure_header = false
+
+    print "* #{@spec\desc!} #{@name}:"
+    for failure in *@@current_run_failures
+      print "  * #{reflow '    ', failure}"
+
+  @fail: (cause, message) =>
+    cause_string = switch type cause
+      when 'string'
+        cause
+      when 'table'
+        { :value_name, :expected, :actual_repr, :explanation } = cause
+        "for value: #{value_name}\nexpected: #{expected}\nactual: #{actual_repr},\n  #{reflow '  ', explanation, 70}"
+      else
+        error "internal error: invalid matcher return: #{repr cause}"
+    if message?
+      @@current_run_failures[] = "#{message}: #{cause_string}"
+    else
+      @@current_run_failures[] = cause_string
+
+  @fatal: (value_name, cause, message) =>
+    @@fail value_name, cause, message
+    error FATAL_TEST_ERROR_MARKER
+
+export expect_that = (value_name, actual, matcher) ->
+  if matcher\matches actual
+    return
+
+  Test::fail
+    :value_name
+    expected: matcher\describe!
+    actual_repr: matcher\actual_repr?! ?? repr actual
+    explanation: matcher\explain_match actual
+
+export assert_that = (value_name, actual, matcher) ->
+  if matcher\matches actual
+    return
+
+  Test::fatal
+    :value_name
+    expected: matcher\describe!
+    actual_repr: matcher.actual_repr?! ?? repr actual
+    explanation: matcher\explain_match actual
+
+class Matcher
+  matches: (actual) => error 'unimplemented'
+  actual_repr: nil -- => "string"
+  explain_match: (actual) => error 'unimplemented'
+  describe: (is_match) => error 'unimplemented'
+
+class Eq extends Matcher
+  new: (@expected) =>
+
+  matches: (actual) =>
+    @expected == actual
+
+  explain_match: (actual) =>
+    "which #{@describe @matches actual}"
+
+  describe: (is_match=true) =>
+    if is_match
+      "is equal to #{repr @expected}"
+    else
+      "isn't equal to #{repr @expected}"
+
+class Matches
+  new: (@pat) =>
+
+  matches: (actual) =>
+    (actual\match @pat)?
+
+  explain_match: (actual) =>
+    "which #{@describe @matches actual}"
+
+  describe: (is_match=true) =>
+    if is_match
+      "matches #{repr @pat}"
+    else
+      "doesn't match #{repr @pat}"
+
+class ToStringsAs
+  new: (@inner) =>
+
+  matches: (actual) =>
+    @inner\matches tostring actual
+
+  explain_match: (actual) =>
+    tostring_actual = tostring actual
+    "which tostrings as '#{tostring_actual}' #{@inner\explain_match tostring_actual}"
+
+  describe: (is_match=true) =>
+    if is_match
+      "tostrings as a string which #{@inner\describe true}"
+    else
+      "doesn't tostrings as a string which #{@inner\describe false}"
+
+class Err
+  new: (@inner) =>
+    @actual_set = false
+    @actual = nil
+
+  actual_repr: =>
+    "error: #{repr @actual}"
+
+  get_err: (fn) =>
+    if @actual_set
+      return @actual
+
+    local err
+    try
+      fn!
+    catch err2
+      err = err2
+    @actual = err
+    @actual_set = true
+    return err
+
+  matches: (fn) =>
+    err = @get_err fn
+    if not err?
+      return false
+    @inner\matches err
+
+  explain_match: (fn) =>
+    err = @get_err fn
+    "which throws error '#{err}' which #{@inner\explain_match err}"
+
+  describe: (is_match=true) =>
+    if is_match
+      "throws an error which #{@inner\describe!}"
+    else
+      "doesn't throw an error"
+
+repr = (value) ->
+  table.concat with {}
+    stack={}
+    repr_impl = (value) ->
+      for elem in *stack
+        if rawequal value, elem
+          [] = '...'
+      stack[] = value
+
+      switch type value
+        when 'string'
+          [] = "'#{value}'"
+        when 'table'
+          if table.<>? and table.<tostring>?
+            [] = tostring table
+          else if is_list value
+            [] = '['
+            first = true
+            for elem in *value
+              if not first
+                [] = ', '
+              first = false
+
+              repr_impl elem
+            [] = ']'
+          else
+            [] = '{'
+            first = true
+            for k, v in pairs value
+              if not first
+                [] = ', '
+              first = false
+
+              repr_impl k
+              [] = ': '
+              repr_impl v
+            [] = '}'
+        else
+          [] = tostring value
+
+      stack[#stack] = nil
+    repr_impl value
+
+is_list = (table) ->
+  max_key = 0
+  num_keys = 0
+  for k, _ in pairs table
+    num_keys += 1
+    if 'integer' != type k
+      return false
+    if max_key < k
+      max_key = k
+  max_key == num_keys
+
+export matchers =
+  eq: (value) -> Eq value
+  same: (value) -> Same value
+  matches: (pattern) -> Matches pattern
+  tostrings_as: (matcher) -> ToStringsAs matcher
+  err: (matcher) -> Err matcher
+-- err: (matcher) -> Err matcher
+-- export assert = {
+--   is:
+--     truthy: (x, msg=nil) ->
+--       if not x
+--         current_it_run\fail "#{x} is not truthy", msg
+--     falsy: (x, msg=nil) ->
+--       if x
+--         current_it_run\fail "#{x} is not falsy", msg
+--     True: (x, msg=nil) ->
+--       if x != true
+--         current_it_run\fail "#{x} is not true", msg
+--     False: (x, msg=nil) ->
+--       if x != false
+--         current_it_run\fail "#{x} is not false", msg
+--   are:
+--     equal: (a, b, msg=nil) ->
+--       if a != b
+--         current_it_run\fail "#{a} != #{b}", msg
+--     same: (a, b, msg=nil) ->
+--       if not deep_equal a, b
+--         current_it_run\fail "#{a} !== #{b}", msg
+-- }
+
+-- deep_equal = (a, b) ->
+--   if a == b
+--     return true
+--
+--   type_a = type a
+--   type_b = type b
+--   if type_a != type_b
+--     return false
+--   if type_a != 'table'
+--     return false
+--   for ka, va in pairs a
+--     vb = b[ka]
+--     if not deep_equal va, vb
+--       return false
+--   for kb, _ in pairs b
+--     if not a[kb]
+--       return false
+--   true
+
+reflow = (prefix, string, width=80) ->
+  lines = with {}
+    chunk_len = width - #prefix
+    first_line = true
+    for line in string\gmatch '[^\r\n]*'
+      for i = 1, #line, chunk_len
+        chunk = line\sub i, i + chunk_len - 1
+        if first_line
+          [] = chunk
+        else
+          [] = prefix .. chunk
+        first_line = false
+  table.concat lines, '\n'
 
 export run_tests = ->
   -- Gather specs
-  if not specs?
+  if not spec_fns?
     return
-  for spec_fn in *specs
+  for spec_fn in *spec_fns
     spec_fn!
 
   root_spec?\test!
