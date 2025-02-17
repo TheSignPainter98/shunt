@@ -190,7 +190,7 @@ _G.fs ??= {
     handle?
 
   makeDir: (path) ->
-    os.execute "mkdir '#{path}'"
+    os.execute "mkdir -p '#{path}'"
 }
 
 main {...}
