@@ -8,7 +8,7 @@ NODE_FONTNAME = C059
 EDGE_FONTNAME = $(NODE_FONTNAME)
 GRAPHVIZ_OPTS = -Gfontname="$(NODE_FONTNAME)" -Nfontname="$(NODE_FONTNAME)" -Efontname="$(EDGE_FONTNAME)"
 
-all: $(DIAGRAMS) fat.lua fat.goo
+all: $(DIAGRAMS) packed/fat
 .PHONY: all
 
 docs/%.svg: docs/%.dot Makefile
@@ -17,9 +17,12 @@ docs/%.svg: docs/%.dot Makefile
 fat.lua: $(SOURCES)
 	yue -l --target=5.1 .
 
-fat.goo: ./goo.lua $(OBJECTS)
-	$(LUA) $< ball $@ '*.lua'
+packed/fat: fat.lua moonpack.lua $(SOURCES)
+	$(LUA) moonpack.lua $< -o $@
+
+# fat.goo: ./goo.lua $(OBJECTS)
+# 	$(LUA) $< ball $@ '*.lua'
 
 clean:
-	$(RM) $(DIAGRAMS) $(OBJECTS) startup.lua fat.goo
+	$(RM) $(DIAGRAMS) $(OBJECTS) startup.lua packed/fat fat.goo
 .PHONY: clean

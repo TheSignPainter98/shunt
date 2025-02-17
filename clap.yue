@@ -104,7 +104,10 @@ export class Param
   description: (@_description) => @
   options: (@_options) => @
   transform: (@_transform) => @
-  capture_remainder: => @_capture_remainder = true
+  capture_remainder: =>
+    @_capture_remainder = true
+    @_required = false
+    @
 
   _repr: =>
     name = @_arg_name or @_name
