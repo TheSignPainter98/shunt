@@ -26,7 +26,7 @@ main = (args) ->
 parse_args = (args) ->
   parser = with ArgParser 'moonpack'
     \version '1.0'
-    \description 'a linker for lua'
+    \description 'a static linker for lua'
     \add with Flag 'output'
       \description 'output binary name'
       \default nil
