@@ -24,7 +24,7 @@ main = (args) ->
   output_file\close!
 
 parse_args = (args) ->
-  parser = with ArgParser 'bundle'
+  parser = with ArgParser 'moonpack'
     \version '1.0'
     \description 'a linker for lua'
     \add with Flag 'output'
