@@ -2,22 +2,24 @@ local *
 
 import log from require 'fat.logger'
 
-specs = {}
+specs = nil
 failed = false
 
 export spec = (fn) ->
+  if not specs?
+    specs = {}
   specs[] = fn
 
 root_spec = nil
 current_spec = nil
 current_spec_kind = 'describe'
 export describe = (what, fn) ->
-  spec_section 'describe', what, fn
+  declare_spec_section 'describe', what, fn
 
 export it = (what, fn) ->
-  spec_section 'it', what, fn
+  declare_spec_section 'it', what, fn
 
-spec_section = (kind, what, fn) ->
+declare_spec_section = (kind, what, fn) ->
   if not root_spec?
     root_spec = Spec::root!
   if not current_spec?
@@ -38,11 +40,17 @@ spec_section = (kind, what, fn) ->
     when 'it'
       current_spec\add_child Test what, fn, current_spec
 
-export assert = {
-  eq: (a, b) ->
-    if a != b
-      error "assertion failed: #{a} != #{b}"
-}
+class ItRun
+  new: =>
+    @failures = {}
+
+  fail: (cause, message) =>
+    if message?
+      @failures[] = "#{message}: #{cause}"
+    else
+      @failures[] = cause
+
+current_it_run = nil
 
 class Spec
   @root: =>
@@ -55,13 +63,15 @@ class Spec
     @children[] = child
 
   desc: =>
-    parts = with {@name}
+    rev_parts = with {@name}
       spec = @parent
       while spec?
         [] = spec.name
         spec = spec.parent
-    for i = 1, #parts
-      parts[i] = parts[#parts - i + 1]
+    parts = with {}
+      n = #rev_parts
+      for i = 1, n
+        [i] = rev_parts[n - i + 1]
     table.concat parts, ' '
 
   test: =>
@@ -76,14 +86,28 @@ class Spec
 class Test
   new: (@name, @assertions_fn, @spec) =>
 
+  @test_failure_header_output: false
+
   test: =>
+    current_it_run = ItRun!
     try
       @assertions_fn!
     catch err
-      print "FAIL: #{@spec\desc!} #{@name}:\n\t#{err}"
+      current_it_run\fail "error thrown: #{err}"
+
+    if #current_it_run.failures > 0
+      if not @@test_failure_header_output
+        print 'SOME TESTS FAILED:'
+        @@test_failure_header_output = true
+      print "* #{@spec\desc!} #{@name}:"
+      for failure in *current_it_run.failures
+        print "  * #{failure}"
+
 
 export run_tests = ->
   -- Gather specs
+  if not specs?
+    return
   for spec_fn in *specs
     spec_fn!
 
