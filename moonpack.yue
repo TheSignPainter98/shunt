@@ -77,8 +77,11 @@ class SourceFile
     for line in io.lines @path
       lines[] = line
 
-      if req = line\match 'require%(([^)]*)%)'
-        required_mods[] = req\sub 2, #req-1
+      if require_call_arg = line\match 'require%(([^)]*)%)'
+        mod = require_call_arg\sub 2, -2
+        if not mod\match '^[a-zA-Z0-9.]*$'
+          error "cannot use '#{mod}' as a module name"
+        required_mods[] = mod
     @lines = lines
     @required_mods = required_mods
 
@@ -119,48 +122,6 @@ class SourceFile
 
   fmt_line: (lineno, line) =>
     "#{line} -- #{@path}:#{lineno}"
-
-get_requires = (path) -> coroutine.wrap ->
-  for line in io.lines path
-    req = line\match 'require%(([^)]*)%)'
-    if not req?
-      continue
-    coroutine.yield req\sub 2, #req - 1
-
-make_unique = (list) ->
-  with {}
-    seen = {}
-    for elem in *list
-      if seen[elem]
-        continue
-      seem[elem] = true
-      [] = elem
-
-collate = (entry_point_path, non_entrypoint_paths, opts) ->
-  { :include_line_comments } = opts
-
-  collated_lines = {}
-  for path in *non_entrypoint_paths
-    collate_file path, collated_lines, preload: true, :include_line_comments
-  collate_file entry_point_path, collated_lines, preload: false, :include_line_comments
-  collated_lines[] = ''
-
-  table.concat collated_lines, '\n'
-
-collate_file = (path, ret, opts) ->
-  { :preload, :include_line_comments } = opts
-  with ret
-    if preload
-      [] = "package.preload['#{module_name path}'] = function(...)"
-    lineno = 0
-    for line in io.lines path
-      lineno += 1
-      [] = if include_line_comments
-        "#{line} -- #{path}:#{lineno}"
-      else
-        line
-    if preload
-      [] = "end"
 
 _G.fs ??= {
   find: (pattern) ->
