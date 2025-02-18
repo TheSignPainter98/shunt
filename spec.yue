@@ -223,7 +223,10 @@ class Err
     @actual = nil
 
   actual_repr: =>
-    "error: #{repr @actual}"
+    if @actual?
+      "error #{repr @actual}"
+    else
+      "no error thrown"
 
   get_err: (fn) =>
     if @actual_set
@@ -245,11 +248,11 @@ class Err
     @inner\matches err
 
   explain_match: (fn) =>
-    err = @get_err fn
-    "which throws error '#{err}' which #{@inner\explain_match err}"
+    @get_err fn
+    "which throws #{@actual_repr!} #{@inner\explain_match err}"
 
   describe: (is_match=true) =>
-    if is_match
+    if @actual_set -- is_match
       "throws an error which #{@inner\describe!}"
     else
       "doesn't throw an error"
