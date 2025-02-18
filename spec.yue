@@ -173,6 +173,47 @@ class Eq
     else
       "isn't equal to #{repr @expected}"
 
+class Compare
+  new: (@kind, @value) =>
+
+  matches: (actual) =>
+    switch @kind
+      when '=='
+        actual == @value
+      when '<'
+        actual < @value
+      when '<='
+        actual <= @value
+      when '>'
+        actual > @value
+      when '>='
+        actual >= @value
+      else
+        error "internal error: unrecognised comparison: #{@kind}"
+
+  explain_match: (actual) =>
+    "which #{@describe @matches actual}"
+
+  describe: (is_match=true) =>
+    comparison_name = switch @kind
+      when '=='
+        "equal to"
+      when '<'
+        "less than"
+      when '<='
+        "at most"
+      when '>'
+        "greater than"
+      when '>='
+        "at least"
+      else
+        error "internal error: unrecognised comparison: #{@kind}"
+    if is_match
+      "is #{comparison_name} #{repr @value}"
+    else
+      "isn't #{comparison_name} #{repr @value}"
+
+
 class DeepEq
   new: (@expected) =>
 
@@ -336,8 +377,12 @@ is_list = (table) ->
 export matchers =
   anything: -> Anything!
   not_: (matcher) -> Not matcher
-  eq: (value) -> Eq value
+  eq: (value) -> Compare '==', value
   deep_eq: (value) -> DeepEq value
+  lt: (value) -> Compare '<', value
+  le: (value) -> Compare '<=', value
+  gt: (value) -> Compare '>', value
+  ge: (value) -> Compare '>=', value
   matches: (pattern) -> Matches pattern
   tostrings_as: (matcher) -> ToStringsAs matcher
   err: (matcher) -> Err matcher
