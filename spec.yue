@@ -329,7 +329,7 @@ class NoErrors
     if @error?
       "error #{repr @error}"
     else
-      "no error thrown"
+      "no error"
 
   get_err: (fn) =>
     if @error_set
@@ -356,17 +356,17 @@ class NoErrors
 
 class Errors
   new: (@inner) =>
-    @actual_set = false
-    @actual = nil
+    @error_set = false
+    @error = nil
 
   actual_repr: =>
     "-> #{@error_repr!}"
 
   error_repr: =>
-    if @actual?
-      "error #{repr @actual}"
+    if @error?
+      "error #{repr @error}"
     else
-      "no error thrown"
+      "no error"
 
   get_err: (fn) =>
     if @error_set
