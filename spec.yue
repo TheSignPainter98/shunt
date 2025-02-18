@@ -391,6 +391,10 @@ class Contains
 
 class Each
   new: (@kind, @inner) =>
+    @pretty_kind = if @kind == 'key-value'
+      'key-value pair'
+    else
+      @kind
 
   matches: (actual) =>
     not (@find_non_match actual)?
@@ -419,29 +423,63 @@ class Each
 
   describe: (is_match=true) =>
     if is_match
-      "contains a value which #{@inner\describe!}"
+      "consists of #{@pretty_kind} which #{@inner\describe!}"
     else
-      "does not contain any value which #{@inner\describe!}"
+      "contains a #{@pretty_kind} which #{@inner\describe!}"
 
-repr = (value) ->
+class Fields
+  new: (fields) =>
+    @fields = [ {:field, :matcher} for field, matcher in pairs fields ]
+    table.sort @fields, (a, b) ->
+      taf = type a.field
+      tbf = type b.field
+      if taf != tbf or taf == 'number'
+        return false
+      a.field < b.field
+
+  matches: (actual) =>
+    not (@find_non_match actual)?
+
+  find_non_match: (actual) =>
+    for {:field, :matcher} in *@fields
+      if not matcher\matches actual[field]
+        return field, matcher
+    nil
+
+  explain_match: (actual) =>
+    non_match_field, non_match_matcher = @find_non_match actual
+    if not non_match_field?
+      field_descriptions = [ "there is a field '#{field}' #{matcher\explain_match actual[field]}" for {:field, :matcher} in *@fields ]
+      "in which:\n  #{table.concat field_descriptions, '\n  '}"
+    else
+      "in which field #{repr non_match_field} #{non_match_matcher\explain_match actual[non_match_field]}"
+
+  describe: (is_match=true) =>
+    field_descriptions = [ "there is a field '#{field}' which #{matcher\describe!}" for {:field, :matcher} in *@fields ]
+    if is_match
+      "is a table in which:\n  #{table.concat field_descriptions, '\n  '}"
+    else
+      "isn't a table in which:\n  #{table.concat field_descriptions, '\n  '}"
+
+repr = =>
   table.concat with {}
     stack={}
-    repr_impl = (value) ->
+    repr_impl = =>
       for elem in *stack
-        if rawequal value, elem
+        if rawequal @, elem
           [] = '...'
-      stack[] = value
+      stack[] = @
 
-      switch type value
+      switch type @
         when 'string'
-          [] = "'#{value}'"
+          [] = "'#{@}'"
         when 'table'
           if table.<>? and table.<tostring>?
             [] = tostring table
-          else if is_list value
+          else if is_list @
             [] = '['
             first = true
-            for elem in *value
+            for elem in *@
               if not first
                 [] = ', '
               first = false
@@ -451,20 +489,28 @@ repr = (value) ->
           else
             [] = '{'
             first = true
-            for k, v in pairs value
+            keys = [ key for key, _ in pairs @ ]
+            table.sort keys, (a, b) ->
+              ta = type a
+              tb = type b
+              if ta != tb or ta == 'number'
+                return false
+              a < b
+            for key in *keys
+              value = @[key]
               if not first
                 [] = ', '
               first = false
 
-              repr_impl k
+              repr_impl key
               [] = ': '
-              repr_impl v
+              repr_impl value
             [] = '}'
         else
-          [] = tostring value
+          [] = tostring @
 
       stack[#stack] = nil
-    repr_impl value
+    repr_impl @
 
 is_list = (table) ->
   max_key = 0
@@ -497,6 +543,7 @@ export matchers =
   each_pair: (matcher) -> Each 'key-value', matcher
   err: (matcher) -> Err matcher
   has_type: (typ) -> Type typ
+  fields: (fields) -> Fields fields
 
 reflow = (prefix, string, width=80) ->
   lines = with {}
