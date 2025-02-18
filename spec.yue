@@ -39,6 +39,8 @@ declare_spec_section = (kind, what, fn) ->
       current_spec = parent_spec
     when 'it'
       current_spec\add_child Test what, fn, current_spec
+    else
+      error "internal error: unknown kind #{repr kind}"
 
 class Spec
   @root: =>
@@ -189,7 +191,7 @@ class Compare
       when '>='
         actual >= @value
       else
-        error "internal error: unrecognised comparison: #{@kind}"
+        error "internal error: unrecognised comparison: #{repr @kind}"
 
   explain_match: (actual) =>
     "which #{@describe @matches actual}"
@@ -207,7 +209,7 @@ class Compare
       when '>='
         "at least"
       else
-        error "internal error: unrecognised comparison: #{@kind}"
+        error "internal error: unrecognised comparison: #{repr @kind}"
     if is_match
       "is #{comparison_name} #{repr @value}"
     else
@@ -335,6 +337,77 @@ class Err
     else
       "doesn't throw an error"
 
+class Contains
+  new: (@kind, @inner) =>
+    @pretty_kind = if @kind == 'key-value'
+      'key-value pair'
+    else
+      @kind
+
+  matches: (actual) =>
+    (@find_match actual)?
+
+  find_match: (actual) =>
+    for key, value in pairs actual
+      to_check = switch @kind
+        when 'key'
+          key
+        when 'value'
+          value
+        when 'key-value'
+          :key, :value
+        else
+          error "internal error: unknown kind #{repr @kind}"
+      if @inner\matches to_check
+        return to_check
+    nil
+
+  explain_match: (actual) =>
+    if match = @find_match actual
+      "which contains #{repr match} #{@inner\explain_match match}"
+    else
+      "which does not contain any #{@pretty_kind} which #{@inner\describe!}"
+
+  describe: (is_match=true) =>
+    if is_match
+      "contains a value which #{@inner\describe!}"
+    else
+      "does not contain any #{@pretty_kind} which #{@inner\describe!}"
+
+class Each
+  new: (@kind, @inner) =>
+
+  matches: (actual) =>
+    not (@find_non_match actual)?
+
+  find_non_match: (actual) =>
+    for key, value in pairs actual
+      to_check = switch @kind
+        when 'key'
+          key
+        when 'value'
+          value
+        when 'key-value'
+          :key, :value
+        else
+          error "internal error: unknown kind #{repr @kind}"
+      if not @inner\matches to_check
+        return to_check
+    nil
+
+  explain_match: (actual) =>
+    non_match = @find_non_match actual
+    if not non_match?
+      "in which each element #{@inner\describe true}"
+    else
+      "in which some element #{@inner\describe false}"
+
+  describe: (is_match=true) =>
+    if is_match
+      "contains a value which #{@inner\describe!}"
+    else
+      "does not contain any value which #{@inner\describe!}"
+
 repr = (value) ->
   table.concat with {}
     stack={}
@@ -401,30 +474,13 @@ export matchers =
   len: (matcher) -> Len matcher
   matches: (pattern) -> Matches pattern
   tostrings_as: (matcher) -> ToStringsAs matcher
+  contains_key: (matcher) -> Contains 'key', matcher
+  contains_value: (matcher) -> Contains 'value', matcher
+  contains_pair: (matcher) -> Contains 'key-value', matcher
+  each_key: (matcher) -> Each 'key', matcher
+  each_value: (matcher) -> Each 'value', matcher
+  each_pair: (matcher) -> Each 'key-value', matcher
   err: (matcher) -> Err matcher
--- err: (matcher) -> Err matcher
--- export assert = {
---   is:
---     truthy: (x, msg=nil) ->
---       if not x
---         current_it_run\fail "#{x} is not truthy", msg
---     falsy: (x, msg=nil) ->
---       if x
---         current_it_run\fail "#{x} is not falsy", msg
---     True: (x, msg=nil) ->
---       if x != true
---         current_it_run\fail "#{x} is not true", msg
---     False: (x, msg=nil) ->
---       if x != false
---         current_it_run\fail "#{x} is not false", msg
---   are:
---     equal: (a, b, msg=nil) ->
---       if a != b
---         current_it_run\fail "#{a} != #{b}", msg
---     same: (a, b, msg=nil) ->
---       if not deep_equal a, b
---         current_it_run\fail "#{a} !== #{b}", msg
--- }
 
 reflow = (prefix, string, width=80) ->
   lines = with {}
