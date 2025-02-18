@@ -101,8 +101,8 @@ class Test
       when 'string'
         cause
       when 'table'
-        { :value_name, :expected, :actual_repr, :explanation } = cause
-        "for value: #{value_name}\nexpected: #{expected}\nactual: #{actual_repr},\n  #{reflow '  ', explanation, 70}"
+        { :location, :expected, :actual_repr, :explanation } = cause
+        "at: #{location}\nexpected: #{expected}\nactual: #{actual_repr},\n  #{reflow '  ', explanation, 70}"
       else
         error "internal error: invalid matcher return: #{repr cause}"
     if message?
@@ -114,25 +114,34 @@ class Test
     @@fail value_name, cause, message
     error FATAL_TEST_ERROR_MARKER
 
-export expect_that = (value_name, actual, matcher) ->
+export expect_that = (actual, matcher) ->
   if matcher\matches actual
     return
 
   Test::fail
-    :value_name
+    location: get_caller_location 'expect_that'
     expected: matcher\describe!
     actual_repr: matcher\actual_repr?! ?? repr actual
     explanation: matcher\explain_match actual
 
-export assert_that = (value_name, actual, matcher) ->
+export assert_that = (actual, matcher) ->
   if matcher\matches actual
     return
 
   Test::fatal
-    :value_name
+    location: get_caller_location 'assert_that'
     expected: matcher\describe!
     actual_repr: matcher.actual_repr?! ?? repr actual
     explanation: matcher\explain_match actual
+
+--- Get location of the caller of the function which called this function.
+get_caller_location = (kind) ->
+  { :currentline, :short_src, :what } = debug.getinfo 3, 'Sl'
+  switch what
+    when 'C', 'tail'
+      "last #{kind} call (debug info lost)"
+    else
+      "#{short_src}:#{currentline}"
 
 class Anything
   matches: (actual) =>
