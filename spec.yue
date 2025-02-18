@@ -136,6 +136,16 @@ export assert_that = (value_name, actual, matcher) ->
     actual_repr: matcher.actual_repr?! ?? repr actual
     explanation: matcher\explain_match actual
 
+class Anything
+  matches: (actual) =>
+    true
+
+  explain_match: (actual) =>
+    "which #{@describe!}"
+
+  describe: (is_match=true) =>
+    "is anything"
+
 class Eq
   new: (@expected) =>
 
@@ -312,6 +322,7 @@ is_list = (table) ->
   max_key == num_keys and num_keys > 0
 
 export matchers =
+  anything: -> Anything!
   eq: (value) -> Eq value
   deep_eq: (value) -> DeepEq value
   matches: (pattern) -> Matches pattern
