@@ -3,7 +3,6 @@ local *
 import log from require 'fat.logger'
 
 spec_fns = nil
-failed = false
 
 export spec = (fn) ->
   if not spec_fns?
@@ -78,7 +77,7 @@ FATAL_TEST_ERROR_MARKER = 'INTERNAL ERROR: FATAL TEST ERROR'
 class Test
   new: (@name, @assertions_fn, @spec) =>
 
-  @output_test_failure_header: true
+  @any_failed: false
   @current_run_failures: {}
 
   test: =>
@@ -92,15 +91,12 @@ class Test
     if #@@current_run_failures == 0
       return
 
-    if @@output_test_failure_header
-      print 'SOME TESTS FAILED:'
-      @@output_test_failure_header = false
-
     print "* #{@spec\desc!} #{@name}:"
     for failure in *@@current_run_failures
       print "  * #{reflow '    ', failure}"
 
   @fail: (cause, message) =>
+    @@any_failed = true
     cause_string = switch type cause
       when 'string'
         cause
@@ -568,5 +564,5 @@ export run_tests = ->
 
   root_spec?\test!
 
-  if failed
-    error "some checks failed"
+  if Test::any_failed
+    print "some checks failed!"
