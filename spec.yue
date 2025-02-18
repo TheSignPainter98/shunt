@@ -264,6 +264,21 @@ class Matches
     else
       "doesn't match #{repr @pat}"
 
+class Len
+  new: (@inner) =>
+
+  matches: (actual) =>
+    @inner\matches #actual
+
+  explain_match: (actual) =>
+    "which has length #{#actual} #{@inner\explain_match #actual}"
+
+  describe: (is_match=true) =>
+    if is_match
+      "has a length which #{@inner\describe!}"
+    else
+      "doesn't have a length which #{@inner\describe!}"
+
 class ToStringsAs
   new: (@inner) =>
 
@@ -383,6 +398,7 @@ export matchers =
   le: (value) -> Compare '<=', value
   gt: (value) -> Compare '>', value
   ge: (value) -> Compare '>=', value
+  len: (matcher) -> Len matcher
   matches: (pattern) -> Matches pattern
   tostrings_as: (matcher) -> ToStringsAs matcher
   err: (matcher) -> Err matcher
