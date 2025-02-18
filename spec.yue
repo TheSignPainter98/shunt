@@ -146,6 +146,18 @@ class Anything
   describe: (is_match=true) =>
     "is anything"
 
+class Not
+  new: (@inner) =>
+
+  matches: (actual) =>
+    not @inner\matches actual
+
+  explain_match: (actual) =>
+    @inner\explain_match actual
+
+  describe: (is_match=true) =>
+    @inner\describe not is_match
+
 class Eq
   new: (@expected) =>
 
@@ -323,6 +335,7 @@ is_list = (table) ->
 
 export matchers =
   anything: -> Anything!
+  not_: (matcher) -> Not matcher
   eq: (value) -> Eq value
   deep_eq: (value) -> DeepEq value
   matches: (pattern) -> Matches pattern
