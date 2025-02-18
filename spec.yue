@@ -251,6 +251,21 @@ class DeepEq
     else
       "isn't deeply equal to #{repr @expected}"
 
+class Type
+  new: (@type) =>
+
+  matches: (actual) =>
+    @type == type actual
+
+  explain_match: (actual) =>
+    "which #{@describe @matches actual}"
+
+  describe: (is_match=true) =>
+    if is_match
+      "has type #{@type}"
+    else
+      "does not have type #{@type}"
+
 class Matches
   new: (@pat) =>
 
@@ -481,6 +496,7 @@ export matchers =
   each_value: (matcher) -> Each 'value', matcher
   each_pair: (matcher) -> Each 'key-value', matcher
   err: (matcher) -> Err matcher
+  has_type: (typ) -> Type typ
 
 reflow = (prefix, string, width=80) ->
   lines = with {}
