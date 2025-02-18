@@ -151,6 +151,41 @@ class Eq
     else
       "isn't equal to #{repr @expected}"
 
+class DeepEq
+  new: (@expected) =>
+
+  matches: (actual) =>
+    @deep_equal @expected, actual
+
+  deep_equal: (a, b) =>
+    if a == b
+      return true
+
+    type_a = type a
+    type_b = type b
+    if type_a != type_b
+      return false
+
+    if type_a != 'table'
+      return false
+    for ka, va in pairs a
+      vb = b[ka]
+      if not @deep_equal va, vb
+        return false
+    for kb, _ in pairs b
+      if not a[kb]
+        return false
+    true
+
+  explain_match: (actual) =>
+    "which #{@describe @matches actual}"
+
+  describe: (is_match=true) =>
+    if is_match
+      "is deeply equal to #{repr @expected}"
+    else
+      "isn't deeply equal to #{repr @expected}"
+
 class Matches
   new: (@pat) =>
 
@@ -267,15 +302,15 @@ is_list = (table) ->
   num_keys = 0
   for k, _ in pairs table
     num_keys += 1
-    if 'integer' != type k
+    if 'number' != type k
       return false
     if max_key < k
       max_key = k
-  max_key == num_keys
+  max_key == num_keys and num_keys > 0
 
 export matchers =
   eq: (value) -> Eq value
-  same: (value) -> Same value
+  deep_eq: (value) -> DeepEq value
   matches: (pattern) -> Matches pattern
   tostrings_as: (matcher) -> ToStringsAs matcher
   err: (matcher) -> Err matcher
@@ -302,25 +337,6 @@ export matchers =
 --       if not deep_equal a, b
 --         current_it_run\fail "#{a} !== #{b}", msg
 -- }
-
--- deep_equal = (a, b) ->
---   if a == b
---     return true
---
---   type_a = type a
---   type_b = type b
---   if type_a != type_b
---     return false
---   if type_a != 'table'
---     return false
---   for ka, va in pairs a
---     vb = b[ka]
---     if not deep_equal va, vb
---       return false
---   for kb, _ in pairs b
---     if not a[kb]
---       return false
---   true
 
 reflow = (prefix, string, width=80) ->
   lines = with {}
