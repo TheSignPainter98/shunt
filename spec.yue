@@ -317,29 +317,67 @@ class ToStringsAs
     else
       "doesn't tostrings as a string which #{@inner\describe false}"
 
-class Err
+class NoErrors
+  new: =>
+    @error_set = false
+    @error = nil
+
+  actual_repr: =>
+    "-> #{@error_repr!}"
+
+  error_repr: =>
+    if @error?
+      "error #{repr @error}"
+    else
+      "no error thrown"
+
+  get_err: (fn) =>
+    if @error_set
+      return @error
+
+    try
+      fn!
+    catch err
+      @error = err
+    @error_set = true
+    @error
+
+  matches: (fn) =>
+    not (@get_err fn)?
+
+  explain_match: (fn) =>
+    "which #{@describe @matches fn}"
+
+  describe: (is_match=true) =>
+    if is_match
+      "doesn't throw an error"
+    else
+      "throws an error"
+
+class Errors
   new: (@inner) =>
     @actual_set = false
     @actual = nil
 
   actual_repr: =>
+    "-> #{@error_repr!}"
+
+  error_repr: =>
     if @actual?
       "error #{repr @actual}"
     else
       "no error thrown"
 
   get_err: (fn) =>
-    if @actual_set
-      return @actual
+    if @error_set
+      return @error
 
-    local err
     try
       fn!
-    catch err2
-      err = err2
-    @actual = err
-    @actual_set = true
-    return err
+    catch err
+      @error = err
+    @error_set = true
+    @error
 
   matches: (fn) =>
     err = @get_err fn
@@ -348,11 +386,11 @@ class Err
     @inner\matches err
 
   explain_match: (fn) =>
-    @get_err fn
-    "which throws #{@actual_repr!} #{@inner\explain_match err}"
+    err = @get_err fn
+    "which throws #{@error_repr!} #{@inner\explain_match err}"
 
   describe: (is_match=true) =>
-    if @actual_set -- is_match
+    if is_match
       "throws an error which #{@inner\describe!}"
     else
       "doesn't throw an error"
@@ -546,7 +584,8 @@ export matchers =
   each_key: (matcher) -> Each 'key', matcher
   each_value: (matcher) -> Each 'value', matcher
   each_pair: (matcher) -> Each 'key-value', matcher
-  err: (matcher) -> Err matcher
+  no_errors: -> NoErrors!
+  errors: (matcher) -> Errors matcher
   has_type: (typ) -> Type typ
   fields: (fields) -> Fields fields
 
