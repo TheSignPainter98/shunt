@@ -1,0 +1,136 @@
+local *
+
+import spec from require 'spec'
+
+type_checkers = {}
+
+typed = (type_spec, value) ->
+  if not type_spec?
+    error 'cannot typecheck: no type spec provided'
+
+  -- checker_steps = type_checkers[type_spec] ?? do
+  --   program = generate_checker_program type_spec
+  --   type_checkers[type_spec] = program
+  --   program
+  checker = type_checker type_spec
+
+  -- print (require 'spec').repr checker
+
+type_checkers = {}
+type_checker = (type_spec) ->
+  with {}
+    -- stack = {}
+    for token_type, token in lex type_spec
+      print token_type, token
+    -- idx = 1
+    -- if named_type = (type_spec\sub idx)\match '^([0-9]+)'
+    --   steps = type_checkers[named_type]
+    --   if not steps?
+    --     error "cannot typecheck: unknown type '#{named_type}'"
+    --   for step in *steps
+    --     [] = step
+    -- else if (type_spec\sub i)\match '^('
+    --   error 'tuples and functions not yet supported'
+    -- else if (type_spec )
+
+PAREN_OPEN = 1
+PAREN_CLOSE = 2
+BRACE_OPEN = 3
+BRACE_CLOSE = 4
+BRACKET_OPEN = 5
+BRACKET_CLOSE = 6
+COMMA = 7
+ARROW = 8
+NAME = 9
+lex = (type_spec) -> coroutine.wrap ->
+  original_type_spec = type_spec
+  while #type_spec > 0
+    token_type, token = if whitespace = type_spec\match '^[ \t\r\n]'
+      nil, whitespace
+    else if type_spec\match '^%('
+      PAREN_OPEN, '('
+    else if type_spec\match '^%)'
+      PAREN_CLOSE, ')'
+    else if type_spec\match '^,'
+      COMMA, ','
+    else if type_spec\match '^{'
+      BRACE_OPEN, '{'
+    else if type_spec\match '^}'
+      BRACE_CLOSE, '}'
+    else if type_spec\match '^%['
+      BRACKET_OPEN, '['
+    else if type_spec\match '^]'
+      BRACKET_CLOSE, ']'
+    else if type_spec\match '^->'
+      ARROW, '->'
+    else if name = type_spec\match '^([a-zA-Z_][a-zA-Z0-9_]*)'
+      NAME, name
+    else
+      error "unrecognised character '#{type_spec\sub 1, 1}' in type spec '#{original_type_spec}"
+
+    type_spec = type_spec\sub #token + 1
+    if token_type?
+      coroutine.yield token_type, token
+
+declare_type = (name, type_spec) ->
+  error 'todo'
+
+spec ->
+  import expect_that, describe, it, matchers from require 'spec'
+  import anything, deep_eq, eq, errors, match, matches, no_errors from matchers
+
+  describe 'lex', ->
+    tokens = (raw) ->
+      with {}
+        for token_type, token in lex raw
+          [] = { :token_type, :token }
+
+    it 'emits simple types', ->
+      simple_types =
+        * type nil
+        * type false
+        * type 0
+        * type ""
+      for simple_type in *simple_types
+        expect_that (tokens simple_type), deep_eq {
+          { token_type: NAME, token: simple_type },
+        }
+
+    it 'emits strucural tokens', ->
+      expect_that (tokens '(),{}[]->'), deep_eq {
+        { token_type: PAREN_OPEN, token: '(' },
+        { token_type: PAREN_CLOSE, token: ')' },
+        { token_type: COMMA, token: ',' },
+        { token_type: BRACE_OPEN, token: '{' },
+        { token_type: BRACE_CLOSE, token: '}' },
+        { token_type: BRACKET_OPEN, token: '[' },
+        { token_type: BRACKET_CLOSE, token: ']' },
+        { token_type: ARROW, token: '->' },
+      }
+
+    it 'ignores whitespace', ->
+      expect_that (tokens ' (\tstring\r)\n-> string '), deep_eq {
+        { token_type: PAREN_OPEN, token: "(" },
+        { token_type: NAME, token: "string" },
+        { token_type: PAREN_CLOSE, token: ")" },
+        { token_type: ARROW, token: "->" },
+        { token_type: NAME, token: "string" },
+      }
+
+    it 'rejects unrecognised characters', ->
+      expect_that (-> tokens '"'), errors matches [[unrecognised character '"']]
+      expect_that (-> tokens '1'), errors matches [[unrecognised character '1']]
+
+  -- describe 'typed', ->
+  --   it 'requires two arguments', ->
+  --     expect_that (-> typed!), errors matches 'cannot typecheck: no type spec provided'
+  --   --
+  --   -- it 'handles nils', ->
+  --   --   expect_that (-> typed 'nil', nil), no_errors!
+  --   --   expect_that (-> typed 'nil', 123), errors anything!
+  --
+  --   it 'handles numbers', ->
+  --     expect_that (-> typed 'number', nil), errors anything!
+  --     expect_that (-> typed 'number', 123), no_errors!
+
+(require 'spec').run_tests!
