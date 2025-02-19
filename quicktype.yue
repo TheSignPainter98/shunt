@@ -20,8 +20,15 @@ type_checkers = {}
 type_checker = (type_spec) ->
   with {}
     -- stack = {}
-    for token_type, token in lex type_spec
+    lexer = Lexer type_spec
+    -- print type lexer!
+    -- token_type, token = coroutine.resume lexer
+    token_type, token = lexer\next!
+    while token?
       print token_type, token
+      token_type, token = lexer\next!
+    -- for token_type, token in
+    --   print token_type, token
     -- idx = 1
     -- if named_type = (type_spec\sub idx)\match '^([0-9]+)'
     --   steps = type_checkers[named_type]
@@ -33,44 +40,71 @@ type_checker = (type_spec) ->
     --   error 'tuples and functions not yet supported'
     -- else if (type_spec )
 
-PAREN_OPEN = 1
-PAREN_CLOSE = 2
-BRACE_OPEN = 3
-BRACE_CLOSE = 4
-BRACKET_OPEN = 5
-BRACKET_CLOSE = 6
-COMMA = 7
-ARROW = 8
-NAME = 9
-lex = (type_spec) -> coroutine.wrap ->
-  original_type_spec = type_spec
-  while #type_spec > 0
-    token_type, token = if whitespace = type_spec\match '^[ \t\r\n]'
-      nil, whitespace
-    else if type_spec\match '^%('
-      PAREN_OPEN, '('
-    else if type_spec\match '^%)'
-      PAREN_CLOSE, ')'
-    else if type_spec\match '^,'
-      COMMA, ','
-    else if type_spec\match '^{'
-      BRACE_OPEN, '{'
-    else if type_spec\match '^}'
-      BRACE_CLOSE, '}'
-    else if type_spec\match '^%['
-      BRACKET_OPEN, '['
-    else if type_spec\match '^]'
-      BRACKET_CLOSE, ']'
-    else if type_spec\match '^->'
-      ARROW, '->'
-    else if name = type_spec\match '^([a-zA-Z_][a-zA-Z0-9_]*)'
-      NAME, name
-    else
-      error "unrecognised character '#{type_spec\sub 1, 1}' in type spec '#{original_type_spec}"
+PAREN_OPEN = <tostring>: => "paren_open"
+PAREN_CLOSE = <tostring>: => "paren_close"
+BRACE_OPEN = <tostring>: => "brace_open"
+BRACE_CLOSE = <tostring>: => "brace_close"
+BRACKET_OPEN = <tostring>: => "bracket_close"
+BRACKET_CLOSE = <tostring>: => "bracket_close"
+COMMA = <tostring>: => "comma"
+ARROW = <tostring>: => "arrow"
+NAME = <tostring>: => "name"
+class Lexer
+  new: (type_spec) =>
+    @done = false
+    @peeked = nil
+    @tokens = coroutine.wrap ->
+      original_type_spec = type_spec
+      while #type_spec > 0
+        token_type, token = if whitespace = type_spec\match '^[ \t\r\n]'
+          nil, whitespace
+        else if type_spec\match '^%('
+          PAREN_OPEN, '('
+        else if type_spec\match '^%)'
+          PAREN_CLOSE, ')'
+        else if type_spec\match '^,'
+          COMMA, ','
+        else if type_spec\match '^{'
+          BRACE_OPEN, '{'
+        else if type_spec\match '^}'
+          BRACE_CLOSE, '}'
+        else if type_spec\match '^%['
+          BRACKET_OPEN, '['
+        else if type_spec\match '^]'
+          BRACKET_CLOSE, ']'
+        else if type_spec\match '^->'
+          ARROW, '->'
+        else if name = type_spec\match '^([a-zA-Z_][a-zA-Z0-9_]*)'
+          NAME, name
+        else
+          error "unrecognised character '#{type_spec\sub 1, 1}' in type spec '#{original_type_spec}"
 
-    type_spec = type_spec\sub #token + 1
-    if token_type?
-      coroutine.yield token_type, token
+        type_spec = type_spec\sub #token + 1
+        if token_type?
+          coroutine.yield token_type, token
+
+  peek: =>
+    if @done
+      return nil
+
+    if @peeked?
+      return @peeked
+
+    @peeked = {@tokens!}
+    if not @peeked
+      @done = true
+    unpack @peeked
+
+  next: =>
+    if @done
+      return nil
+
+    if @peeked?
+      peeked = @peeked
+      @peeked = nil
+      unpack peeked
+    else
+      @tokens!
 
 declare_type = (name, type_spec) ->
   error 'todo'
@@ -82,7 +116,7 @@ spec ->
   describe 'lex', ->
     tokens = (raw) ->
       with {}
-        for token_type, token in lex raw
+        for token_type, token in (Lexer raw).tokens
           [] = { :token_type, :token }
 
     it 'emits simple types', ->
@@ -121,6 +155,18 @@ spec ->
       expect_that (-> tokens '"'), errors matches [[unrecognised character '"']]
       expect_that (-> tokens '1'), errors matches [[unrecognised character '1']]
 
+    describe ':peek', ->
+      it 'matches :next', ->
+        lexer = Lexer '()'
+        expect_that {lexer\peek!}, deep_eq {PAREN_OPEN, '('}
+        expect_that {lexer\next!}, deep_eq {PAREN_OPEN, '('}
+        expect_that {lexer\peek!}, deep_eq {PAREN_OPEN, ')'}
+        expect_that {lexer\next!}, deep_eq {PAREN_OPEN, ')'}
+
+      it 'returns nil on empty peek', ->
+        lexer = Lexer ''
+        expect_that {lexer\peek!}, deep_eq {}
+
   -- describe 'typed', ->
   --   it 'requires two arguments', ->
   --     expect_that (-> typed!), errors matches 'cannot typecheck: no type spec provided'
@@ -134,3 +180,5 @@ spec ->
   --     expect_that (-> typed 'number', 123), no_errors!
 
 (require 'spec').run_tests!
+
+type_checker '(string, string) -> boolean'
