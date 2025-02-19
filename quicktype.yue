@@ -56,7 +56,7 @@ class Lexer
     @tokens = coroutine.wrap ->
       original_type_spec = type_spec
       while #type_spec > 0
-        token_type, token_value = if whitespace = type_spec\match '^[ \t\r\n]'
+        token_type, value = if whitespace = type_spec\match '^[ \t\r\n]'
           nil, whitespace
         else if type_spec\match '^%('
           PAREN_OPEN, '('
@@ -79,9 +79,14 @@ class Lexer
         else
           error "unrecognised character '#{type_spec\sub 1, 1}' in type spec '#{original_type_spec}"
 
-        type_spec = type_spec\sub #token_value + 1
-        if token_type?
-          coroutine.yield { :token_type, :token_value }
+        type_spec = type_spec\sub #value + 1
+        switch token_type
+          when nil
+            continue -- continue
+          when NAME
+            coroutine.yield { :token_type, :value }
+          else
+            coroutine.yield { :token_type }
 
   peek: =>
     if @done
@@ -127,28 +132,28 @@ spec ->
         * type ""
       for simple_type in *simple_types
         expect_that (tokens simple_type), deep_eq {
-          { token_type: NAME, token_value: simple_type },
+          { token_type: NAME, value: simple_type },
         }
 
     it 'emits strucural tokens', ->
       expect_that (tokens '(),{}[]->'), deep_eq {
-        { token_type: PAREN_OPEN, token_value: '(' },
-        { token_type: PAREN_CLOSE, token_value: ')' },
-        { token_type: COMMA, token_value: ',' },
-        { token_type: BRACE_OPEN, token_value: '{' },
-        { token_type: BRACE_CLOSE, token_value: '}' },
-        { token_type: BRACKET_OPEN, token_value: '[' },
-        { token_type: BRACKET_CLOSE, token_value: ']' },
-        { token_type: ARROW, token_value: '->' },
+        { token_type: PAREN_OPEN },
+        { token_type: PAREN_CLOSE },
+        { token_type: COMMA },
+        { token_type: BRACE_OPEN },
+        { token_type: BRACE_CLOSE },
+        { token_type: BRACKET_OPEN },
+        { token_type: BRACKET_CLOSE },
+        { token_type: ARROW },
       }
 
     it 'ignores whitespace', ->
       expect_that (tokens ' (\tstring\r)\n-> string '), deep_eq {
-        { token_type: PAREN_OPEN, token_value: "(" },
-        { token_type: NAME, token_value: "string" },
-        { token_type: PAREN_CLOSE, token_value: ")" },
-        { token_type: ARROW, token_value: "->" },
-        { token_type: NAME, token_value: "string" },
+        { token_type: PAREN_OPEN },
+        { token_type: NAME, value: "string" },
+        { token_type: PAREN_CLOSE },
+        { token_type: ARROW },
+        { token_type: NAME, value: "string" },
       }
 
     it 'rejects unrecognised characters', ->
@@ -158,12 +163,12 @@ spec ->
     describe ':peek', ->
       it 'matches :next', ->
         lexer = Lexer '()'
-        assert_that lexer\peek!, deep_eq { token_type: PAREN_OPEN, token_value: '('}
-        assert_that lexer\peek!, deep_eq { token_type: PAREN_OPEN, token_value: '('}
-        assert_that lexer\next!, deep_eq { token_type: PAREN_OPEN, token_value: '('}
-        assert_that lexer\peek!, deep_eq { token_type: PAREN_CLOSE, token_value: ')'}
-        assert_that lexer\peek!, deep_eq { token_type: PAREN_CLOSE, token_value: ')'}
-        assert_that lexer\next!, deep_eq { token_type: PAREN_CLOSE, token_value: ')'}
+        assert_that lexer\peek!, deep_eq { token_type: PAREN_OPEN }
+        assert_that lexer\peek!, deep_eq { token_type: PAREN_OPEN }
+        assert_that lexer\next!, deep_eq { token_type: PAREN_OPEN }
+        assert_that lexer\peek!, deep_eq { token_type: PAREN_CLOSE }
+        assert_that lexer\peek!, deep_eq { token_type: PAREN_CLOSE }
+        assert_that lexer\next!, deep_eq { token_type: PAREN_CLOSE }
 
       it 'returns nil on empty peek', ->
         lexer = Lexer ''
