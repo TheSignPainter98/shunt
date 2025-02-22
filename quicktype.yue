@@ -1,92 +1,142 @@
 local *
 
-import spec from require 'spec'
+import spec, repr from require 'spec'
 
 type_checkers = {}
 
-typed = (type_spec, value) ->
+export typed = (type_spec, value) ->
   if not type_spec?
     error 'cannot typecheck: no type spec provided'
 
+  checker = type_checkers[type_spec] ?? do
+    checker = type_checker type_spec
+    type_checkers[type_spec] = checker
+    checker
+  error 'todo'
   -- checker_steps = type_checkers[type_spec] ?? do
   --   program = generate_checker_program type_spec
   --   type_checkers[type_spec] = program
   --   program
-  checker = type_checker type_spec
-
+  -- checker = type_checker type_spec
   -- print (require 'spec').repr checker
 
-type_checkers = {}
-type_checker = (type_spec) ->
-  with {}
-    -- stack = {}
-    lexer = Lexer type_spec
-    -- print type lexer!
-    -- token_type, token = coroutine.resume lexer
-    token_type, token = lexer\next!
-    while token?
-      print token_type, token
-      token_type, token = lexer\next!
-    -- for token_type, token in
-    --   print token_type, token
-    -- idx = 1
-    -- if named_type = (type_spec\sub idx)\match '^([0-9]+)'
-    --   steps = type_checkers[named_type]
-    --   if not steps?
-    --     error "cannot typecheck: unknown type '#{named_type}'"
-    --   for step in *steps
-    --     [] = step
-    -- else if (type_spec\sub i)\match '^('
-    --   error 'tuples and functions not yet supported'
-    -- else if (type_spec )
+-- Non termianls
+NT_TYPE_SPEC = <tostring>: => "type_spec"
+NT_FUNC_SPEC = <tostring>: => "func_spec"
+NT_NONFUNC_SPEC = <tostring>: => "nonfunc_spec"
+NT_LIST = <tostring>: => "list"
 
-PAREN_OPEN = <tostring>: => "paren_open"
-PAREN_CLOSE = <tostring>: => "paren_close"
-BRACE_OPEN = <tostring>: => "brace_open"
-BRACE_CLOSE = <tostring>: => "brace_close"
-BRACKET_OPEN = <tostring>: => "bracket_close"
-BRACKET_CLOSE = <tostring>: => "bracket_close"
-COMMA = <tostring>: => "comma"
-ARROW = <tostring>: => "arrow"
-NAME = <tostring>: => "name"
+-- Terminals
+T_PAREN_OPEN = <tostring>: => "<paren_open>"
+T_PAREN_CLOSE = <tostring>: => "<paren_close>"
+T_BRACE_OPEN = <tostring>: => "<brace_open>"
+T_BRACE_CLOSE = <tostring>: => "<brace_close>"
+T_BRACKET_OPEN = <tostring>: => "<bracket_close>"
+T_BRACKET_CLOSE = <tostring>: => "<bracket_close>"
+T_COMMA = <tostring>: => "<comma>"
+T_ARROW = <tostring>: => "<arrow>"
+T_NAME = <tostring>: => "<name>"
+
+type_checker = (type_spec) ->
+  type_spec_parser = Parser
+    * produces: NT_TYPE_SPEC
+      patterns:
+        * { NT_NONFUNC_SPEC }
+    * produces: NT_NONFUNC_SPEC
+      patterns:
+        * { T_NAME }
+        * { NT_LIST }
+    * produces: NT_LIST
+      patterns:
+        * { T_BRACKET_OPEN, NT_TYPE_SPEC, T_BRACKET_CLOSE }
+  type_spec_parser\parse type_spec
+  {}
+
+class Parser
+  new: (raw_rules) =>
+    @rules = with {}
+      for { :produces, :patterns } in *raw_rules
+        for pattern in *patterns
+          [] = { :produces, :pattern }
+    @stack = nil
+
+  parse: (type_spec) =>
+    lexer = Lexer type_spec
+
+    @stack = {}
+    for token in lexer.tokens
+      print "stack is #{repr @stack}"
+      reduced = false
+      for rule in *@rules
+        if @try_reduce rule
+          reduced = true
+          break
+      if not reduced
+        @shift token
+  
+  shift: (token) =>
+    @stack[] = token
+    print "shifted #{repr token}"
+
+  try_reduce: (rule) =>
+    { :produces, :pattern } = rule
+
+    -- Check reduction possible
+    if #@stack < #pattern
+      print "! no reduction: too short: #{repr pattern}"
+      return false
+    for i = 0, #pattern - 1
+      print "! no reduction: mismatch: #{repr pattern}"
+      if @stack[#@stack - i].type != pattern[i]
+        return false
+
+    -- Reduce.
+    for i = 1, #pattern
+      @stack[#@stack] = nil
+    @stack[] = token
+    print "reduced #{produces} <- #{repr pattern}"
+    true
+
 class Lexer
   new: (type_spec) =>
+    print "making lexer for #{repr type_spec}"
+
     @done = false
     @peeked = nil
     @tokens = coroutine.wrap ->
       original_type_spec = type_spec
       while #type_spec > 0
-        token_type, value = if whitespace = type_spec\match '^[ \t\r\n]'
+        type, value = if whitespace = type_spec\match '^[ \t\r\n]'
           nil, whitespace
         else if type_spec\match '^%('
-          PAREN_OPEN, '('
+          T_PAREN_OPEN, '('
         else if type_spec\match '^%)'
-          PAREN_CLOSE, ')'
+          T_PAREN_CLOSE, ')'
         else if type_spec\match '^,'
-          COMMA, ','
+          T_COMMA, ','
         else if type_spec\match '^{'
-          BRACE_OPEN, '{'
+          T_BRACE_OPEN, '{'
         else if type_spec\match '^}'
-          BRACE_CLOSE, '}'
+          T_BRACE_CLOSE, '}'
         else if type_spec\match '^%['
-          BRACKET_OPEN, '['
+          T_BRACKET_OPEN, '['
         else if type_spec\match '^]'
-          BRACKET_CLOSE, ']'
+          T_BRACKET_CLOSE, ']'
         else if type_spec\match '^->'
-          ARROW, '->'
+          T_ARROW, '->'
         else if name = type_spec\match '^([a-zA-Z_][a-zA-Z0-9_]*)'
-          NAME, name
+          T_NAME, name
         else
           error "unrecognised character '#{type_spec\sub 1, 1}' in type spec '#{original_type_spec}"
 
         type_spec = type_spec\sub #value + 1
-        switch token_type
+        switch type
           when nil
             continue -- continue
-          when NAME
-            coroutine.yield { :token_type, :value }
+          when T_NAME
+            coroutine.yield { :type, :value }
           else
-            coroutine.yield { :token_type }
+            coroutine.yield { :type }
 
   peek: =>
     if @done
@@ -111,14 +161,22 @@ class Lexer
     else
       @tokens!
 
-declare_type = (name, type_spec) ->
-  error 'todo'
+export declare_type = (name, type_spec) ->
+  first_char = name\sub 1, 1
+  if first_char\upper! != first_char
+    error "cannot declare type '#{name}': custom types must start with uppercase"
+  if type_checkers[name]?
+    error "cannot redefine type '#{name}'"
+  type_checkers[name] = type_checker name
+
+export deactivate = ->
+  typed = (_, fn) -> fn
 
 spec ->
   import assert_that, expect_that, describe, it, matchers from require 'spec'
   import anything, deep_eq, eq, errors, match, matches, no_errors from matchers
 
-  describe 'lex', ->
+  describe 'Lexer', ->
     tokens = (raw) ->
       with {}
         for token in (Lexer raw).tokens
@@ -132,28 +190,28 @@ spec ->
         * type ""
       for simple_type in *simple_types
         expect_that (tokens simple_type), deep_eq {
-          { token_type: NAME, value: simple_type },
+          { type: T_NAME, value: simple_type },
         }
 
     it 'emits strucural tokens', ->
       expect_that (tokens '(),{}[]->'), deep_eq {
-        { token_type: PAREN_OPEN },
-        { token_type: PAREN_CLOSE },
-        { token_type: COMMA },
-        { token_type: BRACE_OPEN },
-        { token_type: BRACE_CLOSE },
-        { token_type: BRACKET_OPEN },
-        { token_type: BRACKET_CLOSE },
-        { token_type: ARROW },
+        { type: T_PAREN_OPEN },
+        { type: T_PAREN_CLOSE },
+        { type: T_COMMA },
+        { type: T_BRACE_OPEN },
+        { type: T_BRACE_CLOSE },
+        { type: T_BRACKET_OPEN },
+        { type: T_BRACKET_CLOSE },
+        { type: T_ARROW },
       }
 
     it 'ignores whitespace', ->
       expect_that (tokens ' (\tstring\r)\n-> string '), deep_eq {
-        { token_type: PAREN_OPEN },
-        { token_type: NAME, value: "string" },
-        { token_type: PAREN_CLOSE },
-        { token_type: ARROW },
-        { token_type: NAME, value: "string" },
+        { type: T_PAREN_OPEN },
+        { type: T_NAME, value: "string" },
+        { type: T_PAREN_CLOSE },
+        { type: T_ARROW },
+        { type: T_NAME, value: "string" },
       }
 
     it 'rejects unrecognised characters', ->
@@ -163,17 +221,40 @@ spec ->
     describe ':peek', ->
       it 'matches :next', ->
         lexer = Lexer '()'
-        assert_that lexer\peek!, deep_eq { token_type: PAREN_OPEN }
-        assert_that lexer\peek!, deep_eq { token_type: PAREN_OPEN }
-        assert_that lexer\next!, deep_eq { token_type: PAREN_OPEN }
-        assert_that lexer\peek!, deep_eq { token_type: PAREN_CLOSE }
-        assert_that lexer\peek!, deep_eq { token_type: PAREN_CLOSE }
-        assert_that lexer\next!, deep_eq { token_type: PAREN_CLOSE }
+        assert_that lexer\peek!, deep_eq { type: T_PAREN_OPEN }
+        assert_that lexer\peek!, deep_eq { type: T_PAREN_OPEN }
+        assert_that lexer\next!, deep_eq { type: T_PAREN_OPEN }
+        assert_that lexer\peek!, deep_eq { type: T_PAREN_CLOSE }
+        assert_that lexer\peek!, deep_eq { type: T_PAREN_CLOSE }
+        assert_that lexer\next!, deep_eq { type: T_PAREN_CLOSE }
 
-      it 'returns nil on empty peek', ->
+      it 'returns nil at EOF', ->
         lexer = Lexer ''
         expect_that lexer\peek!, eq nil
         expect_that lexer\peek!, eq nil
+
+  describe 'Parser', ->
+    describe 'run on simple types', ->
+      it 'accepts primitives', ->
+        expect_that (type_checker 'nil'), anything!
+        expect_that (type_checker 'number'), anything!
+        expect_that (type_checker 'string'), anything!
+        expect_that (type_checker 'table'), anything!
+        expect_that (type_checker 'coroutine'), anything!
+
+      it 'accepts custom types', ->
+        expect_that (type_checker 'CustomType'), anything!
+
+      it 'rejects unknown primitives', ->
+        expect_that (-> type_checker, 'custom'), errors matches [[type 'custom' is not Lua primitive]]
+
+  describe 'declare_type', ->
+    it 'rejects false primitives', ->
+      expect_that (-> declare_type 'custom'), errors matches 'custom types must start with uppercase'
+
+    it 'rejects redefinition', ->
+      declare_type 'Custom', 'number'
+      expect_that (-> declare_type 'Custom'), errors matches [[cannot redefine type 'Custom']]
 
   -- describe 'typed', ->
   --   it 'requires two arguments', ->
@@ -187,6 +268,8 @@ spec ->
   --     expect_that (-> typed 'number', nil), errors anything!
   --     expect_that (-> typed 'number', 123), no_errors!
 
-(require 'spec').run_tests!
+import set_log_verbosity from require 'fat.logger'
+set_log_verbosity true
+(require 'spec').run_tests 'declare_type rejects redefinition'
 
--- type_checker '(string, string) -> boolean'
+-- print 'type checker:', type_checker 'boolean'
