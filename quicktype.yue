@@ -38,105 +38,140 @@ T_ARROW = <tostring>: => "<arrow>"
 T_NAME = <tostring>: => "<name>"
 
 type_checker = (type_spec) ->
+  parsed_type = parse type_spec
+  {} -- TODO(kcza): complete me!
+
+parse = (type_spec) ->
   type_spec_parser = Parser
-    * produces: NT_TYPE_SPEC
-      patterns:
-        * { NT_NONFUNC_SPEC }
-    * produces: NT_NONFUNC_SPEC
-      patterns:
-        * { T_NAME }
-        * { NT_LIST }
-    * produces: NT_LIST
-      patterns:
-        * { T_BRACKET_OPEN, NT_TYPE_SPEC, T_BRACKET_CLOSE }
+    root_symbol: NT_TYPE_SPEC,
+    rules:
+      * produces: NT_TYPE_SPEC
+        patterns:
+          * pattern: { NT_NONFUNC_SPEC }
+      * produces: NT_NONFUNC_SPEC
+        patterns:
+          * pattern: { T_NAME }
+          * pattern: { NT_LIST }
+      * produces: NT_LIST
+        patterns:
+          * pattern: { T_BRACKET_OPEN, NT_TYPE_SPEC, T_BRACKET_CLOSE }
+            action: (_, elem_type, _) -> List elem_type
   type_spec_parser\parse type_spec
-  {}
 
 class Parser
-  new: (raw_rules) =>
+  new: (config) =>
+    { :root_symbol, rules: raw_rules } = config
+    @root_symbol = root_symbol
     @rules = with {}
       for { :produces, :patterns } in *raw_rules
-        for pattern in *patterns
-          [] = { :produces, :pattern }
-    @stack = nil
+        for { :pattern, :action } in *patterns
+          if pattern == nil or #pattern == 0
+            error "cannot construct rules: pattern missing"
+          if not action? and #pattern != 1
+            error "cannot construct rules: implicit action only available on single-symbol patterns"
+          [] = { :produces, :pattern, :action }
 
   parse: (type_spec) =>
     lexer = Lexer type_spec
 
-    @stack = {}
-    for token in lexer.tokens
-      print "stack is #{repr @stack}"
-      reduced = false
-      for rule in *@rules
-        if @try_reduce rule
-          reduced = true
-          break
-      if not reduced
-        @shift token
-  
-  shift: (token) =>
-    @stack[] = token
-    print "shifted #{repr token}"
+    stack = {lexer\next!}
+    while #stack > 0
+      done = @step lexer, stack
+      if done
+        break
+    stack[1].value
 
-  try_reduce: (rule) =>
-    { :produces, :pattern } = rule
+  step: (lexer, stack) =>
+    print "======= STEP stack is #{repr stack} ======="
+    for rule in *@rules
+      if @try_reduce rule, stack
+        print "reduced #{repr rule.produces} <- #{repr rule.pattern}"
+        return #stack == 1 and stack[1].type == @root_symbol
+
+    token = lexer\next!
+    if not token?
+      error "unexpected EOF"
+    @shift token, stack
+    false
+
+  shift: (token, stack) =>
+    stack[] = token
+
+  try_reduce: (rule, stack) =>
+    { :produces, :pattern, :action } = rule
 
     -- Check reduction possible
-    if #@stack < #pattern
-      print "! no reduction: too short: #{repr pattern}"
+    if #stack < #pattern
       return false
-    for i = 0, #pattern - 1
-      print "! no reduction: mismatch: #{repr pattern}"
-      if @stack[#@stack - i].type != pattern[i]
+    for i = 1, #pattern
+      if stack[#stack - #pattern + i].type != pattern[i]
         return false
 
     -- Reduce.
-    for i = 1, #pattern
-      @stack[#@stack] = nil
-    @stack[] = token
-    print "reduced #{produces} <- #{repr pattern}"
+    reduced_values = with {}
+      for i = #stack - #pattern + 1, #stack
+        [] = stack[i].value
+        stack[i] = nil
+    value = if action?
+      action unpack value
+    else
+      assert #reduced_values == 1
+      reduced_values[1]
+    print repr Symbol produces, value
+    stack[] = Symbol produces, value
     true
 
 class Lexer
   new: (type_spec) =>
-    print "making lexer for #{repr type_spec}"
-
     @done = false
     @peeked = nil
+    @known_primitives =
+      nil: true
+      boolean: true
+      number: true
+      string: true
+      function: true
+      table: true
+      thread: true
     @tokens = coroutine.wrap ->
       original_type_spec = type_spec
       while #type_spec > 0
-        type, value = if whitespace = type_spec\match '^[ \t\r\n]'
-          nil, whitespace
+        ty, value, bytes_consumed = if whitespace = type_spec\match '^[ \t\r\n]'
+          nil, whitespace, #whitespace
         else if type_spec\match '^%('
-          T_PAREN_OPEN, '('
+          T_PAREN_OPEN, '(', 1
         else if type_spec\match '^%)'
-          T_PAREN_CLOSE, ')'
+          T_PAREN_CLOSE, ')', 1
         else if type_spec\match '^,'
-          T_COMMA, ','
+          T_COMMA, ',', 1
         else if type_spec\match '^{'
-          T_BRACE_OPEN, '{'
+          T_BRACE_OPEN, '{', 1
         else if type_spec\match '^}'
-          T_BRACE_CLOSE, '}'
+          T_BRACE_CLOSE, '}', 1
         else if type_spec\match '^%['
-          T_BRACKET_OPEN, '['
+          T_BRACKET_OPEN, '[', 1
         else if type_spec\match '^]'
-          T_BRACKET_CLOSE, ']'
+          T_BRACKET_CLOSE, ']', 1
         else if type_spec\match '^->'
-          T_ARROW, '->'
+          T_ARROW, '->', 2
         else if name = type_spec\match '^([a-zA-Z_][a-zA-Z0-9_]*)'
-          T_NAME, name
+          if @known_primitives[name]?
+            T_NAME, (Primitive name), #name
+          else if (name\sub 1, 1)\match '^[a-z]$'
+            error "type '#{name}' is not a Lua primitive"
+          else
+            T_NAME, (UserType name), #name
         else
           error "unrecognised character '#{type_spec\sub 1, 1}' in type spec '#{original_type_spec}"
 
-        type_spec = type_spec\sub #value + 1
-        switch type
+        type_spec = type_spec\sub bytes_consumed + 1
+        switch ty
           when nil
-            continue -- continue
+            continue
           when T_NAME
-            coroutine.yield { :type, :value }
+            coroutine.yield Symbol ty, value
           else
-            coroutine.yield { :type }
+            coroutine.yield Symbol ty
 
   peek: =>
     if @done
@@ -159,12 +194,67 @@ class Lexer
       @peeked = nil
       peeked
     else
-      @tokens!
+      ret = @tokens!
+      if not ret?
+        @done = true
+      ret
+
+class Symbol
+  new: (@type, @value=nil) =>
+
+  __tostring: =>
+    if @value?
+      "#{@type}(#{@value})"
+    else
+      "#{@type}"
+
+class Primitive
+  new: (@name) =>
+
+  __len: => #@name
+
+  __tostring: => @name
+
+class UserType
+  new: (@name) =>
+
+  __tostring: => @name
+
+class List
+  new: (@elem_type) =>
+
+  __tostring: =>
+    "[#{@elem_type}]"
+
+class Function
+  new: (@param_types, @return_types) =>
+
+  __tostring: =>
+    table.concat with {}
+      [] = '('
+      first = true
+      for param_type in *@param_types
+        if not first
+          [] = ", "
+        first = false
+
+        [] = tostring param_type
+      [] = ') -> '
+      if #@return_types == 1
+        [] = tostring @return_types[1]
+      else
+        [] = '<'
+        first = true
+        for return_type in *@return_types
+          if not first
+            [] = ", "
+          first = false
+          [] = tostring return_type
+        [] = '>'
 
 export declare_type = (name, type_spec) ->
-  first_char = name\sub 1, 1
-  if first_char\upper! != first_char
-    error "cannot declare type '#{name}': custom types must start with uppercase"
+  if not (name\sub 1, 1)\match '^[A-Z_]$'
+    error "cannot declare type '#{name}': custom types must start with uppercase or '_'"
   if type_checkers[name]?
     error "cannot redefine type '#{name}'"
   type_checkers[name] = type_checker name
@@ -174,10 +264,11 @@ export deactivate = ->
 
 spec ->
   import assert_that, expect_that, describe, it, matchers from require 'spec'
-  import anything, deep_eq, eq, errors, match, matches, no_errors from matchers
+  import anything, contains_value, deep_eq, eq, errors, fields, len, match, matches, no_errors from matchers
 
   describe 'Lexer', ->
     tokens = (raw) ->
+      assert raw
       with {}
         for token in (Lexer raw).tokens
           [] = token
@@ -188,30 +279,33 @@ spec ->
         * type false
         * type 0
         * type ""
+        * type ->
+        * type coroutine.create ->
+        * type coroutine.wrap ->
       for simple_type in *simple_types
         expect_that (tokens simple_type), deep_eq {
-          { type: T_NAME, value: simple_type },
+          Symbol T_NAME, Primitive simple_type
         }
 
     it 'emits strucural tokens', ->
       expect_that (tokens '(),{}[]->'), deep_eq {
-        { type: T_PAREN_OPEN },
-        { type: T_PAREN_CLOSE },
-        { type: T_COMMA },
-        { type: T_BRACE_OPEN },
-        { type: T_BRACE_CLOSE },
-        { type: T_BRACKET_OPEN },
-        { type: T_BRACKET_CLOSE },
-        { type: T_ARROW },
+        Symbol T_PAREN_OPEN
+        Symbol T_PAREN_CLOSE
+        Symbol T_COMMA
+        Symbol T_BRACE_OPEN
+        Symbol T_BRACE_CLOSE
+        Symbol T_BRACKET_OPEN
+        Symbol T_BRACKET_CLOSE
+        Symbol T_ARROW
       }
 
     it 'ignores whitespace', ->
       expect_that (tokens ' (\tstring\r)\n-> string '), deep_eq {
-        { type: T_PAREN_OPEN },
-        { type: T_NAME, value: "string" },
-        { type: T_PAREN_CLOSE },
-        { type: T_ARROW },
-        { type: T_NAME, value: "string" },
+        Symbol T_PAREN_OPEN
+        Symbol T_NAME, Primitive "string"
+        Symbol T_PAREN_CLOSE
+        Symbol T_ARROW
+        Symbol T_NAME, Primitive "string"
       }
 
     it 'rejects unrecognised characters', ->
@@ -221,12 +315,12 @@ spec ->
     describe ':peek', ->
       it 'matches :next', ->
         lexer = Lexer '()'
-        assert_that lexer\peek!, deep_eq { type: T_PAREN_OPEN }
-        assert_that lexer\peek!, deep_eq { type: T_PAREN_OPEN }
-        assert_that lexer\next!, deep_eq { type: T_PAREN_OPEN }
-        assert_that lexer\peek!, deep_eq { type: T_PAREN_CLOSE }
-        assert_that lexer\peek!, deep_eq { type: T_PAREN_CLOSE }
-        assert_that lexer\next!, deep_eq { type: T_PAREN_CLOSE }
+        assert_that lexer\peek!, deep_eq Symbol T_PAREN_OPEN
+        assert_that lexer\peek!, deep_eq Symbol T_PAREN_OPEN
+        assert_that lexer\next!, deep_eq Symbol T_PAREN_OPEN
+        assert_that lexer\peek!, deep_eq Symbol T_PAREN_CLOSE
+        assert_that lexer\peek!, deep_eq Symbol T_PAREN_CLOSE
+        assert_that lexer\next!, deep_eq Symbol T_PAREN_CLOSE
 
       it 'returns nil at EOF', ->
         lexer = Lexer ''
@@ -236,17 +330,23 @@ spec ->
   describe 'Parser', ->
     describe 'run on simple types', ->
       it 'accepts primitives', ->
-        expect_that (type_checker 'nil'), anything!
-        expect_that (type_checker 'number'), anything!
-        expect_that (type_checker 'string'), anything!
-        expect_that (type_checker 'table'), anything!
-        expect_that (type_checker 'coroutine'), anything!
+        expect_that (parse 'nil'), deep_eq Primitive type nil
+        expect_that (parse 'number'), deep_eq Primitive type 0
+        expect_that (parse 'number'), deep_eq Primitive type 0.0
+        expect_that (parse 'string'), deep_eq Primitive type ""
+        expect_that (parse 'table'), deep_eq Primitive type {}
+        expect_that (parse 'function'), deep_eq Primitive type ->
+        expect_that (parse 'thread'), deep_eq Primitive type coroutine.create ->
 
       it 'accepts custom types', ->
-        expect_that (type_checker 'CustomType'), anything!
+        expect_that (parse 'CustomType'), deep_eq UserType 'CustomType'
 
       it 'rejects unknown primitives', ->
-        expect_that (-> type_checker, 'custom'), errors matches [[type 'custom' is not Lua primitive]]
+        expect_that (-> parse 'custom'), errors matches [[type 'custom' is not a Lua primitive]]
+
+    -- describe 'run on compositetypes', ->
+    --   it 'accepts lists', ->
+    --     expect_that (type_checker '[]')
 
   describe 'declare_type', ->
     it 'rejects false primitives', ->
@@ -269,7 +369,7 @@ spec ->
   --     expect_that (-> typed 'number', 123), no_errors!
 
 import set_log_verbosity from require 'fat.logger'
-set_log_verbosity true
-(require 'spec').run_tests 'declare_type rejects redefinition'
+-- set_log_verbosity true
+(require 'spec').run_tests select 1, ...
 
 -- print 'type checker:', type_checker 'boolean'
