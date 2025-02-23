@@ -280,7 +280,6 @@ spec ->
         * type ""
         * type ->
         * type coroutine.create ->
-        * type coroutine.wrap ->
       for simple_type in *simple_types
         expect_that (tokens simple_type), deep_eq {
           Symbol T_NAME, Primitive simple_type
