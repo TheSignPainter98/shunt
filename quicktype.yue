@@ -20,18 +20,12 @@ export typed = (type_spec, value) ->
   -- checker = type_checker type_spec
   -- print (require 'spec').repr checker
 
--- Non termianls
-NT_TYPE_SPEC = <tostring>: => "type_spec"
-NT_FUNC_SPEC = <tostring>: => "func_spec"
-NT_NONFUNC_SPEC = <tostring>: => "nonfunc_spec"
-NT_LIST = <tostring>: => "list"
-
--- Terminals
+-- Tokens
 T_PAREN_OPEN = <tostring>: => "<paren_open>"
 T_PAREN_CLOSE = <tostring>: => "<paren_close>"
 T_BRACE_OPEN = <tostring>: => "<brace_open>"
 T_BRACE_CLOSE = <tostring>: => "<brace_close>"
-T_BRACKET_OPEN = <tostring>: => "<bracket_close>"
+T_BRACKET_OPEN = <tostring>: => "<bracket_open>"
 T_BRACKET_CLOSE = <tostring>: => "<bracket_close>"
 T_COMMA = <tostring>: => "<comma>"
 T_ARROW = <tostring>: => "<arrow>"
@@ -42,84 +36,78 @@ type_checker = (type_spec) ->
   {} -- TODO(kcza): complete me!
 
 parse = (type_spec) ->
-  type_spec_parser = Parser
-    root_symbol: NT_TYPE_SPEC,
-    rules:
-      * produces: NT_TYPE_SPEC
-        patterns:
-          * pattern: { NT_NONFUNC_SPEC }
-      * produces: NT_NONFUNC_SPEC
-        patterns:
-          * pattern: { T_NAME }
-          * pattern: { NT_LIST }
-      * produces: NT_LIST
-        patterns:
-          * pattern: { T_BRACKET_OPEN, NT_TYPE_SPEC, T_BRACKET_CLOSE }
-            action: (_, elem_type, _) -> List elem_type
-  type_spec_parser\parse type_spec
+  type_spec_parser = Parser Lexer type_spec
+  type_spec_parser\parse!
 
 class Parser
-  new: (config) =>
-    { :root_symbol, rules: raw_rules } = config
-    @root_symbol = root_symbol
-    @rules = with {}
-      for { :produces, :patterns } in *raw_rules
-        for { :pattern, :action } in *patterns
-          if pattern == nil or #pattern == 0
-            error "cannot construct rules: pattern missing"
-          if not action? and #pattern != 1
-            error "cannot construct rules: implicit action only available on single-symbol patterns"
-          [] = { :produces, :pattern, :action }
+  new: (@lexer) =>
 
-  parse: (type_spec) =>
-    lexer = Lexer type_spec
+  parse: =>
+    @parse_type!
 
-    stack = {lexer\next!}
-    while #stack > 0
-      done = @step lexer, stack
-      if done
-        break
-    stack[1].value
+  parse_type: =>
+    @select
+      * token: T_NAME
+        action: @\parse_name
+      * token: T_BRACKET_OPEN
+        action: @\parse_list
+      * token: T_PAREN_OPEN
+        action: @\parse_tuple
 
-  step: (lexer, stack) =>
-    print "======= STEP stack is #{repr stack} ======="
-    for rule in *@rules
-      if @try_reduce rule, stack
-        print "reduced #{repr rule.produces} <- #{repr rule.pattern}"
-        return #stack == 1 and stack[1].type == @root_symbol
+  parse_name: =>
+    name_token = @lexer\next!
+    assert T_NAME == name_token.type
+    name_token.value
 
-    token = lexer\next!
+  parse_list: =>
+    {_, elem_type, _} = @sequence
+      * token: T_BRACKET_OPEN
+      * action: @\parse_type
+      * token: T_BRACKET_CLOSE
+    List elem_type
+
+  parse_tuple: =>
+    {_, elem_types, _} = @sequence
+      * token: T_PAREN_OPEN
+      * action: -> @parse_repeat_separated @\parse_type, T_COMMA
+      * token: T_PAREN_CLOSE
+    Tuple elem_types
+
+  parse_repeat_separated: (elem_parser, sep_token) =>
+    with {}
+      [] = elem_parser!
+      while @lexer\peek!.type == sep_token
+        @lexer\next!
+        [] = elem_parser!
+
+  expect: (expected_token) =>
+    token = @lexer\next!
     if not token?
       error "unexpected EOF"
-    @shift token, stack
-    false
+    if token.type != expected_token
+      error "expected #{expected_token}"
+    token.value ?? 0
 
-  shift: (token, stack) =>
-    stack[] = token
+  select: (options) =>
+    next_token = @lexer\peek!
+    for option in *options
+      if option.token == next_token.type
+        return option.action!
+    options_repr = table.concat [ tostring option.token for option in *options ], ', '
+    error "expected one of #{options_repr}, got #{next_token.type}"
 
-  try_reduce: (rule, stack) =>
-    { :produces, :pattern, :action } = rule
-
-    -- Check reduction possible
-    if #stack < #pattern
-      return false
-    for i = 1, #pattern
-      if stack[#stack - #pattern + i].type != pattern[i]
-        return false
-
-    -- Reduce.
-    reduced_values = with {}
-      for i = #stack - #pattern + 1, #stack
-        [] = stack[i].value
-        stack[i] = nil
-    value = if action?
-      action unpack value
-    else
-      assert #reduced_values == 1
-      reduced_values[1]
-    print repr Symbol produces, value
-    stack[] = Symbol produces, value
-    true
+  sequence: (expected_tokens) =>
+    with {}
+      for { token: expected_token, :action } in *expected_tokens
+        if expected_token?
+          token = @lexer\next!
+          if not token?
+            error "unexpected EOF"
+          if token.type != expected_token
+            error "expected #{expected_token}, got #{token.type}"
+          [] = token.value ?? 0
+        else if action?
+          [] = action!
 
 class Lexer
   new: (type_spec) =>
@@ -134,37 +122,37 @@ class Lexer
       table: true
       thread: true
     @tokens = coroutine.wrap ->
-      original_type_spec = type_spec
-      while #type_spec > 0
-        ty, value, bytes_consumed = if whitespace = type_spec\match '^[ \t\r\n]'
+      index = 1
+      while index <= #type_spec
+        ty, value, bytes_consumed = if whitespace = type_spec\match '^[ \t\r\n]+', index
           nil, whitespace, #whitespace
-        else if type_spec\match '^%('
+        else if type_spec\match '^%(', index
           T_PAREN_OPEN, '(', 1
-        else if type_spec\match '^%)'
+        else if type_spec\match '^%)', index
           T_PAREN_CLOSE, ')', 1
-        else if type_spec\match '^,'
+        else if type_spec\match '^,', index
           T_COMMA, ',', 1
-        else if type_spec\match '^{'
+        else if type_spec\match '^{', index
           T_BRACE_OPEN, '{', 1
-        else if type_spec\match '^}'
+        else if type_spec\match '^}', index
           T_BRACE_CLOSE, '}', 1
-        else if type_spec\match '^%['
+        else if type_spec\match '^%[', index
           T_BRACKET_OPEN, '[', 1
-        else if type_spec\match '^]'
+        else if type_spec\match '^]', index
           T_BRACKET_CLOSE, ']', 1
-        else if type_spec\match '^->'
+        else if type_spec\match '^->', index
           T_ARROW, '->', 2
-        else if name = type_spec\match '^([a-zA-Z_][a-zA-Z0-9_]*)'
+        else if name = type_spec\match '^([a-zA-Z_][a-zA-Z0-9_]*)', index
           if @known_primitives[name]?
             T_NAME, (Primitive name), #name
-          else if (name\sub 1, 1)\match '^[a-z]$'
-            error "type '#{name}' is not a Lua primitive"
+          else if not name\match '^[A-Z]'
+            error "cannot use '#{name}' as custom type name: name must start with an uppercase letter"
           else
             T_NAME, (UserType name), #name
         else
-          error "unrecognised character '#{type_spec\sub 1, 1}' in type spec '#{original_type_spec}"
+          error "unrecognised character '#{type_spec\sub index, index}' in type spec '#{type_spec}"
 
-        type_spec = type_spec\sub bytes_consumed + 1
+        index += bytes_consumed
         switch ty
           when nil
             continue
@@ -225,6 +213,13 @@ class List
 
   __tostring: =>
     "[#{@elem_type}]"
+
+class Tuple
+  new: (@elem_types) =>
+
+  __tostring: =>
+    elem_type_reprs = [ tostring elem_type for elem_type in *@elem_types ]
+    "(#{table.concat elem_type_reprs, ', '})"
 
 class Function
   new: (@param_types, @return_types) =>
@@ -342,11 +337,20 @@ spec ->
         expect_that (parse 'CustomType'), deep_eq UserType 'CustomType'
 
       it 'rejects unknown primitives', ->
-        expect_that (-> parse 'custom'), errors matches [[type 'custom' is not a Lua primitive]]
+        expect_that (-> parse 'custom'), errors matches [[cannot use 'custom' as custom type name: name must start with an uppercase letter]]
 
-    -- describe 'run on compositetypes', ->
-    --   it 'accepts lists', ->
-    --     expect_that (type_checker '[]')
+    describe 'run on composite types', ->
+      it 'accepts lists', ->
+        expect_that (parse '[string]'), deep_eq List Primitive 'string'
+        expect_that (parse '[[string]]'), deep_eq List List Primitive 'string'
+
+      it 'accepts tuples', ->
+        expect_that (parse '(nil, number)'), deep_eq Tuple { (Primitive 'nil'), Primitive 'number' }
+        expect_that (parse '((nil, number), string, (Custom, table))'), deep_eq Tuple {
+          Tuple { (Primitive 'nil'), (Primitive 'number') },
+          Primitive 'string',
+          Tuple { (UserType 'Custom'), (Primitive 'table') },
+        }
 
   describe 'declare_type', ->
     it 'rejects false primitives', ->
@@ -368,8 +372,6 @@ spec ->
   --     expect_that (-> typed 'number', nil), errors anything!
   --     expect_that (-> typed 'number', 123), no_errors!
 
-import set_log_verbosity from require 'fat.logger'
+-- import set_log_verbosity from require 'fat.logger'
 -- set_log_verbosity true
 (require 'spec').run_tests select 1, ...
-
--- print 'type checker:', type_checker 'boolean'
