@@ -1,4 +1,5 @@
 local *
+local Parser
 
 import spec, repr from require 'spec'
 
@@ -20,58 +21,18 @@ export typed = (type_spec, value) ->
   -- checker = type_checker type_spec
   -- print (require 'spec').repr checker
 
--- Tokens
-T_PAREN_OPEN = <tostring>: => "<paren_open>"
-T_PAREN_CLOSE = <tostring>: => "<paren_close>"
-T_BRACE_OPEN = <tostring>: => "<brace_open>"
-T_BRACE_CLOSE = <tostring>: => "<brace_close>"
-T_BRACKET_OPEN = <tostring>: => "<bracket_open>"
-T_BRACKET_CLOSE = <tostring>: => "<bracket_close>"
-T_COMMA = <tostring>: => "<comma>"
-T_ARROW = <tostring>: => "<arrow>"
-T_NAME = <tostring>: => "<name>"
-
 type_checker = (type_spec) ->
   parsed_type = parse type_spec
   {} -- TODO(kcza): complete me!
 
 parse = (type_spec) ->
-  type_spec_parser = Parser Lexer type_spec
+  type_spec_parser = TypeSpecParser Lexer type_spec
   type_spec_parser\parse!
 
 class Parser
   new: (@lexer) =>
-
   parse: =>
-    @parse_type!
-
-  parse_type: =>
-    @select
-      * token: T_NAME
-        action: @\parse_name
-      * token: T_BRACKET_OPEN
-        action: @\parse_list
-      * token: T_PAREN_OPEN
-        action: @\parse_tuple
-
-  parse_name: =>
-    name_token = @lexer\next!
-    assert T_NAME == name_token.type
-    name_token.value
-
-  parse_list: =>
-    {_, elem_type, _} = @sequence
-      * token: T_BRACKET_OPEN
-      * action: @\parse_type
-      * token: T_BRACKET_CLOSE
-    List elem_type
-
-  parse_tuple: =>
-    {_, elem_types, _} = @sequence
-      * token: T_PAREN_OPEN
-      * action: -> @parse_repeat_separated @\parse_type, T_COMMA
-      * token: T_PAREN_CLOSE
-    Tuple elem_types
+    error 'unimplemented'
 
   parse_repeat_separated: (elem_parser, sep_token) =>
     with {}
@@ -108,6 +69,49 @@ class Parser
           [] = token.value ?? 0
         else if action?
           [] = action!
+
+class TypeSpecParser extends Parser
+  parse: =>
+    @parse_type!
+
+  parse_type: =>
+    @select
+      * token: T_NAME
+        action: @\parse_name
+      * token: T_BRACKET_OPEN
+        action: @\parse_list
+      * token: T_PAREN_OPEN
+        action: @\parse_tuple
+
+  parse_name: =>
+    name_token = @lexer\next!
+    assert T_NAME == name_token.type
+    name_token.value
+
+  parse_list: =>
+    {_, elem_type, _} = @sequence
+      * token: T_BRACKET_OPEN
+      * action: @\parse_type
+      * token: T_BRACKET_CLOSE
+    List elem_type
+
+  parse_tuple: =>
+    {_, elem_types, _} = @sequence
+      * token: T_PAREN_OPEN
+      * action: -> @parse_repeat_separated @\parse_type, T_COMMA
+      * token: T_PAREN_CLOSE
+    Tuple elem_types
+
+-- Tokens
+T_PAREN_OPEN = <tostring>: => "<paren_open>"
+T_PAREN_CLOSE = <tostring>: => "<paren_close>"
+T_BRACE_OPEN = <tostring>: => "<brace_open>"
+T_BRACE_CLOSE = <tostring>: => "<brace_close>"
+T_BRACKET_OPEN = <tostring>: => "<bracket_open>"
+T_BRACKET_CLOSE = <tostring>: => "<bracket_close>"
+T_COMMA = <tostring>: => "<comma>"
+T_ARROW = <tostring>: => "<arrow>"
+T_NAME = <tostring>: => "<name>"
 
 class Lexer
   new: (type_spec) =>
