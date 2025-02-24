@@ -294,8 +294,6 @@ named_type = (name) ->
 class Primitive
   new: (@name) =>
 
-  __len: => #@name
-
   __tostring: => @name
 
 class UserType
