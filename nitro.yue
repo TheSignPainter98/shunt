@@ -1,0 +1,66 @@
+local *
+
+import ArgParser, Param, Flag from require 'clap'
+import spec, run_tests from require 'spec'
+
+log = (...) -> -- Ignore.
+
+main = (args) ->
+  args, ok = parse_args args
+  if not ok
+    return
+  if args.test
+    run_tests!
+    return
+  if args.verbose
+    log = (fn) -> print fn!
+
+  output_file = args.output ?? do
+    truncated = args.file\gsub '%..*$', ''
+    if #truncated == 0
+      error 'input file must have a file extension'
+    truncated
+
+  local raw_code
+  log -> "reading input from #{args.file}"
+  with assert io.open args.file, 'r'
+    raw_code = assert \read '*a'
+    \close!
+
+  log -> 'generating bytecode'
+  bytecode = to_bytecode raw_code
+
+  log -> "writing output to #{output_file}"
+  with assert io.open output_file, 'wb+'
+    assert \write bytecode
+    \close!
+
+parse_args = (args) ->
+  arg_parser = with ArgParser 'nitro'
+    \version '1.0'
+    \description 'an optimiser for lua'
+    \add with Flag 'output'
+      \description 'output file name'
+      \default nil
+    \add with Flag 'test'
+      \description 'run tests'
+      \short nil
+    \add with Flag 'verbose'
+      \description 'log verbosely'
+    \add with Param 'file'
+      \description 'the file to optimise'
+  arg_parser\parse args
+
+to_bytecode = (code) ->
+  string.dump assert loadstring code
+
+spec ->
+  import expect_that, describe, it, matchers from require 'spec'
+  import eq from matchers
+
+  describe 'bytecode', ->
+    it 'survives a roundtrip', ->
+      fn = loadstring to_bytecode 'return 42'
+      expect_that fn!, eq 42
+
+main {...}
