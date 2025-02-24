@@ -534,6 +534,7 @@ repr = =>
       for elem in *stack
         if rawequal @, elem
           [] = '...'
+          return
       stack[] = @
 
       switch type @
