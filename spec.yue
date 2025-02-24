@@ -407,7 +407,10 @@ class Errors
 
   explain_match: (fn) =>
     err = @get_err fn
-    "which throws #{@error_repr!} #{@inner\explain_match err}"
+    if err?
+      "which throws #{@error_repr!} #{@inner\explain_match err}"
+    else
+      "which doesn't throw an error"
 
   describe: (is_match=true) =>
     if is_match
