@@ -89,18 +89,31 @@ class Test
         return
 
     @@current_run_failures = {}
+    print_calls = {}
+    old_print = print
+    global print = (...) ->
+      print_calls[] = {...}
     try
       @assertions_fn!
     catch err
       if not err\match FATAL_TEST_ERROR_MARKER
         Test::fail "caught error: #{err}"
+    print = old_print
 
     if #@@current_run_failures == 0
       return
 
-    print "* #{@spec\desc!} #{@name}:"
+    if #print_calls > 0
+      print '--- START of print output ---'
+      print table.concat [ table.concat [ tostring print_call_part for print_call_part in *print_call_parts ], '\t' for print_call_parts in *print_calls], '\n'
+      print '--- END of print output ---'
+
+    print "* #{@desc!}:"
     for failure in *@@current_run_failures
       print "  * #{reflow '    ', failure}"
+
+  desc: =>
+    "#{@spec\desc!} #{@name}"
 
   @fail: (cause, message) =>
     @@num_failures += 1
