@@ -296,12 +296,12 @@ class Primitive
 
   __len: => #@name
 
-  __tostring: => 'P' .. @name
+  __tostring: => @name
 
 class UserType
   new: (@name) =>
 
-  __tostring: => 'U' .. @name
+  __tostring: => @name
 
 class List
   new: (@elem_type) =>
