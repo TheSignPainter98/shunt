@@ -3,27 +3,23 @@ local Parser
 
 import spec, repr from require 'spec'
 
-type_checkers = {}
-
 export typed = (type_spec, value) ->
   if not type_spec?
     error 'cannot typecheck: no type spec provided'
 
-  checker = type_checkers[type_spec] ?? do
-    checker = type_checker type_spec
-    type_checkers[type_spec] = checker
-    checker
-  error 'todo'
-  -- checker_steps = type_checkers[type_spec] ?? do
-  --   program = generate_checker_program type_spec
-  --   type_checkers[type_spec] = program
-  --   program
-  -- checker = type_checker type_spec
-  -- print (require 'spec').repr checker
+  checker = type_checker type_spec
+  check checker, value
 
+type_checkers = {}
 type_checker = (type_spec) ->
-  parsed_type = parse type_spec
-  {} -- TODO(kcza): complete me!
+  type_checkers[type_spec] ?? do
+    -- Slow path: parse and generate checker
+    parsed_type = parse type_spec
+    checker = parsed_type\checker!
+
+    type_checkers[type_spec] = checker
+    print "got checker:\n#{repr checker}"
+    checker
 
 parse = (type_spec) ->
   type_spec_parser = TypeSpecParser Lexer type_spec
@@ -155,7 +151,7 @@ class TypeSpecParser extends Parser
         Mapping first_elem, maps_to
       when 'struct'
         @expect T_COLON
-        first_type = @parse_named_type!
+        first_type = @parse_type!
         first_field = Field first_elem, first_type
         if @lexer\peek!.type == T_COMMA
           @expect T_COMMA
@@ -296,6 +292,11 @@ class Primitive
 
   __tostring: => @name
 
+  checker: (prog={}) =>
+    with prog
+      [] = C_PRIMITIVE
+      [] = @name
+
 class UserType
   new: (@name) =>
 
@@ -314,6 +315,16 @@ class Tuple
     elem_type_reprs = [ tostring elem_type for elem_type in *@elem_types ]
     "(#{table.concat elem_type_reprs, ', '})"
 
+  checker: (prog={}) =>
+    with prog
+      [] = C_PRIMITIVE
+      [] = 'table'
+      for i = 1, #@elem_types
+        [] = C_PUSH
+        [] = i
+        @elem_types[i]\checker prog
+        [] = C_POP
+
 class Struct
   new: (@fields) =>
 
@@ -321,11 +332,24 @@ class Struct
     field_reprs = [ tostring field for field in *@fields ]
     "{#{table.concat field_reprs, ', '}}"
 
+  checker: (prog={}) =>
+    with prog
+      [] = C_PRIMITIVE
+      [] = 'table'
+      for field in *@fields
+        [] = C_PUSH
+        [] = field.name
+        field.type\checker prog
+        [] = C_POP
+
 class Field
   new: (@name, @type) =>
 
   __tostring: =>
     "#{@name}: #{@type}"
+
+  checker: (prog={}) =>
+    @type\checker prog
 
 class Set
   new: (@elem_type) =>
@@ -364,6 +388,32 @@ class Function
           first = false
           [] = tostring return_type
         [] = '>'
+
+C_PRIMITIVE = <tostring>: => 'PRIMITIVE'
+C_PUSH = <tostring>: => 'PUSH'
+C_POP = <tostring>: => 'POP'
+
+value_stack_size = 0
+value_stack = {}
+check = (check_prog, value) ->
+  value_stack_size = 1
+  value_stack[1] = value
+
+  for pc = 1, #check_prog
+    switch check_prog[pc]
+      when C_PRIMITIVE
+        ty = type value_stack[value_stack_size]
+        pc += 1
+        if ty != check_prog[pc]
+          error "incorrect type: expected #{check_prog[pc]} but got #{ty}"
+      when C_PUSH
+        pc += 1
+        field = value_stack[value_stack_size][check_prog[pc]]
+        value_stack_size += 1
+        value_stack[value_stack_size] = field
+      when C_POP
+        value_stack[value_stack_size] = nil
+        value_stack_size -= 1
 
 export declare_type = (name, type_spec) ->
   if not (name\sub 1, 1)\match '^[A-Z_]$'
@@ -485,27 +535,58 @@ spec ->
         expect_that (parse '{field1: number, field2: string}'), deep_eq Struct
           * Field 'field1', Primitive 'number'
           * Field 'field2', Primitive 'string'
+        expect_that (parse '{outer1: {inner1: boolean}, outer2: {inner2: boolean}}'), deep_eq Struct
+          * Field 'outer1', Struct
+            * Field 'inner1', Primitive 'boolean'
+          * Field 'outer2', Struct
+            * Field 'inner2', Primitive 'boolean'
 
   describe 'declare_type', ->
     it 'rejects false primitives', ->
       expect_that (-> declare_type 'custom'), errors matches 'custom types must start with uppercase'
 
-    it 'rejects redefinition', ->
-      declare_type 'Custom', 'number'
-      expect_that (-> declare_type 'Custom'), errors matches [[cannot redefine type 'Custom']]
+    -- it 'rejects redefinition', ->
+    --   declare_type 'Custom', 'number'
+    --   expect_that (-> declare_type 'Custom'), errors matches [[cannot redefine type 'Custom']]
 
-  -- describe 'typed', ->
-  --   it 'requires two arguments', ->
-  --     expect_that (-> typed!), errors matches 'cannot typecheck: no type spec provided'
-  --   --
-  --   -- it 'handles nils', ->
-  --   --   expect_that (-> typed 'nil', nil), no_errors!
-  --   --   expect_that (-> typed 'nil', 123), errors anything!
-  --
-  --   it 'handles numbers', ->
-  --     expect_that (-> typed 'number', nil), errors anything!
-  --     expect_that (-> typed 'number', 123), no_errors!
+  describe 'typed', ->
+    it 'requires two arguments', ->
+      expect_that (-> typed!), errors matches 'cannot typecheck: no type spec provided'
+
+    it 'checks primitive types', ->
+      expect_that (-> typed 'nil', nil), no_errors!
+      expect_that (-> typed 'number', 123), no_errors!
+      expect_that (-> typed 'string', 'some-string'), no_errors!
+
+      expect_that (-> typed 'nil', 123), errors matches 'incorrect type: expected nil but got number'
+      expect_that (-> typed 'number', nil), errors matches 'incorrect type: expected number but got nil'
+      expect_that (-> typed 'string', 123), errors matches 'incorrect type: expected string but got number'
+
+    it 'checks tuples', ->
+      expect_that (-> typed '(number, boolean, string)', {123, true, 'hello'}), no_errors!
+      expect_that (-> typed '(number, boolean, string)', {123, true, 'hello', coroutine.create ->}), no_errors!
+      expect_that (-> typed '((number, boolean), (string, thread))', {{123, true}, {'hello', coroutine.create ->}}), no_errors!
+
+      expect_that (-> typed '(number, boolean, string)', nil), errors matches 'incorrect type: expected table but got nil'
+      expect_that (-> typed '(number, boolean, string)', {}), errors matches 'incorrect type: expected number but got nil'
+      expect_that (-> typed '(number, boolean, string)', {123}), errors matches 'incorrect type: expected boolean but got nil'
+      expect_that (-> typed '(number, boolean, string)', {'interloper'}), errors matches 'incorrect type: expected number but got string'
+
+    it 'checks structs', ->
+      expect_that (-> typed '{}', {}), no_errors!
+      expect_that (-> typed '{}', {123}), no_errors!
+      expect_that (-> typed '{}', {hello: 123}), no_errors!
+      expect_that (-> typed '{hello: string}', {hello: 'hello'}), no_errors!
+      expect_that (-> typed '{hello: {world: string}}', {hello: world: 'world'}), no_errors!
+
+      expect_that (-> typed '{}', 132), errors matches 'incorrect type: expected table but got number'
+      expect_that (-> typed '{hello: string}', {}), errors matches 'incorrect type: expected string but got nil'
+      expect_that (-> typed '{hello: string}', hello: 123), errors matches 'incorrect type: expected string but got number'
+      expect_that (-> typed '{hello: {world: string}}', hello: 123), errors matches 'incorrect type: expected table but got number'
+      expect_that (-> typed '{hello: {world: string}}', hello: {}), errors matches 'incorrect type: expected string but got nil'
+      expect_that (-> typed '{hello: {world: string}}', hello: world: 123), errors matches 'incorrect type: expected string but got number'
 
 -- import set_log_verbosity from require 'fat.logger'
 -- set_log_verbosity true
 (require 'spec').run_tests select 1, ...
+-- TODO(kcza): optional values
