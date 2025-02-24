@@ -541,8 +541,8 @@ repr = =>
         when 'string'
           [] = "'#{@}'"
         when 'table'
-          if table.<>? and table.<tostring>?
-            [] = tostring table
+          if @.<>? and @.<tostring>?
+            [] = tostring @
           else if is_list @
             [] = '['
             first = true
