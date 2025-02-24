@@ -527,7 +527,7 @@ class Fields
     else
       "isn't a table in which:\n  #{table.concat field_descriptions, '\n  '}"
 
-repr = =>
+export repr = =>
   table.concat with {}
     stack={}
     repr_impl = =>
