@@ -77,7 +77,7 @@ FATAL_TEST_ERROR_MARKER = 'INTERNAL ERROR: FATAL TEST ERROR'
 class Test
   new: (@name, @assertions_fn, @spec) =>
 
-  @any_failed: false
+  @num_failures: 0
   @current_run_failures: {}
 
   test: (filter=nil) =>
@@ -103,7 +103,7 @@ class Test
       print "  * #{reflow '    ', failure}"
 
   @fail: (cause, message) =>
-    @@any_failed = true
+    @@num_failures += 1
     cause_string = switch type cause
       when 'string'
         cause
@@ -619,5 +619,5 @@ export run_tests = (filter) ->
 
   root_spec?\test filter
 
-  if Test::any_failed
-    print "some checks failed!"
+  if Test.num_failures > 0
+    print "#{Test.num_failures} checks failed!"
