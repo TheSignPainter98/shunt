@@ -47,13 +47,24 @@ class Parser
       error "unexpected EOF"
     if token.type != expected_token
       error "expected #{expected_token}"
-    token.value ?? 0
+    token.value ?? token.type
 
   select: (options) =>
     next_token = @lexer\peek!
-    for option in *options
+
+    i = 1
+    while options[i]
+      option = options[i]
       if option.token == next_token.type
-        return option.action!
+        return if action = option.action
+          action!
+        else
+          option.token
+      i += 1
+
+    if options.otherwise?
+      return options.otherwise!
+
     options_repr = table.concat [ tostring option.token for option in *options ], ', '
     error "expected one of #{options_repr}, got #{next_token.type}"
 
@@ -69,24 +80,27 @@ class Parser
           [] = token.value ?? 0
         else if action?
           [] = action!
+        else
+          error "sequence element must have expected_token or action"
 
 class TypeSpecParser extends Parser
+
   parse: =>
     @parse_type!
 
   parse_type: =>
     @select
       * token: T_NAME
-        action: @\parse_name
+        action: @\parse_named_type
       * token: T_BRACKET_OPEN
         action: @\parse_list
       * token: T_PAREN_OPEN
         action: @\parse_tuple
+      * token: T_BRACE_OPEN
+        action: @\parse_table
 
-  parse_name: =>
-    name_token = @lexer\next!
-    assert T_NAME == name_token.type
-    name_token.value
+  parse_named_type: =>
+    named_type @expect T_NAME
 
   parse_list: =>
     {_, elem_type, _} = @sequence
@@ -102,68 +116,116 @@ class TypeSpecParser extends Parser
       * token: T_PAREN_CLOSE
     Tuple elem_types
 
+  parse_table: =>
+    {_, table, _} = @sequence
+      * token: T_BRACE_OPEN
+      * action: @\parse_table_content
+      * token: T_BRACE_CLOSE
+    table
+
+  parse_table_content: =>
+    first_elem = @select
+      * token: T_NAME
+        action: -> @expect T_NAME
+      * token: T_BRACE_CLOSE
+        action: -> nil
+      otherwise: @\parse_type
+    if first_elem == nil
+      return Struct {}
+
+    second_elem = @select
+      * token: T_BRACE_CLOSE
+        action: -> 'set'
+      * token: T_ARROW
+        action: -> 'mapping'
+      * token: T_COLON
+        action: -> 'struct'
+
+    switch second_elem
+      when 'set'
+        if 'string' == type first_elem
+          first_elem = named_type first_elem
+        Set first_elem
+      when 'mapping'
+        if 'string' == type first_elem
+          first_elem = named_type first_elem
+        { _, maps_to } = @sequence
+          * token: T_ARROW
+          * action: @\parse_type
+        Mapping first_elem, maps_to
+      when 'struct'
+        @expect T_COLON
+        first_type = @parse_named_type!
+        first_field = Field first_elem, first_type
+        if @lexer\peek!.type == T_COMMA
+          @expect T_COMMA
+        remainder = @select
+          * token: T_BRACE_CLOSE
+            action: -> nil
+          * token: T_NAME
+            action: -> @parse_repeat_separated @\parse_field, T_COMMA
+        if remainder?
+          Struct { first_field, ...remainder}
+        else
+          Struct { first_field }
+      else
+        error "internal error: unexpected symbol: #{repr second_elem}"
+
+  parse_field: =>
+    {name, _, type} = @sequence
+      * token: T_NAME
+      * token: T_COLON
+      * action: @\parse_type
+    Field name, type
+
 -- Tokens
-T_PAREN_OPEN = <tostring>: => "<paren_open>"
-T_PAREN_CLOSE = <tostring>: => "<paren_close>"
-T_BRACE_OPEN = <tostring>: => "<brace_open>"
-T_BRACE_CLOSE = <tostring>: => "<brace_close>"
-T_BRACKET_OPEN = <tostring>: => "<bracket_open>"
-T_BRACKET_CLOSE = <tostring>: => "<bracket_close>"
-T_COMMA = <tostring>: => "<comma>"
-T_ARROW = <tostring>: => "<arrow>"
+T_PAREN_OPEN = <tostring>: => "'('"
+T_PAREN_CLOSE = <tostring>: => "')'"
+T_BRACE_OPEN = <tostring>: => "'{'"
+T_BRACE_CLOSE = <tostring>: => "'}'"
+T_BRACKET_OPEN = <tostring>: => "'['"
+T_BRACKET_CLOSE = <tostring>: => "']'"
+T_COMMA = <tostring>: => "','"
+T_COLON = <tostring>: => "':'"
+T_ARROW = <tostring>: => "'->'"
 T_NAME = <tostring>: => "<name>"
 
 class Lexer
   new: (type_spec) =>
+    @index = 1
     @done = false
     @peeked = nil
-    @known_primitives =
-      nil: true
-      boolean: true
-      number: true
-      string: true
-      function: true
-      table: true
-      thread: true
     @tokens = coroutine.wrap ->
-      index = 1
-      while index <= #type_spec
-        ty, value, bytes_consumed = if whitespace = type_spec\match '^[ \t\r\n]+', index
-          nil, whitespace, #whitespace
-        else if type_spec\match '^%(', index
-          T_PAREN_OPEN, '(', 1
-        else if type_spec\match '^%)', index
-          T_PAREN_CLOSE, ')', 1
-        else if type_spec\match '^,', index
-          T_COMMA, ',', 1
-        else if type_spec\match '^{', index
-          T_BRACE_OPEN, '{', 1
-        else if type_spec\match '^}', index
-          T_BRACE_CLOSE, '}', 1
-        else if type_spec\match '^%[', index
-          T_BRACKET_OPEN, '[', 1
-        else if type_spec\match '^]', index
-          T_BRACKET_CLOSE, ']', 1
-        else if type_spec\match '^->', index
-          T_ARROW, '->', 2
-        else if name = type_spec\match '^([a-zA-Z_][a-zA-Z0-9_]*)', index
-          if @known_primitives[name]?
-            T_NAME, (Primitive name), #name
-          else if not name\match '^[A-Z]'
-            error "cannot use '#{name}' as custom type name: name must start with an uppercase letter"
-          else
-            T_NAME, (UserType name), #name
+      while @index <= #type_spec
+        ty, value, bytes_consumed = if whitespace = type_spec\match '^[ \t\r\n]+', @index
+          nil, nil, #whitespace
+        else if match = type_spec\match '^%(', @index
+          T_PAREN_OPEN, nil, #match
+        else if match = type_spec\match '^%)', @index
+          T_PAREN_CLOSE, nil, #match
+        else if match = type_spec\match '^,', @index
+          T_COMMA, nil, #match
+        else if match = type_spec\match '^{', @index
+          T_BRACE_OPEN, nil, #match
+        else if match = type_spec\match '^}', @index
+          T_BRACE_CLOSE, nil, #match
+        else if match = type_spec\match '^%[', @index
+          T_BRACKET_OPEN, nil, #match
+        else if match = type_spec\match '^]', @index
+          T_BRACKET_CLOSE, nil, #match
+        else if match = type_spec\match '^:', @index
+          T_COLON, nil, #match
+        else if match = type_spec\match '^->', @index
+          T_ARROW, nil, #match
+        else if name = type_spec\match '^([a-zA-Z_][a-zA-Z0-9_]*)', @index
+          T_NAME, name, #name
         else
-          error "unrecognised character '#{type_spec\sub index, index}' in type spec '#{type_spec}"
+          error "unrecognised character '#{type_spec\sub @index, @index}' in type spec '#{type_spec}"
 
-        index += bytes_consumed
-        switch ty
-          when nil
-            continue
-          when T_NAME
-            coroutine.yield Symbol ty, value
-          else
-            coroutine.yield Symbol ty
+        @index += bytes_consumed
+        if not ty?
+          continue
+        coroutine.yield Symbol ty, value
 
   peek: =>
     if @done
@@ -191,6 +253,17 @@ class Lexer
         @done = true
       ret
 
+  snapshot: =>
+    Snapshot @index, @peeked
+
+  restore: (snapshot) =>
+    { :index, :peeked } = snapshot
+    @index = index
+    @peeked = peeked
+
+class Snapshot
+  new: (@index, @peeked) =>
+
 class Symbol
   new: (@type, @value=nil) =>
 
@@ -200,17 +273,35 @@ class Symbol
     else
       "#{@type}"
 
+known_primitives =
+  nil: true
+  boolean: true
+  number: true
+  string: true
+  function: true
+  table: true
+  thread: true
+named_type = (name) ->
+  if not name.match?
+    error repr name
+  if known_primitives[name]?
+    Primitive name
+  else if not name\match '^[A-Z]'
+    error "cannot use '#{name}' as custom type name: name must start with an uppercase letter"
+  else
+    UserType name
+
 class Primitive
   new: (@name) =>
 
   __len: => #@name
 
-  __tostring: => @name
+  __tostring: => 'P' .. @name
 
 class UserType
   new: (@name) =>
 
-  __tostring: => @name
+  __tostring: => 'U' .. @name
 
 class List
   new: (@elem_type) =>
@@ -224,6 +315,31 @@ class Tuple
   __tostring: =>
     elem_type_reprs = [ tostring elem_type for elem_type in *@elem_types ]
     "(#{table.concat elem_type_reprs, ', '})"
+
+class Struct
+  new: (@fields) =>
+
+  __tostring: =>
+    field_reprs = [ tostring field for field in *@fields ]
+    "{#{table.concat field_reprs, ', '}}"
+
+class Field
+  new: (@name, @type) =>
+
+  __tostring: =>
+    "#{@name}: #{@type}"
+
+class Set
+  new: (@elem_type) =>
+
+  __tostring: =>
+    "{#{@elem_type}}"
+
+class Mapping
+  new: (@in_type, @out_type) =>
+
+  __tostring: =>
+    "{#{@in_type} -> #{@out_type}}"
 
 class Function
   new: (@param_types, @return_types) =>
@@ -282,11 +398,11 @@ spec ->
         * type coroutine.create ->
       for simple_type in *simple_types
         expect_that (tokens simple_type), deep_eq {
-          Symbol T_NAME, Primitive simple_type
+          Symbol T_NAME, simple_type
         }
 
     it 'emits strucural tokens', ->
-      expect_that (tokens '(),{}[]->'), deep_eq {
+      expect_that (tokens '(),{}[]:->'), deep_eq {
         Symbol T_PAREN_OPEN
         Symbol T_PAREN_CLOSE
         Symbol T_COMMA
@@ -294,20 +410,21 @@ spec ->
         Symbol T_BRACE_CLOSE
         Symbol T_BRACKET_OPEN
         Symbol T_BRACKET_CLOSE
+        Symbol T_COLON
         Symbol T_ARROW
       }
 
     it 'ignores whitespace', ->
       expect_that (tokens ' (\tstring\r)\n-> string '), deep_eq {
         Symbol T_PAREN_OPEN
-        Symbol T_NAME, Primitive "string"
+        Symbol T_NAME, "string"
         Symbol T_PAREN_CLOSE
         Symbol T_ARROW
-        Symbol T_NAME, Primitive "string"
+        Symbol T_NAME, "string"
       }
 
     it 'rejects unrecognised characters', ->
-      expect_that (-> tokens '"'), errors matches [[unrecognised character '"']]
+      expect_that (-> tokens '@'), errors matches [[unrecognised character '@']]
       expect_that (-> tokens '1'), errors matches [[unrecognised character '1']]
 
     describe ':peek', ->
@@ -354,6 +471,22 @@ spec ->
           Primitive 'string',
           Tuple { (UserType 'Custom'), (Primitive 'table') },
         }
+
+      it 'accepts sets', ->
+        expect_that (parse '{string}'), deep_eq Set Primitive 'string'
+        expect_that (parse '{{string}}'), deep_eq Set Set Primitive 'string'
+
+      it 'accepts mappings', ->
+        expect_that (parse '{boolean -> number}'), deep_eq Mapping (Primitive 'boolean'), Primitive 'number'
+        expect_that (parse '{{boolean -> number} -> {string -> thread}}'), deep_eq Mapping (Mapping (Primitive 'boolean'), Primitive 'number'), Mapping (Primitive 'string'), Primitive 'thread'
+
+      it 'accepts structs', ->
+        expect_that (parse '{}'), deep_eq Struct {}
+        expect_that (parse '{field: boolean}'), deep_eq Struct
+          * Field 'field', Primitive 'boolean'
+        expect_that (parse '{field1: number, field2: string}'), deep_eq Struct
+          * Field 'field1', Primitive 'number'
+          * Field 'field2', Primitive 'string'
 
   describe 'declare_type', ->
     it 'rejects false primitives', ->
