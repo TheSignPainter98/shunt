@@ -3,3 +3,6 @@
 *.goo
 packed/
 test.yue
+
+# Binaries
+bin/*
