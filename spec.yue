@@ -97,7 +97,7 @@ class Test
       @assertions_fn!
     catch err
       if not err\match FATAL_TEST_ERROR_MARKER
-        Test::fail "caught error: #{err}"
+        Test::fail "caught error: #{debug.traceback err, 2}"
     print = old_print
 
     if #@@current_run_failures == 0
