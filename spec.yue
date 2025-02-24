@@ -63,14 +63,14 @@ class Spec
         [i] = rev_parts[n - i + 1]
     table.concat parts, ' '
 
-  test: =>
+  test: (filter=nil) =>
     log ->
       if @name?
         "testing #{@desc!}..."
       else
         "running test suite..."
     for child in *@children
-      child\test!
+      child\test filter
 
 FATAL_TEST_ERROR_MARKER = 'INTERNAL ERROR: FATAL TEST ERROR'
 
@@ -80,7 +80,14 @@ class Test
   @any_failed: false
   @current_run_failures: {}
 
-  test: =>
+  test: (filter=nil) =>
+    if filter?
+      desc = @desc!
+      if not desc\match filter
+        log ->
+          "* skipping #{desc}"
+        return
+
     @@current_run_failures = {}
     try
       @assertions_fn!
@@ -603,14 +610,14 @@ reflow = (prefix, string, width=80) ->
         first_line = false
   table.concat lines, '\n'
 
-export run_tests = ->
+export run_tests = (filter) ->
   -- Gather specs
   if not spec_fns?
     return
   for spec_fn in *spec_fns
     spec_fn!
 
-  root_spec?\test!
+  root_spec?\test filter
 
   if Test::any_failed
     print "some checks failed!"
