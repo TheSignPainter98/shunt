@@ -3,7 +3,7 @@ local Parser
 
 import spec, repr from require 'spec'
 
-export t = (type_spec, value) ->
+export T = (type_spec, value) ->
   if not type_spec?
     error 'cannot typecheck: no type spec provided'
 
@@ -506,7 +506,7 @@ export declare_type = (name, type_spec) ->
   type_checkers[name] = type_checker name
 
 export deactivate = ->
-  t = (_, fn) -> fn
+  T = (_, fn) -> fn
 
 spec ->
   import assert_that, expect_that, describe, it, matchers from require 'spec'
@@ -638,49 +638,55 @@ spec ->
     --   declare_type 'Custom', 'number'
     --   expect_that (-> declare_type 'Custom'), errors matches [[cannot redefine type 'Custom']]
 
-  describe 't', ->
+  describe 'T', ->
     it 'requires two arguments', ->
-      expect_that (-> t!), errors matches 'cannot typecheck: no type spec provided'
+      expect_that (-> T!), errors matches 'cannot typecheck: no type spec provided'
 
-    it 'checks primitive types', ->
-      expect_that (-> t 'nil', nil), no_errors!
-      expect_that (-> t 'number', 123), no_errors!
-      expect_that (-> t 'string', 'some-string'), no_errors!
+    it 'checks primitives', ->
+      expect_that (-> T 'nil', nil), no_errors!
+      expect_that (-> T 'number', 123), no_errors!
+      expect_that (-> T 'string', 'some-string'), no_errors!
 
-      expect_that (-> t 'nil', 123), errors matches 'incorrect type: expected nil but got number'
-      expect_that (-> t 'number', nil), errors matches 'incorrect type: expected number but got nil'
-      expect_that (-> t 'string', 123), errors matches 'incorrect type: expected string but got number'
+      expect_that (-> T 'nil', 123), errors matches 'incorrect type: expected nil but got number'
+      expect_that (-> T 'number', nil), errors matches 'incorrect type: expected number but got nil'
+      expect_that (-> T 'string', 123), errors matches 'incorrect type: expected string but got number'
+
+    it 'checks optionals', ->
+      expect_that (-> T '?number', nil), no_errors!
+      expect_that (-> T '?number', 123), no_errors!
+      expect_that (-> T '?number', 'str'), errors matches 'incorrect type: expected number but got string'
+      expect_that (-> T '?(number)', 'str'), errors matches 'incorrect type: expected table but got string'
 
     it 'checks tuples', ->
-      expect_that (-> t '()', {}), no_errors!
-      expect_that (-> t '(number, boolean, string)', {123, true, 'hello'}), no_errors!
-      expect_that (-> t '(number, boolean, string)', {123, true, 'hello', coroutine.create ->}), no_errors!
-      expect_that (-> t '((number, boolean), (string, thread))', {{123, true}, {'hello', coroutine.create ->}}), no_errors!
+      expect_that (-> T '()', {}), no_errors!
+      expect_that (-> T '(number, boolean, string)', {123, true, 'hello'}), no_errors!
+      expect_that (-> T '(number, boolean, string)', {123, true, 'hello', coroutine.create ->}), no_errors!
+      expect_that (-> T '((number, boolean), (string, thread))', {{123, true}, {'hello', coroutine.create ->}}), no_errors!
 
-      expect_that (-> t '(number, boolean, string)', nil), errors matches 'incorrect type: expected table but got nil'
-      expect_that (-> t '(number, boolean, string)', {}), errors matches 'incorrect type: expected number but got nil'
-      expect_that (-> t '(number, boolean, string)', {123}), errors matches 'incorrect type: expected boolean but got nil'
-      expect_that (-> t '(number, boolean, string)', {'interloper'}), errors matches 'incorrect type: expected number but got string'
+      expect_that (-> T '(number, boolean, string)', nil), errors matches 'incorrect type: expected table but got nil'
+      expect_that (-> T '(number, boolean, string)', {}), errors matches 'incorrect type: expected number but got nil'
+      expect_that (-> T '(number, boolean, string)', {123}), errors matches 'incorrect type: expected boolean but got nil'
+      expect_that (-> T '(number, boolean, string)', {'interloper'}), errors matches 'incorrect type: expected number but got string'
 
     it 'checks structs', ->
-      expect_that (-> t '{}', {}), no_errors!
-      expect_that (-> t '{}', {123}), no_errors!
-      expect_that (-> t '{}', {hello: 123}), no_errors!
-      expect_that (-> t '{hello: string}', {hello: 'hello'}), no_errors!
-      expect_that (-> t '{hello: {world: string}}', {hello: world: 'world'}), no_errors!
-      expect_that (-> t '{hello: {world: string}, foo: boolean}', hello: {world:'asdf'}, foo: true), no_errors!
+      expect_that (-> T '{}', {}), no_errors!
+      expect_that (-> T '{}', {123}), no_errors!
+      expect_that (-> T '{}', {hello: 123}), no_errors!
+      expect_that (-> T '{hello: string}', {hello: 'hello'}), no_errors!
+      expect_that (-> T '{hello: {world: string}}', {hello: world: 'world'}), no_errors!
+      expect_that (-> T '{hello: {world: string}, foo: boolean}', hello: {world:'asdf'}, foo: true), no_errors!
 
-      expect_that (-> t '{}', 132), errors matches 'incorrect type: expected table but got number'
-      expect_that (-> t '{hello: string}', {}), errors matches 'incorrect type: expected string but got nil'
-      expect_that (-> t '{hello: string}', hello: 123), errors matches 'incorrect type: expected string but got number'
-      expect_that (-> t '{hello: {world: string}}', hello: 123), errors matches 'incorrect type: expected table but got number'
-      expect_that (-> t '{hello: {world: string}}', hello: {}), errors matches 'incorrect type: expected string but got nil'
-      expect_that (-> t '{hello: {world: string}}', hello: world: 123), errors matches 'incorrect type: expected string but got number'
-      expect_that (-> t '{hello: {world: string}, foo: boolean}', hello: {world:'asdf'}, foo: 123), errors matches 'incorrect type: expected boolean but got number'
+      expect_that (-> T '{}', 132), errors matches 'incorrect type: expected table but got number'
+      expect_that (-> T '{hello: string}', {}), errors matches 'incorrect type: expected string but got nil'
+      expect_that (-> T '{hello: string}', hello: 123), errors matches 'incorrect type: expected string but got number'
+      expect_that (-> T '{hello: {world: string}}', hello: 123), errors matches 'incorrect type: expected table but got number'
+      expect_that (-> T '{hello: {world: string}}', hello: {}), errors matches 'incorrect type: expected string but got nil'
+      expect_that (-> T '{hello: {world: string}}', hello: world: 123), errors matches 'incorrect type: expected string but got number'
+      expect_that (-> T '{hello: {world: string}, foo: boolean}', hello: {world:'asdf'}, foo: 123), errors matches 'incorrect type: expected boolean but got number'
 
     it 'checks functions', ->
-      expect_that (-> t '() -> nil', ->), no_errors!
-      expect_that (-> t '() -> nil', {}), errors matches 'incorrect type: expected function but got table'
+      expect_that (-> T '() -> nil', ->), no_errors!
+      expect_that (-> T '() -> nil', {}), errors matches 'incorrect type: expected function but got table'
 
 -- import set_log_verbosity from require 'fat.logger'
 -- set_log_verbosity true
