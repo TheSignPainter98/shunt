@@ -495,7 +495,7 @@ check = (check_prog, value) ->
   with check_prog
     local pc = 0
     n_instructions = #check_prog
-    while pc <= n_instructions
+    while pc < n_instructions
       pc += 1
       switch [pc]
         when C_PUSH
@@ -523,6 +523,8 @@ check = (check_prog, value) ->
             pc += 1
           else
             pc = [pc + 1] - 1
+        else
+          error "internal error: illegal type-checker VM instruction #{[pc]}@#{pc}"
 
 export declare_type = (name, type_spec) ->
   if not (name\sub 1, 1)\match '^[A-Z_]$'
