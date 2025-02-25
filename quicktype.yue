@@ -18,6 +18,7 @@ type_checker = (type_spec) ->
     checker = parsed_type\checker!
 
     type_checkers[type_spec] = checker
+    validate checker
     print "got checker:\n#{repr checker}"
     checker
 
@@ -340,7 +341,7 @@ class List
       loop_start = #prog
       [] = C_GET_FIELD
       [] = C_JMP_IF_NIL
-      [] = 10101010
+      [] = LABEL_PLACEHOLDER
       loop_exit_jump_index = #prog
       @elem_type\checker prog
       [] = C_POP
@@ -456,6 +457,13 @@ C_GET_FIELD = <tostring>: => '<field>'
 C_INCR = <tostring>: => '<incr>'
 C_JMP = <tostring>: => '<jmp>'
 C_JMP_IF_NIL = <tostring>: => '<jnil>'
+
+LABEL_PLACEHOLDER = <tostring>: => '<LABEL-PLACEHOLDER>'
+
+validate = (check_prog) ->
+  for instruction in *check_prog
+    if instruction == LABEL_PLACEHOLDER
+      error "unresolved placeholder in check program:\n#{repr check_prog}"
 
 value_stack_size = 0
 value_stack = {}
