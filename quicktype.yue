@@ -470,40 +470,44 @@ check = (check_prog, value) ->
   value_stack_size = 1
   value_stack[1] = value
 
-  for pc = 1, #check_prog
-    switch check_prog[pc]
-      when C_PUSH
-        pc += 1
-        value = check_prog[pc]
-        value_stack_size += 1
-        value_stack[value_stack_size] = value
-      when C_POP
-        value_stack[value_stack_size] = nil
-        value_stack_size -= 1
-      when C_ASSERT_PRIMITIVE
-        ty = type value_stack[value_stack_size]
-        pc += 1
-        if ty != check_prog[pc]
-          error "incorrect type: expected #{check_prog[pc]} but got #{ty}"
-      when C_GET_FIELD
-        value_stack_size += 1
-        value_stack[value_stack_size] = value_stack[value_stack_size-2][value_stack[value_stack_size-1]]
-      when C_INCR
-        value_stack[value_stack_size] += 1
-      when C_JMP
-        pc = chec_prog[pc + 1] - 1
-      when C_JMP_IF_NIL
-        if value_stack[value_stack_size]?
-          pc = chec_prog[pc] - 1
-        else
+  with check_prog
+    local pc = 0
+    n_instructions = #check_prog
+    while pc <= n_instructions
+      pc += 1
+      switch [pc]
+        when C_PUSH
           pc += 1
+          value = [pc]
+          value_stack_size += 1
+          value_stack[value_stack_size] = value
+        when C_POP
+          value_stack[value_stack_size] = nil
+          value_stack_size -= 1
+        when C_ASSERT_PRIMITIVE
+          ty = type value_stack[value_stack_size]
+          pc += 1
+          if ty != [pc]
+            error "incorrect type: expected #{check_prog[pc]} but got #{ty}"
+        when C_GET_FIELD
+          value_stack_size += 1
+          value_stack[value_stack_size] = value_stack[value_stack_size-2][value_stack[value_stack_size-1]]
+        when C_INCR
+          value_stack[value_stack_size] += 1
+        when C_JMP
+          pc = chec_prog[pc + 1] - 1
+        when C_JMP_IF_NIL
+          if value_stack[value_stack_size]?
+            pc = chec_prog[pc] - 1
+          else
+            pc = [pc + 1] - 1
 
 export declare_type = (name, type_spec) ->
   if not (name\sub 1, 1)\match '^[A-Z_]$'
     error "cannot declare type '#{name}': custom types must start with uppercase or '_'"
   if type_checkers[name]?
     error "cannot redefine type '#{name}'"
-  type_checkers[name] = type_checker name
+  type_checkers[name] = type_checker type_spec
 
 export deactivate = ->
   T = (_, fn) -> fn
