@@ -90,7 +90,6 @@ class Parser
           error "sequence element must have expected_token or action"
 
 class TypeSpecParser extends Parser
-
   parse: =>
     @parse_type!
 
