@@ -100,7 +100,7 @@ class TypeSpecParser extends Parser
       * token: T_BRACKET_OPEN
         action: @\parse_list
       * token: T_PAREN_OPEN
-        action: @\parse_tuple
+        action: @\parse_tuple_or_function
       * token: T_BRACE_OPEN
         action: @\parse_table
 
@@ -116,12 +116,20 @@ class TypeSpecParser extends Parser
 
   parse_tuple_or_function: =>
     @expect T_PAREN_OPEN
+    local types
     if @maybe T_PAREN_CLOSE
-      return Tuple {}
-    {types, _} = @sequence
-      * action: -> @parse_repeat_separated @\parse_type, T_COMMA
-      * token: T_PAREN_CLOSE
-    Tuple types
+      types = {}
+    else
+      {types, _} = @sequence
+        * action: -> @parse_repeat_separated @\parse_type, T_COMMA
+        * token: T_PAREN_CLOSE
+    if not @maybe T_ARROW
+      return Tuple types
+
+    return_type = @parse_type!
+    if return_type.name? and return_type.name == 'nil'
+      return_type = nil
+    Function types, {return_type}
 
   parse_table: =>
     {_, table, _} = @sequence
@@ -437,7 +445,9 @@ class Function
         [] = '>'
 
   checker: (prog={}) =>
-    error 'todo'
+    with prog
+      [] = C_ASSERT_PRIMITIVE
+      [] = 'function'
 
 C_PUSH = <tostring>: => '<push>'
 C_POP = <tostring>: => '<pop>'
@@ -608,6 +618,11 @@ spec ->
           * Field 'outer2', Struct
             * Field 'inner2', Primitive 'boolean'
 
+      it 'accepts functions', ->
+        expect_that (parse '() -> nil'), deep_eq Function {}, {}
+        expect_that (parse '(string) -> number'), deep_eq Function {Primitive 'string'}, {Primitive 'number'}
+        expect_that (parse '(string) -> (number) -> boolean'), deep_eq Function {Primitive 'string'}, {Function {Primitive 'number'}, {Primitive 'boolean'}}
+
   describe 'declare_type', ->
     it 'rejects false primitives', ->
       expect_that (-> declare_type 'custom'), errors matches 'custom types must start with uppercase'
@@ -655,6 +670,10 @@ spec ->
       expect_that (-> typed '{hello: {world: string}}', hello: {}), errors matches 'incorrect type: expected string but got nil'
       expect_that (-> typed '{hello: {world: string}}', hello: world: 123), errors matches 'incorrect type: expected string but got number'
       expect_that (-> typed '{hello: {world: string}, foo: boolean}', hello: {world:'asdf'}, foo: 123), errors matches 'incorrect type: expected boolean but got number'
+
+    it 'checks functions', ->
+      expect_that (-> typed '() -> nil', ->), no_errors!
+      expect_that (-> typed '() -> nil', {}), errors matches 'incorrect type: expected function but got table'
 
 -- import set_log_verbosity from require 'fat.logger'
 -- set_log_verbosity true
