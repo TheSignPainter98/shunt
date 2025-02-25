@@ -45,6 +45,15 @@ class Parser
       error "expected #{expected_token}"
     token.value ?? token.type
 
+  maybe: (expected_token) =>
+    token = @lexer\peek!
+    if not token?
+      return nil
+    if token.type != expected_token
+      return nil
+    @lexer\next!
+    token.value ?? token.type
+
   select: (options) =>
     next_token = @lexer\peek!
 
@@ -105,12 +114,14 @@ class TypeSpecParser extends Parser
       * token: T_BRACKET_CLOSE
     List elem_type
 
-  parse_tuple: =>
-    {_, elem_types, _} = @sequence
-      * token: T_PAREN_OPEN
+  parse_tuple_or_function: =>
+    @expect T_PAREN_OPEN
+    if @maybe T_PAREN_CLOSE
+      return Tuple {}
+    {types, _} = @sequence
       * action: -> @parse_repeat_separated @\parse_type, T_COMMA
       * token: T_PAREN_CLOSE
-    Tuple elem_types
+    Tuple types
 
   parse_table: =>
     {_, table, _} = @sequence
@@ -568,6 +579,7 @@ spec ->
         expect_that (parse '[[string]]'), deep_eq List List Primitive 'string'
 
       it 'accepts tuples', ->
+        expect_that (parse '()'), deep_eq Tuple {}
         expect_that (parse '(nil, number)'), deep_eq Tuple { (Primitive 'nil'), Primitive 'number' }
         expect_that (parse '((nil, number), string, (Custom, table))'), deep_eq Tuple {
           Tuple { (Primitive 'nil'), (Primitive 'number') },
@@ -618,6 +630,7 @@ spec ->
       expect_that (-> typed 'string', 123), errors matches 'incorrect type: expected string but got number'
 
     it 'checks tuples', ->
+      expect_that (-> typed '()', {}), no_errors!
       expect_that (-> typed '(number, boolean, string)', {123, true, 'hello'}), no_errors!
       expect_that (-> typed '(number, boolean, string)', {123, true, 'hello', coroutine.create ->}), no_errors!
       expect_that (-> typed '((number, boolean), (string, thread))', {{123, true}, {'hello', coroutine.create ->}}), no_errors!
