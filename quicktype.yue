@@ -294,7 +294,7 @@ class Primitive
 
   checker: (prog={}) =>
     with prog
-      [] = C_PRIMITIVE
+      [] = C_ASSERT_PRIMITIVE
       [] = @name
 
 class UserType
@@ -302,11 +302,36 @@ class UserType
 
   __tostring: => @name
 
+  checker: (prog={}) =>
+    error 'todo'
+
 class List
   new: (@elem_type) =>
 
   __tostring: =>
     "[#{@elem_type}]"
+
+  checker: (prog={}) =>
+    with prog
+      [] = C_ASSERT_PRIMITIVE
+      [] = 'table'
+      [] = C_PUSH
+      [] = 1
+
+      loop_start = #prog
+      [] = C_GET_FIELD
+      [] = C_JMP_IF_NIL
+      [] = 10101010
+      loop_exit_jump_index = #prog
+      @elem_type\checker prog
+      [] = C_POP
+      [] = C_INCR
+      [] = C_JMP
+      [] = loop_start
+
+      [] = C_POP -- TODO(kcza): check stack on early exit
+      [loop_exit_jump_index] = #prog
+
 
 class Tuple
   new: (@elem_types) =>
@@ -317,12 +342,15 @@ class Tuple
 
   checker: (prog={}) =>
     with prog
-      [] = C_PRIMITIVE
+      [] = C_ASSERT_PRIMITIVE
       [] = 'table'
       for i = 1, #@elem_types
         [] = C_PUSH
         [] = i
+        [] = C_GET_FIELD
         @elem_types[i]\checker prog
+        [] = C_POP
+        [] = C_INCR
         [] = C_POP
 
 class Struct
@@ -334,12 +362,14 @@ class Struct
 
   checker: (prog={}) =>
     with prog
-      [] = C_PRIMITIVE
+      [] = C_ASSERT_PRIMITIVE
       [] = 'table'
       for field in *@fields
         [] = C_PUSH
         [] = field.name
+        [] = C_GET_FIELD
         field.type\checker prog
+        [] = C_POP
         [] = C_POP
 
 class Field
@@ -357,11 +387,17 @@ class Set
   __tostring: =>
     "{#{@elem_type}}"
 
+  checker: (prog={}) =>
+    error 'todo'
+
 class Mapping
   new: (@in_type, @out_type) =>
 
   __tostring: =>
     "{#{@in_type} -> #{@out_type}}"
+
+  checker: (prog={}) =>
+    error 'todo'
 
 class Function
   new: (@param_types, @return_types) =>
@@ -389,9 +425,16 @@ class Function
           [] = tostring return_type
         [] = '>'
 
-C_PRIMITIVE = <tostring>: => 'PRIMITIVE'
-C_PUSH = <tostring>: => 'PUSH'
-C_POP = <tostring>: => 'POP'
+  checker: (prog={}) =>
+    error 'todo'
+
+C_PUSH = <tostring>: => '<push>'
+C_POP = <tostring>: => '<pop>'
+C_ASSERT_PRIMITIVE = <tostring>: => '<assert-primitive>'
+C_GET_FIELD = <tostring>: => '<field>'
+C_INCR = <tostring>: => '<incr>'
+C_JMP = <tostring>: => '<jmp>'
+C_JMP_IF_NIL = <tostring>: => '<jnil>'
 
 value_stack_size = 0
 value_stack = {}
@@ -401,19 +444,31 @@ check = (check_prog, value) ->
 
   for pc = 1, #check_prog
     switch check_prog[pc]
-      when C_PRIMITIVE
+      when C_PUSH
+        pc += 1
+        value = check_prog[pc]
+        value_stack_size += 1
+        value_stack[value_stack_size] = value
+      when C_POP
+        value_stack[value_stack_size] = nil
+        value_stack_size -= 1
+      when C_ASSERT_PRIMITIVE
         ty = type value_stack[value_stack_size]
         pc += 1
         if ty != check_prog[pc]
           error "incorrect type: expected #{check_prog[pc]} but got #{ty}"
-      when C_PUSH
-        pc += 1
-        field = value_stack[value_stack_size][check_prog[pc]]
+      when C_GET_FIELD
         value_stack_size += 1
-        value_stack[value_stack_size] = field
-      when C_POP
-        value_stack[value_stack_size] = nil
-        value_stack_size -= 1
+        value_stack[value_stack_size] = value_stack[value_stack_size-2][value_stack[value_stack_size-1]]
+      when C_INCR
+        value_stack[value_stack_size] += 1
+      when C_JMP
+        pc = chec_prog[pc + 1] - 1
+      when C_JMP_IF_NIL
+        if value_stack[value_stack_size]?
+          pc = chec_prog[pc] - 1
+        else
+          pc += 1
 
 export declare_type = (name, type_spec) ->
   if not (name\sub 1, 1)\match '^[A-Z_]$'
@@ -578,6 +633,7 @@ spec ->
       expect_that (-> typed '{}', {hello: 123}), no_errors!
       expect_that (-> typed '{hello: string}', {hello: 'hello'}), no_errors!
       expect_that (-> typed '{hello: {world: string}}', {hello: world: 'world'}), no_errors!
+      expect_that (-> typed '{hello: {world: string}, foo: boolean}', hello: {world:'asdf'}, foo: true), no_errors!
 
       expect_that (-> typed '{}', 132), errors matches 'incorrect type: expected table but got number'
       expect_that (-> typed '{hello: string}', {}), errors matches 'incorrect type: expected string but got nil'
@@ -585,6 +641,7 @@ spec ->
       expect_that (-> typed '{hello: {world: string}}', hello: 123), errors matches 'incorrect type: expected table but got number'
       expect_that (-> typed '{hello: {world: string}}', hello: {}), errors matches 'incorrect type: expected string but got nil'
       expect_that (-> typed '{hello: {world: string}}', hello: world: 123), errors matches 'incorrect type: expected string but got number'
+      expect_that (-> typed '{hello: {world: string}, foo: boolean}', hello: {world:'asdf'}, foo: 123), errors matches 'incorrect type: expected boolean but got number'
 
 -- import set_log_verbosity from require 'fat.logger'
 -- set_log_verbosity true
