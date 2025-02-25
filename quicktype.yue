@@ -94,7 +94,11 @@ class TypeSpecParser extends Parser
     @parse_type!
 
   parse_type: =>
-    @select
+    handle_optional = if @maybe T_QUESTION
+      (elem_type) -> Optional elem_type
+    else
+      (...) -> ...
+    handle_optional @select
       * token: T_NAME
         action: @\parse_named_type
       * token: T_BRACKET_OPEN
@@ -203,6 +207,7 @@ T_BRACKET_CLOSE = <tostring>: => "']'"
 T_COMMA = <tostring>: => "','"
 T_COLON = <tostring>: => "':'"
 T_ARROW = <tostring>: => "'->'"
+T_QUESTION = <tostring>: => "'?'"
 T_NAME = <tostring>: => "<name>"
 
 class Lexer
@@ -232,6 +237,8 @@ class Lexer
           T_COLON, nil, #match
         else if match = type_spec\match '^->', @index
           T_ARROW, nil, #match
+        else if match = type_spec\match '^?', @index
+          T_QUESTION, nil, #match
         else if name = type_spec\match '^([a-zA-Z_][a-zA-Z0-9_]*)', @index
           T_NAME, name, #name
         else
@@ -324,6 +331,21 @@ class UserType
   checker: (prog={}) =>
     error 'todo'
 
+class Optional
+  new: (@inner_type) =>
+
+  __tostring: =>
+    "?#{@inner_type}"
+
+  checker: (prog={}) =>
+    with prog
+      [] = C_JMP_IF_NIL
+      [] = LABEL_PLACEHOLDER
+      label_placeholder_index = #prog
+      @inner_type\checker prog
+
+      [label_placeholder_index] = #prog + 1
+
 class List
   new: (@elem_type) =>
 
@@ -349,7 +371,7 @@ class List
       [] = loop_start
 
       [] = C_POP -- TODO(kcza): check stack on early exit
-      [loop_exit_jump_index] = #prog
+      [loop_exit_jump_index] = #prog + 1
 
 
 class Tuple
@@ -495,10 +517,10 @@ check = (check_prog, value) ->
         when C_INCR
           value_stack[value_stack_size] += 1
         when C_JMP
-          pc = chec_prog[pc + 1] - 1
+          pc = [pc + 1] - 1
         when C_JMP_IF_NIL
           if value_stack[value_stack_size]?
-            pc = chec_prog[pc] - 1
+            pc += 1
           else
             pc = [pc + 1] - 1
 
@@ -537,7 +559,7 @@ spec ->
         }
 
     it 'emits strucural tokens', ->
-      expect_that (tokens '(),{}[]:->'), deep_eq {
+      expect_that (tokens '(),{}[]:->?'), deep_eq {
         Symbol T_PAREN_OPEN
         Symbol T_PAREN_CLOSE
         Symbol T_COMMA
@@ -547,6 +569,7 @@ spec ->
         Symbol T_BRACKET_CLOSE
         Symbol T_COLON
         Symbol T_ARROW
+        Symbol T_QUESTION
       }
 
     it 'ignores whitespace', ->
@@ -595,6 +618,11 @@ spec ->
         expect_that (-> parse 'custom'), errors matches [[cannot use 'custom' as custom type name: name must start with an uppercase letter]]
 
     describe 'run on composite types', ->
+      it 'accepts optional', ->
+        expect_that (parse '?nil'), deep_eq Optional Primitive 'nil'
+        expect_that (parse '?string'), deep_eq Optional Primitive 'string'
+        expect_that (parse '?() -> nil'), deep_eq Optional Function {}, {}
+
       it 'accepts lists', ->
         expect_that (parse '[string]'), deep_eq List Primitive 'string'
         expect_that (parse '[[string]]'), deep_eq List List Primitive 'string'
