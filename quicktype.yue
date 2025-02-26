@@ -359,8 +359,9 @@ class List
       [] = C_PUSH
       [] = 1
 
-      loop_start = #prog
       [] = C_GET_FIELD
+      loop_start = #prog
+
       [] = C_JMP_IF_NIL
       [] = LABEL_PLACEHOLDER
       loop_exit_jump_index = #prog
@@ -690,6 +691,20 @@ spec ->
       expect_that (-> T '?number', 123), no_errors!
       expect_that (-> T '?number', 'str'), errors matches 'incorrect type: expected number but got string'
       expect_that (-> T '?(number)', 'str'), errors matches 'incorrect type: expected table but got string'
+
+    it 'checks lists', ->
+      expect_that (-> T '[number]', {}), no_errors!
+      expect_that (-> T '[number]', {123, 312}), no_errors!
+      expect_that (-> T '[[number]]', {{123}, {312}}), no_errors!
+
+      expect_that (-> T '[string]', 123), errors matches 'incorrect type: expected table but got number'
+      expect_that (-> T '[string]', {field: 456}), errors matches 'incorrect type: expected string but got number'
+
+      hybrid = {123, 456, 789, field: 'a'}
+      if #hybrid != 3
+        expect_that (-> T '[string]', hybrid), no_errors!
+      else
+        expect_that (-> T '[string]', hybrid), errors matches 'incorrect type: expected string but got number'
 
     it 'checks tuples', ->
       expect_that (-> T '()', {}), no_errors!
