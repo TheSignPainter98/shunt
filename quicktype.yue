@@ -10,6 +10,8 @@ export T = (type_spec, value) ->
   checker = type_checker type_spec
   check checker, value
 
+DEBUG = false
+
 type_checkers = {}
 type_checker = (type_spec) ->
   type_checkers[type_spec] ?? do
@@ -19,7 +21,8 @@ type_checker = (type_spec) ->
 
     type_checkers[type_spec] = checker
     validate checker
-    print "got checker:\n#{repr checker}"
+    if DEBUG
+      print "got checker:\n\t#{table.concat ["#{i}:\t#{repr checker[i]}" for i = 1, #checker], '\n\t'}"
     checker
 
 parse = (type_spec) ->
@@ -525,6 +528,8 @@ check = (check_prog, value) ->
     n_instructions = #check_prog
     while pc < n_instructions
       pc += 1
+      if DEBUG
+        print "stack state #{[pc]}@#{pc} [#{value_stack_size}]:\n\t#{table.concat [ "#{i}:\t#{repr value_stack[i]}" for i = 1, value_stack_size], '\n\t'}"
       switch [pc]
         when C_PUSH
           pc += 1
@@ -567,6 +572,8 @@ check = (check_prog, value) ->
             pc = [pc + 1] - 1
         else
           error "internal error: illegal type-checker VM instruction #{[pc]}@#{pc}"
+  if true -- DEBUG
+    print "FINAL stack state #{check_prog[pc]}@#{pc} [#{value_stack_size}]:\n\t#{table.concat [ "#{i}:\t#{repr value_stack[i]}" for i = 1, value_stack_size], '\n\t'}"
 
 export declare_type = (name, type_spec) ->
   if not (name\sub 1, 1)\match '^[A-Z_]$'
@@ -788,5 +795,6 @@ spec ->
 
 -- import set_log_verbosity from require 'fat.logger'
 -- set_log_verbosity true
+DEBUG = true
 (require 'spec').run_tests select 1, ...
 -- TODO(kcza): optional values
