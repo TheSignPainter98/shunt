@@ -102,7 +102,7 @@ class TypeSpecParser extends Parser
       * token: T_NAME
         action: @\parse_named_type
       * token: T_BRACKET_OPEN
-        action: @\parse_list
+        action: @\parse_array
       * token: T_PAREN_OPEN
         action: @\parse_tuple_or_function
       * token: T_BRACE_OPEN
@@ -111,12 +111,12 @@ class TypeSpecParser extends Parser
   parse_named_type: =>
     named_type @expect T_NAME
 
-  parse_list: =>
+  parse_array: =>
     {_, elem_type, _} = @sequence
       * token: T_BRACKET_OPEN
       * action: @\parse_type
       * token: T_BRACKET_CLOSE
-    List elem_type
+    Array elem_type
 
   parse_tuple_or_function: =>
     @expect T_PAREN_OPEN
@@ -346,7 +346,7 @@ class Optional
 
       [label_placeholder_index] = #prog + 1
 
-class List
+class Array
   new: (@elem_type) =>
 
   __tostring: =>
@@ -374,7 +374,7 @@ class List
       [loop_exit_jump_index] = #prog + 1
       [] = C_POP
       [] = C_ASSERT_LEN
-      [] = C_POP -- TODO(kcza): check stack on early exit
+      [] = C_POP
 
 class Tuple
   new: (@elem_types) =>
@@ -518,7 +518,7 @@ check = (check_prog, value) ->
           len = #value_stack[value_stack_size-1]
           first_nil_index = value_stack[value_stack_size]
           if len != first_nil_index-1
-            error "incorrect type: expected List but got table"
+            error "incorrect type: expected array but got table"
         when C_GET_FIELD
           value_stack_size += 1
           value_stack[value_stack_size] = value_stack[value_stack_size-2][value_stack[value_stack_size-1]]
@@ -633,9 +633,9 @@ spec ->
         expect_that (parse '?string'), deep_eq Optional Primitive 'string'
         expect_that (parse '?() -> nil'), deep_eq Optional Function {}, {}
 
-      it 'accepts lists', ->
-        expect_that (parse '[string]'), deep_eq List Primitive 'string'
-        expect_that (parse '[[string]]'), deep_eq List List Primitive 'string'
+      it 'accepts arrays', ->
+        expect_that (parse '[string]'), deep_eq Array Primitive 'string'
+        expect_that (parse '[[string]]'), deep_eq Array Array Primitive 'string'
 
       it 'accepts tuples', ->
         expect_that (parse '()'), deep_eq Tuple {}
@@ -699,7 +699,7 @@ spec ->
       expect_that (-> T '?number', 'str'), errors matches 'incorrect type: expected number but got string'
       expect_that (-> T '?(number)', 'str'), errors matches 'incorrect type: expected table but got string'
 
-    it 'checks lists', ->
+    it 'checks arrays', ->
       expect_that (-> T '[number]', {}), no_errors!
       expect_that (-> T '[number]', {123, 312}), no_errors!
       expect_that (-> T '[[number]]', {{123}, {312}}), no_errors!
