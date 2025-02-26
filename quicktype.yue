@@ -778,6 +778,7 @@ spec ->
       expect_that (-> T '{number -> string}', {'hello', [10]: 'world'}), no_errors!
       expect_that (-> T '{{boolean -> number} -> {string -> thread}}', {[{[true]: 123}]: {asdf: coroutine.create ->}}), no_errors!
 
+      expect_that (-> T '{number -> string}', nil), errors matches 'incorrect type: expected table but got nil'
       expect_that (-> T '{number -> string}', {123}), errors matches 'incorrect type: expected string but got number'
       expect_that (-> T '{number -> string}', {'hello', 'world', 'foo', 'bar', 'baz', 123}), errors matches 'incorrect type: expected string but got number'
 
