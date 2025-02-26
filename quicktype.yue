@@ -519,6 +519,11 @@ validate = (check_prog) ->
 
 value_stack_size = 0
 value_stack = {}
+check_error = (...) ->
+  for i = 1, value_stack_size
+    value_stack[i] = nil
+  value_stack_size = 0
+  error ...
 check = (check_prog, value) ->
   value_stack_size = 1
   value_stack[1] = value
@@ -545,12 +550,12 @@ check = (check_prog, value) ->
           ty = type value_stack[value_stack_size]
           pc += 1
           if ty != [pc]
-            error "incorrect type: expected #{check_prog[pc]} but got #{ty}"
+            check_error "incorrect type: expected #{check_prog[pc]} but got #{ty}"
         when C_ASSERT_LEN
           len = #value_stack[value_stack_size-1]
           first_nil_index = value_stack[value_stack_size]
           if len != first_nil_index-1
-            error "incorrect type: expected array but got table"
+            check_error "incorrect type: expected array but got table"
         when C_GET_FIELD
           value_stack_size += 1
           value_stack[value_stack_size] = value_stack[value_stack_size-2][value_stack[value_stack_size-1]]
@@ -571,9 +576,12 @@ check = (check_prog, value) ->
           else
             pc = [pc + 1] - 1
         else
-          error "internal error: illegal type-checker VM instruction #{[pc]}@#{pc}"
+          check_error "internal error: illegal type-checker VM instruction #{[pc]}@#{pc}"
   if true -- DEBUG
     print "FINAL stack state #{check_prog[pc]}@#{pc} [#{value_stack_size}]:\n\t#{table.concat [ "#{i}:\t#{repr value_stack[i]}" for i = 1, value_stack_size], '\n\t'}"
+  assert value_stack_size == 1, "internal error: value stack is not 1"
+  value_stack[1] = nil
+  value_stack_size = 0
 
 export declare_type = (name, type_spec) ->
   if not (name\sub 1, 1)\match '^[A-Z_]$'
