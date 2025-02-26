@@ -517,16 +517,16 @@ validate = (check_prog) ->
     if instruction == LABEL_PLACEHOLDER
       error "unresolved placeholder in check program:\n#{repr check_prog}"
 
-value_stack_size = 0
-value_stack = {}
+stack_size = 0
+stack = {}
 check_error = (...) ->
-  for i = 1, value_stack_size
-    value_stack[i] = nil
-  value_stack_size = 0
+  for i = 1, stack_size
+    stack[i] = nil
+  stack_size = 0
   error ...
 check = (check_prog, value) ->
-  value_stack_size = 1
-  value_stack[1] = value
+  stack_size = 1
+  stack[1] = value
 
   with check_prog
     local pc = 0
@@ -534,54 +534,54 @@ check = (check_prog, value) ->
     while pc < n_instructions
       pc += 1
       if DEBUG
-        print "stack state #{[pc]}@#{pc} [#{value_stack_size}]:\n\t#{table.concat [ "#{i}:\t#{repr value_stack[i]}" for i = 1, value_stack_size], '\n\t'}"
+        print "stack state #{[pc]}@#{pc} [#{stack_size}]:\n\t#{table.concat [ "#{i}:\t#{repr stack[i]}" for i = 1, stack_size], '\n\t'}"
       switch [pc]
         when C_PUSH
           pc += 1
           value = [pc]
           if value == V_NIL
             value = nil
-          value_stack_size += 1
-          value_stack[value_stack_size] = value
+          stack_size += 1
+          stack[stack_size] = value
         when C_POP
-          value_stack[value_stack_size] = nil
-          value_stack_size -= 1
+          stack[stack_size] = nil
+          stack_size -= 1
         when C_ASSERT_PRIMITIVE
-          ty = type value_stack[value_stack_size]
+          ty = type stack[stack_size]
           pc += 1
           if ty != [pc]
             check_error "incorrect type: expected #{check_prog[pc]} but got #{ty}"
         when C_ASSERT_LEN
-          len = #value_stack[value_stack_size-1]
-          first_nil_index = value_stack[value_stack_size]
+          len = #stack[stack_size-1]
+          first_nil_index = stack[stack_size]
           if len != first_nil_index-1
             check_error "incorrect type: expected array but got table"
         when C_GET_FIELD
-          value_stack_size += 1
-          value_stack[value_stack_size] = value_stack[value_stack_size-2][value_stack[value_stack_size-1]]
+          stack_size += 1
+          stack[stack_size] = stack[stack_size-2][stack[stack_size-1]]
         when C_INCR
-          value_stack[value_stack_size] += 1
+          stack[stack_size] += 1
         when C_NEXT
-          tab = value_stack[value_stack_size-1]
-          idx = value_stack[value_stack_size]
+          tab = stack[stack_size-1]
+          idx = stack[stack_size]
           next_idx, value = next tab, idx
-          value_stack[value_stack_size] = next_idx
-          value_stack_size += 1
-          value_stack[value_stack_size] = value
+          stack[stack_size] = next_idx
+          stack_size += 1
+          stack[stack_size] = value
         when C_JMP
           pc = [pc + 1] - 1
         when C_JMP_IF_NIL
-          if value_stack[value_stack_size]?
+          if stack[stack_size]?
             pc += 1
           else
             pc = [pc + 1] - 1
         else
           check_error "internal error: illegal type-checker VM instruction #{[pc]}@#{pc}"
   if true -- DEBUG
-    print "FINAL stack state #{check_prog[pc]}@#{pc} [#{value_stack_size}]:\n\t#{table.concat [ "#{i}:\t#{repr value_stack[i]}" for i = 1, value_stack_size], '\n\t'}"
-  assert value_stack_size == 1, "internal error: value stack is not 1"
-  value_stack[1] = nil
-  value_stack_size = 0
+    print "FINAL stack state #{check_prog[pc]}@#{pc} [#{stack_size}]:\n\t#{table.concat [ "#{i}:\t#{repr stack[i]}" for i = 1, stack_size], '\n\t'}"
+  assert stack_size == 1, "internal error: value stack is not 1"
+  stack[1] = nil
+  stack_size = 0
 
 export declare_type = (name, type_spec) ->
   if not (name\sub 1, 1)\match '^[A-Z_]$'
