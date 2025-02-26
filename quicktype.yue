@@ -371,9 +371,10 @@ class List
       [] = C_JMP
       [] = loop_start
 
-      [] = C_POP -- TODO(kcza): check stack on early exit
       [loop_exit_jump_index] = #prog + 1
-
+      [] = C_POP
+      [] = C_ASSERT_LEN
+      [] = C_POP -- TODO(kcza): check stack on early exit
 
 class Tuple
   new: (@elem_types) =>
@@ -475,6 +476,7 @@ class Function
 C_PUSH = <tostring>: => '<push>'
 C_POP = <tostring>: => '<pop>'
 C_ASSERT_PRIMITIVE = <tostring>: => '<assert-primitive>'
+C_ASSERT_LEN = <tostring>: => '<assert-len>'
 C_GET_FIELD = <tostring>: => '<field>'
 C_INCR = <tostring>: => '<incr>'
 C_JMP = <tostring>: => '<jmp>'
@@ -512,6 +514,11 @@ check = (check_prog, value) ->
           pc += 1
           if ty != [pc]
             error "incorrect type: expected #{check_prog[pc]} but got #{ty}"
+        when C_ASSERT_LEN
+          len = #value_stack[value_stack_size-1]
+          first_nil_index = value_stack[value_stack_size]
+          if len != first_nil_index-1
+            error "incorrect type: expected List but got table"
         when C_GET_FIELD
           value_stack_size += 1
           value_stack[value_stack_size] = value_stack[value_stack_size-2][value_stack[value_stack_size-1]]
@@ -698,7 +705,7 @@ spec ->
       expect_that (-> T '[[number]]', {{123}, {312}}), no_errors!
 
       expect_that (-> T '[string]', 123), errors matches 'incorrect type: expected table but got number'
-      expect_that (-> T '[string]', {field: 456}), errors matches 'incorrect type: expected string but got number'
+      expect_that (-> T '[[number]]', {{123}, {'asdf'}}), errors matches 'incorrect type: expected number but got string'
 
       hybrid = {123, 456, 789, field: 'a'}
       if #hybrid != 3
