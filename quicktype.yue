@@ -440,7 +440,30 @@ class Mapping
     "{#{@in_type} -> #{@out_type}}"
 
   checker: (prog={}) =>
-    error 'todo'
+    with prog
+      [] = C_ASSERT_PRIMITIVE
+      [] = 'table'
+      [] = C_PUSH
+      [] = V_NIL
+      [] = C_NEXT
+
+      loop_start = #prog + 1
+      [] = C_JMP_IF_NIL
+      loop_exit_jump_index = #prog + 1
+      [] = LABEL_PLACEHOLDER
+
+      @out_type\checker prog
+      [] = C_POP
+      @in_type\checker prog
+
+      [] = C_NEXT
+      [] = C_JMP
+      [] = loop_start
+
+      [loop_exit_jump_index] = #prog + 1
+      [] = C_POP
+      [] = C_POP
+
 
 class Function
   new: (@param_types, @return_types) =>
@@ -479,8 +502,10 @@ C_ASSERT_PRIMITIVE = <tostring>: => '<assert-primitive>'
 C_ASSERT_LEN = <tostring>: => '<assert-len>'
 C_GET_FIELD = <tostring>: => '<field>'
 C_INCR = <tostring>: => '<incr>'
+C_NEXT = <tostring>: => '<next>'
 C_JMP = <tostring>: => '<jmp>'
 C_JMP_IF_NIL = <tostring>: => '<jnil>'
+V_NIL = <tostring>: => 'nil'
 
 LABEL_PLACEHOLDER = <tostring>: => '<LABEL-PLACEHOLDER>'
 
@@ -504,6 +529,8 @@ check = (check_prog, value) ->
         when C_PUSH
           pc += 1
           value = [pc]
+          if value == V_NIL
+            value = nil
           value_stack_size += 1
           value_stack[value_stack_size] = value
         when C_POP
@@ -524,6 +551,13 @@ check = (check_prog, value) ->
           value_stack[value_stack_size] = value_stack[value_stack_size-2][value_stack[value_stack_size-1]]
         when C_INCR
           value_stack[value_stack_size] += 1
+        when C_NEXT
+          tab = value_stack[value_stack_size-1]
+          idx = value_stack[value_stack_size]
+          next_idx, value = next tab, idx
+          value_stack[value_stack_size] = next_idx
+          value_stack_size += 1
+          value_stack[value_stack_size] = value
         when C_JMP
           pc = [pc + 1] - 1
         when C_JMP_IF_NIL
@@ -723,6 +757,14 @@ spec ->
       expect_that (-> T '(number, boolean, string)', {}), errors matches 'incorrect type: expected number but got nil'
       expect_that (-> T '(number, boolean, string)', {123}), errors matches 'incorrect type: expected boolean but got nil'
       expect_that (-> T '(number, boolean, string)', {'interloper'}), errors matches 'incorrect type: expected number but got string'
+
+    it 'checks mappings', ->
+      expect_that (-> T '{string -> number}', {}), no_errors!
+      expect_that (-> T '{number -> string}', {'hello', [10]: 'world'}), no_errors!
+      expect_that (-> T '{{boolean -> number} -> {string -> thread}}', {[{[true]: 123}]: {asdf: coroutine.create ->}}), no_errors!
+
+      expect_that (-> T '{number -> string}', {123}), errors matches 'incorrect type: expected string but got number'
+      expect_that (-> T '{number -> string}', {'hello', 'world', 'foo', 'bar', 'baz', 123}), errors matches 'incorrect type: expected string but got number'
 
     it 'checks structs', ->
       expect_that (-> T '{}', {}), no_errors!
