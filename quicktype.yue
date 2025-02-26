@@ -414,7 +414,7 @@ class Struct
         [] = C_PUSH
         [] = field.name
         [] = C_GET_FIELD
-        field.type\checker prog
+        field\checker prog
         [] = C_POP
         [] = C_POP
 
