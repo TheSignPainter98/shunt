@@ -61,6 +61,8 @@ class Parser
 
   select: (options) =>
     next_token = @lexer\peek!
+    if not next_token?
+      error "unexpected EOF"
 
     i = 1
     while options[i]
@@ -95,7 +97,10 @@ class Parser
 
 class TypeSpecParser extends Parser
   parse: =>
-    @parse_type!
+    ret = @parse_type!
+    if @lexer\peek!
+      error 'type spec has trailing characters'
+    ret
 
   parse_type: =>
     handle_optional = if @maybe T_QUESTION
@@ -712,6 +717,12 @@ spec ->
 
       it 'rejects unknown primitives', ->
         expect_that (-> parse 'custom'), errors matches [[cannot use 'custom' as custom type name: name must start with an uppercase letter]]
+
+      it 'rejects incomplete types', ->
+        expect_that (-> parse '['), errors matches [[unexpected EOF]]
+
+      it 'rejects inputs with trailing errors', ->
+        expect_that (-> parse 'string]'), errors matches 'type spec has trailing characters'
 
     describe 'run on composite types', ->
       it 'accepts optional', ->
