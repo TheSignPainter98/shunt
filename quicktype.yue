@@ -434,7 +434,28 @@ class Set
     "{#{@elem_type}}"
 
   checker: (prog={}) =>
-    error 'todo'
+    with prog
+      [] = C_ASSERT_PRIMITIVE
+      [] = 'table'
+      [] = C_PUSH
+      [] = V_NIL
+      [] = C_NEXT
+
+      loop_start = #prog + 1
+      [] = C_JMP_IF_NIL
+      loop_exit_jump_index = #prog + 1
+      [] = LABEL_PLACEHOLDER
+      [] = C_ASSERT_TRUTHY
+      [] = C_POP
+      @elem_type\checker prog
+
+      [] = C_NEXT
+      [] = C_JMP
+      [] = loop_start
+
+      [loop_exit_jump_index] = #prog + 1
+      [] = C_POP
+      [] = C_POP
 
 class Mapping
   new: (@in_type, @out_type) =>
@@ -502,6 +523,7 @@ class Function
 C_PUSH = <tostring>: => '<push>'
 C_POP = <tostring>: => '<pop>'
 C_ASSERT_PRIMITIVE = <tostring>: => '<assert-primitive>'
+C_ASSERT_TRUTHY = <tostring>: => '<assert-truthy>'
 C_ASSERT_LEN = <tostring>: => '<assert-len>'
 C_GET_FIELD = <tostring>: => '<field>'
 C_INCR = <tostring>: => '<incr>'
@@ -551,6 +573,9 @@ check = (check_prog, value) ->
           pc += 1
           if ty != [pc]
             check_error "incorrect type: expected #{check_prog[pc]} but got #{ty}"
+        when C_ASSERT_TRUTHY
+          if not stack[stack_size]
+            check_error "incorrect type: expected a truthy value but got #{stack[stack_size]}"
         when C_ASSERT_LEN
           len = #stack[stack_size-1]
           first_nil_index = stack[stack_size]
@@ -772,6 +797,15 @@ spec ->
       expect_that (-> T '(number, boolean, string)', {}), errors matches 'incorrect type: expected number but got nil'
       expect_that (-> T '(number, boolean, string)', {123}), errors matches 'incorrect type: expected boolean but got nil'
       expect_that (-> T '(number, boolean, string)', {'interloper'}), errors matches 'incorrect type: expected number but got string'
+
+    it 'checks sets', ->
+      expect_that (-> T '{number}', {}), no_errors!
+      expect_that (-> T '{number}', {[123]: true, [321]: {}}), no_errors!
+      expect_that (-> T '{{number}}', {[{123}]: true}), no_errors!
+
+      expect_that (-> T '{number}', nil), errors matches 'incorrect type: expected table but got nil'
+      expect_that (-> T '{number}', {[123]: false}), errors matches 'incorrect type: expected a truthy value but got false'
+      expect_that (-> T '{{number}}', {[{['asdf']: true}]: true}), errors matches 'incorrect type: expected number but got string'
 
     it 'checks mappings', ->
       expect_that (-> T '{string -> number}', {}), no_errors!
