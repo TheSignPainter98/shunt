@@ -11,6 +11,7 @@ export T = (type_spec, value) ->
   check checker, value
 
 DEBUG = false
+COLLECT_STATS = false
 
 type_checkers = {}
 type_checker = (type_spec) ->
@@ -546,6 +547,7 @@ check_error = (...) ->
     stack[i] = nil
   stack_size = 0
   error ...
+instruction_counts = {}
 check = (check_prog, value) ->
   stack_size = 1
   stack[1] = value
@@ -555,6 +557,11 @@ check = (check_prog, value) ->
     n_instructions = #check_prog
     while pc < n_instructions
       pc += 1
+      if COLLECT_STATS
+        instruction_counts[ [pc] ] = if v = instruction_counts[ [pc] ]
+          v + 1
+        else
+          1
       if DEBUG
         print "stack state #{[pc]}@#{pc} [#{stack_size}]:\n\t#{table.concat [ "#{i}:\t#{repr stack[i]}" for i = 1, stack_size], '\n\t'}"
       switch [pc]
@@ -618,9 +625,14 @@ export declare_type = (name, type_spec) ->
 export deactivate = ->
   T = (_, fn) -> fn
 
+export stats = ->
+  stats_arr = [:instruction, :count for instruction, count in pairs instruction_counts]
+  table.sort stats_arr, (a, b) -> a.count > b.count
+  stats_arr
+
 spec ->
   import assert_that, expect_that, describe, it, matchers from require 'spec'
-  import anything, contains_value, deep_eq, eq, errors, fields, len, match, matches, no_errors from matchers
+  import anything, contains_value, deep_eq, each_value, eq, errors, fields, ge, gt, len, match, matches, no_errors from matchers
 
   describe 'Lexer', ->
     tokens = (raw) ->
@@ -836,7 +848,19 @@ spec ->
       expect_that (-> T '() -> nil', ->), no_errors!
       expect_that (-> T '() -> nil', {}), errors matches 'incorrect type: expected function but got table'
 
+  describe 'stats', ->
+    it 'has the correct type', ->
+      prev_collect_stats = COLLECT_STATS
+      COLLECT_STATS = true
+
+      T 'string', 'hello' -- Exercise the checker
+      stats_arr = stats!
+      expect_that stats_arr, len gt 0
+      expect_that stats_arr, each_value fields count: ge 0
+
+      COLLECT_STATS = prev_collect_stats
+
 -- import set_log_verbosity from require 'fat.logger'
 -- set_log_verbosity true
-DEBUG = true
+-- DEBUG = true
 (require 'spec').run_tests select 1, ...
