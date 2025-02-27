@@ -602,7 +602,7 @@ check = (check_prog, value) ->
             pc = [pc + 1] - 1
         else
           check_error "internal error: illegal type-checker VM instruction #{[pc]}@#{pc}"
-  if true -- DEBUG
+  if DEBUG
     print "FINAL stack state #{check_prog[pc]}@#{pc} [#{stack_size}]:\n\t#{table.concat [ "#{i}:\t#{repr stack[i]}" for i = 1, stack_size], '\n\t'}"
   assert stack_size == 1, "internal error: value stack is not 1"
   stack[1] = nil
