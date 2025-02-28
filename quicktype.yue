@@ -18,12 +18,11 @@ type_checker = (type_spec) ->
   type_checkers[type_spec] ?? do
     -- Slow path: parse and generate checker
     parsed_type = parse type_spec
-    checker = parsed_type\checker!
+    checker = parsed_type\checker!\build!
 
     type_checkers[type_spec] = checker
-    validate checker
     if DEBUG
-      print "got checker:\n\t#{table.concat ["#{i}:\t#{repr checker[i]}" for i = 1, #checker], '\n\t'}"
+      print "got checker:\n\t#{checker_program_repr checker}"
     checker
 
 parse = (type_spec) ->
@@ -327,28 +326,24 @@ class Primitive
 
   __tostring: => @name
 
-  checker: (prog={}, ctx=CheckerCtx!) =>
-    with prog
-      [] = C_ASSERT_PRIMITIVE
-      [] = @name
+  checker: (checker_builder=CheckerBuilder!) =>
+    with checker_builder
+      \add C_ASSERT_PRIMITIVE, @name
 
 class UserType
   new: (@name) =>
 
   __tostring: => @name
 
-  checker: (prog={}, ctx=CheckerCtx!) =>
-    parsed_user_type = user_types[@name]
-    if not parsed_user_type?
-      error "cannot construct type checker for #{@name}: type not defined"
-    with prog
-      if ctx\already_constructing @
-        [] = C_PUSH_CHECKER
-        [] = @name
+  checker: (checker_builder=CheckerBuilder!) =>
+    with checker_builder
+      parsed_user_type = user_types[@name]
+      if not parsed_user_type? or checker_builder\already_building @
+        \add C_PUSH_CHECKER, @name
       else
-        ctx\push_constructing @
-        parsed_user_type\checker prog, ctx
-        ctx\pop_constructing!
+        \push_building @
+        parsed_user_type\checker checker_builder
+        \pop_building @
 
 class Optional
   new: (@inner_type) =>
@@ -356,14 +351,11 @@ class Optional
   __tostring: =>
     "?#{@inner_type}"
 
-  checker: (prog={}, ctx=CheckerCtx!) =>
-    with prog
-      [] = C_JMP_IF_NIL
-      [] = LABEL_PLACEHOLDER
-      label_placeholder_index = #prog
-      @inner_type\checker prog, ctx
-
-      [label_placeholder_index] = #prog + 1
+  checker: (checker_builder=CheckerBuilder!) =>
+    with checker_builder
+      inner_skip_target = \add_with_unresolved_target C_JMP_IF_NIL
+      @inner_type\checker checker_builder
+      inner_skip_target\resolve_here!
 
 class Array
   new: (@elem_type) =>
@@ -371,29 +363,23 @@ class Array
   __tostring: =>
     "[#{@elem_type}]"
 
-  checker: (prog={}, ctx=CheckerCtx!) =>
-    with prog
-      [] = C_ASSERT_PRIMITIVE
-      [] = 'table'
-      [] = C_PUSH
-      [] = 1
+  checker: (checker_builder=CheckerBuilder!) =>
+    with checker_builder
+      \add C_ASSERT_PRIMITIVE, 'table'
+      \add C_PUSH, 1
 
-      [] = C_GET_FIELD
-      loop_start = #prog
+      loop_start = \add_labelled C_GET_FIELD
 
-      [] = C_JMP_IF_NIL
-      [] = LABEL_PLACEHOLDER
-      loop_exit_jump_index = #prog
-      @elem_type\checker prog, ctx
-      [] = C_POP
-      [] = C_INCR
-      [] = C_JMP
-      [] = loop_start
+      loop_exit_target = \add_with_unresolved_target C_JMP_IF_NIL
+      @elem_type\checker checker_builder
+      \add C_POP
+      \add C_INCR
+      \add C_JMP, loop_start.index
 
-      [loop_exit_jump_index] = #prog + 1
-      [] = C_POP
-      [] = C_ASSERT_LEN
-      [] = C_POP
+      loop_exit_target\resolve_here!
+      \add C_POP
+      \add C_ASSERT_LEN
+      \add C_POP
 
 class Tuple
   new: (@elem_types) =>
@@ -402,18 +388,16 @@ class Tuple
     elem_type_reprs = [ tostring elem_type for elem_type in *@elem_types ]
     "(#{table.concat elem_type_reprs, ', '})"
 
-  checker: (prog={}, ctx=CheckerCtx!) =>
-    with prog
-      [] = C_ASSERT_PRIMITIVE
-      [] = 'table'
+  checker: (checker_builder=CheckerBuilder!) =>
+    with checker_builder
+      \add C_ASSERT_PRIMITIVE, 'table'
       for i = 1, #@elem_types
-        [] = C_PUSH
-        [] = i
-        [] = C_GET_FIELD
-        @elem_types[i]\checker prog, ctx
-        [] = C_POP
-        [] = C_INCR
-        [] = C_POP
+        \add C_PUSH, i
+        \add C_GET_FIELD
+        @elem_types[i]\checker checker_builder
+        \add C_POP
+        \add C_INCR
+        \add C_POP
 
 class Struct
   new: (@fields) =>
@@ -422,17 +406,15 @@ class Struct
     field_reprs = [ tostring field for field in *@fields ]
     "{#{table.concat field_reprs, ', '}}"
 
-  checker: (prog={}, ctx=CheckerCtx!) =>
-    with prog
-      [] = C_ASSERT_PRIMITIVE
-      [] = 'table'
+  checker: (checker_builder=CheckerBuilder!) =>
+    with checker_builder
+      \add C_ASSERT_PRIMITIVE, 'table'
       for field in *@fields
-        [] = C_PUSH
-        [] = field.name
-        [] = C_GET_FIELD
-        field\checker prog, ctx
-        [] = C_POP
-        [] = C_POP
+        \add C_PUSH, field.name
+        \add C_GET_FIELD
+        field\checker checker_builder
+        \add C_POP
+        \add C_POP
 
 class Field
   new: (@name, @type) =>
@@ -440,8 +422,8 @@ class Field
   __tostring: =>
     "#{@name}: #{@type}"
 
-  checker: (prog={}, ctx=CheckerCtx!) =>
-    @type\checker prog, ctx
+  checker: (checker_builder=CheckerBuilder!) =>
+    @type\checker checker_builder
 
 class Set
   new: (@elem_type) =>
@@ -449,29 +431,23 @@ class Set
   __tostring: =>
     "{#{@elem_type}}"
 
-  checker: (prog={}, ctx=CheckerCtx!) =>
-    with prog
-      [] = C_ASSERT_PRIMITIVE
-      [] = 'table'
-      [] = C_PUSH
-      [] = V_NIL
-      [] = C_NEXT
+  checker: (checker_builder=CheckerBuilder!) =>
+    with checker_builder
+      \add C_ASSERT_PRIMITIVE, 'table'
+      \add C_PUSH, V_NIL
+      \add C_NEXT
 
-      loop_start = #prog + 1
-      [] = C_JMP_IF_NIL
-      loop_exit_jump_index = #prog + 1
-      [] = LABEL_PLACEHOLDER
-      [] = C_ASSERT_TRUTHY
-      [] = C_POP
-      @elem_type\checker prog, ctx
+      loop_start_label = \add_with_unresolved_target C_JMP_IF_NIL
+      \add C_ASSERT_TRUTHY
+      \add C_POP
+      @elem_type\checker checker_builder
 
-      [] = C_NEXT
-      [] = C_JMP
-      [] = loop_start
+      \add C_NEXT
+      \add C_JMP, loop_start_label.index
 
-      [loop_exit_jump_index] = #prog + 1
-      [] = C_POP
-      [] = C_POP
+      loop_start_label\resolve_here!
+      \add C_POP
+      \add C_POP
 
 class Mapping
   new: (@in_type, @out_type) =>
@@ -479,30 +455,24 @@ class Mapping
   __tostring: =>
     "{#{@in_type} -> #{@out_type}}"
 
-  checker: (prog={}, ctx=CheckerCtx!) =>
-    with prog
-      [] = C_ASSERT_PRIMITIVE
-      [] = 'table'
-      [] = C_PUSH
-      [] = V_NIL
-      [] = C_NEXT
+  checker: (checker_builder=CheckerBuilder!) =>
+    with checker_builder
+      \add C_ASSERT_PRIMITIVE, 'table'
+      \add C_PUSH, V_NIL
+      \add C_NEXT
 
-      loop_start = #prog + 1
-      [] = C_JMP_IF_NIL
-      loop_exit_jump_index = #prog + 1
-      [] = LABEL_PLACEHOLDER
+      loop_start_label = \add_with_unresolved_target C_JMP_IF_NIL
 
-      @out_type\checker prog, ctx
-      [] = C_POP
-      @in_type\checker prog
+      @out_type\checker checker_builder
+      \add C_POP
+      @in_type\checker checker_builder
 
-      [] = C_NEXT
-      [] = C_JMP
-      [] = loop_start
+      \add C_NEXT
+      \add C_JMP, loop_start_label.index
 
-      [loop_exit_jump_index] = #prog + 1
-      [] = C_POP
-      [] = C_POP
+      loop_start_label\resolve_here!
+      \add C_POP
+      \add C_POP
 
 
 class Function
@@ -531,26 +501,61 @@ class Function
           [] = tostring return_type
         [] = '>'
 
-  checker: (prog={}, ctx=CheckerCtx!) =>
-    with prog
-      [] = C_ASSERT_PRIMITIVE
-      [] = 'function'
+  checker: (checker_builder=CheckerBuilder!) =>
+    with checker_builder
+      \add C_ASSERT_PRIMITIVE, 'function'
 
-class CheckerCtx
+class CheckerBuilder
   new: =>
+    @instructions = {}
     @user_type_stack = {}
 
-  already_constructing: (user_type) =>
+  add: (op, arg='_') =>
+    @instructions[] = op
+    @instructions[] = arg
+
+  add_labelled: (op, arg='_') =>
+    label = @make_label!
+    @add op, arg
+    label
+
+  add_with_unresolved_target: (op) =>
+    label = @make_label!
+    @add op, LABEL_PLACEHOLDER
+    label
+
+  make_label: =>
+    Label @instructions
+
+  build: =>
+    @validate!
+    @instructions
+
+  validate: =>
+    for instruction in *@instructions
+      if instruction == LABEL_PLACEHOLDER
+        error "unresolved placeholder in check program:\n#{repr @instructions}"
+
+  already_building: (user_type) =>
     for user_type_being_checked in *@user_type_stack
       if user_type.name == user_type_being_checked.name
         return true
     false
 
-  push_constructing: (user_type) =>
+  push_building: (user_type) =>
     @user_type_stack[] = user_type
 
-  pop_constructing: =>
+  pop_building: (user_type) =>
+    if @user_type_stack[#@user_type_stack] != user_type
+      error "internal error: user type stack mismanaged, expected #{user_type.name} at the top of #{repr @user_type_stack}"
     @user_type_stack[#@user_type_stack] = nil
+
+class Label
+  new: (@instructions) =>
+    @index = #@instructions + 1
+
+  resolve_here: =>
+    @instructions[@index + 1] = #@instructions + 1
 
 C_PUSH = <tostring>: => '<push>'
 C_POP = <tostring>: => '<pop>'
@@ -565,67 +570,72 @@ C_JMP_IF_NIL = <tostring>: => '<jnil>'
 C_PUSH_CHECKER = <tostring>: => '<push-checker>'
 V_NIL = <tostring>: => 'nil'
 
-LABEL_PLACEHOLDER = <tostring>: => '<LABEL-PLACEHOLDER>'
+checker_program_repr = (checker) ->
+  table.concat ["#{i}:\t#{repr checker[i]}\t#{checker[i+1]}" for i = 1, #checker, 2], '\n\t'
 
-validate = (check_prog) ->
-  for instruction in *check_prog
-    if instruction == LABEL_PLACEHOLDER
-      error "unresolved placeholder in check program:\n#{repr check_prog}"
+LABEL_PLACEHOLDER = <tostring>: => '<LABEL-PLACEHOLDER>'
 
 stack_size = 0
 stack = {}
+num_running_checkers = 0
 check_error = (...) ->
   for i = 1, stack_size
     stack[i] = nil
   stack_size = 0
+  num_running_checkers = 0
   error ...
-
-checker_stack = {}
 
 instruction_counts = {}
 
+export MAX_CHECKER_DEPTH = 1000
 check = (check_prog, value, root=true) ->
+
   if root
     -- Prime stack.
     stack_size = 1
     stack[1] = value
+    num_running_checkers = 0
   initial_stack_size = stack_size
 
+  initial_num_running_checkers = num_running_checkers
+  num_running_checkers += 1
+
+  if num_running_checkers >= MAX_CHECKER_DEPTH
+    error "type checker recursed too many times (#{num_running_checkers} times). If this is okay, increase the MAX_CHECKER_DEPTH"
+
   with check_prog
-    if DEBUG
-      print '=== CHECKER START ==='
-    local pc = 0
+    local pc = -1
     n_instructions = #check_prog
     while true
+      pc += 2
       if pc >= n_instructions
         break
-      pc += 1
 
+      instruction = [pc]
       if COLLECT_STATS
-        instruction_counts[ [pc] ] = if v = instruction_counts[ [pc] ]
+        instruction_counts[instruction] = if v = instruction_counts[instruction]
           v + 1
         else
           1
 
       if DEBUG
-        print "stack state #{[pc]}@#{pc} [#{stack_size}]:\n\t#{table.concat [ "#{i}:\t#{repr stack[i]}" for i = 1, stack_size], '\n\t'}"
+        print "stack state #{instruction}@#{pc} [#{stack_size}]:\n\t#{table.concat [ "#{i}:\t#{repr stack[i]}" for i = 1, stack_size], '\n\t'}"
 
-      switch [pc]
+      switch instruction
         when C_PUSH
-          pc += 1
-          value = [pc]
-          if value == V_NIL
-            value = nil
+          arg = [pc + 1]
+          if arg == V_NIL
+            arg = nil
           stack_size += 1
-          stack[stack_size] = value
+          stack[stack_size] = arg
         when C_POP
           stack[stack_size] = nil
           stack_size -= 1
         when C_ASSERT_PRIMITIVE
           ty = type stack[stack_size]
-          pc += 1
-          if ty != [pc]
-            check_error "incorrect type: expected #{check_prog[pc]} but got #{ty}"
+          arg = [pc + 1]
+          if ty != arg
+            check_error "incorrect type: expected #{arg} but got #{ty}"
         when C_ASSERT_TRUTHY
           if not stack[stack_size]
             check_error "incorrect type: expected a truthy value but got #{stack[stack_size]}"
@@ -647,28 +657,31 @@ check = (check_prog, value, root=true) ->
           stack_size += 1
           stack[stack_size] = value
         when C_JMP
-          pc = [pc + 1] - 1
+          pc = [pc + 1] - 2
         when C_JMP_IF_NIL
           if stack[stack_size]?
-            pc += 1
+            -- No branch.
           else
-            pc = [pc + 1] - 1
+            pc = [pc + 1] - 2
         when C_PUSH_CHECKER
-          pc += 1
-          checker = type_checkers[ [pc] ]
+          arg = [pc + 1]
+          checker = type_checkers[arg]
           if not checker?
-            error "cannot typecheck #{[pc]}: type not defined"
+            error "cannot typecheck #{arg}: type not defined"
           check checker, nil, false
         else
           check_error "internal error: illegal type-checker VM instruction #{[pc]}@#{pc}"
-  if DEBUG
-    print "FINAL stack state #{check_prog[pc]}@#{pc} [#{stack_size}]:\n\t#{table.concat [ "#{i}:\t#{repr stack[i]}" for i = 1, stack_size], '\n\t'}"
+    if DEBUG
+      print "FINAL stack state #{check_prog[pc-2]}@#{pc-2} [#{stack_size}]:\n\t#{table.concat [ "#{i}:\t#{repr stack[i]}" for i = 1, stack_size], '\n\t'}"
 
-  assert stack_size == initial_stack_size, "internal error: value stack is not 1"
-  if root
-    -- Reset stack.
-    stack[1] = nil
-    stack_size = 0
+    num_running_checkers -= 1
+    assert num_running_checkers == initial_num_running_checkers, "internal error: checker depth incorrectly handled: expected #{initial_num_running_checkers} but got #{num_running_checkers}"
+    assert stack_size == initial_stack_size, "internal error: value stack incorrectly handled"
+    if root
+      -- Reset stack.
+      stack[1] = nil
+      stack_size = 0
+  nil
 
 user_types = {}
 export declare_type = (name, type_spec) ->
@@ -687,7 +700,7 @@ export declare_type = (name, type_spec) ->
     error "cannot redefine type '#{name}'"
   parsed_type = parse type_spec
   user_types[name] = parsed_type
-  type_checkers[name] = parsed_type\checker!
+  type_checkers[name] = parsed_type\checker!\build!
 
 export deactivate = ->
   T = (_, fn) -> fn
@@ -931,10 +944,15 @@ spec ->
       declare_type 'NonRecursive', '[string]'
       expect_that (-> T '[NonRecursive]', {{'hello'}}), no_errors!
 
-    it 'support recursive types', ->
+    it 'supports recursive types', ->
       declare_type 'Recursive', '[?Recursive]'
       expect_that (-> T 'Recursive', {{{{{nil}}}}}), no_errors!
       expect_that (-> T 'Recursive', {{{{{'asdf'}}}}}), errors matches 'incorrect type: expected table but got string'
+
+      declare_type 'MutuallyRecursive1', '?MutuallyRecursive2'
+      declare_type 'MutuallyRecursive2', 'MutuallyRecursive1'
+      expect_that (-> T 'MutuallyRecursive1', nil), no_errors!
+      expect_that (-> T 'MutuallyRecursive1', 'asdf'), errors matches 'type checker recursed too many times'
 
   describe 'stats', ->
     it 'has the correct type', ->
