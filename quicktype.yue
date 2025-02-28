@@ -9,6 +9,7 @@ export T = (type_spec, value) ->
 
   checker = type_checker type_spec
   check checker, value
+  value
 
 export DEBUG = false
 export COLLECT_STATS = false
@@ -847,6 +848,10 @@ spec ->
   describe 'T', ->
     it 'requires two arguments', ->
       expect_that (-> T!), errors matches 'cannot typecheck: no type spec provided'
+
+    it 'returns its second argument', ->
+      value = {}
+      expect_that (T '{}', value), eq value
 
     it 'checks primitives', ->
       expect_that (-> T 'nil', nil), no_errors!
