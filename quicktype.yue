@@ -10,8 +10,8 @@ export T = (type_spec, value) ->
   checker = type_checker type_spec
   check checker, value
 
-DEBUG = false
-COLLECT_STATS = false
+export DEBUG = false
+export COLLECT_STATS = false
 
 type_checkers = {}
 type_checker = (type_spec) ->
