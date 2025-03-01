@@ -1046,7 +1046,7 @@ spec ->
       expect_that (-> (F '(string) -> table', ->) 'a', 'b'), errors matches 'function passed too many arguments'
 
     it 'rejects incorrect-type return values', ->
-      expect_that (-> (F '(table) -> string', ->) {}), errors matches 'incorrect type: expected string but got number'
+      expect_that (-> (F '(table) -> string', ->) {}), errors matches 'incorrect type: expected string but got nil'
 
     it 'rejects extra return arguments', ->
       expect_that (-> (F '() -> string', -> 'a', 'b')!), errors matches 'function returned too many values'
