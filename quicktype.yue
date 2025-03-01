@@ -18,13 +18,48 @@ type_checkers = {}
 type_checker = (type_spec) ->
   type_checkers[type_spec] ?? do
     -- Slow path: parse and generate checker
-    parsed_type = parse type_spec
-    checker = parsed_type\checker!\build!
+    checker = (parse type_spec)\checker!\build!
 
     type_checkers[type_spec] = checker
     if DEBUG
       print "got checker:\n\t#{checker_program_repr checker}"
     checker
+
+export F = (type_spec, fn) ->
+  if not type_spec?
+    error 'cannot typecheck: no type spec provided'
+  if 'function' != type fn
+    error 'cannot typecheck: no function provided'
+
+  fn_type = function_type type_spec
+
+  return_types = fn_type\return_checkers!
+  check_returns = (...) ->
+    n_return_values = select '#', ...
+    if #return_types < n_return_values
+      error 'function returned too many values'
+    for i = 1, #return_types
+      check return_types[i], select i, ...
+    ...
+
+  param_types = fn_type\param_checkers!
+  (...) ->
+    if #param_types < select '#', ...
+      error 'function passed too many arguments'
+    for i = 1, #param_types
+      check param_types[i], select i, ...
+    check_returns fn ...
+
+function_types = {}
+function_type = (type_spec) ->
+  function_types[type_spec] ?? do
+    -- Slow path: parse type spec
+    parsed_type = parse type_spec
+    if parsed_type.<class>.__name != 'Function'
+      error "cannot typecheck: expected a function type"
+
+    function_types[type_spec] = parsed_type
+    parsed_type
 
 parse = (type_spec) ->
   type_spec_parser = TypeSpecParser Lexer type_spec
@@ -478,6 +513,26 @@ class Mapping
 
 class Function
   new: (@param_types, @return_types) =>
+    @_param_checkers = nil
+    @_return_checkers = nil
+
+  param_checkers: =>
+    if param_checkers = @_param_checkers
+      return param_checkers
+    param_checkers = with {}
+      for param_type in *@param_types
+        [] = param_type\checker!\build!
+    @_param_checkers = param_checkers
+    param_checkers
+
+  return_checkers: =>
+    if return_checkers = @_return_checkers
+      return return_checkers
+    return_checkers = with {}
+      for return_type in *@return_types
+        [] = return_type\checker!\build!
+    @_return_checkers = return_checkers
+    return_checkers
 
   __tostring: =>
     table.concat with {}
@@ -590,7 +645,6 @@ instruction_counts = {}
 
 export MAX_CHECKER_DEPTH = 1000
 check = (check_prog, value, root=true) ->
-
   if root
     -- Prime stack.
     stack_size = 1
@@ -958,6 +1012,40 @@ spec ->
       declare_type 'MutuallyRecursive2', 'MutuallyRecursive1'
       expect_that (-> T 'MutuallyRecursive1', nil), no_errors!
       expect_that (-> T 'MutuallyRecursive1', 'asdf'), errors matches 'type checker recursed too many times'
+
+  describe 'F', ->
+    it 'requires two arguments', ->
+      expect_that (-> F!), errors matches 'cannot typecheck: no type spec provided'
+      expect_that (-> F '() -> nil'), errors matches 'cannot typecheck: no function provided'
+      expect_that (-> F '() -> nil', 'interloper'), errors matches 'cannot typecheck: no function provided'
+
+    it 'returns its second argument', ->
+      f = F '(number, number) -> number', (a, b) -> a + b
+      expect_that (f 1, 2), eq 3
+
+    it 'accepts nil returns', ->
+      expect_that (-> (F '() -> nil', ->)!), no_errors!
+
+    it 'accepts absent optional arguments', ->
+      expect_that (-> (F '() -> ?string', ->)!), no_errors!
+
+    it 'accepts absent optional retunsr', ->
+      expect_that (-> (F '() -> nil', ->)!), no_errors!
+
+    it 'rejects non-function types', ->
+      expect_that (-> F '{}', ->), errors matches 'cannot typecheck: expected a function type'
+
+    it 'rejects incorrect-type arguments', ->
+      expect_that (-> (F '(string) -> table', ->) 123), errors matches 'incorrect type: expected string but got number'
+
+    it 'rejects extra arguments', ->
+      expect_that (-> (F '(string) -> table', ->) 'a', 'b'), errors matches 'function passed too many arguments'
+
+    it 'rejects incorrect-type return values', ->
+      expect_that (-> (F '(table) -> string', ->) {}), errors matches 'incorrect type: expected string but got number'
+
+    it 'rejects extra return arguments', ->
+      expect_that (-> (F '() -> string', -> 'a', 'b')!), errors matches 'function returned too many values'
 
   describe 'stats', ->
     it 'has the correct type', ->
