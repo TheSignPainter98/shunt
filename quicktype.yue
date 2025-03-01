@@ -761,7 +761,8 @@ export declare_type = (name, type_spec) ->
   type_checkers[name] = parsed_type\checker!\build!
 
 export deactivate = ->
-  T = (_, fn) -> fn
+  T = (_, value) -> value
+  F = (_, fn) ->
 
 export stats = ->
   stats_arr = [:instruction, :count for instruction, count in pairs instruction_counts]
