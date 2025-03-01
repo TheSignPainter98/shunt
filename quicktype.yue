@@ -717,9 +717,7 @@ check = (check_prog, value, root=true) ->
         when C_JMP
           pc = [pc + 1] - 2
         when C_JMP_IF_NIL
-          if stack[stack_size]?
-            -- No branch.
-          else
+          if not stack[stack_size]?
             pc = [pc + 1] - 2
         when C_PUSH_CHECKER
           arg = [pc + 1]
