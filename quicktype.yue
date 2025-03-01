@@ -179,10 +179,27 @@ class TypeSpecParser extends Parser
     if not @maybe T_ARROW
       return Tuple types
 
-    return_type = @parse_type!
-    if return_type.name? and return_type.name == 'nil'
-      return_type = nil
-    Function types, {return_type}
+    Function types, @parse_return_type!
+
+  parse_return_type: =>
+    @select
+      * token: T_NAME
+        action: ->
+          ty = @parse_named_type!
+          if ty.name == 'nil'
+            {} -- 'nil' is an alternative spelling of '<>'
+          else
+            { ty }
+      * token: T_ANGLE_OPEN
+        action: ->
+          @expect T_ANGLE_OPEN
+          if @maybe  T_ANGLE_CLOSE
+            return {}
+          types = @parse_repeat_separated @\parse_type, T_COMMA
+          @expect T_ANGLE_CLOSE
+          types
+      otherwise: ->
+        { @parse_type! }
 
   parse_table: =>
     {_, table, _} = @sequence
@@ -253,6 +270,8 @@ T_BRACE_OPEN = <tostring>: => "'{'"
 T_BRACE_CLOSE = <tostring>: => "'}'"
 T_BRACKET_OPEN = <tostring>: => "'['"
 T_BRACKET_CLOSE = <tostring>: => "']'"
+T_ANGLE_OPEN = <tostring>: => '"<"'
+T_ANGLE_CLOSE = <tostring>: => '">"'
 T_COMMA = <tostring>: => "','"
 T_COLON = <tostring>: => "':'"
 T_ARROW = <tostring>: => "'->'"
@@ -287,6 +306,10 @@ class Lexer
           T_COLON, nil, #match
         else if match = type_spec\match '^->', @index
           T_ARROW, nil, #match
+        else if match = type_spec\match '^<', @index
+          T_ANGLE_OPEN, nil, #match
+        else if match = type_spec\match '^>', @index
+          T_ANGLE_CLOSE, nil, #match
         else if match = type_spec\match '^?', @index
           T_QUESTION, nil, #match
         else if name = type_spec\match '^([a-zA-Z_][a-zA-Z0-9_]*)', @index
@@ -930,8 +953,12 @@ spec ->
 
       it 'accepts functions', ->
         expect_that (parse '() -> nil'), deep_eq Function {}, {}
+        expect_that (parse '() -> <>'), deep_eq Function {}, {}
         expect_that (parse '(string) -> number'), deep_eq Function {Primitive 'string'}, {Primitive 'number'}
+        expect_that (parse '(number, string) -> number'), deep_eq Function {(Primitive 'number'), (Primitive 'string')}, {Primitive 'number'}
         expect_that (parse '(string) -> (number) -> boolean'), deep_eq Function {Primitive 'string'}, {Function {Primitive 'number'}, {Primitive 'boolean'}}
+        expect_that (parse '() -> <string>'), deep_eq Function {}, {(Primitive 'string')}
+        expect_that (parse '() -> <string, boolean>'), deep_eq Function {}, {(Primitive 'string'), (Primitive 'boolean')}
 
   describe 'T', ->
     it 'requires two arguments', ->
@@ -1071,6 +1098,9 @@ spec ->
     it 'accepts absent optional retunsr', ->
       expect_that (-> (F '() -> nil', ->)!), no_errors!
 
+    it 'accepts multiple return values', ->
+      expect_that (-> (F '() -> <string, boolean>', -> 'a', true)!), no_errors!
+
     it 'rejects non-function types', ->
       expect_that (-> F '{}', ->), errors matches 'cannot typecheck: expected a function type'
 
@@ -1085,6 +1115,10 @@ spec ->
 
     it 'rejects extra return arguments', ->
       expect_that (-> (F '() -> string', -> 'a', 'b')!), errors matches 'function returned too many values'
+
+    it 'rejects multiple incorrect return values', ->
+      expect_that (-> (F '() -> <string, boolean>', -> {}, true)!), errors matches 'incorrect type: expected string but got table'
+      expect_that (-> (F '() -> <string, boolean>', -> 'asdf', {})!), errors matches 'incorrect type: expected boolean but got table'
 
   describe 'stats', ->
     it 'has the correct type', ->
