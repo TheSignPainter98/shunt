@@ -1021,6 +1021,7 @@ spec ->
 
     it 'checks functions', ->
       expect_that (-> T '() -> nil', ->), no_errors!
+      expect_that (-> T '() -> nil', -> nil), no_errors!
       expect_that (-> T '() -> nil', {}), errors matches 'incorrect type: expected function but got table'
 
   describe 'declare_type', ->
