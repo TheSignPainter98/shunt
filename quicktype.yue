@@ -432,7 +432,6 @@ class Tuple
         \add C_GET_FIELD
         @elem_types[i]\checker checker_builder
         \add C_POP
-        \add C_INCR
         \add C_POP
 
 class Struct
