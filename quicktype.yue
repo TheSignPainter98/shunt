@@ -1134,5 +1134,5 @@ spec ->
 
 -- import set_log_verbosity from require 'fat.logger'
 -- set_log_verbosity true
--- DEBUG = true
+DEBUG = true
 (require 'spec').run_tests select 1, ...
