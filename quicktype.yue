@@ -145,6 +145,8 @@ class TypeSpecParser extends Parser
     handle_optional @select
       * token: T_NAME
         action: @\parse_named_type
+      * token: T_STRING
+        action: @\parse_string_type
       * token: T_BRACKET_OPEN
         action: @\parse_array
       * token: T_PAREN_OPEN
@@ -154,6 +156,9 @@ class TypeSpecParser extends Parser
 
   parse_named_type: =>
     named_type @expect T_NAME
+
+  parse_string_type: =>
+    StringType @expect T_STRING
 
   parse_array: =>
     {_, elem_type, _} = @sequence
@@ -253,6 +258,7 @@ T_COLON = <tostring>: => "':'"
 T_ARROW = <tostring>: => "'->'"
 T_QUESTION = <tostring>: => "'?'"
 T_NAME = <tostring>: => "<name>"
+T_STRING = <tostring>: => "<string>"
 
 class Lexer
   new: (type_spec) =>
@@ -285,6 +291,8 @@ class Lexer
           T_QUESTION, nil, #match
         else if name = type_spec\match '^([a-zA-Z_][a-zA-Z0-9_]*)', @index
           T_NAME, name, #name
+        else if string = type_spec\match [[^"([^"]*)"]], @index
+          T_STRING, string, #string + 2
         else
           error "unrecognised character '#{type_spec\sub @index, @index}' in type spec '#{type_spec}"
 
@@ -380,6 +388,17 @@ class UserType
         \push_building @
         parsed_user_type\checker checker_builder
         \pop_building @
+
+class StringType
+  new: (@content) =>
+
+  __tostring: =>
+    "\"#{@content}\""
+
+  checker: (checker_builder=CheckerBuilder!) =>
+    with checker_builder
+      \add C_ASSERT_PRIMITIVE, 'string'
+      \add C_ASSERT_EQ, @content
 
 class Optional
   new: (@inner_type) =>
@@ -618,6 +637,7 @@ C_POP = <tostring>: => '<pop>'
 C_ASSERT_PRIMITIVE = <tostring>: => '<assert-primitive>'
 C_ASSERT_TRUTHY = <tostring>: => '<assert-truthy>'
 C_ASSERT_LEN = <tostring>: => '<assert-len>'
+C_ASSERT_EQ = <tostring>: => '<assert-eq>'
 C_GET_FIELD = <tostring>: => '<field>'
 C_INCR = <tostring>: => '<incr>'
 C_DECR = <tostring>: => '<decr>'
@@ -700,6 +720,9 @@ check = (check_prog, value, root=true) ->
           counted_len = stack[stack_size]
           if counted_len != actual_len
             check_error "incorrect type: expected array but got table"
+        when C_ASSERT_EQ
+          if stack[stack_size] != [pc + 1]
+            check_error "incorrect type: expected #{type [pc + 1]} #{repr [pc + 1]}"
         when C_GET_FIELD
           stack_size += 1
           stack[stack_size] = stack[stack_size-2][stack[stack_size-1]]
@@ -791,6 +814,12 @@ spec ->
           Symbol T_NAME, simple_type
         }
 
+    it 'emits string types', ->
+      expect_that (tokens '"hello" "world"'), deep_eq {
+        Symbol T_STRING, 'hello'
+        Symbol T_STRING, 'world'
+      }
+
     it 'emits strucural tokens', ->
       expect_that (tokens '(),{}[]:->?'), deep_eq {
         Symbol T_PAREN_OPEN
@@ -846,6 +875,9 @@ spec ->
 
       it 'accepts user types', ->
         expect_that (parse 'UserType'), deep_eq UserType 'UserType'
+
+      it 'accepts string types', ->
+        expect_that (parse '"hello"'), deep_eq StringType 'hello'
 
       it 'rejects unknown primitives', ->
         expect_that (-> parse 'user'), errors matches [[cannot use 'user' as user type name: name must start with an uppercase letter]]
@@ -917,6 +949,10 @@ spec ->
       expect_that (-> T 'nil', 123), errors matches 'incorrect type: expected nil but got number'
       expect_that (-> T 'number', nil), errors matches 'incorrect type: expected number but got nil'
       expect_that (-> T 'string', 123), errors matches 'incorrect type: expected string but got number'
+
+    it 'checks string types', ->
+      expect_that (-> T '"hello"', 'hello'), no_errors!
+      expect_that (-> T '"hello"', 'world'), errors matches "incorrect type: expected string 'hello'"
 
     it 'checks optionals', ->
       expect_that (-> T '?number', nil), no_errors!
