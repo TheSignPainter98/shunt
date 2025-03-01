@@ -414,6 +414,7 @@ class Array
 
       loop_exit_target\resolve_here!
       \add C_POP
+      \add C_DECR
       \add C_ASSERT_LEN
       \add C_POP
 
@@ -619,6 +620,7 @@ C_ASSERT_TRUTHY = <tostring>: => '<assert-truthy>'
 C_ASSERT_LEN = <tostring>: => '<assert-len>'
 C_GET_FIELD = <tostring>: => '<field>'
 C_INCR = <tostring>: => '<incr>'
+C_DECR = <tostring>: => '<decr>'
 C_NEXT = <tostring>: => '<next>'
 C_JMP = <tostring>: => '<jmp>'
 C_JMP_IF_NIL = <tostring>: => '<jnil>'
@@ -694,15 +696,17 @@ check = (check_prog, value, root=true) ->
           if not stack[stack_size]
             check_error "incorrect type: expected a truthy value but got #{stack[stack_size]}"
         when C_ASSERT_LEN
-          len = #stack[stack_size-1]
-          first_nil_index = stack[stack_size]
-          if len != first_nil_index-1
+          actual_len = #stack[stack_size-1]
+          counted_len = stack[stack_size]
+          if counted_len != actual_len
             check_error "incorrect type: expected array but got table"
         when C_GET_FIELD
           stack_size += 1
           stack[stack_size] = stack[stack_size-2][stack[stack_size-1]]
         when C_INCR
           stack[stack_size] += 1
+        when C_DECR
+          stack[stack_size] -= 1
         when C_NEXT
           tab = stack[stack_size-1]
           idx = stack[stack_size]
