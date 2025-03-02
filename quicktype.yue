@@ -140,7 +140,14 @@ class TypeSpecParser extends Parser
     ret
 
   parse_type: =>
-    @parse_type_conjunction!
+    @parse_type_disjunction!
+
+  parse_type_disjunction: =>
+    disjunction = @parse_repeat_separated @\parse_type_conjunction, T_PIPE
+    if #disjunction == 1
+      disjunction[1] -- Single element
+    else
+      Disjunction disjunction
 
   parse_type_conjunction: =>
     conjunction = @parse_repeat_separated @\parse_optional_type, T_PLUS
@@ -294,6 +301,7 @@ T_COLON = <tostring>: => "':'"
 T_ARROW = <tostring>: => "'->'"
 T_QUESTION = <tostring>: => "'?'"
 T_PLUS = <tostring>: => "'+'"
+T_PIPE = <tostring>: => "'|'"
 T_NAME = <tostring>: => "<name>"
 T_STRING = <tostring>: => "<string>"
 
@@ -332,6 +340,8 @@ class Lexer
           T_QUESTION, nil, #match
         else if match = type_spec\match '^+', @index
           T_PLUS, nil, #match
+        else if match = type_spec\match '^|', @index
+          T_PIPE, nil, #match
         else if name = type_spec\match '^([a-zA-Z_][a-zA-Z0-9_]*)', @index
           T_NAME, name, #name
         else if string = type_spec\match [[^"([^"]*)"]], @index
@@ -623,6 +633,12 @@ class Function
     with checker_builder
       \add C_ASSERT_PRIMITIVE, 'function'
 
+class Disjunction
+  new: (@types) =>
+
+  __tostring: =>
+    table.concat [tostring ty for ty in *@types], '|'
+
 class Conjunction
   new: (@types) =>
 
@@ -875,7 +891,7 @@ spec ->
       }
 
     it 'emits strucural tokens', ->
-      expect_that (tokens '(),{}[]:->?+'), deep_eq {
+      expect_that (tokens '(),{}[]:->?+|'), deep_eq {
         Symbol T_PAREN_OPEN
         Symbol T_PAREN_CLOSE
         Symbol T_COMMA
@@ -887,6 +903,7 @@ spec ->
         Symbol T_ARROW
         Symbol T_QUESTION
         Symbol T_PLUS
+        Symbol T_PIPE
       }
 
     it 'ignores whitespace', ->
@@ -998,6 +1015,25 @@ spec ->
           * Mapping (Primitive 'number'), Primitive 'string'
           * Primitive 'table'
           * Primitive 'function'
+
+      it 'accepts disjunctions', ->
+        expect_that (parse '[string]|{number->string}|table|function'), deep_eq Disjunction
+          * Array Primitive 'string'
+          * Mapping (Primitive 'number'), Primitive 'string'
+          * Primitive 'table'
+          * Primitive 'function'
+
+      it 'gives precedence to conjunctions', ->
+        expect_that (parse 'string+number|boolean'), deep_eq Disjunction
+          * Conjunction
+            * Primitive 'string'
+            * Primitive 'number'
+          * Primitive 'boolean'
+        expect_that (parse 'string|number+boolean'), deep_eq Disjunction
+          * Primitive 'string'
+          * Conjunction
+            * Primitive 'number'
+            * Primitive 'boolean'
 
   describe 'T', ->
     it 'requires two arguments', ->
