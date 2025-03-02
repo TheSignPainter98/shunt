@@ -73,9 +73,11 @@ class Parser
   parse_repeat_separated: (elem_parser, sep_token) =>
     with {}
       [] = elem_parser!
-      while @lexer\peek!.type == sep_token
+      tok = @lexer\peek!
+      while tok? and tok.type == sep_token
         @lexer\next!
         [] = elem_parser!
+        tok = @lexer\peek!
 
   expect: (expected_token) =>
     token = @lexer\next!
@@ -138,11 +140,26 @@ class TypeSpecParser extends Parser
     ret
 
   parse_type: =>
-    handle_optional = if @maybe T_QUESTION
-      (elem_type) -> Optional elem_type
+    @parse_type_conjunction!
+
+  parse_type_conjunction: =>
+    conjunction = @parse_repeat_separated @\parse_optional_type, T_PLUS
+    if #conjunction == 1
+      conjunction[1] -- Single element
     else
-      (...) -> ...
-    handle_optional @select
+      Conjunction conjunction
+
+  parse_optional_type: =>
+    @select
+      * token: T_QUESTION
+        action: ->
+          @expect T_QUESTION
+          Optional @parse_specific_type!
+      otherwise: ->
+        @parse_specific_type!
+
+  parse_specific_type: =>
+    @select
       * token: T_NAME
         action: @\parse_named_type
       * token: T_STRING
@@ -276,6 +293,7 @@ T_COMMA = <tostring>: => "','"
 T_COLON = <tostring>: => "':'"
 T_ARROW = <tostring>: => "'->'"
 T_QUESTION = <tostring>: => "'?'"
+T_PLUS = <tostring>: => "'+'"
 T_NAME = <tostring>: => "<name>"
 T_STRING = <tostring>: => "<string>"
 
@@ -312,6 +330,8 @@ class Lexer
           T_ANGLE_CLOSE, nil, #match
         else if match = type_spec\match '^?', @index
           T_QUESTION, nil, #match
+        else if match = type_spec\match '^+', @index
+          T_PLUS, nil, #match
         else if name = type_spec\match '^([a-zA-Z_][a-zA-Z0-9_]*)', @index
           T_NAME, name, #name
         else if string = type_spec\match [[^"([^"]*)"]], @index
@@ -603,6 +623,17 @@ class Function
     with checker_builder
       \add C_ASSERT_PRIMITIVE, 'function'
 
+class Conjunction
+  new: (@types) =>
+
+  __tostring: =>
+    table.concat [tostring ty for ty in *@types], '+'
+
+  checker: (checker_builder=CheckerBuilder!) =>
+    with checker_builder
+      for ty in *@types
+        ty\checker checker_builder
+
 class CheckerBuilder
   new: =>
     @instructions = {}
@@ -844,7 +875,7 @@ spec ->
       }
 
     it 'emits strucural tokens', ->
-      expect_that (tokens '(),{}[]:->?'), deep_eq {
+      expect_that (tokens '(),{}[]:->?+'), deep_eq {
         Symbol T_PAREN_OPEN
         Symbol T_PAREN_CLOSE
         Symbol T_COMMA
@@ -855,6 +886,7 @@ spec ->
         Symbol T_COLON
         Symbol T_ARROW
         Symbol T_QUESTION
+        Symbol T_PLUS
       }
 
     it 'ignores whitespace', ->
@@ -960,6 +992,13 @@ spec ->
         expect_that (parse '() -> <string>'), deep_eq Function {}, {(Primitive 'string')}
         expect_that (parse '() -> <string, boolean>'), deep_eq Function {}, {(Primitive 'string'), (Primitive 'boolean')}
 
+      it 'accepts conjunctions', ->
+        expect_that (parse '[string]+{number->string}+table+function'), deep_eq Conjunction
+          * Array Primitive 'string'
+          * Mapping (Primitive 'number'), Primitive 'string'
+          * Primitive 'table'
+          * Primitive 'function'
+
   describe 'T', ->
     it 'requires two arguments', ->
       expect_that (-> T!), errors matches 'cannot typecheck: no type spec provided'
@@ -1050,6 +1089,12 @@ spec ->
       expect_that (-> T '() -> nil', ->), no_errors!
       expect_that (-> T '() -> nil', -> nil), no_errors!
       expect_that (-> T '() -> nil', {}), errors matches 'incorrect type: expected function but got table'
+
+    it 'checks conjunctions', ->
+      expect_that (-> T '[string]+{number}', {'a', 'b', 'c'}), no_errors!
+
+      expect_that (-> T 'string+number', 123), errors matches 'incorrect type: expected string but got number'
+      expect_that (-> T 'string+number', 'hello'), errors matches 'incorrect type: expected number but got string'
 
   describe 'declare_type', ->
     it 'requires two arguments', ->
