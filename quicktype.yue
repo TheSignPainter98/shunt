@@ -413,6 +413,8 @@ named_type = (name) ->
     error repr name
   if known_primitives[name]?
     Primitive name
+  else if name == 'any'
+    Any!
   else if not name\match '^[A-Z]'
     error "cannot use '#{name}' as user type name: name must start with an uppercase letter"
   else
@@ -426,6 +428,13 @@ class Primitive
   checker: (checker_builder=CheckerBuilder!) =>
     with checker_builder
       \add C_ASSERT_PRIMITIVE, @name
+
+class Any
+  __tostring: =>
+    'any'
+
+  checker: (checker_builder=CheckerBuilder!) =>
+    checker_builder -- No checks required.
 
 class UserType
   new: (@name) =>
@@ -879,6 +888,7 @@ spec ->
         * type ""
         * type ->
         * type coroutine.create ->
+        * 'any'
       for simple_type in *simple_types
         expect_that (tokens simple_type), deep_eq {
           Symbol T_NAME, simple_type
@@ -944,6 +954,7 @@ spec ->
         expect_that (parse 'table'), deep_eq Primitive type {}
         expect_that (parse 'function'), deep_eq Primitive type ->
         expect_that (parse 'thread'), deep_eq Primitive type coroutine.create ->
+        expect_that (parse 'any'), deep_eq Any!
 
       it 'accepts user types', ->
         expect_that (parse 'UserType'), deep_eq UserType 'UserType'
@@ -1051,6 +1062,16 @@ spec ->
       expect_that (-> T 'nil', 123), errors matches 'incorrect type: expected nil but got number'
       expect_that (-> T 'number', nil), errors matches 'incorrect type: expected number but got nil'
       expect_that (-> T 'string', 123), errors matches 'incorrect type: expected string but got number'
+
+    it 'checks any', ->
+      values =
+        * 123
+        * 'str'
+        * {}
+        * ->
+        * coroutine.create ->
+      for value in *values
+        expect_that (-> T 'any', value), no_errors!
 
     it 'checks string types', ->
       expect_that (-> T '"hello"', 'hello'), no_errors!
