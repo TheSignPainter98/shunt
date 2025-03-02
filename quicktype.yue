@@ -55,7 +55,7 @@ function_type = (type_spec) ->
   function_types[type_spec] ?? do
     -- Slow path: parse type spec
     parsed_type = parse type_spec
-    if parsed_type.<class>.__name != 'Function'
+    if not parsed_type\is Function
       error "cannot typecheck: expected a function type"
 
     function_types[type_spec] = parsed_type
@@ -420,7 +420,11 @@ named_type = (name) ->
   else
     UserType name
 
-class Primitive
+class Type
+  is: (ty) =>
+    @.<class>.__name == ty.__base.__class.__name
+
+class Primitive extends Type
   new: (@name) =>
 
   __tostring: => @name
@@ -429,14 +433,14 @@ class Primitive
     with checker_builder
       \add C_ASSERT_PRIMITIVE, @name
 
-class Any
+class Any extends Type
   __tostring: =>
     'any'
 
   checker: (checker_builder=CheckerBuilder!) =>
     checker_builder -- No checks required.
 
-class UserType
+class UserType extends Type
   new: (@name) =>
 
   __tostring: => @name
@@ -451,7 +455,7 @@ class UserType
         parsed_user_type\checker checker_builder
         \pop_building @
 
-class StringType
+class StringType extends Type
   new: (@content) =>
 
   __tostring: =>
@@ -462,7 +466,7 @@ class StringType
       \add C_ASSERT_PRIMITIVE, 'string'
       \add C_ASSERT_EQ, @content
 
-class Optional
+class Optional extends Type
   new: (@inner_type) =>
 
   __tostring: =>
@@ -474,7 +478,7 @@ class Optional
       @inner_type\checker checker_builder
       inner_skip_target\resolve_here!
 
-class Array
+class Array extends Type
   new: (@elem_type) =>
 
   __tostring: =>
@@ -499,7 +503,7 @@ class Array
       \add C_ASSERT_LEN
       \add C_POP
 
-class Tuple
+class Tuple extends Type
   new: (@elem_types) =>
 
   __tostring: =>
@@ -516,7 +520,7 @@ class Tuple
         \add C_POP
         \add C_POP
 
-class Struct
+class Struct extends Type
   new: (@fields) =>
 
   __tostring: =>
@@ -533,7 +537,7 @@ class Struct
         \add C_POP
         \add C_POP
 
-class Field
+class Field extends Type
   new: (@name, @type) =>
 
   __tostring: =>
@@ -542,7 +546,7 @@ class Field
   checker: (checker_builder=CheckerBuilder!) =>
     @type\checker checker_builder
 
-class Set
+class Set extends Type
   new: (@elem_type) =>
 
   __tostring: =>
@@ -566,7 +570,7 @@ class Set
       \add C_POP
       \add C_POP
 
-class Mapping
+class Mapping extends Type
   new: (@in_type, @out_type) =>
 
   __tostring: =>
@@ -592,7 +596,7 @@ class Mapping
       \add C_POP
 
 
-class Function
+class Function extends Type
   new: (@param_types, @return_types) =>
     @_param_checkers = nil
     @_return_checkers = nil
@@ -642,13 +646,13 @@ class Function
     with checker_builder
       \add C_ASSERT_PRIMITIVE, 'function'
 
-class Disjunction
+class Disjunction extends Type
   new: (@types) =>
 
   __tostring: =>
     table.concat [tostring ty for ty in *@types], '|'
 
-class Conjunction
+class Conjunction extends Type
   new: (@types) =>
 
   __tostring: =>
