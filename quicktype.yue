@@ -420,11 +420,11 @@ named_type = (name) ->
   else
     UserType name
 
-class Type
+class Is
   is: (ty) =>
     @.<class>.__name == ty.__base.__class.__name
 
-class Primitive extends Type
+class Primitive using Is
   new: (@name) =>
 
   __tostring: => @name
@@ -433,14 +433,14 @@ class Primitive extends Type
     with checker_builder
       \add C_ASSERT_PRIMITIVE, @name
 
-class Any extends Type
+class Any using Is
   __tostring: =>
     'any'
 
   checker: (checker_builder=CheckerBuilder!) =>
     checker_builder -- No checks required.
 
-class UserType extends Type
+class UserType using Is
   new: (@name) =>
 
   __tostring: => @name
@@ -455,7 +455,7 @@ class UserType extends Type
         parsed_user_type\checker checker_builder
         \pop_building @
 
-class StringType extends Type
+class StringType using Is
   new: (@content) =>
 
   __tostring: =>
@@ -466,7 +466,7 @@ class StringType extends Type
       \add C_ASSERT_PRIMITIVE, 'string'
       \add C_ASSERT_EQ, @content
 
-class Optional extends Type
+class Optional using Is
   new: (@inner_type) =>
 
   __tostring: =>
@@ -478,7 +478,7 @@ class Optional extends Type
       @inner_type\checker checker_builder
       inner_skip_target\resolve_here!
 
-class Array extends Type
+class Array using Is
   new: (@elem_type) =>
 
   __tostring: =>
@@ -503,7 +503,7 @@ class Array extends Type
       \add C_ASSERT_LEN
       \add C_POP
 
-class Tuple extends Type
+class Tuple using Is
   new: (@elem_types) =>
 
   __tostring: =>
@@ -520,7 +520,7 @@ class Tuple extends Type
         \add C_POP
         \add C_POP
 
-class Struct extends Type
+class Struct using Is
   new: (@fields) =>
 
   __tostring: =>
@@ -537,7 +537,7 @@ class Struct extends Type
         \add C_POP
         \add C_POP
 
-class Field extends Type
+class Field using Is
   new: (@name, @type) =>
 
   __tostring: =>
@@ -546,7 +546,7 @@ class Field extends Type
   checker: (checker_builder=CheckerBuilder!) =>
     @type\checker checker_builder
 
-class Set extends Type
+class Set using Is
   new: (@elem_type) =>
 
   __tostring: =>
@@ -570,7 +570,7 @@ class Set extends Type
       \add C_POP
       \add C_POP
 
-class Mapping extends Type
+class Mapping using Is
   new: (@in_type, @out_type) =>
 
   __tostring: =>
@@ -596,7 +596,7 @@ class Mapping extends Type
       \add C_POP
 
 
-class Function extends Type
+class Function using Is
   new: (@param_types, @return_types) =>
     @_param_checkers = nil
     @_return_checkers = nil
@@ -646,13 +646,13 @@ class Function extends Type
     with checker_builder
       \add C_ASSERT_PRIMITIVE, 'function'
 
-class Disjunction extends Type
+class Disjunction using Is
   new: (@types) =>
 
   __tostring: =>
     table.concat [tostring ty for ty in *@types], '|'
 
-class Conjunction extends Type
+class Conjunction using Is
   new: (@types) =>
 
   __tostring: =>
