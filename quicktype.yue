@@ -1303,6 +1303,9 @@ spec ->
 
       expect_that (-> (F '() -> <number, string...>', -> 123, 'hello', true)!), errors matches 'incorrect type: expected string but got boolean'
 
+    it 'prevents execution on invalid args', ->
+      expect_that (-> (F '(string) -> nil', -> error 'OH NO') 123), errors matches 'incorrect type: expected string but got number'
+
     it 'rejects non-function types', ->
       expect_that (-> F '{}', ->), errors matches 'cannot typecheck: expected a function type'
 
