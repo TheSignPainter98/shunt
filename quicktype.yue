@@ -1,5 +1,5 @@
 local *
-local Parser
+local Parser, Remainder
 
 import spec, repr from require 'spec'
 
@@ -34,20 +34,29 @@ export F = (type_spec, fn) ->
   fn_type = function_type type_spec
 
   return_types = fn_type\return_checkers!
+  n_return_types = #return_types
   check_returns = (...) ->
-    n_return_values = select '#', ...
-    if #return_types < n_return_values
-      error 'function returned too many values'
-    for i = 1, #return_types
+    for i = 1, n_return_types
       check return_types[i], select i, ...
+    for i = n_return_types+1, select '#', ...
+      checker = return_types[i]
+      if not checker?
+        error 'function returned too many values'
+      check checker, select i, ...
+
     ...
 
   param_types = fn_type\param_checkers!
+  n_param_types = #param_types
   (...) ->
-    if #param_types < select '#', ...
-      error 'function passed too many arguments'
-    for i = 1, #param_types
+    for i = 1, n_param_types
       check param_types[i], select i, ...
+    for i = n_param_types+1, select '#', ...
+      checker = param_types[i]
+      if not checker?
+        error 'function given too many arguments'
+      check checker, select i, ...
+
     check_returns fn ...
 
 function_types = {}
@@ -198,10 +207,23 @@ class TypeSpecParser extends Parser
       types = {}
     else
       {types, _} = @sequence
-        * action: -> @parse_repeat_separated @\parse_type, T_COMMA
+        * action: ->
+          @parse_repeat_separated @\parse_function_io_type, T_COMMA
         * token: T_PAREN_CLOSE
     if not @maybe T_ARROW
+      for ty in *types
+        if ty\is Remainder
+          error 'tuple type cannot contain varargs'
       return Tuple types
+
+    for ty in *types[,-1]
+      if ty\is Remainder
+        error 'varargs can only be declared at end of a param type list'
+
+    last_ty = types[#types]
+    if last_ty? and last_ty\is Remainder
+      types.<> = __index: => last_ty.type
+      types[#types] = nil
 
     Function types, @parse_return_type!
 
@@ -209,8 +231,10 @@ class TypeSpecParser extends Parser
     @select
       * token: T_NAME
         action: ->
-          ty = @parse_named_type!
-          if ty.name == 'nil'
+          ty = @parse_function_io_type!
+          if ty\is Remainder
+            <index>: => ty.type
+          else if ty.name == 'nil'
             {} -- 'nil' is an alternative spelling of '<>'
           else
             { ty }
@@ -219,11 +243,28 @@ class TypeSpecParser extends Parser
           @expect T_ANGLE_OPEN
           if @maybe  T_ANGLE_CLOSE
             return {}
-          types = @parse_repeat_separated @\parse_type, T_COMMA
+          types = @parse_repeat_separated @\parse_function_io_type, T_COMMA
           @expect T_ANGLE_CLOSE
+
+          for ty in *types[,-1]
+            if ty\is Remainder
+              error 'variable returns can only be declared at end of a return type list'
+
+          last_ty = types[#types]
+          if last_ty? and last_ty\is Remainder
+            types.<> = __index: => last_ty.type
+            types[#types] = nil
+
           types
       otherwise: ->
-        { @parse_type! }
+        { @parse_function_io_type! }
+
+  parse_function_io_type: =>
+    ty = @parse_type!
+    if (@maybe T_DOTDOTDOT)?
+      Remainder ty
+    else
+      ty
 
   parse_table: =>
     {_, table, _} = @sequence
@@ -299,6 +340,7 @@ T_ANGLE_CLOSE = <tostring>: => '">"'
 T_COMMA = <tostring>: => "','"
 T_COLON = <tostring>: => "':'"
 T_ARROW = <tostring>: => "'->'"
+T_DOTDOTDOT = <tostring>: => "'...'"
 T_QUESTION = <tostring>: => "'?'"
 T_PLUS = <tostring>: => "'+'"
 T_PIPE = <tostring>: => "'|'"
@@ -332,6 +374,8 @@ class Lexer
           T_COLON, nil, #match
         else if match = type_spec\match '^->', @index
           T_ARROW, nil, #match
+        else if match = type_spec\match '^%.%.%.', @index
+          T_DOTDOTDOT, nil, #match
         else if match = type_spec\match '^<', @index
           T_ANGLE_OPEN, nil, #match
         else if match = type_spec\match '^>', @index
@@ -598,53 +642,86 @@ class Mapping using Is
 
 class Function using Is
   new: (@param_types, @return_types) =>
+    @remainder_param_type = param_types.<>?.__index?!
+    @remainder_return_type = return_types.<>?.__index?!
     @_param_checkers = nil
     @_return_checkers = nil
 
   param_checkers: =>
     if param_checkers = @_param_checkers
       return param_checkers
-    param_checkers = with {}
+    param_checkers = with <>: {}
       for param_type in *@param_types
         [] = param_type\checker!\build!
+      if @param_types.<>?
+        if remainder_type = @remainder_param_type
+          remainder_type_checker = remainder_type\checker!\build!
+          .<index> = => remainder_type_checker
     @_param_checkers = param_checkers
     param_checkers
 
   return_checkers: =>
     if return_checkers = @_return_checkers
       return return_checkers
-    return_checkers = with {}
+    return_checkers = with <>: {}
       for return_type in *@return_types
         [] = return_type\checker!\build!
+      if @return_types.<>?
+        if remainder_type = @remainder_return_type
+          remainder_type_checker = remainder_type\checker!\build!
+          .<index> = => remainder_type_checker
     @_return_checkers = return_checkers
     return_checkers
 
   __tostring: =>
     table.concat with {}
       [] = '('
-      first = true
+      first_param = true
       for param_type in *@param_types
-        if not first
+        if not first_param
           [] = ", "
-        first = false
+        first_param = false
 
         [] = tostring param_type
+      if @remainder_param_type?
+        if not first_param
+          [] = ', '
+        [] = tostring @remainder_param_type
+        [] = '...'
       [] = ') -> '
       if #@return_types == 1
-        [] = tostring @return_types[1]
+        if @remainder_return_type?
+          [] = tostring remainder_return_type
+          [] = '...'
+        else
+          [] = tostring @return_types[1]
       else
         [] = '<'
-        first = true
+        first_ret = true
         for return_type in *@return_types
-          if not first
+          if not first_ret
             [] = ", "
-          first = false
+          first_ret = false
           [] = tostring return_type
+        if @remainder_return_type?
+          if not first_ret
+            [] = ', '
+          [] = tostring @remainder_return_type
+          [] = '...'
         [] = '>'
 
   checker: (checker_builder=CheckerBuilder!) =>
     with checker_builder
       \add C_ASSERT_PRIMITIVE, 'function'
+
+class Remainder using Is
+  new: (@type) =>
+
+  __tostring: =>
+    "#{@type}..."
+
+  checker: (checker_builder=CheckerBuilder!) =>
+    error 'internal error: Remainder unresolved in AST'
 
 class Disjunction using Is
   new: (@types) =>
@@ -905,7 +982,7 @@ spec ->
       }
 
     it 'emits strucural tokens', ->
-      expect_that (tokens '(),{}[]:->?+|'), deep_eq {
+      expect_that (tokens '(),{}[]:->...?+|'), deep_eq {
         Symbol T_PAREN_OPEN
         Symbol T_PAREN_CLOSE
         Symbol T_COMMA
@@ -915,6 +992,7 @@ spec ->
         Symbol T_BRACKET_CLOSE
         Symbol T_COLON
         Symbol T_ARROW
+        Symbol T_DOTDOTDOT
         Symbol T_QUESTION
         Symbol T_PLUS
         Symbol T_PIPE
@@ -1023,6 +1101,10 @@ spec ->
         expect_that (parse '(string) -> (number) -> boolean'), deep_eq Function {Primitive 'string'}, {Function {Primitive 'number'}, {Primitive 'boolean'}}
         expect_that (parse '() -> <string>'), deep_eq Function {}, {(Primitive 'string')}
         expect_that (parse '() -> <string, boolean>'), deep_eq Function {}, {(Primitive 'string'), (Primitive 'boolean')}
+
+        expect_that (parse '(string...) -> number...'), deep_eq Function {<index>: => Primitive 'string'}, {<index>: => Primitive 'number'}
+        expect_that (parse '(string...) -> <number...>'), deep_eq Function {<index>: => Primitive 'string'}, {<index>: => Primitive 'number'}
+        expect_that (parse '(boolean, string...) -> <thread, number...>'), deep_eq Function {(Primitive 'boolean'), <index>: => Primitive 'string'}, {(Primitive 'thread'), <index>: => Primitive 'number'}
 
       it 'accepts conjunctions', ->
         expect_that (parse '[string]+{number->string}+table+function'), deep_eq Conjunction
@@ -1201,11 +1283,25 @@ spec ->
     it 'accepts absent optional arguments', ->
       expect_that (-> (F '() -> ?string', ->)!), no_errors!
 
-    it 'accepts absent optional retunsr', ->
+    it 'accepts remainder arguments', ->
+      expect_that (-> (F '(string...) -> nil', ->)!), no_errors!
+      expect_that (-> (F '(string...) -> nil', ->) 'hello', 'world'), no_errors!
+      expect_that (-> (F '(number, string...) -> nil', ->) 123, 'hello', 'world'), no_errors!
+
+      expect_that (-> (F '(number, string...) -> nil', (...) ->) 123, 'hello', true), errors matches 'incorrect type: expected string but got boolean'
+
+    it 'accepts absent optional returns', ->
       expect_that (-> (F '() -> nil', ->)!), no_errors!
 
     it 'accepts multiple return values', ->
       expect_that (-> (F '() -> <string, boolean>', -> 'a', true)!), no_errors!
+
+    it 'accepts remainder return values', ->
+      expect_that (-> (F '() -> string...', ->)!), no_errors!
+      expect_that (-> (F '() -> string...', ->, 'hello', 'world')!), no_errors!
+      expect_that (-> (F '() -> <number, string...>', -> 123, 'hello', 'world')!), no_errors!
+
+      expect_that (-> (F '() -> <number, string...>', -> 123, 'hello', true)!), errors matches 'incorrect type: expected string but got boolean'
 
     it 'rejects non-function types', ->
       expect_that (-> F '{}', ->), errors matches 'cannot typecheck: expected a function type'
@@ -1214,7 +1310,7 @@ spec ->
       expect_that (-> (F '(string) -> table', ->) 123), errors matches 'incorrect type: expected string but got number'
 
     it 'rejects extra arguments', ->
-      expect_that (-> (F '(string) -> table', ->) 'a', 'b'), errors matches 'function passed too many arguments'
+      expect_that (-> (F '(string) -> table', ->) 'a', 'b'), errors matches 'function given too many arguments'
 
     it 'rejects incorrect-type return values', ->
       expect_that (-> (F '(table) -> string', ->) {}), errors matches 'incorrect type: expected string but got nil'
