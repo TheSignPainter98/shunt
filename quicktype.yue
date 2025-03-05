@@ -841,13 +841,12 @@ check = (check_prog, value, root=true) ->
 
   with check_prog
     local pc = -1
-    n_instructions = #check_prog
     while true
       pc += 2
-      if pc >= n_instructions
+      instruction = [pc]
+      if instruction == nil
         break
 
-      instruction = [pc]
       if COLLECT_STATS
         instruction_counts[instruction] = if v = instruction_counts[instruction]
           v + 1
