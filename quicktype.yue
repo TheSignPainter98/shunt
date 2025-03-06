@@ -1,5 +1,4 @@
 local *
-local Parser, Remainder
 
 import spec, repr from require 'spec'
 
