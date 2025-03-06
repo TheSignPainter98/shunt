@@ -20,8 +20,6 @@ type_checker = (type_spec) ->
     checker = (parse type_spec)\checker!\build!
 
     type_checkers[type_spec] = checker
-    if DEBUG
-      print "got checker:\n\t#{checker_program_repr checker}"
     checker
 
 export F = (type_spec, fn) ->
@@ -838,6 +836,8 @@ check = (check_prog, value, root=true) ->
   if num_running_checkers >= MAX_CHECKER_DEPTH
     error "type checker recursed too many times (#{num_running_checkers} times). If this is okay, increase the MAX_CHECKER_DEPTH"
 
+  if DEBUG
+    print "running checker:\n\t#{checker_program_repr check_prog}"
   with check_prog
     local pc = -1
     while true
