@@ -690,7 +690,7 @@ class Function using Is
       [] = ') -> '
       if #@return_types == 1
         if @remainder_return_type?
-          [] = tostring remainder_return_type
+          [] = tostring @remainder_return_type
           [] = '...'
         else
           [] = tostring @return_types[1]
