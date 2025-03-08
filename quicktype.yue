@@ -835,6 +835,7 @@ checker_program_repr = (checker) ->
 
 LABEL_PLACEHOLDER = <tostring>: => '<LABEL-PLACEHOLDER>'
 
+export MAX_CHECKER_DEPTH = 1000
 stack_size = 0
 stack = {}
 num_unions = 0
@@ -843,8 +844,6 @@ union_bail_jumps = {}
 root_union = nil
 num_running_checkers = 0
 instruction_counts = {}
-
-export MAX_CHECKER_DEPTH = 1000
 check = (check_prog, value, root=true) ->
   if root
     -- Prime stack.
