@@ -7,7 +7,9 @@ export T = (type_spec, value) ->
     error 'cannot typecheck: no type spec provided'
 
   checker = type_checker type_spec
-  check checker, value
+  err = check checker, value
+  if err?
+    error err -- , 2
   value
 
 export DEBUG = false
@@ -34,12 +36,16 @@ export F = (type_spec, fn) ->
   n_return_types = #return_types
   check_returns = (...) ->
     for i = 1, n_return_types
-      check return_types[i], select i, ...
+      err = check return_types[i], select i, ...
+      if err?
+        error err --, 2
     for i = n_return_types+1, select '#', ...
       checker = return_types[i]
       if not checker?
         error 'function returned too many values'
-      check checker, select i, ...
+      err = check checker, select i, ...
+      if err?
+        error err --, 2
 
     ...
 
@@ -47,12 +53,16 @@ export F = (type_spec, fn) ->
   n_param_types = #param_types
   (...) ->
     for i = 1, n_param_types
-      check param_types[i], select i, ...
+      err = check param_types[i], select i, ...
+      if err?
+        error err --, 2
     for i = n_param_types+1, select '#', ...
       checker = param_types[i]
       if not checker?
         error 'function given too many arguments'
-      check checker, select i, ...
+      err = check checker, select i, ...
+      if err?
+        error err --, 2
 
     check_returns fn ...
 
@@ -450,8 +460,6 @@ known_primitives =
   table: true
   thread: true
 named_type = (name) ->
-  if not name.match?
-    error repr name
   if known_primitives[name]?
     Primitive name
   else if name == 'any'
@@ -844,6 +852,24 @@ union_bail_jumps = {}
 root_union = nil
 num_running_checkers = 0
 instruction_counts = {}
+macro check_error = (msg) ->
+  lines = with {}
+    [] = 'msg = if num_unions == 0'
+    [] = "  #{msg}"
+    [] = 'else'
+    [] = '  nil'
+
+    [] = 'new_size = union_depths[num_unions] ?? 0'
+    [] = 'for i = new_size + 1, stack_size'
+    [] = '  stack[i] = nil'
+    [] = 'stack_size = new_size'
+
+    [] = 'if num_unions == 0'
+    [] = '  return msg'
+    [] = 'print "BAILING to #{union_bail_jumps[num_unions]}"'
+    [] = 'pc = union_bail_jumps[num_unions] - 2'
+    [] = 'bailing = true'
+  table.concat lines, '\n'
 check = (check_prog, value, root=true) ->
   if root
     -- Prime stack.
@@ -854,28 +880,13 @@ check = (check_prog, value, root=true) ->
   initial_num_running_checkers = num_running_checkers
 
   if num_running_checkers >= MAX_CHECKER_DEPTH
-    error "type checker recursed too many times (#{num_running_checkers} times). If this is okay, increase the MAX_CHECKER_DEPTH"
+    return "type checker recursed too many times (#{num_running_checkers} times). If this is okay, increase the MAX_CHECKER_DEPTH"
 
   if DEBUG
     print "running checker:\n\t#{checker_program_repr check_prog}"
   with check_prog
     local pc
     bailing = false
-    check_error = (msg) ->
-      -- TODO(kcza): make this a macro!
-      if num_unions == 0 and 'function' == type msg
-        msg = msg! -- Resolve before touching stack.
-
-      new_size = union_depths[num_unions] ?? 0
-      for i = new_size + 1, stack_size
-        stack[i] = nil
-      stack_size = new_size
-
-      if num_unions == 0
-        error msg
-      print "BAILING to #{union_bail_jumps[num_unions]}"
-      pc = union_bail_jumps[num_unions] - 2
-      bailing = true
 
     pc = -1
     while true
@@ -907,21 +918,18 @@ check = (check_prog, value, root=true) ->
           ty = type stack[stack_size]
           arg = [pc + 1]
           if ty != arg
-            print 'OH NO'
-            print num_unions
-            check_error -> "incorrect type: expected #{arg} but got #{ty}"
-            print 'OH YEAH'
+            $check_error "incorrect type: expected #{arg} but got #{ty}"
         when C_ASSERT_TRUTHY
           if not stack[stack_size]
-            check_error -> "incorrect type: expected a truthy value but got #{stack[stack_size]}"
+            $check_error "incorrect type: expected a truthy value but got #{stack[stack_size]}"
         when C_ASSERT_LEN
           actual_len = #stack[stack_size-1]
           counted_len = stack[stack_size]
           if counted_len != actual_len
-            check_error "incorrect type: expected array but got table"
+            $check_error "incorrect type: expected array but got table"
         when C_ASSERT_EQ
           if stack[stack_size] != [pc + 1]
-            check_error -> "incorrect type: expected #{type [pc + 1]} #{repr [pc + 1]}"
+            $check_error "incorrect type: expected #{type [pc + 1]} #{repr [pc + 1]}"
         when C_GET_FIELD
           stack_size += 1
           stack[stack_size] = stack[stack_size-2][stack[stack_size-1]]
@@ -945,33 +953,27 @@ check = (check_prog, value, root=true) ->
           arg = [pc + 1]
           checker = type_checkers[arg]
           if not checker?
-            error "cannot typecheck #{arg}: type not defined"
+            return "cannot typecheck #{arg}: type not defined"
 
           num_running_checkers += 1
-          recovered_err = nil
-          try -- TODO(kcza): remove this try
-            recovered_err = check checker, nil, false
-          catch err
-            recovered_err = err
-            print 'RECOVERED'
+          err = check checker, nil, false
           num_running_checkers -= 1
 
-          if recovered_err?
+          if err?
             if num_unions == 0
-              error recovered_err
+              return err
+
+            bailing = true
             pc = union_bail_jumps[num_unions] - 2
         when C_CLEAR_BAILING
           bailing = false
         when C_SET_UNION_BAIL_TARGET
-          -- TODO(kcza): CHECK VIA USER TYPES!
           union_bail_jumps[num_unions] = [pc + 1]
         when C_PUSH_UNION_CTX
           num_unions += 1
           union_depths[num_unions] = #stack
           if num_unions == 1
             root_union = [pc + 1]
-            print "set root union to #{[pc + 1]}; #{[pc]}"
-          print "ROOT UNION IS #{root_union}"
         when C_POP_UNION_CTX
           union_bail_jumps[num_unions] = nil
           union_depths[num_unions] = nil
@@ -979,9 +981,9 @@ check = (check_prog, value, root=true) ->
 
           if bailing
             if num_unions == 0
-              check_error "incorrect type: expected #{root_union} but got #{type stack[stack_size]}"
+              $check_error "incorrect type: expected #{root_union} but got #{type stack[stack_size]}"
             else
-              check_error! -- Unwind.
+              $check_error! -- Unwind.
 
           if num_unions == 0
             root_union = nil
