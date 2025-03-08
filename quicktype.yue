@@ -281,52 +281,33 @@ class TypeSpecParser extends Parser
     table
 
   parse_table_content: =>
-    first_elem = @select
-      * token: T_NAME
-        action: -> @expect T_NAME
-      * token: T_BRACE_CLOSE
-        action: -> nil
-      otherwise: @\parse_type
-    if first_elem == nil
+    if (@lexer\peek! ?? {}).type == T_BRACE_CLOSE
       return Struct {}
 
-    second_elem = @select
+    checkpoint = @lexer\checkpoint!
+    first_elem_is_field_name = (@maybe T_NAME)? and (@maybe T_COLON)?
+    @lexer\restore checkpoint
+
+    if first_elem_is_field_name
+      return Struct @parse_repeat_separated @\parse_field, T_COMMA
+
+    first_type = @parse_type!
+    table_content_type = @select
       * token: T_BRACE_CLOSE
         action: -> 'set'
       * token: T_ARROW
         action: -> 'mapping'
-      * token: T_COLON
-        action: -> 'struct'
 
-    switch second_elem
+    switch table_content_type
       when 'set'
-        if 'string' == type first_elem
-          first_elem = named_type first_elem
-        Set first_elem
+        Set first_type
       when 'mapping'
-        if 'string' == type first_elem
-          first_elem = named_type first_elem
         { _, maps_to } = @sequence
           * token: T_ARROW
           * action: @\parse_type
-        Mapping first_elem, maps_to
-      when 'struct'
-        @expect T_COLON
-        first_type = @parse_type!
-        first_field = Field first_elem, first_type
-        if @lexer\peek!.type == T_COMMA
-          @expect T_COMMA
-        remainder = @select
-          * token: T_BRACE_CLOSE
-            action: -> nil
-          * token: T_NAME
-            action: -> @parse_repeat_separated @\parse_field, T_COMMA
-        if remainder?
-          Struct { first_field, ...remainder}
-        else
-          Struct { first_field }
+        Mapping first_type, maps_to
       else
-        error "internal error: unexpected symbol: #{repr second_elem}"
+        error "internal error: illegal table contents type: #{repr table_content_type}"
 
   parse_field: =>
     {name, _, type} = @sequence
@@ -431,15 +412,15 @@ class Lexer
         @done = true
       ret
 
-  snapshot: =>
-    Snapshot @index, @peeked
+  checkpoint: =>
+    Checkpoint @index, @peeked
 
-  restore: (snapshot) =>
-    { :index, :peeked } = snapshot
+  restore: (checkpoint) =>
+    { :index, :peeked } = checkpoint
     @index = index
     @peeked = peeked
 
-class Snapshot
+class Checkpoint
   new: (@index, @peeked) =>
 
 class Symbol
@@ -1197,6 +1178,9 @@ spec ->
           * Mapping (Primitive 'number'), Primitive 'string'
           * Primitive 'table'
           * Primitive 'function'
+        expect_that (parse '{string|number}'), deep_eq Set Disjunction
+          * Primitive 'string'
+          * Primitive 'number'
 
       it 'gives precedence to conjunctions', ->
         expect_that (parse 'string+number|boolean'), deep_eq Disjunction
@@ -1321,6 +1305,21 @@ spec ->
       expect_that (-> T 'string|number', 'hello'), no_errors!
       expect_that (-> T 'string|number', 123), no_errors!
       expect_that (-> T 'string|number', true), errors matches 'incorrect type: expected string|number but got boolean'
+
+    it 'checks nested inline disjunctions', ->
+      expect_that (-> T 'number|{string|number}|string', 'hello'), no_errors!
+      expect_that (-> T 'number|{string|number}|string', {hello: true}), no_errors!
+      expect_that (-> T 'number|{string|number}|string', {[1]: true}), no_errors!
+      expect_that (-> T 'number|{string|number}|string', ->), errors matches 'incorrect type: expected number|{string|number}|string but got function'
+
+    it 'checks nested recursive disjunctions', ->
+      declare_type 'InnerDisjunction', 'string|number'
+      expect_that (-> T 'boolean|InnerDisjunction|function', true), no_errors!
+      expect_that (-> T 'boolean|InnerDisjunction|function', 'hello'), no_errors!
+      expect_that (-> T 'boolean|InnerDisjunction|function', 123), no_errors!
+      expect_that (-> T 'boolean|InnerDisjunction|function', ->), no_errors!
+
+      expect_that (-> T 'boolean|InnerDisjunction|function', {}), errors matches 'incorrect type: expected boolean|InnerDisjunction|function but got table'
 
   describe 'declare_type', ->
     it 'requires two arguments', ->
