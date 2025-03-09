@@ -21,7 +21,7 @@ main = (raw_args) ->
   spec.set_log_verbosity args.verbose
 
   if args.test
-    run_tests!
+    run_tests args.test.filter
     return
   if not args.no_install
     install_startup_script raw_args
