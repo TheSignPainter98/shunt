@@ -5,7 +5,7 @@ local Subcommand -- `local *` does not cover exports
 
 unpack ??= table.unpack ?? (tab) ->
   -- Rough fallback for luajit.
-  {e1, e2, e3, e4, e5, e5, e6, e7, e8, e9, e10, limit} = tab
+  {e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, _limit} = tab
   switch #tab
     when 0
       return
@@ -29,9 +29,7 @@ unpack ??= table.unpack ?? (tab) ->
       return e1, e2, e3, e4, e5, e6, e7, e8, e9
     when 10
       return e1, e2, e3, e4, e5, e6, e7, e8, e9, e10
-  if limit?
-    error 'cannot unpack table: too many values to unpack'
-  return e1, e2, e3, e4, e5, e5, e6, e7, e8, e9, e10, limit
+  error 'cannot unpack table: too many values to unpack'
 
 EXIT = <tostring>: => "<exit>"
 SELF = <tostring>: => '<self>'
