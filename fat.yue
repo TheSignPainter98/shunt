@@ -23,7 +23,9 @@ main = (raw_args) ->
 
   spam args.no_reattempt, ->
     if args.display?
-      display.main args.display, args
+      display.main args.display
+    else if args.ledger?
+      ledger.main args.ledger
 
 install_startup_script = (raw_args) ->
   stringified_args = {}
