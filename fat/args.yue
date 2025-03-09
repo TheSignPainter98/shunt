@@ -24,6 +24,9 @@ export class Args
         \global!
       \add with Subcommand 'test'
         \description 'test the program and exit'
+        \add with Flag 'no-minecraft'
+          \description 'skip in-world tests'
+          \short nil
         \add with Param 'filter'
           \description 'run only tests matching this pattern'
           \default nil

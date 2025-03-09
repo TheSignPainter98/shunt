@@ -12,6 +12,8 @@ import 'fat.logger'
 import log from require 'fat.logger'
 import 'spec'
 
+global skip_minecraft_tests = false
+
 main = (raw_args) ->
   args, ok = Args::parse raw_args
   if not ok
@@ -20,8 +22,9 @@ main = (raw_args) ->
   logger.set_log_verbosity args.verbose
   spec.set_log_verbosity args.verbose
 
-  if args.test
-    run_tests args.test.filter
+  with? args.test
+    skip_minecraft_tests = .no_minecraft
+    run_tests .filter
     return
   if not args.no_install
     install_startup_script raw_args
