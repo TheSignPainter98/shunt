@@ -8,13 +8,18 @@ import Args from require 'fat.args'
 display = require 'fat.display.main'
 ledger = require 'fat.ledger.main'
 import run_tests from require 'spec'
-import log, set_log_verbosity from require 'fat.logger'
+import 'fat.logger'
+import log from require 'fat.logger'
+import 'spec'
 
 main = (raw_args) ->
   args, ok = Args::parse raw_args
   if not ok
     return
-  set_log_verbosity args.verbose
+
+  logger.set_log_verbosity args.verbose
+  spec.set_log_verbosity args.verbose
+
   if args.test
     run_tests!
     return

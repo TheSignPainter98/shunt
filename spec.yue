@@ -3,7 +3,7 @@ local *
 spec_fns = nil
 
 verbose = false
-export log_verbosely = (v=true) ->
+export set_log_verbosity = (v=true) ->
   verbose = v
 log = (msg) ->
   if verbose
@@ -69,10 +69,6 @@ class Spec
     table.concat parts, ' '
 
   test: (filter=nil) =>
-    if @name?
-      log -> "testing #{@desc!}..."
-    else
-      log -> "running test suite..."
     for child in *@children
       child\test filter
 
@@ -90,6 +86,8 @@ class Test
       if not desc\match filter
         log -> "* skipping #{desc}"
         return
+    else
+      log -> "* running #{@desc!}"
 
     @@current_run_failures = {}
     print_calls = {}
