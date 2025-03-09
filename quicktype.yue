@@ -9,7 +9,7 @@ export T = (type_spec, value) ->
   checker = type_checker type_spec
   err = check checker, value
   if err?
-    error err -- , 2
+    error err, 2
   value
 
 export DEBUG = false
@@ -38,14 +38,14 @@ export F = (type_spec, fn) ->
     for i = 1, n_return_types
       err = check return_types[i], select i, ...
       if err?
-        error err --, 2
+        error err, 2
     for i = n_return_types+1, select '#', ...
       checker = return_types[i]
       if not checker?
         error 'function returned too many values'
       err = check checker, select i, ...
       if err?
-        error err --, 2
+        error err, 2
 
     ...
 
@@ -55,14 +55,14 @@ export F = (type_spec, fn) ->
     for i = 1, n_param_types
       err = check param_types[i], select i, ...
       if err?
-        error err --, 2
+        error err, 3
     for i = n_param_types+1, select '#', ...
       checker = param_types[i]
       if not checker?
         error 'function given too many arguments'
       err = check checker, select i, ...
       if err?
-        error err --, 2
+        error err, 3
 
     check_returns fn ...
 
