@@ -1,0 +1,54 @@
+local *
+
+import F from require 'quicktype'
+import spec from require 'spec'
+
+class Queue
+  new: =>
+    @entries = {}
+    @front = 1
+    @back = 1
+
+  len: F '(Self) -> number', =>
+    @back - @front
+
+  enqueue: F '(Self, any) -> nil', (elem) =>
+    @entries[@back] = elem
+    @back += 1
+
+  dequeue: F '(Self) -> ?any', =>
+    import repr from require 'spec'
+    print repr @
+    with? @entries[@front]
+      @entries[@front] = nil
+      @front += 1
+
+  peek: F '(Self) -> ?any', =>
+    @entries[@front]
+
+spec ->
+  import describe, expect_that, it, matchers from require 'spec'
+  import contains, eq from matchers
+
+  describe 'Queue', ->
+    it 'dequeues nil on empty', ->
+      with Queue!
+        expect_that \dequeue!, eq nil
+
+    it 'dequeues in the right order', ->
+      with Queue!
+        expect_that \len!, eq 0
+        \enqueue 'one'
+        \enqueue 'two'
+        \enqueue 'three'
+        expect_that \len!, eq 3
+        expect_that \dequeue!, eq 'one'
+        expect_that \dequeue!, eq 'two'
+        expect_that \dequeue!, eq 'three'
+        expect_that \dequeue!, eq nil
+        expect_that \len!, eq 0
+        \enqueue 'four'
+        \enqueue 'five'
+        expect_that \len!, eq 2
+        expect_that \dequeue!, eq 'four'
+        expect_that \dequeue!, eq 'five'
