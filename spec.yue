@@ -557,12 +557,13 @@ export repr = =>
             [] = '{'
             first = true
             keys = [ key for key, _ in pairs @ ]
-            table.sort keys, (a, b) ->
-              ta = type a
-              tb = type b
-              if ta != tb or ta == 'number'
-                return false
-              a < b
+            if can_sort keys
+              table.sort keys, (a, b) ->
+                ta = type a
+                tb = type b
+                if ta != tb or ta == 'number'
+                  return false
+                a < b
             for key in *keys
               value = @[key]
               if not first
@@ -589,6 +590,18 @@ is_list = (table) ->
     if max_key < k
       max_key = k
   max_key == num_keys and num_keys > 0
+
+can_sort = (list) ->
+  for elem in *list
+    switch type elem
+      when 'boolean', 'string', 'number'
+        continue
+      when 'table'
+        if not table.<>? or not table.<lt>?
+          return false
+      else
+        return false
+  true
 
 export matchers =
   anything: -> Anything!
