@@ -59,7 +59,7 @@ export F = (type_spec, fn) ->
     for i = n_param_types+1, select '#', ...
       checker = param_types[i]
       if not checker?
-        error 'function given too many arguments'
+        error 'function given too many arguments', 3
       err = check checker, select i, ...
       if err?
         error err, 3
