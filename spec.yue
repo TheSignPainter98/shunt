@@ -77,6 +77,7 @@ FATAL_TEST_ERROR_MARKER = 'INTERNAL ERROR: FATAL TEST ERROR'
 class Test
   new: (@name, @assertions_fn, @spec) =>
 
+  @num_run: 0
   @num_failures: 0
   @current_run_failures: {}
 
@@ -88,6 +89,7 @@ class Test
         return
     else
       log -> "* running #{@desc!}"
+    @@num_run += 1
 
     @@current_run_failures = {}
     print_calls = {}
@@ -650,5 +652,7 @@ export run_tests = (filter) ->
 
   root_spec?\test filter
 
+  log ->
+    "#{Test.num_run} checks run"
   if Test.num_failures > 0
     print "#{Test.num_failures} checks failed!"
