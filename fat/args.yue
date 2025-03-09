@@ -1,6 +1,6 @@
 local *
 
-import ArgParser, Flag from require 'clap'
+import ArgParser, Flag, Subcommand from require 'clap'
 
 export class Args
   @parse: (args) =>
@@ -19,12 +19,10 @@ export class Args
         \short nil
         \dest 'no_reattempt'
         \global!
-      \add with Flag 'test'
-        \description 'run tests'
-        \short nil
-        \global!
       \add with Flag 'verbose'
         \description 'log verbosely'
         \global!
+      \add with Subcommand 'test'
+        \description 'test the program and exit'
       \add (require 'fat.display.main').subcommand
       \add (require 'fat.ledger.main').subcommand
