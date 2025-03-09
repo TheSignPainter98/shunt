@@ -47,7 +47,8 @@ install_startup_script = (raw_args) ->
     shell.execute({'fat', #{table.concat stringified_args, ', '}})
   "
   with assert io.open 'startup.lua', 'w+'
-    \write script
+    assert \write script
+    assert \close!
 
 spam = (no_reattempt, fn) ->
   if no_reattempt
@@ -62,11 +63,15 @@ spam = (no_reattempt, fn) ->
       fn!
       done = true
     catch err
+      colour = term.getTextColor!
+      term.setTextColor colors.red
       print err
+      term.setTextColor colour
+
       print "[failed]"
       sleep 1
-      print "[attempt #{attempt}]"
       term?.clear!
+      print "[attempt #{attempt}]"
 
 sleep = (n_secs) ->
   if os.sleep?
