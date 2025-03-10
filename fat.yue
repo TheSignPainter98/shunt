@@ -65,7 +65,7 @@ spam = (no_reattempt, fn) ->
     catch err
       colour = term?.getTextColor!
       term?.setTextColor colors.red
-      print err
+      print debug.traceback err
       term?.setTextColor colour
 
       print "[failed]"
@@ -79,4 +79,8 @@ sleep = (n_secs) ->
   else
     os.execute "sleep #{n_secs}s"
 
-main {...}
+args = {...}
+try
+  main args
+catch err
+  print debug.traceback err
