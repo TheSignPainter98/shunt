@@ -11,7 +11,7 @@ export subcommand = with Subcommand 'ledger'
     \short nil
     \description 'at the start, print all history'
 
-export main = (args) ->
+export main = F '({}) -> <>', (args) ->
   term_width, term_height = term?.getSize!
   term_width ??= 80
   term_height ??= 20
@@ -25,22 +25,23 @@ export main = (args) ->
     width: term_width
 
 class Ledger
-  new: F '(Self, number) -> nil', (@max_len) =>
+  new: F '(Self, number) -> <>', (@max_len) =>
     @entries = Queue!
 
   len: F '(Self) -> number', =>
     @entries\len!
 
-  add: F '(Self, [string]) -> nil', (entry) =>
+  add: F '(Self, [string]) -> <>', (entry) =>
     if @entries\len! == @max_len
       @entries\dequeue!
     @entries\enqueue entry
 
-  emit: F '(Self, ?LedgerFmtOpts) -> nil', (opts={}) =>
+  emit: F '(Self, ?LedgerFmtOpts) -> <>', (opts={}) =>
     to_print = @fmt opts
 
     term?.clear!
     print to_print
+    return
 
   fmt: F '(Self, LedgerFmtOpts) -> string', (opts) =>
     buf = {}
@@ -48,10 +49,10 @@ class Ledger
     @fmt_body buf, opts
     table.concat buf, '\n'
 
-  fmt_header: F '(Self, [string], LedgerFmtOpts) -> nil', (buf, opts) =>
+  fmt_header: F '(Self, [string], LedgerFmtOpts) -> <>', (buf, opts) =>
     @fmt_entry buf, { 'when', 'what', 'how' }, opts
 
-  fmt_body: F '(Self, [string], LedgerFmtOpts) -> nil', (buf, opts) =>
+  fmt_body: F '(Self, [string], LedgerFmtOpts) -> <>', (buf, opts) =>
     { :max_rows } = opts
 
     len = @len!
@@ -64,7 +65,7 @@ class Ledger
     for entry in *entries[#entries,1,-1]
       @fmt_entry buf, entry, opts
 
-  fmt_entry: F '(Self, [string], [string], ?LedgerFmtOpts) -> nil', (buf, entry, opts={}) =>
+  fmt_entry: F '(Self, [string], [string], ?LedgerFmtOpts) -> <>', (buf, entry, opts={}) =>
     { :width } = opts
 
     sep = '  '

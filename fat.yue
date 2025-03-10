@@ -11,6 +11,7 @@ import run_tests from require 'spec'
 import 'fat.logger'
 import log from require 'fat.logger'
 import 'spec'
+import F from require 'quicktype'
 
 global skip_minecraft_tests = false
 
@@ -50,7 +51,7 @@ install_startup_script = (raw_args) ->
     assert \write script
     assert \close!
 
-spam = (no_reattempt, fn) ->
+spam = F '(boolean, () -> <>) -> <>', (no_reattempt, fn) ->
   if no_reattempt
     fn!
     return
@@ -73,7 +74,7 @@ spam = (no_reattempt, fn) ->
       term?.clear!
       print "[attempt #{attempt}]"
 
-sleep = (n_secs) ->
+sleep = F '(number) -> <>', (n_secs) ->
   if os.sleep?
     os.sleep n_secs
   else
