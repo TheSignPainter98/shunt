@@ -42,7 +42,7 @@ export F = (type_spec, fn) ->
     for i = n_return_types+1, select '#', ...
       checker = return_types[i]
       if not checker?
-        error 'function returned too many values'
+        error "function returned too many values: expected #{n_return_types} but got #{select '#', ...}", 2
       err = check checker, select i, ...
       if err?
         error err, 2
@@ -236,15 +236,6 @@ class TypeSpecParser extends Parser
 
   parse_return_type: =>
     @select
-      * token: T_NAME
-        action: ->
-          ty = @parse_function_io_type!
-          if ty\is Remainder
-            <index>: => ty.type
-          else if ty.name == 'nil'
-            {} -- 'nil' is an alternative spelling of '<>'
-          else
-            { ty }
       * token: T_ANGLE_OPEN
         action: ->
           @expect T_ANGLE_OPEN
@@ -264,7 +255,11 @@ class TypeSpecParser extends Parser
 
           types
       otherwise: ->
-        { @parse_function_io_type! }
+        ty = @parse_function_io_type!
+        if ty\is Remainder
+          <index>: => ty.type
+        else
+          { ty }
 
   parse_function_io_type: =>
     ty = @parse_type!
@@ -1116,7 +1111,7 @@ spec ->
       it 'accepts optional', ->
         expect_that (parse '?nil'), deep_eq Optional Primitive 'nil'
         expect_that (parse '?string'), deep_eq Optional Primitive 'string'
-        expect_that (parse '?() -> nil'), deep_eq Optional Function {}, {}
+        expect_that (parse '?() -> nil'), deep_eq Optional Function {}, {Primitive 'nil'}
 
       it 'accepts arrays', ->
         expect_that (parse '[string]'), deep_eq Array Primitive 'string'
@@ -1153,8 +1148,8 @@ spec ->
             * Field 'inner2', Primitive 'boolean'
 
       it 'accepts functions', ->
-        expect_that (parse '() -> nil'), deep_eq Function {}, {}
         expect_that (parse '() -> <>'), deep_eq Function {}, {}
+        expect_that (parse '() -> nil'), deep_eq Function {}, {Primitive 'nil'}
         expect_that (parse '(string) -> number'), deep_eq Function {Primitive 'string'}, {Primitive 'number'}
         expect_that (parse '(number, string) -> number'), deep_eq Function {(Primitive 'number'), (Primitive 'string')}, {Primitive 'number'}
         expect_that (parse '(string) -> (number) -> boolean'), deep_eq Function {Primitive 'string'}, {Function {Primitive 'number'}, {Primitive 'boolean'}}
@@ -1164,6 +1159,7 @@ spec ->
         expect_that (parse '(string...) -> number...'), deep_eq Function {<index>: => Primitive 'string'}, {<index>: => Primitive 'number'}
         expect_that (parse '(string...) -> <number...>'), deep_eq Function {<index>: => Primitive 'string'}, {<index>: => Primitive 'number'}
         expect_that (parse '(boolean, string...) -> <thread, number...>'), deep_eq Function {(Primitive 'boolean'), <index>: => Primitive 'string'}, {(Primitive 'thread'), <index>: => Primitive 'number'}
+        expect_that (parse '() -> [string]...'), deep_eq Function {}, { <index>: => Array Primitive 'string' }
 
       it 'accepts conjunctions', ->
         expect_that (parse '[string]+{number->string}+table+function'), deep_eq Conjunction
@@ -1359,8 +1355,11 @@ spec ->
       f = F '(number, number) -> number', (a, b) -> a + b
       expect_that (f 1, 2), eq 3
 
+    it 'accepts none returns', ->
+      expect_that (-> (F '() -> <>', ->)!), no_errors!
+
     it 'accepts nil returns', ->
-      expect_that (-> (F '() -> nil', ->)!), no_errors!
+      expect_that (-> (F '() -> nil', -> nil)!), no_errors!
 
     it 'accepts absent optional arguments', ->
       expect_that (-> (F '() -> ?string', ->)!), no_errors!
