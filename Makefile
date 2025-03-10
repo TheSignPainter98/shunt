@@ -16,7 +16,8 @@ docs/%.svg: docs/%.dot Makefile
 	./$< $(GRAPHVIZ_OPTS) -Tsvg >$@
 
 bin/%: bin/%.lua.packed nitro.lua clap.lua spec.lua
-	$(LUA) ./nitro.lua $< -o $@
+# $(LUA) ./nitro.lua $< -o $@
+	cp $< $@
 
 bin/%.lua.packed: %.lua $(OBJECTS) moonpack.lua
 	$(LUA) ./moonpack.lua $< -o $@
@@ -29,3 +30,11 @@ bin/%.lua.packed: %.lua $(OBJECTS) moonpack.lua
 clean:
 	$(RM) $(DIAGRAMS) $(OBJECTS) startup.lua packed/fat fat.goo $(BINARIES) bin/*
 .PHONY: clean
+
+install: $(BINARIES)
+	for computer_dir in ~/.local/share/PrismLauncher/instances/CC-\ Islands/.minecraft/saves/*/computercraft/computer/*/; do \
+		rsync -a ./bin "$$computer_dir";           \
+		mv "$$computer_dir"/bin/* "$$computer_dir"; \
+		rmdir "$$computer_dir"/bin/;               \
+	done
+.PHONY: install
