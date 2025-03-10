@@ -63,10 +63,10 @@ spam = (no_reattempt, fn) ->
       fn!
       done = true
     catch err
-      colour = term.getTextColor!
-      term.setTextColor colors.red
+      colour = term?.getTextColor!
+      term?.setTextColor colors.red
       print err
-      term.setTextColor colour
+      term?.setTextColor colour
 
       print "[failed]"
       sleep 1
