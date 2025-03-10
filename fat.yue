@@ -44,7 +44,7 @@ install_startup_script = (raw_args) ->
 
   script = "
     shell.run('set motd.enable false')
-    shell.execute({'fat', #{table.concat stringified_args, ', '}})
+    shell.execute('fat', #{table.concat stringified_args, ', '})
   "
   with assert io.open 'startup.lua', 'w+'
     assert \write script
