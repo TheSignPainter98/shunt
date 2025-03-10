@@ -15,7 +15,7 @@ all: $(DIAGRAMS) $(BINARIES)
 docs/%.svg: docs/%.dot Makefile
 	./$< $(GRAPHVIZ_OPTS) -Tsvg >$@
 
-bin/%: $(OBJECTS) moonpack.lua nitro.lua
+bin/%: %.lua $(OBJECTS) moonpack.lua nitro.lua
 	$(LUA) ./moonpack.lua $< -o $@.lua.packed
 	$(LUA) ./nitro.lua $@.lua.packed -o $@
 
