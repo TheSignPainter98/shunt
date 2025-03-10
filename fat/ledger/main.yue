@@ -56,6 +56,9 @@ class Ledger
     { :max_rows } = opts
 
     len = @len!
+    if len == 0
+      buf[] = "--- ledger empty ---"
+      return
     if max_rows > len
       max_rows = len
     entries = [ entry for entry in @entries\iter! ]
