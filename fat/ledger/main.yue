@@ -12,7 +12,6 @@ export subcommand = with Subcommand 'ledger'
     \description 'at the start, print all history'
 
 export main = (args) ->
-  print '[ledger start]'
   term_width, term_height = term?.getSize!
   term_width ??= 80
   term_height ??= 20
