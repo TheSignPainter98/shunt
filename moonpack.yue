@@ -121,7 +121,10 @@ class SourceFile
         [] = @fmt_line lineno, line
 
   fmt_line: (lineno, line) =>
-    "#{line} -- #{@path}:#{lineno}"
+    if line\match '-- [0-9]+$'
+      "#{line} -- #{@path}:#{lineno}"
+    else
+      line
 
 _G.fs ??= {
   find: (pattern) ->
