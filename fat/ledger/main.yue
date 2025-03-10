@@ -1,0 +1,137 @@
+local *
+
+import Flag, Subcommand from require 'clap'
+import Queue from require 'fat.data.queue'
+import declare_type, F from require 'quicktype'
+import spec from require 'spec'
+
+export subcommand = with Subcommand 'ledger'
+  \description 'show system status log'
+  \add with Flag 'show-history'
+    \short nil
+    \description 'at the start, print all history'
+
+export main = (args) ->
+  print '[ledger start]'
+  term_width, term_height = term?.getSize!
+  term_width ??= 80
+  term_height ??= 20
+
+  ledger = Ledger term_height - 1
+  ledger\add { 'hello', 'world', 'hfjdkla' }
+  ledger\add { 'hello2', 'world', 'hfjdkla' }
+  ledger\add { 'hello3', 'world', 'hfjdkla' }
+  ledger\emit
+    max_rows: term_height - 1
+    width: term_width
+
+class Ledger
+  new: F '(Self, number) -> nil', (@max_len) =>
+    @entries = Queue!
+
+  len: F '(Self) -> number', =>
+    @entries\len!
+
+  add: F '(Self, [string]) -> nil', (entry) =>
+    if @entries\len! == @max_len
+      @entries\dequeue!
+    @entries\enqueue entry
+
+  emit: F '(Self, ?LedgerFmtOpts) -> nil', (opts={}) =>
+    to_print = @fmt opts
+
+    term?.clear!
+    print to_print
+
+  fmt: F '(Self, LedgerFmtOpts) -> string', (opts) =>
+    buf = {}
+    @fmt_header buf, opts
+    @fmt_body buf, opts
+    table.concat buf, '\n'
+
+  fmt_header: F '(Self, [string], LedgerFmtOpts) -> nil', (buf, opts) =>
+    @fmt_entry buf, { 'when', 'what', 'how' }, opts
+
+  fmt_body: F '(Self, [string], LedgerFmtOpts) -> nil', (buf, opts) =>
+    { :max_rows } = opts
+
+    len = @len!
+    if max_rows > len
+      max_rows = len
+    entries = [ entry for entry in @entries\iter! ]
+    for entry in *entries[#entries,1,-1]
+      @fmt_entry buf, entry, opts
+
+  fmt_entry: F '(Self, [string], [string], ?LedgerFmtOpts) -> nil', (buf, entry, opts={}) =>
+    { :width } = opts
+
+    sep = '  '
+    column_widths =
+      * 15
+      * 10
+    final_column_width = width - (sum column_widths) - #sep * #column_widths
+    if final_column_width < 0
+      error "cannot display entry in width of #{width} chars, need at least #{sum column_widths + #sep * (#column_widths - 1)}"
+    column_widths[] = final_column_width
+
+    cells = [ fmt_cell entry[i], column_widths[i] for i = 1, 3 ]
+    buf[] = table.concat cells, sep
+
+declare_type 'LedgerFmtOpts', [[{
+  max_rows: number,
+  width: number
+}]]
+
+sum = F '([number]) -> number', (ns) ->
+  tot = 0
+  for n in *ns
+    tot += n
+  tot
+
+fmt_cell = F '(string, number) -> string', (string, width) ->
+  if #string == width
+    string
+  else if #string < width
+    "%-#{width}s"\format string
+  else
+    "#{string\sub 1, width - 3}..."
+
+spec ->
+  import assert_that, describe, expect_that, it, matchers from require 'spec'
+  import deep_eq, eq from matchers
+
+  describe 'Ledger', ->
+    it 'rotates its content', ->
+      LEN = 3
+      ledger = Ledger LEN
+      for i = 1, LEN
+        ledger\add { 'hello', 'world', tostring i }
+      assert_that ledger\len!, eq LEN
+
+      expect_that [ entry for entry in ledger.entries\iter! ], deep_eq
+        * { 'hello', 'world', '1' }
+        * { 'hello', 'world', '2' }
+        * { 'hello', 'world', '3' }
+
+      ledger\add { 'hello', 'world', 'NEW' }
+      expect_that [ entry for entry in ledger.entries\iter! ], deep_eq
+        * { 'hello', 'world', '2' }
+        * { 'hello', 'world', '3' }
+        * { 'hello', 'world', 'NEW' }
+
+  describe 'fmt_cell', ->
+    it 'preserves right-size input', ->
+      expect_that (fmt_cell 'xxx', 3), eq "xxx"
+
+    it 'pads too-small input', ->
+      expect_that (fmt_cell 'xxx', 6), eq "xxx   "
+
+    it 'truncates too-large input', ->
+      expect_that (fmt_cell 'xxxxxx', 5), eq "xx..."
+
+  describe 'sum', ->
+    it 'adds given values', ->
+      expect_that (sum {1, 2, 3, 4, 5}), eq 15
+
+    it 'handles no values', ->
+      expect_that (sum {}), eq 0
