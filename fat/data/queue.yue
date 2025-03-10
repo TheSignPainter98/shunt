@@ -3,7 +3,7 @@ local *
 import F from require 'quicktype'
 import spec from require 'spec'
 
-class Queue
+export class Queue
   new: =>
     @entries = {}
     @front = 1
@@ -26,9 +26,16 @@ class Queue
   peek: F '(Self) -> ?any', =>
     @entries[@front]
 
+  iter: =>
+    coroutine.wrap ->
+      i = @front
+      while i != @back
+        coroutine.yield @entries[i]
+        i += 1
+
 spec ->
   import describe, expect_that, it, matchers from require 'spec'
-  import contains, eq from matchers
+  import contains, deep_eq, eq from matchers
 
   describe 'Queue', ->
     it 'dequeues nil on empty', ->
@@ -52,3 +59,14 @@ spec ->
         expect_that \len!, eq 2
         expect_that \dequeue!, eq 'four'
         expect_that \dequeue!, eq 'five'
+
+    describe '\\iter', ->
+      with Queue!
+        \enqueue 'one'
+        \enqueue 'two'
+        \enqueue 'three'
+
+        expect_that [ entry for entry in \iter! ], deep_eq
+          * 'one'
+          * 'two'
+          * 'three'
