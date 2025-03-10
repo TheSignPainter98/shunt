@@ -15,14 +15,17 @@ all: $(DIAGRAMS) $(BINARIES)
 docs/%.svg: docs/%.dot Makefile
 	./$< $(GRAPHVIZ_OPTS) -Tsvg >$@
 
-bin/%: %.lua $(OBJECTS) moonpack.lua nitro.lua
-	$(LUA) ./moonpack.lua $< -o $@.lua.packed
-	$(LUA) ./nitro.lua $@.lua.packed -o $@
+bin/%: bin/%.lua.packed nitro.lua clap.lua spec.lua
+	$(LUA) ./nitro.lua $< -o $@
+
+bin/%.lua.packed: %.lua $(OBJECTS) moonpack.lua
+	$(LUA) ./moonpack.lua $< -o $@
+.INTERMEDIATE: bin/%.lua.packed
 
 %.lua: %.yue
 	yue --target=5.1 -l -s $< -o $@
 .PRECIOUS: %.lua
 
 clean:
-	$(RM) $(DIAGRAMS) $(OBJECTS) startup.lua packed/fat fat.goo $(BINARIES)
+	$(RM) $(DIAGRAMS) $(OBJECTS) startup.lua packed/fat fat.goo $(BINARIES) bin/*
 .PHONY: clean
