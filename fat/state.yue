@@ -64,7 +64,8 @@ class StateMachineBuilder
         .state = make_state name, new_state_spec._fields, args
         if reporter?
           reporter .state
-    {
+
+    T 'StateMachine', {
       <index>: index,
       <newindex>: (key, v) =>
         error "cannot add field '#{key}' to state machine"
@@ -101,7 +102,7 @@ class StateSpec
 
 declare_type 'StateMachine', [[{
   state: {name: string},
-  goto: (Self, string, ?{string -> any}) -> nil
+  goto: (Self, string, ?{string -> any}) -> <>
 }]]
 
 valid_state_name = F '(string) -> boolean', (name) ->
