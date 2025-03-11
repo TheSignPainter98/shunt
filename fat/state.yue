@@ -54,6 +54,7 @@ class StateMachineBuilder
       .state = make_state @_initial_state_name, {}, {}
 
       states = @_states
+
       reporter = @_reporter
       .goto = F '(Self, string, ?{string -> any}) -> <>', (name, args={}) =>
         if not states[@state.name]?._transitions[name]
@@ -64,6 +65,39 @@ class StateMachineBuilder
         .state = make_state name, new_state_spec._fields, args
         if reporter?
           reporter .state
+
+      initial_state_name = @_initial_state_name
+      .to_graphviz = F '(Self) -> string', =>
+        lines = with {}
+          [] = 'digraph {'
+          [] = '  bgcolor = black'
+          [] = '  color = white'
+          [] = '  node ['
+          [] = '    color = white'
+          [] = '    fontcolor = white'
+          [] = '    fillcolor = white'
+          [] = '  ]'
+          [] = '  edge ['
+          [] = '    color = white'
+          [] = '    fontcolor = white'
+          [] = '  ]'
+          [] = '  levels=1'
+
+          [] = "  #{initial_state_name}[shape=point]"
+          for state_name, state in pairs states
+            [] = ''
+            field_names = [ field_name for field_name in pairs state._fields ]
+            table.sort field_names
+            if #field_names == 0
+              [] = "  #{state_name}"
+            else
+              [] = "  #{state_name} [label=\"#{state_name}(#{table.concat field_names, ', '})\"]"
+            for other_state in pairs state._transitions
+              [] = "  #{state_name} -> #{other_state}"
+
+          [] = '}'
+        table.concat lines, '\n'
+
 
     T 'StateMachine', {
       <index>: index,
@@ -111,9 +145,6 @@ valid_state_name = F '(string) -> boolean', (name) ->
 valid_field_name = F '(string) -> boolean', (name) ->
   (name\match '^[a-z_][a-z0-9_]*$')?
 
-dot = F '(StateMachine) -> string', (state_machine) ->
-  error 'todo'
-
 spec ->
   import describe, it, matchers, expect_that from require 'spec'
   import anything, deep_eq, eq, errors, matches, no_errors from matchers
@@ -146,6 +177,26 @@ spec ->
         \add_state with StateSpec '-invalid'
           \add_field '-invalid', 'string'
         \build!), errors matches "cannot build state machine: state name '%-invalid' not a valid identifier"
+
+    it 'formats itself as graphviz', ->
+      graphviz_repr = StateMachineBuilder!
+        \set_initial_state 'state-1'
+        \add_state with StateSpec 'state-1'
+          \add_transition_to 'state-2'
+        \add_state with StateSpec 'state-2'
+          \add_transition_to 'state-1'
+          \add_field 'hello', 'string'
+          \add_field 'world', 'number'
+        \build!
+        \to_graphviz!
+      must_contain =
+        * 'digraph {'
+        * 'state%-1 *%[shape=point%]'
+        * 'state%-1 *%-> *state%-2'
+        * 'state%-2 *%[label="state%-2%(hello, world%)"%]'
+        * 'state%-2 *%-> *state%-1'
+      for str in *must_contain
+        expect_that graphviz_repr, matches str
 
   describe 'valid_state_name', ->
     valid_idents =
