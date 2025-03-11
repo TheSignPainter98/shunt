@@ -31,10 +31,6 @@ clean:
 	$(RM) $(DIAGRAMS) $(OBJECTS) startup.lua packed/fat fat.goo $(BINARIES) bin/*
 .PHONY: clean
 
-install: $(BINARIES)
-	for computer_dir in ~/.local/share/PrismLauncher/instances/CC-\ Islands/.minecraft/saves/*/computercraft/computer/*/; do \
-		rsync -a --exclude "*.lua.packed" ./bin "$$computer_dir";           \
-		mv "$$computer_dir"/bin/* "$$computer_dir"; \
-		rmdir "$$computer_dir"/bin/;               \
-	done
+install: scripts/install.sh $(BINARIES)
+	./$<
 .PHONY: install
