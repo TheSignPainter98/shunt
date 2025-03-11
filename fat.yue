@@ -30,6 +30,11 @@ main = (raw_args) ->
   if not args.no_install
     install_startup_script raw_args
 
+  if monitor = peripheral.find 'monitor'
+    log -> 'see monitor'
+    monitor.clear!
+    term.redirect monitor
+
   spam args.no_reattempt, ->
     if args.display?
       display.main args.display
