@@ -9,8 +9,11 @@ class StateMachineBuilder
   new: =>
     @_states = T '{string -> table}', {}
     @_initial_state_name = T '?string', nil
+    @_reporter = T '?(State) -> <>', nil
 
   set_initial_state: F '(Self, string) -> Self', (@_initial_state_name) => @
+
+  set_reporter: F '(Self, (State) -> <>) -> Self', (@_reporter) => @
 
   add_state: F '(Self, StateSpec) -> Self', (state) =>
     if @_states[state._name]?
@@ -28,6 +31,8 @@ class StateMachineBuilder
 
     index = with {}
       make_state = F '(string, {string->string}, {string->any}) -> {}', (name, arg_specs, args) ->
+        args = { ...args } -- Clone for safety
+
         new_state = with :name, <>: {}
           for field, spec in pairs arg_specs
             [field] = T spec, args[field]
@@ -49,13 +54,16 @@ class StateMachineBuilder
       .state = make_state @_initial_state_name, {}, {}
 
       states = @_states
-      .goto = F '(Self, string, ?{string -> any}) -> nil', (name, args={}) =>
+      reporter = @_reporter
+      .goto = F '(Self, string, ?{string -> any}) -> <>', (name, args={}) =>
         if not states[@state.name]?._transitions[name]
           error "no such transition: #{@state.name} -> #{name}"
         new_state_spec = states[name]
         if not new_state_spec?
           error "internal error: no such state '#{name}'"
         .state = make_state name, new_state_spec._fields, args
+        if reporter?
+          reporter .state
     {
       <index>: index,
       <newindex>: (key, v) =>
@@ -107,7 +115,7 @@ dot = F '(StateMachine) -> string', (state_machine) ->
 
 spec ->
   import describe, it, matchers, expect_that from require 'spec'
-  import anything, eq, errors, matches, no_errors from matchers
+  import anything, deep_eq, eq, errors, matches, no_errors from matchers
 
   describe 'StateMachineBuilder', ->
     it 'requires initial state', ->
@@ -253,3 +261,39 @@ spec ->
       it 'rejects extra state fields', ->
         test_sm = make_test_sm!
         expect_that (-> test_sm\goto 'state-3', spare: 'spare'), errors matches 'no such field state%-3.spare'
+
+  describe 'set_reporter', ->
+    it 'is respected by state machines', ->
+      states = {}
+      test_sm = StateMachineBuilder!
+        \set_initial_state 'state-1'
+        \set_reporter (state) ->
+          states[] = state
+        \add_state with StateSpec 'state-1'
+          \add_transition_to 'state-2'
+        \add_state with StateSpec 'state-2'
+          \add_transition_to 'state-1'
+          \add_field 'hello', 'string'
+          \add_field 'world', 'number'
+        \build!
+
+      data =
+        hello: 'asdf'
+        world: 123
+
+      test_sm\goto 'state-2', data
+
+      expect_that states, deep_eq
+        * { name: 'state-2', ...data }
+
+      test_sm\goto 'state-1'
+      test_sm\goto 'state-2', data
+      test_sm\goto 'state-1'
+      test_sm\goto 'state-2', data
+
+      expect_that [ state.<index> for state in *states ], deep_eq
+        * { name: 'state-2', ...data }
+        * { name: 'state-1' }
+        * { name: 'state-2', ...data }
+        * { name: 'state-1' }
+        * { name: 'state-2', ...data }
