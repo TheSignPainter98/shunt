@@ -86,12 +86,17 @@ class Parser
   parse: =>
     error 'unimplemented'
 
-  parse_repeat_separated: (elem_parser, sep_token) =>
+  parse_repeat_separated: (elem_parser, sep_token, opts={}) =>
+    { :separator_trails_before } = opts
+
     with {}
       [] = elem_parser!
       tok = @lexer\peek!
       while tok? and tok.type == sep_token
         @lexer\next!
+        if separator_trails_before == @lexer\peek!.type
+          break
+
         [] = elem_parser!
         tok = @lexer\peek!
 
@@ -215,7 +220,7 @@ class TypeSpecParser extends Parser
     else
       {types, _} = @sequence
         * action: ->
-          @parse_repeat_separated @\parse_function_io_type, T_COMMA
+          @parse_repeat_separated @\parse_function_io_type, T_COMMA, separator_trails_before: T_PAREN_CLOSE
         * token: T_PAREN_CLOSE
     if not @maybe T_ARROW
       for ty in *types
@@ -241,7 +246,7 @@ class TypeSpecParser extends Parser
           @expect T_ANGLE_OPEN
           if @maybe  T_ANGLE_CLOSE
             return {}
-          types = @parse_repeat_separated @\parse_function_io_type, T_COMMA
+          types = @parse_repeat_separated @\parse_function_io_type, T_COMMA, separator_trails_before: T_ANGLE_CLOSE
           @expect T_ANGLE_CLOSE
 
           for ty in *types[,-1]
@@ -284,7 +289,7 @@ class TypeSpecParser extends Parser
     @lexer\restore checkpoint
 
     if first_elem_is_field_name
-      return Struct @parse_repeat_separated @\parse_field, T_COMMA
+      return Struct @parse_repeat_separated @\parse_field, T_COMMA, separator_trails_before: T_BRACE_CLOSE
 
     first_type = @parse_type!
     table_content_type = @select
@@ -1119,6 +1124,7 @@ spec ->
 
       it 'accepts tuples', ->
         expect_that (parse '()'), deep_eq Tuple {}
+        expect_that (parse '(nil,)'), deep_eq Tuple { Primitive 'nil' }
         expect_that (parse '(nil, number)'), deep_eq Tuple { (Primitive 'nil'), Primitive 'number' }
         expect_that (parse '((nil, number), string, (User, table))'), deep_eq Tuple {
           Tuple { (Primitive 'nil'), (Primitive 'number') },
@@ -1138,6 +1144,8 @@ spec ->
         expect_that (parse '{}'), deep_eq Struct {}
         expect_that (parse '{field: boolean}'), deep_eq Struct
           * Field 'field', Primitive 'boolean'
+        expect_that (parse '{field: boolean,}'), deep_eq Struct
+          * Field 'field', Primitive 'boolean'
         expect_that (parse '{field1: number, field2: string}'), deep_eq Struct
           * Field 'field1', Primitive 'number'
           * Field 'field2', Primitive 'string'
@@ -1154,6 +1162,7 @@ spec ->
         expect_that (parse '(number, string) -> number'), deep_eq Function {(Primitive 'number'), (Primitive 'string')}, {Primitive 'number'}
         expect_that (parse '(string) -> (number) -> boolean'), deep_eq Function {Primitive 'string'}, {Function {Primitive 'number'}, {Primitive 'boolean'}}
         expect_that (parse '() -> <string>'), deep_eq Function {}, {(Primitive 'string')}
+        expect_that (parse '() -> <string,>'), deep_eq Function {}, { Primitive 'string' }
         expect_that (parse '() -> <string, boolean>'), deep_eq Function {}, {(Primitive 'string'), (Primitive 'boolean')}
 
         expect_that (parse '(string...) -> number...'), deep_eq Function {<index>: => Primitive 'string'}, {<index>: => Primitive 'number'}
