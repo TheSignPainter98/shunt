@@ -11,11 +11,11 @@ class StateMachineBuilder
     @_initial_state_name = T '?string', nil
     @_reporter = T '?(State) -> <>', nil
 
-  set_initial_state: F '(string) => some', (@_initial_state_name) => @
+  set_initial_state: F '(string) => Self', (@_initial_state_name) => @
 
-  set_reporter: F '((State) -> <>) => some', (@_reporter) => @
+  set_reporter: F '((State) -> <>) => Self', (@_reporter) => @
 
-  add_state: F '(StateSpec) => some', (state) =>
+  add_state: F '(StateSpec) => Self', (state) =>
     if @_states[state._name]?
       error "cannot build state machine: state '#{state._name}' redefined"
     @_states[state._name] = state

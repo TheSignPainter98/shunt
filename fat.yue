@@ -2,6 +2,8 @@ local *
 
 import declare_type from require 'quicktype'
 
+declare_type 'Self', 'some'
+
 import Args from require 'fat.args'
 display = require 'fat.display.main'
 ledger = require 'fat.ledger.main'
