@@ -9,21 +9,21 @@ export class Queue
     @front = 1
     @back = 1
 
-  len: F '(Self) -> number', =>
+  len: F '() => number', =>
     @back - @front
 
-  enqueue: F '(Self, any) -> nil', (elem) =>
+  enqueue: F '(any) => nil', (elem) =>
     @entries[@back] = elem
     @back += 1
 
-  dequeue: F '(Self) -> ?any', =>
+  dequeue: F '() => ?any', =>
     import repr from require 'spec'
     print repr @
     with? @entries[@front]
       @entries[@front] = nil
       @front += 1
 
-  peek: F '(Self) -> ?any', =>
+  peek: F '() => ?any', =>
     @entries[@front]
 
   iter: =>

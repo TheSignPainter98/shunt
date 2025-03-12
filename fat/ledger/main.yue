@@ -25,34 +25,34 @@ export main = F '({}) -> <>', (args) ->
     width: term_width
 
 class Ledger
-  new: F '(Self, number) -> <>', (@max_len) =>
+  new: F '(number) => <>', (@max_len) =>
     @entries = Queue!
 
-  len: F '(Self) -> number', =>
+  len: F '() => number', =>
     @entries\len!
 
-  add: F '(Self, [string]) -> <>', (entry) =>
+  add: F '([string]) => <>', (entry) =>
     if @entries\len! == @max_len
       @entries\dequeue!
     @entries\enqueue entry
 
-  emit: F '(Self, ?LedgerFmtOpts) -> <>', (opts={}) =>
+  emit: F '(?LedgerFmtOpts) => <>', (opts={}) =>
     to_print = @fmt opts
 
     term?.clear!
     print to_print
     return
 
-  fmt: F '(Self, LedgerFmtOpts) -> string', (opts) =>
+  fmt: F '(LedgerFmtOpts) => string', (opts) =>
     buf = {}
     @fmt_header buf, opts
     @fmt_body buf, opts
     table.concat buf, '\n'
 
-  fmt_header: F '(Self, [string], LedgerFmtOpts) -> <>', (buf, opts) =>
+  fmt_header: F '([string], LedgerFmtOpts) => <>', (buf, opts) =>
     @fmt_entry buf, { 'when', 'what', 'how' }, opts
 
-  fmt_body: F '(Self, [string], LedgerFmtOpts) -> <>', (buf, opts) =>
+  fmt_body: F '([string], LedgerFmtOpts) => <>', (buf, opts) =>
     { :max_rows } = opts
 
     len = @len!
@@ -65,7 +65,7 @@ class Ledger
     for entry in *entries[#entries,1,-1]
       @fmt_entry buf, entry, opts
 
-  fmt_entry: F '(Self, [string], [string], ?LedgerFmtOpts) -> <>', (buf, entry, opts={}) =>
+  fmt_entry: F '([string], [string], ?LedgerFmtOpts) => <>', (buf, entry, opts={}) =>
     { :width } = opts
 
     sep = '  '

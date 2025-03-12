@@ -11,17 +11,17 @@ class StateMachineBuilder
     @_initial_state_name = T '?string', nil
     @_reporter = T '?(State) -> <>', nil
 
-  set_initial_state: F '(Self, string) -> Self', (@_initial_state_name) => @
+  set_initial_state: F '(string) => some', (@_initial_state_name) => @
 
-  set_reporter: F '(Self, (State) -> <>) -> Self', (@_reporter) => @
+  set_reporter: F '((State) -> <>) => some', (@_reporter) => @
 
-  add_state: F '(Self, StateSpec) -> Self', (state) =>
+  add_state: F '(StateSpec) => some', (state) =>
     if @_states[state._name]?
       error "cannot build state machine: state '#{state._name}' redefined"
     @_states[state._name] = state
     @
 
-  build: F '(Self) -> StateMachine', =>
+  build: F '() => StateMachine', =>
     if not @_initial_state_name?
       error 'cannot build state machine: initial state undefined'
     if not @_states[@_initial_state_name]?
@@ -45,7 +45,7 @@ class StateMachineBuilder
             error "no such field #{name}.#{key}"
         {
           <index>: new_state
-          <newindex>: F '(Self, string, any) -> ?any', (key, value) =>
+          <newindex>: F '(string, any) => ?any', (key, value) =>
             arg_spec = arg_specs[key]
             if not arg_spec?
               error "no such field #{name}.#{key}"
@@ -56,7 +56,7 @@ class StateMachineBuilder
       states = @_states
 
       reporter = @_reporter
-      .goto = F '(Self, string, ?{string -> any}) -> <>', (name, args={}) =>
+      .goto = F '(string, ?{string -> any}) => <>', (name, args={}) =>
         if not states[@state.name]?._transitions[name]
           error "no such transition: #{@state.name} -> #{name}"
         new_state_spec = states[name]
@@ -67,7 +67,7 @@ class StateMachineBuilder
           reporter .state
 
       initial_state_name = @_initial_state_name
-      .to_graphviz = F '(Self) -> string', =>
+      .to_graphviz = F '() => string', =>
         lines = with {}
           [] = 'digraph {'
           [] = '  bgcolor = black'
@@ -113,21 +113,21 @@ declare_type 'StateSpec', [[{
   _fields: {string -> string},
 }]]
 class StateSpec
-  new: F '(Self, string) -> Self', (@_name) =>
+  new: F '(string) => <>', (@_name) =>
     if not valid_state_name @_name
       error "cannot build state machine: state name '#{@_name}' not a valid identifier"
 
     @_transitions = T '{string}', {}
     @_fields = T '{string -> string}', {}
 
-  add_transition_to: F '(Self, string) -> Self', (name) =>
+  add_transition_to: F '(string) => <>', (name) =>
     if not valid_state_name name
       error "cannot build state machine: state name '#{name}' not a valid identifier"
     if @_transitions[name]? or @_fields[name]?
       error "cannot build state machine: transition #{@_name}->#{name} redefined"
     @_transitions[name] = true
 
-  add_field: F '(Self, string, string) -> Self', (name, type_spec) =>
+  add_field: F '(string, string) => <>', (name, type_spec) =>
     if not valid_field_name name
       error "cannot build state machine: field name '#{name}' not a valid identifier"
     if @_fields[name] or @_transitions[name]?
@@ -136,7 +136,7 @@ class StateSpec
 
 declare_type 'StateMachine', [[{
   state: {name: string},
-  goto: (Self, string, ?{string -> any}) -> <>,
+  goto: (string, ?{string -> any}) => <>,
 }]]
 
 valid_state_name = F '(string) -> boolean', (name) ->
