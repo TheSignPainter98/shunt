@@ -110,7 +110,7 @@ is_empty = (table) ->
 
 declare_type 'StateSpec', [[{
   _transitions: {string},
-  _fields: {string -> string}
+  _fields: {string -> string},
 }]]
 class StateSpec
   new: F '(Self, string) -> Self', (@_name) =>
@@ -136,7 +136,7 @@ class StateSpec
 
 declare_type 'StateMachine', [[{
   state: {name: string},
-  goto: (Self, string, ?{string -> any}) -> <>
+  goto: (Self, string, ?{string -> any}) -> <>,
 }]]
 
 valid_state_name = F '(string) -> boolean', (name) ->

@@ -82,7 +82,7 @@ class Ledger
 
 declare_type 'LedgerFmtOpts', [[{
   max_rows: number,
-  width: number
+  width: number,
 }]]
 
 sum = F '([number]) -> number', (ns) ->
