@@ -445,6 +445,8 @@ named_type = (name) ->
     Primitive name
   else if name == 'any'
     Any!
+  else if name == 'some'
+    Some!
   else if not name\match '^[A-Z]'
     error "cannot use '#{name}' as user type name: name must start with an uppercase letter"
   else
@@ -469,6 +471,14 @@ class Any using Is
 
   checker: (checker_builder=CheckerBuilder!) =>
     checker_builder -- No checks required.
+
+class Some using Is
+  __tostring: =>
+    'some'
+
+  checker: (checker_builder=CheckerBuilder!) =>
+    with checker_builder
+      \add C_ASSERT_NON_NIL
 
 class UserType using Is
   new: (@name) =>
@@ -624,7 +634,6 @@ class Mapping using Is
       loop_start_label\resolve_here!
       \add C_POP
       \add C_POP
-
 
 class Function using Is
   new: (@param_types, @return_types) =>
@@ -802,6 +811,7 @@ class Label
 
 C_PUSH = <tostring>: => '<push>'
 C_POP = <tostring>: => '<pop>'
+C_ASSERT_NON_NIL = <tostring>: => '<assert-non-nil>'
 C_ASSERT_PRIMITIVE = <tostring>: => '<assert-primitive>'
 C_ASSERT_TRUTHY = <tostring>: => '<assert-truthy>'
 C_ASSERT_LEN = <tostring>: => '<assert-len>'
@@ -895,6 +905,9 @@ check = (check_prog, value, root=true) ->
         when C_POP
           stack[stack_size] = nil
           stack_size -= 1
+        when C_ASSERT_NON_NIL
+          if stack[stack_size] == nil
+            $check_error "incorrect type: expected some but got nil"
         when C_ASSERT_PRIMITIVE
           ty = type stack[stack_size]
           arg = [pc + 1]
@@ -1029,6 +1042,7 @@ spec ->
         * type ->
         * type coroutine.create ->
         * 'any'
+        * 'some'
       for simple_type in *simple_types
         expect_that (tokens simple_type), deep_eq {
           Symbol T_NAME, simple_type
@@ -1096,6 +1110,7 @@ spec ->
         expect_that (parse 'function'), deep_eq Primitive type ->
         expect_that (parse 'thread'), deep_eq Primitive type coroutine.create ->
         expect_that (parse 'any'), deep_eq Any!
+        expect_that (parse 'some'), deep_eq Some!
 
       it 'accepts user types', ->
         expect_that (parse 'UserType'), deep_eq UserType 'UserType'
@@ -1225,6 +1240,18 @@ spec ->
         * coroutine.create ->
       for value in *values
         expect_that (-> T 'any', value), no_errors!
+      expect_that (-> T 'any', nil), no_errors!
+
+    it 'checks some', ->
+      values =
+        * 123
+        * 'str'
+        * {}
+        * ->
+        * coroutine.create ->
+      for value in *values
+        expect_that (-> T 'some', value), no_errors!
+      expect_that (-> T 'some', nil), errors matches "incorrect type: expected some but got nil"
 
     it 'checks string types', ->
       expect_that (-> T '"hello"', 'hello'), no_errors!
