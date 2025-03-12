@@ -71,7 +71,7 @@ function_type = (type_spec) ->
   function_types[type_spec] ?? do
     -- Slow path: parse type spec
     parsed_type = parse type_spec
-    if not parsed_type\is Function
+    if not (parsed_type\is Function) and not parsed_type\is Method
       error "cannot typecheck: expected a function type"
 
     function_types[type_spec] = parsed_type
@@ -222,7 +222,8 @@ class TypeSpecParser extends Parser
         * action: ->
           @parse_repeat_separated @\parse_function_io_type, T_COMMA, separator_trails_before: T_PAREN_CLOSE
         * token: T_PAREN_CLOSE
-    if not @maybe T_ARROW
+    function_arrow = (@maybe T_THIN_ARROW) ?? @maybe T_FAT_ARROW
+    if not function_arrow?
       for ty in *types
         if ty\is Remainder
           error 'tuple type cannot contain varargs'
@@ -237,7 +238,13 @@ class TypeSpecParser extends Parser
       types.<> = __index: => last_ty.type
       types[#types] = nil
 
-    Function types, @parse_return_type!
+    switch function_arrow
+      when T_THIN_ARROW
+        Function types, @parse_return_type!
+      when T_FAT_ARROW
+        Method types, @parse_return_type!
+      else
+        error "internal error: unknown function arrow type: #{function_arrow}"
 
   parse_return_type: =>
     @select
@@ -295,7 +302,7 @@ class TypeSpecParser extends Parser
     table_content_type = @select
       * token: T_BRACE_CLOSE
         action: -> 'set'
-      * token: T_ARROW
+      * token: T_THIN_ARROW
         action: -> 'mapping'
 
     switch table_content_type
@@ -303,7 +310,7 @@ class TypeSpecParser extends Parser
         Set first_type
       when 'mapping'
         { _, maps_to } = @sequence
-          * token: T_ARROW
+          * token: T_THIN_ARROW
           * action: @\parse_type
         Mapping first_type, maps_to
       else
@@ -327,7 +334,8 @@ T_ANGLE_OPEN = <tostring>: => '"<"'
 T_ANGLE_CLOSE = <tostring>: => '">"'
 T_COMMA = <tostring>: => "','"
 T_COLON = <tostring>: => "':'"
-T_ARROW = <tostring>: => "'->'"
+T_THIN_ARROW = <tostring>: => "'->'"
+T_FAT_ARROW = <tostring>: => "'=>'"
 T_DOTDOTDOT = <tostring>: => "'...'"
 T_QUESTION = <tostring>: => "'?'"
 T_PLUS = <tostring>: => "'+'"
@@ -361,7 +369,9 @@ class Lexer
         else if match = type_spec\match '^:', @index
           T_COLON, nil, #match
         else if match = type_spec\match '^->', @index
-          T_ARROW, nil, #match
+          T_THIN_ARROW, nil, #match
+        else if match = type_spec\match '^=>', @index
+          T_FAT_ARROW, nil, #match
         else if match = type_spec\match '^%.%.%.', @index
           T_DOTDOTDOT, nil, #match
         else if match = type_spec\match '^<', @index
@@ -709,6 +719,12 @@ class Function using Is
     with checker_builder
       \add C_ASSERT_PRIMITIVE, 'function'
 
+class Method extends Function
+  new: (param_types, return_types) =>
+    super { Some!, ...param_types }, return_types
+
+  __tostring: => super!
+
 class Remainder using Is
   new: (@type) =>
 
@@ -1055,7 +1071,7 @@ spec ->
       }
 
     it 'emits strucural tokens', ->
-      expect_that (tokens '(),{}[]:->...?+|'), deep_eq {
+      expect_that (tokens '(),{}[]:->=>...?+|'), deep_eq {
         Symbol T_PAREN_OPEN
         Symbol T_PAREN_CLOSE
         Symbol T_COMMA
@@ -1064,7 +1080,8 @@ spec ->
         Symbol T_BRACKET_OPEN
         Symbol T_BRACKET_CLOSE
         Symbol T_COLON
-        Symbol T_ARROW
+        Symbol T_THIN_ARROW
+        Symbol T_FAT_ARROW
         Symbol T_DOTDOTDOT
         Symbol T_QUESTION
         Symbol T_PLUS
@@ -1076,7 +1093,7 @@ spec ->
         Symbol T_PAREN_OPEN
         Symbol T_NAME, "string"
         Symbol T_PAREN_CLOSE
-        Symbol T_ARROW
+        Symbol T_THIN_ARROW
         Symbol T_NAME, "string"
       }
 
@@ -1184,6 +1201,21 @@ spec ->
         expect_that (parse '(string...) -> <number...>'), deep_eq Function {<index>: => Primitive 'string'}, {<index>: => Primitive 'number'}
         expect_that (parse '(boolean, string...) -> <thread, number...>'), deep_eq Function {(Primitive 'boolean'), <index>: => Primitive 'string'}, {(Primitive 'thread'), <index>: => Primitive 'number'}
         expect_that (parse '() -> [string]...'), deep_eq Function {}, { <index>: => Array Primitive 'string' }
+
+      it 'accepts methods', ->
+        expect_that (parse '() => <>'), deep_eq Method {}, {}
+        expect_that (parse '() => nil'), deep_eq Method {}, {Primitive 'nil'}
+        expect_that (parse '(string) => number'), deep_eq Method {Primitive 'string'}, {Primitive 'number'}
+        expect_that (parse '(number, string) => number'), deep_eq Method {(Primitive 'number'), (Primitive 'string')}, {Primitive 'number'}
+        expect_that (parse '(string) => (number) => boolean'), deep_eq Method {Primitive 'string'}, {Method {Primitive 'number'}, {Primitive 'boolean'}}
+        expect_that (parse '() => <string>'), deep_eq Method {}, {(Primitive 'string')}
+        expect_that (parse '() => <string,>'), deep_eq Method {}, { Primitive 'string' }
+        expect_that (parse '() => <string, boolean>'), deep_eq Method {}, {(Primitive 'string'), (Primitive 'boolean')}
+
+        expect_that (parse '(string...) => number...'), deep_eq Method {<index>: => Primitive 'string'}, {<index>: => Primitive 'number'}
+        expect_that (parse '(string...) => <number...>'), deep_eq Method {<index>: => Primitive 'string'}, {<index>: => Primitive 'number'}
+        expect_that (parse '(boolean, string...) => <thread, number...>'), deep_eq Method {(Primitive 'boolean'), <index>: => Primitive 'string'}, {(Primitive 'thread'), <index>: => Primitive 'number'}
+        expect_that (parse '() => [string]...'), deep_eq Method {}, { <index>: => Array Primitive 'string' }
 
       it 'accepts conjunctions', ->
         expect_that (parse '[string]+{number->string}+table+function'), deep_eq Conjunction
@@ -1441,6 +1473,13 @@ spec ->
     it 'rejects multiple incorrect return values', ->
       expect_that (-> (F '() -> <string, boolean>', -> {}, true)!), errors matches 'incorrect type: expected string but got table'
       expect_that (-> (F '() -> <string, boolean>', -> 'asdf', {})!), errors matches 'incorrect type: expected boolean but got table'
+
+    it 'accepts methods', ->
+      expect_that (-> (F '(number) => <>', =>), {}, 123), no_errors!
+      expect_that (-> (F '(number) => <>', =>), 'recv', 123), no_errors!
+
+    it 'requires a method receiver', ->
+      expect_that (-> (F '() => <>', =>)!), errors matches "incorrect type: expected some but got nil"
 
   describe 'stats', ->
     it 'has the correct type', ->
