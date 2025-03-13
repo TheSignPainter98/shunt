@@ -356,7 +356,7 @@ class Lexer
     @peeked = nil
     @tokens = coroutine.wrap ->
       while @index <= #type_spec
-        ty, value, bytes_consumed = if match = type_spec\match '^%-%-[^\r\n]*'
+        ty, value, bytes_consumed = if match = type_spec\match '^%-%-[^\r\n]*', @index
           nil, nil, #match
         else if whitespace = type_spec\match '^[ \t\r\n]+', @index
           nil, nil, #whitespace
