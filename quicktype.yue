@@ -350,7 +350,9 @@ class Lexer
     @peeked = nil
     @tokens = coroutine.wrap ->
       while @index <= #type_spec
-        ty, value, bytes_consumed = if whitespace = type_spec\match '^[ \t\r\n]+', @index
+        ty, value, bytes_consumed = if match = type_spec\match '^%-%-[^\r\n]*'
+          nil, nil, #match
+        else if whitespace = type_spec\match '^[ \t\r\n]+', @index
           nil, nil, #whitespace
         else if match = type_spec\match '^%(', @index
           T_PAREN_OPEN, nil, #match
@@ -1096,6 +1098,9 @@ spec ->
         Symbol T_THIN_ARROW
         Symbol T_NAME, "string"
       }
+
+    it 'ignores comments', ->
+      expect_that (tokens '-- hello\n--world!'), deep_eq {}
 
     it 'rejects unrecognised characters', ->
       expect_that (-> tokens '@'), errors matches [[unrecognised character '@']]
