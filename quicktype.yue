@@ -896,7 +896,6 @@ macro check_error = (msg) ->
 
     [] = 'if num_unions == 0'
     [] = '  return msg'
-    [] = 'print "BAILING to #{union_bail_jumps[num_unions]}"'
     [] = 'pc = union_bail_jumps[num_unions] - 2'
     [] = 'bailing = true'
   table.concat lines, '\n'
