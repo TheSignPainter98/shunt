@@ -1,0 +1,183 @@
+local *
+
+import F, declare_type from require 'quicktype'
+import spec from require 'spec'
+
+declare_type 'StationBackend', [[{
+  name: () => StationName,
+  set_name: (StationName) => <>,
+  train_present: () => boolean,
+  train_enroute: () => boolean,
+  train_has_schedule: () => boolean,
+  train_schedule: () => Schedule,
+  train_set_schedule: (Schedule) => <>,
+}]]
+declare_type 'StationName', 'string'
+declare_type 'Schedule', [[{
+  cyclic: boolean,
+  entries: [ScheduleEntry],
+}]]
+declare_type 'ScheduleEntry', [=[{
+  instruction: {
+    id: "create:destination",
+    data: { text: string },
+  },
+  conditions: [[{
+    id: "create:idle"|"create:delay",
+    data: {
+      value: number,
+      time_unit: TimeUnit,
+    },
+  }]]
+}]=]
+declare_type 'TimeUnit', '0|1|2'
+declare_type 'Resource', [[{
+  id: () => string,
+  kind: () => "cargo"|"player"
+}]]
+
+export class Station
+  new: F '(?StationBackend) => <>', (@backend=MinecraftBackend!) =>
+
+  name: F '() => StationName', =>
+    @backend\name!
+
+  train_present: F '() => boolean', =>
+    @backend\train_present!
+
+  apply_schedule: F '(Schedule) => <>', (schedule) =>
+    @backend\train_set_schedule schedule
+
+time_units =
+  TICKS: 0
+  SECONDS: 1
+  MINUTES: 2
+CARGO_INACTIVE_CONDITION =
+  id: "create:idle"
+  data:
+    value: 5
+    time_unit: time_units.SECONDS
+CARGO_INACTIVE_TIMEOUT =
+  id: "create:delay"
+  data:
+    value: 15
+    time_unit: time_units.SECONDS
+OVERALL_TIMEOUT =
+  id: "create:delay"
+  data:
+    value: 30
+    time_unit: time_units.SECONDS
+
+class MinecraftBackend
+  new: =>
+    stations = { peripheral.find 'Create_Station' }
+    if #stations == 0
+      error 'cannot create Station: no stations attached'
+    if #stations > 1
+      error 'cannot create Station: too many stations attached'
+    { @station } = stations
+
+  name: F '() => StationName', =>
+    @station\getStationName!
+
+  set_name: F '(StationName) => <>', (name) =>
+    @station\setStationName name
+
+  train_present: F '() => boolean', =>
+    @station\isTrainPresent!
+
+  train_enroute: F '() => boolean', =>
+    @station\isTrainEnroute!
+
+  train_has_schedule: F '() => boolean', =>
+    @station\hasSchedule!
+
+  train_schedule: F '() => Schedule', =>
+    @station\getSchedule!
+
+  train_set_schedule: F '(Schedule) => <>', (schedule) =>
+    @station\setSchedule schedule
+
+declare_type 'TestStationBackendOpts', [[{
+  name: ?() => StationName,
+  set_name: ?(StationName) => <>,
+  train_present: ?() => boolean,
+  train_enroute: ?() => boolean,
+  train_has_schedule: ?() => boolean,
+  train_schedule: ?() => Schedule,
+  train_set_schedule: ?(Schedule) => <>,
+}]]
+export class TestBackend
+  new: F '(?TestStationBackendOpts) => <>', (opts={}) =>
+    {
+      :name=-> error 'name unimplemented'
+      :set_name=-> error 'set_name unimplemented'
+      :train_present=-> error 'train_present unimplemented'
+      :train_enroute=-> error 'train_enroute unimplemented'
+      :train_has_schedule=-> error 'train_set_schedule unimplemented'
+      :train_schedule=-> error 'train_schedule unimplemented'
+      :train_set_schedule=-> error 'train_set_schedule unimplemented'
+    } = opts
+    @name = name
+    @set_name = set_name
+    @train_present = train_present
+    @train_enroute = train_enroute
+    @train_has_schedule = train_has_schedule
+    @train_schedule = train_schedule
+    @train_set_schedule = train_set_schedule
+
+spec ->
+  import T from require 'quicktype'
+  import describe, expect_that, it, matchers from require 'spec'
+  import anything, errors, no_errors from matchers
+
+  describe 'Station', ->
+    describe '\\apply_schedule', ->
+      it 'accepts valid schedules', ->
+        station = Station TestBackend
+          train_set_schedule: F '(any) => <>', (schedule) =>
+            T 'Schedule', schedule
+            return
+
+        valid_schedule =
+          cyclic: false
+          entries:
+            * instruction:
+                id: 'create:destination'
+                data: text: 'from-station'
+              conditions:
+                * { CARGO_INACTIVE_CONDITION, CARGO_INACTIVE_TIMEOUT }
+                * { OVERALL_TIMEOUT }
+            * instruction:
+                id: 'create:destination'
+                data: text: 'to-station'
+              conditions:
+                * { CARGO_INACTIVE_CONDITION, CARGO_INACTIVE_TIMEOUT }
+                * { OVERALL_TIMEOUT }
+        expect_that (-> station\apply_schedule valid_schedule), no_errors!
+
+      it 'rejects invalid schedules', ->
+        invalid_schedules =
+          * {}
+          * { cyclic: '123' }
+          * { cyclic: false, entries: {} }
+          * { cyclic: false, entries: {{}} }
+          * { cyclic: false, entries: {{instruction: 'asdf'}} }
+          * { cyclic: false, entries: {{instruction: {id: 'asdf'}}} }
+          * { cyclic: false, entries: {{instruction: {id: 'create:destination', data: 'asdf'}}} }
+          * { cyclic: false, entries: {{instruction: {id: 'create:destination', data: text: false}}} }
+          * { cyclic: false, entries: {{instruction: {id: 'create:destination', data: text: 'station'}, conditions: {}}} }
+          * { cyclic: false, entries: {{instruction: {id: 'create:destination', data: text: 'station'}, conditions: {{}}}} }
+          * { cyclic: false, entries: {{instruction: {id: 'create:destination', data: text: 'station'}, conditions: {{id: 'asdf'}}}} }
+          * { cyclic: false, entries: {{instruction: {id: 'create:destination', data: text: 'station'}, conditions: {{id: 'create:idle'}}}} }
+          * { cyclic: false, entries: {{instruction: {id: 'create:destination', data: text: 'station'}, conditions: {{id: 'create:idle', data: {}}}}} }
+          * { cyclic: false, entries: {{instruction: {id: 'create:destination', data: text: 'station'}, conditions: {{id: 'create:idle', data: {value: 'asdf'}}}}} }
+          * { cyclic: false, entries: {{instruction: {id: 'create:destination', data: text: 'station'}, conditions: {{id: 'create:idle', data: {value: 5}}}}} }
+          * { cyclic: false, entries: {{instruction: {id: 'create:destination', data: text: 'station'}, conditions: {{id: 'create:idle', data: {value: 5, time_unit: 'asdf'}}}}} }
+          * { cyclic: false, entries: {{instruction: {id: 'create:destination', data: text: 'station'}, conditions: {{id: 'create:idle', data: {value: 5, time_unit: -1}}}}} }
+        for invalid_schedule in *invalid_schedules
+          expect_that (-> station\apply_schedule invalid_schedule), errors anything!
+
+      it 'applies the given schedule in world', ->
+        if not _G.skip_minecraft_tests
+          return
