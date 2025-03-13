@@ -401,7 +401,7 @@ class Lexer
         else if string = type_spec\match [[^"([^"]*)"]], @index
           T_STRING, string, #string + 2
         else
-          error "unrecognised character '#{type_spec\sub @index, @index}' in type spec '#{type_spec}"
+          error "unexpected character '#{type_spec\sub @index, @index}' in type spec '#{type_spec}"
 
         @index += bytes_consumed
         if not ty?
@@ -1132,8 +1132,8 @@ spec ->
     it 'ignores comments', ->
       expect_that (tokens '-- hello\n--world!'), deep_eq {}
 
-    it 'rejects unrecognised characters', ->
-      expect_that (-> tokens '~'), errors matches [[unrecognised character '~']]
+    it 'rejects unexpected characters', ->
+      expect_that (-> tokens '~'), errors matches [[unexpected character '~']]
 
     describe ':peek', ->
       it 'matches :next', ->
