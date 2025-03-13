@@ -1,0 +1,116 @@
+local *
+
+import declare_type, F from require 'quicktype'
+import spec from require 'spec'
+
+declare_type 'StockpileBackend', [[{
+  size: () => number,
+  slot_content: (number) => number,
+  slot_capacity: (number) => SlotInfo,
+}]]
+declare_type 'SlotInfo', [[{
+  count: number,
+  displayName: string,
+}]]
+export class Stockpile
+  new: F '(?StockpileBackend) => <>', (@backend=MinecraftBackend!) =>
+
+  info: F '() => StockpileInfo', =>
+    item = nil
+    stored = 0
+    capacity = 0
+    for i = 1, @backend\size!
+      capacity += @backend\slot_capacity i
+
+      slot = @backend\slot_content i
+      if not slot?
+        continue
+
+      slot_item = slot.displayName
+      if not item?
+        item = slot_item
+      else if slot_item != item
+        error "stockpile impure: contains both #{item} and #{slot_item}"
+
+      stored += slot.count
+    :item, :stored, :capacity
+
+declare_type 'StockpileInfo', [[{
+  item: string,
+  stored: number,
+  capacity: number,
+}]]
+class MinecraftBackend
+  new: =>
+    inventories = { peripheral.find 'inventory' }
+    if #inventories == 0
+      error 'cannot create Stockpile: no inventories attached'
+    if #inventories > 1
+      error 'cannot create Stockpile: too many inventories attached'
+    { @inventory } = inventories
+
+  size: F '() => number', =>
+    @inventory\size!
+
+  slot_content: F '(number) => number', (slot_id) =>
+    @inventory\getItemDetail slot_id
+
+  slot_capacity: F '(number) => SlotInfo', (slot_id) =>
+    @inventory\getItemLimit slot_id
+
+
+declare_type 'TestStockpileBackendOpts', [[{
+  size: ?() => number,
+  slot_content: ?(number) => number,
+  slot_capacity: ?(number) => SlotInfo,
+}]]
+export class TestBackend
+  new: F '(TestStockpileBackendOpts) => <>', (opts) =>
+    {
+      :size=-> error 'size unimplemented'
+      :slot_content=-> error 'slot_content unimplemented'
+      :slot_capacity=-> error 'slot_capacity unimplemented'
+    } = opts
+    @size = size
+    @slot_content = slot_content
+    @slot_capacity = slot_capacity
+
+spec ->
+  import describe, expect_that, it, matchers from require 'spec'
+  import deep_eq, errors, matches from matchers
+
+  describe 'Stockpile', ->
+    describe '\\info', ->
+      it 'returns correctly on valid inventory', ->
+        stockpile = Stockpile TestBackend
+          size: => 4
+          slot_content: (slot_id) =>
+            {
+              count: 16 * slot_id
+              displayName: "Diamond Axe"
+            }
+          slot_capacity: (slot_id) =>
+            32 * slot_id
+
+        info = stockpile\info!
+        expect_that info, deep_eq {
+          item: 'Diamond Axe'
+          stored: 16 * (1 + 2 + 3 + 4)
+          capacity: 32 * (1 + 2 + 3 + 4)
+        }
+
+      it 'rejects impure inventories', ->
+        stockpile = Stockpile TestBackend
+          size: => 2
+          slot_content: (slot_id) =>
+            displayName = switch slot_id
+              when 1
+                "Diamond Axe"
+              when 2
+                "Iron Axe"
+              else
+                error "unexpected slot_id: #{slot_id}"
+            count: 1, :displayName
+          slot_capacity: (slot_id) => 1
+
+        expect_that (-> stockpile\info!), errors matches 'stockpile impure: contains both Diamond Axe and Iron Axe'
