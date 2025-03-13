@@ -85,7 +85,7 @@ declare_type 'TestUplinkBackendOpts', [[{
   broadcast: ?(any, ?string) => <>,
 }]]
 export class TestBackend
-  new: F '(?TestUplinkBackendOpts) => <>', (opts={}) =>
+  new: F '(TestUplinkBackendOpts) => <>', (opts) =>
     {
       :send=-> error 'send unimplemented'
       :receive=-> error 'receive unimplemented'
