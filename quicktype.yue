@@ -950,7 +950,7 @@ check = (check_prog, value, root=true) ->
           ty = type stack[stack_size]
           arg = [pc + 1]
           if ty != arg
-            $check_error "incorrect type: expected #{arg} but got #{ty}"
+            $check_error "incorrect type: expected #{arg} but got #{ty} (#{repr stack[stack_size]})"
         when C_ASSERT_TRUTHY
           if not stack[stack_size]
             $check_error "incorrect type: expected a truthy value but got #{stack[stack_size]}"
@@ -958,7 +958,7 @@ check = (check_prog, value, root=true) ->
           actual_len = #stack[stack_size-1]
           counted_len = stack[stack_size]
           if counted_len != actual_len
-            $check_error "incorrect type: expected array but got table"
+            $check_error "incorrect type: expected array but got table (#{repr stack[stack_size]})"
         when C_ASSERT_EQ
           if stack[stack_size] != [pc + 1]
             $check_error "incorrect type: expected #{type [pc + 1]} #{repr [pc + 1]} but got #{repr stack[stack_size]}"
@@ -1013,7 +1013,7 @@ check = (check_prog, value, root=true) ->
 
           if bailing
             if num_unions == 0
-              $check_error "incorrect type: expected #{root_union} but got #{type stack[stack_size]}"
+              $check_error "incorrect type: expected #{root_union} but got #{type stack[stack_size]} (#{repr stack[stack_size]})"
             else
               $check_error! -- Unwind.
 
