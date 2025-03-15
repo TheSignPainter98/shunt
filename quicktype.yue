@@ -1,4 +1,5 @@
 local *
+local Symbol
 
 import spec, repr from require 'spec'
 
@@ -81,32 +82,48 @@ parse = (type_spec) ->
   type_spec_parser = TypeSpecParser Lexer type_spec
   type_spec_parser\parse!
 
-class Parser
+export class Parser
   new: (@lexer) =>
   parse: =>
     error 'unimplemented'
 
   parse_repeat_separated: (elem_parser, sep_token, opts={}) =>
-    { :separator_trails_before } = opts
+    {
+      :separator_trails_before
+      :allow_repeated_separator
+    } = opts
 
     with {}
       [] = elem_parser!
       tok = @lexer\peek!
       while tok? and tok.type == sep_token
         @lexer\next!
+        if allow_repeated_separator
+          @ignore_any sep_token
         if separator_trails_before == @lexer\peek!.type
           break
 
         [] = elem_parser!
         tok = @lexer\peek!
 
+  repeat: (elem_parser) =>
+    with {}
+      while @lexer\peek!?
+        [] = elem_parser!
+
   expect: (expected_token) =>
     token = @lexer\next!
     if not token?
       error "unexpected EOF"
     if token.type != expected_token
-      error "expected #{expected_token}"
+      error "expected #{expected_token}, got #{token}"
     token.value ?? token.type
+
+  ignore_any: (expected_token) =>
+    next_token = @lexer\peek!
+    while not next_token? or next_token.type != expected_token
+      @expect expected_token
+      next_token = @lexer\peek!
 
   maybe: (expected_token) =>
     token = @lexer\peek!
@@ -401,7 +418,7 @@ class Lexer
         else if string = type_spec\match [[^"([^"]*)"]], @index
           T_STRING, string, #string + 2
         else
-          error "unexpected character '#{type_spec\sub @index, @index}' in type spec '#{type_spec}"
+          error "unexpected character '#{type_spec\sub @index, @index}' in type spec '#{type_spec}'"
 
         @index += bytes_consumed
         if not ty?
@@ -445,7 +462,7 @@ class Lexer
 class Checkpoint
   new: (@index, @peeked) =>
 
-class Symbol
+export class Symbol
   new: (@type, @value=nil) =>
 
   __tostring: =>
@@ -1150,7 +1167,7 @@ spec ->
         expect_that lexer\peek!, eq nil
         expect_that lexer\peek!, eq nil
 
-  describe 'Parser', ->
+  describe 'TypeSpecParser', ->
     describe 'run on simple types', ->
       it 'accepts primitives', ->
         expect_that (parse 'nil'), deep_eq Primitive type nil
