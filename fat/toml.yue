@@ -429,6 +429,9 @@ spec ->
             * key4: 'hello'
 
   describe 'parse_toml', ->
+    it 'returns an empty table on empty input', ->
+      expect_that (parse_toml ''), deep_eq {}
+
     it 'parses toml and returns its value', ->
       expect_that (parse_toml "hello = 'world'"), deep_eq
         hello: 'world'
