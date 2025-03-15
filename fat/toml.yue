@@ -3,6 +3,11 @@ local *
 import F, declare_type, Parser, Symbol from require 'quicktype'
 import spec from require 'spec'
 
+export parse_toml = (raw) ->
+  parser = TomlParser Lexer raw
+  ast = parser\parse!
+  ast\construct_value!
+
 -- Minimal TOML parser. NB, this does NOT currently support:
 -- - Quotes in strings
 -- - Non-literal strings
@@ -422,3 +427,8 @@ spec ->
               key2:
                 key3: 'hello'
             * key4: 'hello'
+
+  describe 'parse_toml', ->
+    it 'parses toml and returns its value', ->
+      expect_that (parse_toml "hello = 'world'"), deep_eq
+        hello: 'world'
