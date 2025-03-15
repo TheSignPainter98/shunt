@@ -92,6 +92,8 @@ export class Parser
       :separator_trails_before
       :allow_repeated_separator
     } = opts
+    if not separator_trails_before? or 'table' != type separator_trails_before[1]
+      separator_trails_before = {separator_trails_before}
 
     with {}
       [] = elem_parser!
@@ -101,15 +103,15 @@ export class Parser
         if allow_repeated_separator
           @ignore_any sep_token
         tok = @lexer\peek!
-        if tok? and separator_trails_before == @lexer\peek!.type
+        if tok? and contains tok.type, separator_trails_before
           break
 
         [] = elem_parser!
         tok = @lexer\peek!
 
-  repeat: (elem_parser) =>
+  repeat_until: (elem_parser, until_tok) =>
     with {}
-      while @lexer\peek!?
+      while @lexer\peek!.type != until_tok
         [] = elem_parser!
 
   expect: (expected_token) =>
@@ -170,6 +172,12 @@ export class Parser
           [] = action!
         else
           error "sequence element must have expected_token or action"
+
+contains = (needle, haystack) ->
+  for elem in *haystack
+    if needle == elem
+      return true
+  false
 
 class TypeSpecParser extends Parser
   parse: =>

@@ -5,73 +5,88 @@ import spec from require 'spec'
 
 -- Minimal TOML parser. NB, this does NOT currently support:
 -- - Quotes in strings
--- - Multi-line strings
--- - Literal vs non-literal strings
+-- - Non-literal strings
+-- - Inline tables
+-- - Inline arrays
 class TomlParser extends Parser
   new: (@lexer) =>
 
   parse: =>
-    ret = @parse_root!
+    ret = @parse_file!
     @expect T_EOF
     ret
 
-  parse_root: =>
+  parse_file: =>
     @ignore_any T_NEWLINE
     if @lexer\peek!.type == T_EOF
       return Ast!
 
-    root_section = @parse_section_body!
-    @ignore_any T_NEWLINE
-    if @lexer\peek!?
-      non_root_sections = {} -- @parse_repeat_separated @\parse_section, T_NEWLINE, allow_repeated_separator: true, separator_trails_before: T_EOF
-    Ast root_section, non_root_sections
+    root_section = nil
+    if @lexer\peek!.type != T_BRACKET_OPEN
+      root_section = @parse_section_body!
+      @ignore_any T_NEWLINE
 
-  -- parse_section: =>
-  --   header = @parse_section_header!
-  --   @expect T_NEWLINE
-  --   body = @parse_section_body!
-  --   Section header, body
-  --
-  -- parse_section_header: =>
-  --   @expect T_BRACKET_OPEN
-  --   is_array_of_tables = @maybe T_BRACKET_OPEN
-  --
-  --   key = @parse_key!
-  --
-  --   if is_array_of_tables
-  --     @expect T_BRACKET_CLOSE
-  --   @expect T_BRACKET_CLOSE
-  --
-  --   if is_array_of_tables
-  --     ArrayOfTablesHeader key
-  --   else
-  --     TableHeader key
+    named_sections = nil
+    if @lexer\peek!.type != T_EOF
+      named_sections = @repeat_until @\parse_section, T_EOF
+    Ast root_section, named_sections
+
+  parse_section: =>
+    header = @parse_section_header!
+
+    @expect T_NEWLINE
+    @ignore_any T_NEWLINE
+
+    body = switch @lexer\peek!.type
+      when T_BRACKET_OPEN, T_EOF
+        nil
+      else
+        @parse_section_body!
+
+    Section header, body
+
+  parse_section_header: =>
+    @expect T_BRACKET_OPEN
+    is_array_of_tables = @maybe T_BRACKET_OPEN
+
+    key = @parse_key!
+
+    if is_array_of_tables
+      @expect T_BRACKET_CLOSE
+    @expect T_BRACKET_CLOSE
+
+    if is_array_of_tables
+      ArrayOfTablesHeader key
+    else
+      TableHeader key
 
   parse_section_body: =>
-    @parse_repeat_separated @\parse_section_entry, T_NEWLINE, allow_repeated_separator: true, separator_trails_before: T_EOF
+    @parse_repeat_separated @\parse_entry, T_NEWLINE,
+      allow_repeated_separator: true,
+      separator_trails_before:
+        * T_BRACKET_OPEN
+        * T_EOF
 
-  parse_section_entry: =>
+  parse_entry: =>
     key = @parse_key!
     @expect T_EQUALS
     value = @parse_value!
     Entry key, value
 
   parse_key: =>
-    -- print 'parsing key'
     Key @parse_repeat_separated @\parse_key_part, T_DOT
 
   parse_key_part: =>
     @expect T_KEY_LITERAL
 
   parse_value: =>
-    -- print 'parsing value'
     Value @select
       * token: T_BOOLEAN
       * token: T_STRING
       * token: T_NUMBER
 
 class Ast
-  new: (@root_section={}, @non_root_sections={}) =>
+  new: (@root_section={}, @named_sections={}) =>
 
 class Section
   new: (@header, @entries) =>
@@ -153,7 +168,6 @@ class Lexer
         @index += bytes_consumed
         if not ty?
           continue
-        -- print "at #{Symbol ty, value}"
         coroutine.yield Symbol ty, value
       coroutine.yield Symbol T_EOF
 
@@ -256,7 +270,7 @@ spec ->
       expect_that (parse_ast '\n'), deep_eq Ast!
 
     it 'accepts root table', ->
-      expect_that (parse_ast 'key=true'), deep_eq Ast
+      expect_that (parse_ast '\nkey=true'), deep_eq Ast
         * Entry (Key {'key'}), Value true
       expect_that (parse_ast 'key=1234\nkey=-1234.5'), deep_eq Ast
         * Entry (Key {'key'}), Value 1234
@@ -272,11 +286,39 @@ spec ->
       expect_that (parse_ast 'key1.key2=true'), deep_eq Ast
         * Entry (Key {'key1', 'key2'}), Value true
 
-    -- it 'accepts non-root tables', ->
-    --   expect_that (parse_ast "
-    --     [table]
-    --     key = 'value'
-    --   "), deep_eq Ast!
-    --
-    -- it 'accepts both root and non-root tables', ->
-    --   expect_that (parse_ast ''), deep_eq Ast!
+    it 'accepts named sections', ->
+      expect_that (parse_ast "
+
+        [table]
+
+        key = 'value'
+
+        [[table.array]]
+
+        key = 'value'
+
+      "), deep_eq Ast nil,
+        * Section (TableHeader Key {'table'}),
+          * Entry (Key {'key'}), Value 'value'
+        * Section (ArrayOfTablesHeader Key {'table', 'array'}),
+          * Entry (Key {'key'}), Value 'value'
+
+    it 'accepts both root and named sections', ->
+      expect_that (parse_ast "
+        key = 'value'
+        [table]
+        key = 'value'
+      "), deep_eq Ast {Entry (Key {'key'}), Value 'value'},
+        * Section (TableHeader Key {'table'}), {Entry (Key {'key'}), Value 'value'}
+
+    it 'accepts empty sections', ->
+      expect_that (parse_ast "
+        [table1]
+        [table2]
+        [[array]]
+        [table3]
+      "), deep_eq Ast nil,
+        * Section (TableHeader Key {'table1'})
+        * Section (TableHeader Key {'table2'})
+        * Section (ArrayOfTablesHeader Key {'array'})
+        * Section (TableHeader Key {'table3'})
