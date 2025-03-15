@@ -86,25 +86,68 @@ class TomlParser extends Parser
       * token: T_NUMBER
 
 class Ast
-  new: (@root_section={}, @named_sections={}) =>
+  new: (@root_section_entries={}, @named_sections={}) =>
+
+  construct_value: =>
+    tab = {}
+    for entry in *@root_section_entries
+      entry\construct_value_in tab
+    for named_section in *@named_sections
+      named_section\construct_value_in tab
+    tab
 
 class Section
   new: (@header, @entries) =>
 
+  construct_value_in: (tab) =>
+    tab = @header\acquire_target tab
+    for entry in *@entries
+      entry\construct_value_in tab
+
 class TableHeader
   new: (@key) =>
+
+  acquire_target: (tab) =>
+    tab, key = @key\acquire_target tab
+    if not tab[key]?
+      tab[key] = {}
+    tab[key]
 
 class ArrayOfTablesHeader
   new: (@key) =>
 
+  acquire_target: (tab) =>
+    tab, key = @key\acquire_target tab
+    if not tab[key]?
+      tab[key] = {}
+    tab = tab[key]
+
+    target = {}
+    tab[] = target
+    target
+
 class Entry
   new: (@key, @value) =>
+
+  construct_value_in: (tab) =>
+    tab, key = @key\acquire_target tab
+    tab[key] = @value\construct_value!
 
 class Key
   new: (@parts) =>
 
+  acquire_target: (tab) =>
+    for part in *@parts[,-1]
+      if not tab[part]?
+        tab[part] = {}
+      tab = tab[part]
+    tab, @parts[#@parts]
+
 class Value
   new: (@value) =>
+
+  construct_value: =>
+    @value
 
 -- Tokens
 T_KEY_LITERAL = <tostring>: => '<key-literal>'
@@ -322,3 +365,60 @@ spec ->
         * Section (TableHeader Key {'table2'})
         * Section (ArrayOfTablesHeader Key {'array'})
         * Section (TableHeader Key {'table3'})
+
+  describe 'Ast', ->
+    it 'constructs the root section', ->
+      ast = Ast
+        * Entry (Key {'key1'}), Value true
+        * Entry (Key {'key2', 'key3'}), Value 'hello'
+      expect_that ast\construct_value!, deep_eq
+        key1: true
+        key2:
+          key3: 'hello'
+
+    it 'constructs table sections', ->
+      ast = Ast nil,
+        * Section (TableHeader Key {'table1'}),
+          * Entry (Key {'key1'}), Value true
+          * Entry (Key {'key2', 'key3'}), Value 'hello'
+        * Section (TableHeader Key {'table1'}),
+          * Entry (Key {'key4'}), Value 'world'
+        * Section (TableHeader Key {'table2', 'table3'}),
+          * Entry (Key {'key5'}), Value 'hello'
+        * Section (TableHeader Key {'table2', 'table3'}),
+          * Entry (Key {'key6'}), Value 'world'
+      expect_that ast\construct_value!, deep_eq
+        table1:
+          key1: true
+          key2:
+            key3: 'hello'
+          key4: 'world'
+        table2:
+          table3:
+            key5: 'hello'
+            key6: 'world'
+
+    it 'constructs array of tables sections', ->
+      ast = Ast nil,
+        * Section (ArrayOfTablesHeader Key {'table1'}),
+          * Entry (Key {'key1'}), Value true
+          * Entry (Key {'key2', 'key3'}), Value 'hello'
+        * Section (ArrayOfTablesHeader Key {'table1'}),
+          * Entry (Key {'key4'}), Value 'hello'
+        * Section (ArrayOfTablesHeader Key {'table2', 'table3'}),
+          * Entry (Key {'key1'}), Value true
+          * Entry (Key {'key2', 'key3'}), Value 'hello'
+        * Section (ArrayOfTablesHeader Key {'table2', 'table3'}),
+          * Entry (Key {'key4'}), Value 'hello'
+      expect_that ast\construct_value!, deep_eq
+        table1:
+          * key1: true
+            key2:
+              key3: 'hello'
+          * key4: 'hello'
+        table2:
+          table3:
+            * key1: true
+              key2:
+                key3: 'hello'
+            * key4: 'hello'
