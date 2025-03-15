@@ -1,0 +1,282 @@
+local *
+
+import F, declare_type, Parser, Symbol from require 'quicktype'
+import spec from require 'spec'
+
+-- Minimal TOML parser. NB, this does NOT currently support:
+-- - Quotes in strings
+-- - Multi-line strings
+-- - Literal vs non-literal strings
+class TomlParser extends Parser
+  new: (@lexer) =>
+
+  parse: =>
+    ret = @parse_root!
+    @expect T_EOF
+    ret
+
+  parse_root: =>
+    @ignore_any T_NEWLINE
+    if @lexer\peek!.type == T_EOF
+      return Ast!
+
+    root_section = @parse_section_body!
+    @ignore_any T_NEWLINE
+    if @lexer\peek!?
+      non_root_sections = {} -- @parse_repeat_separated @\parse_section, T_NEWLINE, allow_repeated_separator: true, separator_trails_before: T_EOF
+    Ast root_section, non_root_sections
+
+  -- parse_section: =>
+  --   header = @parse_section_header!
+  --   @expect T_NEWLINE
+  --   body = @parse_section_body!
+  --   Section header, body
+  --
+  -- parse_section_header: =>
+  --   @expect T_BRACKET_OPEN
+  --   is_array_of_tables = @maybe T_BRACKET_OPEN
+  --
+  --   key = @parse_key!
+  --
+  --   if is_array_of_tables
+  --     @expect T_BRACKET_CLOSE
+  --   @expect T_BRACKET_CLOSE
+  --
+  --   if is_array_of_tables
+  --     ArrayOfTablesHeader key
+  --   else
+  --     TableHeader key
+
+  parse_section_body: =>
+    @parse_repeat_separated @\parse_section_entry, T_NEWLINE, allow_repeated_separator: true, separator_trails_before: T_EOF
+
+  parse_section_entry: =>
+    key = @parse_key!
+    @expect T_EQUALS
+    value = @parse_value!
+    Entry key, value
+
+  parse_key: =>
+    -- print 'parsing key'
+    Key @parse_repeat_separated @\parse_key_part, T_DOT
+
+  parse_key_part: =>
+    @expect T_KEY_LITERAL
+
+  parse_value: =>
+    -- print 'parsing value'
+    Value @select
+      * token: T_BOOLEAN
+      * token: T_STRING
+      * token: T_NUMBER
+
+class Ast
+  new: (@root_section={}, @non_root_sections={}) =>
+
+class Section
+  new: (@header, @entries) =>
+
+class TableHeader
+  new: (@key) =>
+
+class ArrayOfTablesHeader
+  new: (@key) =>
+
+class Entry
+  new: (@key, @value) =>
+
+class Key
+  new: (@parts) =>
+
+class Value
+  new: (@value) =>
+
+-- Tokens
+T_KEY_LITERAL = <tostring>: => '<key-literal>'
+T_BOOLEAN = <tostring>: => '<boolean>'
+T_NUMBER = <tostring>: => '<number>'
+T_STRING = <tostring>: => '<string>'
+T_BRACE_OPEN = <tostring>: => "'{'"
+T_BRACE_CLOSE = <tostring>: => "'}'"
+T_BRACKET_OPEN = <tostring>: => "'['"
+T_BRACKET_CLOSE = <tostring>: => "']'"
+T_EQUALS = <tostring>: => "'='"
+T_COMMA = <tostring>: => "','"
+T_DOT = <tostring>: => "'.'"
+T_NEWLINE = <tostring>: => "'\\n'"
+T_EOF = <tostring>: => '<eof>'
+
+class Lexer
+  new: (input) =>
+    @index = 1
+    @done = false
+    @peeked = nil
+    @tokens = coroutine.wrap ->
+      while @index <= #input
+        ty, value, bytes_consumed = if comment = input\match '^#[^\r\n]*', @index
+          nil, nil, #comment
+        else if whitespace = input\match '^[ \t]+', @index
+          nil, nil, #whitespace
+        else if string = input\match "^'''([^']*)'''", @index
+          T_STRING, string, #string + 6
+        else if string = input\match "^'([^'\r\n]*)'", @index
+          T_STRING, string, #string + 2
+        else if number = input\match '^%-?[0-9]*%.[0-9]+', @index
+          T_NUMBER, (assert tonumber number), #number
+        else if number = input\match '^%-?[0-9]+', @index
+          T_NUMBER, (assert tonumber number), #number
+        else if boolean_true = input\match '^true', @index
+          T_BOOLEAN, true, #boolean_true
+        else if boolean_false = input\match '^false', @index
+          T_BOOLEAN, false, #boolean_false
+        else if key = input\match '^[a-zA-Z0-9_-]+', @index
+          T_KEY_LITERAL, key, #key
+        else if match = input\match '^=', @index
+          T_EQUALS, nil, #match
+        else if match = input\match '^{', @index
+          T_BRACE_OPEN, nil, #match
+        else if match = input\match '^}', @index
+          T_BRACE_CLOSE, nil, #match
+        else if match = input\match '^%[', @index
+          T_BRACKET_OPEN, nil, #match
+        else if match = input\match '^]', @index
+          T_BRACKET_CLOSE, nil, #match
+        else if match = input\match '^,', @index
+          T_COMMA, nil, #match
+        else if match = input\match '^%.', @index
+          T_DOT, nil, #match
+        else if match = input\match '^[\r\n]', @index
+          T_NEWLINE, nil, #match
+        else
+          error "unexpected character '#{input\sub @index, @index}' in toml '#{input}'"
+
+        @index += bytes_consumed
+        if not ty?
+          continue
+        -- print "at #{Symbol ty, value}"
+        coroutine.yield Symbol ty, value
+      coroutine.yield Symbol T_EOF
+
+  peek: =>
+    if @done
+      return nil
+
+    if @peeked?
+      return @peeked
+
+    @peeked = @tokens!
+    if not @peeked
+      @done = true
+    @peeked
+
+  next: =>
+    if @done
+      return nil
+
+    if @peeked?
+      peeked = @peeked
+      @peeked = nil
+      peeked
+    else
+      ret = @tokens!
+      if not ret?
+        @done = true
+      ret
+
+spec ->
+  import assert_that, expect_that, describe, it, matchers from require 'spec'
+  import deep_eq, eq, errors, matches from matchers
+
+  describe 'Lexer', ->
+    tokens = (raw) ->
+      assert raw
+      with {}
+        for token in (Lexer raw).tokens
+          [] = token
+
+    it 'emits structural tokens', ->
+      expect_that (tokens '{}[],=.\r\n'), deep_eq
+        * Symbol T_BRACE_OPEN
+        * Symbol T_BRACE_CLOSE
+        * Symbol T_BRACKET_OPEN
+        * Symbol T_BRACKET_CLOSE
+        * Symbol T_COMMA
+        * Symbol T_EQUALS
+        * Symbol T_DOT
+        * Symbol T_NEWLINE
+        * Symbol T_NEWLINE
+        * Symbol T_EOF
+
+    it 'emits values', ->
+      expect_that (tokens [['hello' '''he\nllo''' 123 -1234.5 true false]]), deep_eq
+        * Symbol T_STRING, 'hello'
+        * Symbol T_STRING, 'he\\nllo'
+        * Symbol T_NUMBER, 123
+        * Symbol T_NUMBER, -1234.5
+        * Symbol T_BOOLEAN, true
+        * Symbol T_BOOLEAN, false
+        * Symbol T_EOF
+
+    it 'ignores comments', ->
+      expect_that (tokens '#hello\n#world'), deep_eq
+        * Symbol T_NEWLINE
+        * Symbol T_EOF
+
+    it 'rejects unexpectec characters', ->
+      expect_that (-> tokens '~'), errors matches [[unexpected character '~']]
+
+    describe '\\peek', ->
+      it 'matches \\next', ->
+        lexer = Lexer '{}'
+        assert_that lexer\peek!, deep_eq Symbol T_BRACE_OPEN
+        assert_that lexer\peek!, deep_eq Symbol T_BRACE_OPEN
+        assert_that lexer\next!, deep_eq Symbol T_BRACE_OPEN
+        assert_that lexer\peek!, deep_eq Symbol T_BRACE_CLOSE
+        assert_that lexer\peek!, deep_eq Symbol T_BRACE_CLOSE
+        assert_that lexer\next!, deep_eq Symbol T_BRACE_CLOSE
+
+      it 'returns EOF at EOF', ->
+        lexer = Lexer ''
+        expect_that lexer\peek!, deep_eq Symbol T_EOF
+        expect_that lexer\peek!, deep_eq Symbol T_EOF
+
+  describe 'TomlParser', ->
+    parse_ast = (input) ->
+      tokens = (raw) ->
+        assert raw
+        with {}
+          for token in (Lexer raw).tokens
+            [] = token
+      import repr from require 'spec'
+      print repr tokens input
+      (TomlParser Lexer input)\parse!
+
+    it 'accepts empty', ->
+      expect_that (parse_ast ''), deep_eq Ast!
+      expect_that (parse_ast '\n'), deep_eq Ast!
+
+    it 'accepts root table', ->
+      expect_that (parse_ast 'key=true'), deep_eq Ast
+        * Entry (Key {'key'}), Value true
+      expect_that (parse_ast 'key=1234\nkey=-1234.5'), deep_eq Ast
+        * Entry (Key {'key'}), Value 1234
+        * Entry (Key {'key'}), Value -1234.5
+      expect_that (parse_ast "key='aa'\n\nkey='aa'"), deep_eq Ast
+        * Entry (Key {'key'}), Value 'aa'
+        * Entry (Key {'key'}), Value 'aa'
+      expect_that (parse_ast 'key=true\nkey=false\n'), deep_eq Ast
+        * Entry (Key {'key'}), Value true
+        * Entry (Key {'key'}), Value false
+
+    it 'accepts composite keys', ->
+      expect_that (parse_ast 'key1.key2=true'), deep_eq Ast
+        * Entry (Key {'key1', 'key2'}), Value true
+
+    -- it 'accepts non-root tables', ->
+    --   expect_that (parse_ast "
+    --     [table]
+    --     key = 'value'
+    --   "), deep_eq Ast!
+    --
+    -- it 'accepts both root and non-root tables', ->
+    --   expect_that (parse_ast ''), deep_eq Ast!
