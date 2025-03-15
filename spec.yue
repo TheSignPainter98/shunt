@@ -266,7 +266,7 @@ class DeepEq
       if not @deep_equal va, vb
         return false
     for kb, _ in pairs b
-      if not a[kb]
+      if not a[kb]?
         return false
     true
 
