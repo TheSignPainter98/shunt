@@ -145,7 +145,7 @@ export class Subcommand
     @
   description: (@_description) => @
 
-  _parse: (args, global_flags, global_values={}, parents={}) =>
+  _parse: (args, global_flags, global_values={}, path={}) =>
     ret = with <index>: global_values
       for flag in *@_flags
         if flag._global
@@ -213,8 +213,9 @@ export class Subcommand
           ret[param._dest] = arg_value
           curr_param += 1
       else if command = subcommand_map[arg]
-        parents[] = @_name
-        subcommand_ret, err = command\_parse [ a for a in *args[i+1,] ], global_flags, global_values, parents
+        print "pushing #{arg}"
+        path[] = arg
+        subcommand_ret, err = command\_parse [ a for a in *args[i+1,] ], global_flags, global_values, path
         if err?
           return nil, err
         ret[command._dest] = subcommand_ret
@@ -223,25 +224,30 @@ export class Subcommand
         return nil, "unexpected argument '#{arg}'"
 
     if ret._usage
-      print @_usage_message parents
+      print @_usage_message path
       return nil, EXIT
     if help = ret._help
       if help == true
-        print @_help_message parents
+        print @_help_message path
         return nil, EXIT
 
       if 'table' != type help
         error "internal error: unexpected help type #{type help}"
 
+      if help.command?
+        if help.command != SELF
+          path[#path] = help.command
+        else
+          path[#path] = nil
       if help.command == SELF
-        print @_help_message parents
+        print @_help_message path
         return nil, EXIT
       if sc = subcommand_map[help.command]
-        print sc\_help_message parents
+        print sc\_help_message path
         return nil, EXIT
       return nil, "no such subcommand '#{help}'"
     if ret._version
-      print @_version_message parents
+      print @_version_message path
       return nil, EXIT
 
     for flag in *@_flags
@@ -359,17 +365,9 @@ export class Subcommand
 
     nil
 
-  _usage_message: (parents={}) =>
-    parents = if parents[#parents] == @_name
-      -- This is a hack :C
-      [ p for p in *parents[,#parents-1]]
-    else
-      parents
-    parents_repr = if #parents > 0
-      (table.concat parents, ' ') .. ' '
-    else
-      ''
-    table.concat with {'Usage: ', parents_repr, @_name, ' '}
+  _usage_message: (path={}) =>
+    path_repr = table.concat path, ' '
+    table.concat with {'Usage: ', path_repr, ' '}
       first_arg = true
       for flag in *@_sorted_flags!
         if not first_arg
@@ -401,17 +399,15 @@ export class Subcommand
           [] = ' '
         [] = '<command>'
 
-  _help_message: (parents={})=>
+  _help_message: (path={})=>
     lines = with {}
       if @_description?
         [] = table.concat with {}
-          [] = table.concat parents, ' '
-          if #parents > 0
-            [] = ' '
-          [] = "#{@_name} - #{@_description}"
+          [] = table.concat path, ' '
+          [] = " - #{@_description}"
 
       [] = ''
-      [] = @_usage_message parents
+      [] = @_usage_message path
 
       if #@_subcommands > 0
         [] = ''
@@ -505,8 +501,8 @@ export class Subcommand
           if flag._global
             [] = flag
 
-  _version_message: (parents={}) =>
-    parts = {...parents, @_name}
+  _version_message: (path={}) =>
+    parts = {...path}
     if @_version?
       parts[] = @_version
     table.concat parts, ' '
@@ -531,7 +527,7 @@ export class ArgParser extends Subcommand
     global_values = with {}
       for global_flag in *global_flags
         [global_flag._dest] = global_flag._default
-    ret, err = @_parse args, global_flags, global_values
+    ret, err = @_parse args, global_flags, global_values, {@_name}
     if err?
       if err == EXIT
         return nil, false
