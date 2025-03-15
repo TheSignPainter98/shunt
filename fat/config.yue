@@ -1,0 +1,20 @@
+local *
+
+import parse_toml from require 'fat.toml'
+import F from require 'quicktype'
+
+cached_config = nil
+tried_to_get_config = false
+export config = F '() -> ?{}', ->
+  if not tried_to_get_config
+    tried_to_get_config = true
+
+    raw_content = nil
+    with? io.open 'fat.toml'
+      config_absent = true
+      raw_content = assert \read '*a'
+      assert \close!
+    if raw_content?
+      cached_config = parse_toml raw_content
+    
+  cached_config
