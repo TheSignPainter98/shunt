@@ -213,7 +213,6 @@ export class Subcommand
           ret[param._dest] = arg_value
           curr_param += 1
       else if command = subcommand_map[arg]
-        print "pushing #{arg}"
         path[] = arg
         subcommand_ret, err = command\_parse [ a for a in *args[i+1,] ], global_flags, global_values, path
         if err?
