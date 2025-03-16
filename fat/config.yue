@@ -10,11 +10,11 @@ export config = F '() -> ?{}', ->
     tried_to_get_config = true
 
     raw_content = nil
-    with? io.open 'fat.toml'
+    with? io.open 'fat.toml', 'r'
       config_absent = true
       raw_content = assert \read '*a'
       assert \close!
     if raw_content?
       cached_config = parse_toml raw_content
-    
+
   cached_config
