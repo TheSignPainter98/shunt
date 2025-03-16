@@ -26,9 +26,7 @@ export main = F '({}) -> <>', (args) ->
     width: term_width
 
 declare_type 'Ledger', [[{
-  entries: {
-    iter: () => thread,
-  },
+  iter: () => thread,
 }]]
 declare_type 'Entry', [[{
   when: string,
@@ -36,38 +34,42 @@ declare_type 'Entry', [[{
   how: string,
 }]]
 class Ledger
-  @save_path: '.ledger-state.toml'
-
-  new: F '(number) => <>', (@max_len) =>
+  new: F '(?number, ?string) => <>', (@max_len=100, @save_path=".ledger-state.toml") =>
     @entries = Queue!
 
-  load: F '(?string) => <>', (path=@@save_path) =>
+  iter: F '() => function', =>
+    @entries\iter!
+
+  load: F '(?string) => <>', =>
     local content
-    with assert io.open path, 'r'
+    with assert io.open @save_path, 'r'
       content = assert \read '*a'
       assert \close!
+    print "got content: [#{content}]"
     data = parse_toml content
 
     @max_len = T 'number', assert data.max_len, 'saved ledger missing max_len field'
-    entries = T '[Entry]', assert data.entries, 'saved ledger missing entries array'
+    entries = T '[Entry]', data.entries ?? {}
     @entries = Queue!
     for entry in *entries
-      @entries\add entry
+      @entries\enqueue entry
 
-  save: F '(?string) => <>', (path=@@save_path) =>
+  save: F '(?string) => <>', =>
     lines = with {}
-      [] = "max_len = #{max_len}"
-      for entry in *@entries
+      [] = "max_len = #{@max_len}"
+      for entry in @entries\iter!
         [] = '[[entries]]'
-        [] = "what = '#{entry[1]}'"
-        [] = "when = '#{entry[2]}'"
-        [] = "how = '#{entry[3]}'"
+        [] = "what = '#{entry.what}'"
+        [] = "when = '#{entry.when}'"
+        [] = "how = '#{entry.how}'"
         [] = ''
     to_write = table.concat lines, '\n'
+    print "writing content: [#{to_write}]"
 
-    with assert io.open 'w+'
+    with assert io.open @save_path, 'w+'
       assert \write to_write
       assert \close!
+    return
 
   len: F '() => number', =>
     @entries\len!
@@ -76,6 +78,7 @@ class Ledger
     if @entries\len! == @max_len
       @entries\dequeue!
     @entries\enqueue entry
+    @save!
 
   emit: F '(?LedgerFmtOpts) => <>', (opts={}) =>
     to_print = @fmt opts
@@ -165,6 +168,28 @@ spec ->
         * when: 'hello', what: 'world', how: '2'
         * when: 'hello', what: 'world', how: '3'
         * when: 'hello', what: 'world', how: 'NEW'
+
+    it 'is persisted', ->
+      path = os.tmpname!
+      print 'running test in', path
+
+      ledger1 = Ledger 100, path
+      ledger2 = Ledger 100, path
+
+      ledger1\add when: 'hello', what: 'world', how: '1'
+      ledger1\add when: 'hello', what: 'world', how: '2'
+      entries1 = [ entry for entry in ledger1\iter! ]
+      assert_that entries1, deep_eq
+        * when: 'hello', what: 'world', how: '1'
+        * when: 'hello', what: 'world', how: '2'
+
+      ledger2\load path
+      entries2 = [ entry for entry in ledger2\iter! ]
+      assert_that entries2, deep_eq
+        * when: 'hello', what: 'world', how: '1'
+        * when: 'hello', what: 'world', how: '2'
+
+      assert os.remove path
 
   describe 'fmt_cell', ->
     it 'preserves right-size input', ->
