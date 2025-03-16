@@ -36,6 +36,7 @@ declare_type 'Entry', [[{
 class Ledger
   new: F '(?number, ?string) => <>', (@max_len=100, @save_path=".ledger-state.toml") =>
     @entries = Queue!
+    @entry_save_fragments = Queue!
 
   iter: F '() => function', =>
     @entries\iter!
@@ -53,16 +54,13 @@ class Ledger
     @entries = Queue!
     for entry in *entries
       @entries\enqueue entry
+      @entry_save_fragments\enqueue @fmt_entry_as_toml entry
 
   save: F '(?string) => <>', =>
     lines = with {}
       [] = "max_len = #{@max_len}"
-      for entry in @entries\iter!
-        [] = '[[entries]]'
-        [] = "what = '#{entry.what}'"
-        [] = "when = '#{entry.when}'"
-        [] = "how = '#{entry.how}'"
-        [] = ''
+      for entry_save_fragment in @entry_save_fragments\iter!
+        [] = entry_save_fragment
     to_write = table.concat lines, '\n'
     print "writing content: [#{to_write}]"
 
@@ -71,13 +69,22 @@ class Ledger
       assert \close!
     return
 
+  fmt_entry_as_toml: F '(Entry) => string', (entry) =>
+    table.concat with {}
+      [] = '[[entries]]\n'
+      [] = "what = '#{entry.what}'\n"
+      [] = "when = '#{entry.when}'\n"
+      [] = "how = '#{entry.how}'\n"
+
   len: F '() => number', =>
     @entries\len!
 
   add: F '(Entry) => <>', (entry) =>
     if @entries\len! == @max_len
       @entries\dequeue!
+      @entry_save_fragments\dequeue!
     @entries\enqueue entry
+    @entry_save_fragments\enqueue @fmt_entry_as_toml entry
     @save!
 
   emit: F '(?LedgerFmtOpts) => <>', (opts={}) =>
