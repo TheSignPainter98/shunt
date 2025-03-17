@@ -15,7 +15,7 @@ import F from require 'quicktype'
 
 require 'fat.state' -- TODO(kcza): remove me, just for testing
 require 'fat.peripheral.uplink' -- TODO(kcza): remove me, just for testing
-require 'fat.peripheral.station' -- TODO(kcza): remove me, just for testing
+require 'fat.peripheral.platform' -- TODO(kcza): remove me, just for testing
 require 'fat.peripheral.stockpile' -- TODO(kcza): remove me, just for testing
 require 'fat.config' -- TODO(kcza): remove me, just for testing
 
