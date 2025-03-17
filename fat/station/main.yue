@@ -1,8 +1,7 @@
 local *
 
 import Flag, Subcommand from require 'clap'
-import write_config from require 'fat.config'
-import parse_toml from require 'fat.toml'
+import init_config from require 'fat.station.config'
 import F from require 'quicktype'
 import spec from require 'spec'
 
@@ -17,29 +16,6 @@ export subcommand = with Subcommand 'station'
 
 export main = F '({}) -> <>', (args) ->
   if args.init
-    init args.force
+    init_config args.force
     return
 
-default_config = [=[
-[station]
-name = '<station-name>'
-
-[[platforms]]
-name = '<platform-name>'
-
-# Uncomment the following if this station *produces* a resource. NB: the
-# resource name does not need to a Minecraft ID, it just needs to be name which
-# is consistent across the network.
-# produces = '<resource-name>'
-
-# Uncomment the following if this station *consumes* a resource. NB: the
-# resource name does not need to a Minecraft ID, it just needs to be name which
-# is consistent across the network.
-# consumes = '<resource-name>'
-]=]
-init = F '(boolean) -> <>', (force) ->
-  try
-    write_config default_config, force
-  catch err
-    print "cannot write config: #{err}\nperhaps retry with --force?"
-  return
