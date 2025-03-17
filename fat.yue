@@ -32,17 +32,17 @@ main = (raw_args) ->
   logger.set_log_verbosity args.verbose
   spec.set_log_verbosity args.verbose
 
+  if monitor = peripheral?.find 'monitor'
+    log -> 'see monitor'
+    monitor.clear!
+    term.redirect monitor
+
   with? args.test
     skip_minecraft_tests = .no_minecraft
     run_tests .filter
     return
   if not args.no_install
     install_startup_script raw_args
-
-  if monitor = peripheral?.find 'monitor'
-    log -> 'see monitor'
-    monitor.clear!
-    term.redirect monitor
 
   spam args.no_reattempt, ->
     if args.display?
