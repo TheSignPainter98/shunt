@@ -1,7 +1,9 @@
 local *
 
-import declare_type from require 'quicktype'
+import apply_compat, test_compat from require 'compat'
+apply_compat!
 
+import declare_type from require 'quicktype'
 declare_type 'Self', 'some'
 
 import Args from require 'fat.args'
@@ -99,3 +101,8 @@ try
   main args
 catch err
   print debug.traceback err
+
+spec.spec ->
+  describe 'compat', ->
+    it 'passes checks', ->
+      test_compat!

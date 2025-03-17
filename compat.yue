@@ -1,0 +1,47 @@
+local *
+
+compat_applied = false
+export apply_compat = ->
+  compat_applied = true
+
+  if not os.tmpname?
+    os.tmpname = ->
+      ".lua_#{'%x'\format math.random 1, 100000}"
+
+    os.remove = (path) ->
+      try
+        fs.delete path
+        return true
+      catch _
+        return false
+
+export test_compat = ->
+  if not compat_applied
+    error 'call apply_compat before testing compat'
+  tests =
+    * name: 'os.tmpname returns a string'
+      check: ->
+        assert 'string' == type os.tmpname!
+    * name: 'os.remove removes files',
+      check: ->
+        TEST_FILE = '.test_file_hj4k3h5jio'
+        with? io.open TEST_FILE, 'r'
+          \close!
+          error "test file '#{TEST_FILE}' already exists, please remove it"
+        with assert io.open TEST_FILE, 'w+'
+          \close!
+        with assert io.open TEST_FILE, 'r'
+          \close!
+        os.remove TEST_FILE
+        with? io.open TEST_FILE, 'r'
+          \close!
+          error "expected test file '#{TEST_FILE}' to have been removed after calling os.remove"
+  failed = false
+  for test in *tests
+    try
+      test.check!
+    catch err
+      print "* test '#{test.name}' failed:\n  #{err}"
+      failed = true
+  if failed
+    error 'some compatibility checks failed'
