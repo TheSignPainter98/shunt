@@ -31,4 +31,5 @@ export class Args
           \description 'run only tests matching this pattern'
           \default nil
       \add (require 'fat.display.main').subcommand
+      \add (require 'fat.station.main').subcommand
       \add (require 'fat.ledger.main').subcommand

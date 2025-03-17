@@ -7,6 +7,7 @@ declare_type 'Self', 'some'
 import Args from require 'fat.args'
 display = require 'fat.display.main'
 ledger = require 'fat.ledger.main'
+station = require 'fat.station.main'
 import run_tests from require 'spec'
 import 'fat.logger'
 import log from require 'fat.logger'
@@ -44,6 +45,8 @@ main = (raw_args) ->
   spam args.no_reattempt, ->
     if args.display?
       display.main args.display
+    else if args.station?
+      station.main args.station
     else if args.ledger?
       ledger.main args.ledger
 

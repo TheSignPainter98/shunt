@@ -3,6 +3,7 @@
 *.goo
 packed/
 test.yue
+*.toml
 
 # Binaries
 bin/*
