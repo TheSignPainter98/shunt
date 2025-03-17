@@ -627,7 +627,7 @@ export matchers =
   no_errors: -> NoErrors!
   errors: (matcher) -> Errors matcher
   has_type: (typ) -> Type typ
-  fields: (fields) -> Fields fields
+  has_fields: (fields) -> Fields fields
 
 reflow = (prefix, string, width=80) ->
   lines = with {}

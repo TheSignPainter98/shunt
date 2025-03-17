@@ -1088,7 +1088,7 @@ export stats = ->
 
 spec ->
   import assert_that, expect_that, describe, it, matchers from require 'spec'
-  import anything, contains_value, deep_eq, each_value, eq, errors, fields, ge, gt, len, match, matches, no_errors from matchers
+  import anything, contains_value, deep_eq, each_value, eq, errors, has_fields, ge, gt, len, match, matches, no_errors from matchers
 
   describe 'Lexer', ->
     tokens = (raw) ->
@@ -1557,6 +1557,6 @@ spec ->
       T 'string', 'hello' -- Exercise the checker
       stats_arr = stats!
       expect_that stats_arr, len gt 0
-      expect_that stats_arr, each_value fields count: ge 0
+      expect_that stats_arr, each_value has_fields count: ge 0
 
       COLLECT_STATS = prev_collect_stats
