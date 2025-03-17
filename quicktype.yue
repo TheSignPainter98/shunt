@@ -187,6 +187,9 @@ class TypeSpecParser extends Parser
     ret
 
   parse_type: =>
+    if @maybe T_BANG
+      return Never!
+
     @parse_type_disjunction!
 
   parse_type_disjunction: =>
@@ -365,6 +368,7 @@ T_ANGLE_OPEN = <tostring>: => '"<"'
 T_ANGLE_CLOSE = <tostring>: => '">"'
 T_COMMA = <tostring>: => "','"
 T_COLON = <tostring>: => "':'"
+T_BANG = <tostring>: => "'!'"
 T_THIN_ARROW = <tostring>: => "'->'"
 T_FAT_ARROW = <tostring>: => "'=>'"
 T_DOTDOTDOT = <tostring>: => "'...'"
@@ -402,6 +406,8 @@ class Lexer
           T_BRACKET_CLOSE, nil, #match
         else if match = type_spec\match '^:', @index
           T_COLON, nil, #match
+        else if match = type_spec\match '^!', @index
+          T_BANG, nil, #match
         else if match = type_spec\match '^->', @index
           T_THIN_ARROW, nil, #match
         else if match = type_spec\match '^=>', @index
@@ -527,6 +533,11 @@ class Some using Is
   checker: (checker_builder=CheckerBuilder!) =>
     with checker_builder
       \add C_ASSERT_NON_NIL
+
+class Never using Is
+  checker: (checker_builder=CheckerBuilder!) =>
+    with checker_builder
+      \add C_ASSERT_NEVER
 
 class UserType using Is
   new: (@name) =>
@@ -881,6 +892,7 @@ C_ASSERT_PRIMITIVE = <tostring>: => '<assert-primitive>'
 C_ASSERT_TRUTHY = <tostring>: => '<assert-truthy>'
 C_ASSERT_LEN = <tostring>: => '<assert-len>'
 C_ASSERT_EQ = <tostring>: => '<assert-eq>'
+C_ASSERT_NEVER = <tostring>: => '<assert-never>'
 C_GET_FIELD = <tostring>: => '<field>'
 C_INCR = <tostring>: => '<incr>'
 C_DECR = <tostring>: => '<decr>'
@@ -988,6 +1000,8 @@ check = (check_prog, value, root=true) ->
         when C_ASSERT_EQ
           if stack[stack_size] != [pc + 1]
             $check_error "incorrect type: expected #{type [pc + 1]} #{repr [pc + 1]} but got #{repr stack[stack_size]}"
+        when C_ASSERT_NEVER
+          $check_error 'never expected a value here'
         when C_GET_FIELD
           stack_size += 1
           stack[stack_size] = stack[stack_size-2][stack[stack_size-1]]
@@ -1112,6 +1126,11 @@ spec ->
           Symbol T_NAME, simple_type
         }
 
+    it 'emits the never type', ->
+      expect_that (tokens '!'), deep_eq {
+        Symbol T_BANG
+      }
+
     it 'emits number types', ->
       expect_that (tokens '123 456.654 .789 -123 -456.654 -.789'), deep_eq {
         Symbol T_NUMBER, 123
@@ -1188,6 +1207,7 @@ spec ->
         expect_that (parse 'thread'), deep_eq Primitive type coroutine.create ->
         expect_that (parse 'any'), deep_eq Any!
         expect_that (parse 'some'), deep_eq Some!
+        expect_that (parse '!'), deep_eq Never!
 
       it 'accepts user types', ->
         expect_that (parse 'UserType'), deep_eq UserType 'UserType'
@@ -1347,6 +1367,9 @@ spec ->
       for value in *values
         expect_that (-> T 'some', value), no_errors!
       expect_that (-> T 'some', nil), errors matches "incorrect type: expected some but got nil"
+
+    it 'rejects never', ->
+      expect_that (-> T '!', 123), errors matches 'never expected a value here'
 
     it 'checks number types', ->
       expect_that (-> T '123', 123), no_errors!
@@ -1548,6 +1571,9 @@ spec ->
 
     it 'requires a method receiver', ->
       expect_that (-> (F '() => <>', =>)!), errors matches "incorrect type: expected some but got nil"
+
+    it 'checks never', ->
+      expect_that (-> (F '() -> !', ->)!), errors matches 'never expected a value here'
 
   describe 'stats', ->
     it 'has the correct type', ->
