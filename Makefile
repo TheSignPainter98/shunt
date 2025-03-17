@@ -34,3 +34,7 @@ clean:
 install: scripts/install.sh $(BINARIES)
 	./$<
 .PHONY: install
+
+uninstall: scripts/uninstall.sh
+	./$<
+.PHONY: uninstall
