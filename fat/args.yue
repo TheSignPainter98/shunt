@@ -11,14 +11,6 @@ export class Args
     with ArgParser 'fat'
       \version '0.1'
       \description 'an automatic cargo router'
-      \add with Flag 'no-install'
-        \description 'skip installing startup script'
-        \global!
-      \add with Flag 'fragile'
-        \description 'exit on failure, rather than reattempting'
-        \short nil
-        \dest 'no_reattempt'
-        \global!
       \add with Flag 'verbose'
         \description 'log verbosely'
         \global!
@@ -30,6 +22,6 @@ export class Args
         \add with Param 'filter'
           \description 'run only tests matching this pattern'
           \default nil
-      \add (require 'fat.display.main').subcommand
-      \add (require 'fat.station.main').subcommand
-      \add (require 'fat.ledger.main').subcommand
+      \add (require 'fat.install.main').subcommand
+      \add (require 'fat.start.main').subcommand
+      \add (require 'fat.uninstall.main').subcommand

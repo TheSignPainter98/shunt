@@ -12,7 +12,7 @@ export subcommand = with Subcommand 'ledger'
     \short nil
     \description 'at the start, print all history'
 
-export main = F '({}) -> <>', (args) ->
+export main = F '({}) -> <>', (config) ->
   term_width, term_height = term?.getSize!
   term_width ??= 80
   term_height ??= 20

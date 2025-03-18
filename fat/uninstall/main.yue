@@ -1,0 +1,44 @@
+local *
+
+import Flag, Subcommand from require 'clap'
+import _startup_script from require 'fat.install.main'
+import F from require 'quicktype'
+
+export subcommand = with Subcommand 'uninstall'
+  \description 'disable fat on startup'
+  -- TODO(kcza): this does more!
+  \add with Flag 'force'
+    \description 'delete existing config'
+
+export main = F '({}) -> <>', (args) ->
+  if args.force
+    remove_files true
+    return
+
+  local content
+  with? io.open 'startup.lua', 'r'
+    content = assert \read '*a'
+    assert \close!
+  if not content?
+    print 'cannot uninstall fat: startup.lua missing'
+    return
+
+  if content != _startup_script
+    print 'cannot uninstall fat: startup script contains changes\nrerun with --force to delete anyway'
+    return
+
+  remove_files false
+  return
+
+remove_files = F '(boolean) -> <>', (force) ->
+  remove_with_force = if force
+    (path) ->
+      os.remove path
+      return
+  else
+    (path) ->
+      assert (os.remove path), "cannot remove #{path}"
+      return
+
+  remove_with_force 'startup.lua'
+  remove_with_force 'fat.toml'
