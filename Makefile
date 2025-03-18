@@ -3,7 +3,7 @@ LUA = luajit
 DIAGRAMS = $(shell ls docs/*.dot | sed 's/\.dot$$/.svg/')
 SOURCES = $(shell find -name '*.yue')
 OBJECTS = $(patsubst %.yue,%.lua,$(SOURCES))
-BINARIES = bin/fat bin/goo bin/moonpack bin/nitro nitro.lua moonpack.lua
+BINARIES = bin/fat bin/goo
 
 NODE_FONTNAME = C059
 EDGE_FONTNAME = $(NODE_FONTNAME)
