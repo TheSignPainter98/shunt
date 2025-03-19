@@ -2,6 +2,11 @@ local *
 
 import ArgParser, Flag, Param, Subcommand from require 'clap'
 
+macro build_date = ->
+  date = os.date '%Y-%m-%d@%H:%M:%S'
+  "\"#{date}\""
+export VERSION = "0.1 (#{$build_date!})"
+
 export class Args
   @parse: (args) =>
     arg_parser = @_arg_parser!
@@ -9,7 +14,7 @@ export class Args
 
   @_arg_parser: =>
     with ArgParser 'fat'
-      \version '0.1'
+      \version VERSION
       \description 'an automatic cargo router'
       \add with Flag 'verbose'
         \description 'log verbosely'
