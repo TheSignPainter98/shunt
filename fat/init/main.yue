@@ -10,18 +10,18 @@ station_config = require 'fat.station.config'
 ledger = require 'fat.ledger.main'
 
 export subcommand = with Subcommand 'init'
-  \description 'initialise fat node'
+  \description 'initialise this fat instance'
   \add with Flag 'force'
     \description 'overwrite existing config'
-  \add with Param 'what'
-    \description 'the type of node to initialise'
+  \add with Param 'instance-type'
+    \description 'the type of instance to initialise'
     \options
       * 'station'
       * 'ledger'
       * 'display'
 
 export main = F '({}) -> <>', (args) ->
-  default_config = switch args.what
+  default_config = switch args.instance_type
     when 'station'
       station_config.default_config
     when 'ledger'
@@ -29,7 +29,7 @@ export main = F '({}) -> <>', (args) ->
     when 'display'
       display.default_config
     else
-      error "internal error: unrecognised what type '#{args.what}'"
+      error "internal error: unrecognised instance type '#{args.instance_type}'"
   write_config default_config, args.force
 
   config_is_valid = false
@@ -42,12 +42,12 @@ export main = F '({}) -> <>', (args) ->
     else
       os.execute 'nvim fat.toml'
 
-    config_is_valid = validate_config args.what
+    config_is_valid = validate_config args.instance_type
 
-  print "#{args.what} configured"
+  print "#{args.instance_type} configured"
   return
 
-validate_config = F '(string) -> boolean', (what) ->
+validate_config = F '(string) -> boolean', (instance_type) ->
   local raw_config
   with assert io.open 'fat.toml', 'r'
     raw_config = assert \read '*a'
@@ -55,8 +55,8 @@ validate_config = F '(string) -> boolean', (what) ->
 
   config = parse_toml raw_config
 
-  if not config[what]?
-    print "config does not contain #{what} section"
+  if not config[instance_type]?
+    print "config does not contain #{instance_type} section"
     return false
 
   true

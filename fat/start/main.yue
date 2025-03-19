@@ -18,7 +18,7 @@ export subcommand = with Subcommand 'start'
 export main = F '({}) -> <>', (args) ->
   cfg = config!
   if not cfg?
-    print 'cannot start fat: config missing\ntry running `fat init <node-type>` first'
+    print 'cannot start fat: config missing\ntry running `fat init <instance-type>` first'
     return
 
   to_spam = if cfg.display?
@@ -28,7 +28,7 @@ export main = F '({}) -> <>', (args) ->
   else if cfg.ledger?
     -> ledger.main cfg
   else
-    print 'cannot detect node type'
+    print 'cannot detect instance type'
     return
   spam args.no_reattempt, ->
 
