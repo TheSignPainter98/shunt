@@ -1,0 +1,62 @@
+local *
+
+import Flag, Param, Subcommand from require 'clap'
+import write_config from require 'fat.config'
+import parse_toml from require 'fat.toml'
+import F from require 'quicktype'
+
+station_config = require 'fat.station.config'
+
+export subcommand = with Subcommand 'init'
+  \description 'initialise fat node'
+  \add with Flag 'force'
+    \description 'overwrite existing config'
+  \add with Param 'what'
+    \description 'the type of node to initialise'
+    \options
+      * 'controller'
+      * 'station'
+      * 'ledger'
+      * 'display'
+
+export main = F '({}) -> <>', (args) ->
+  switch args.what
+    when 'controller'
+      -- TODO(kcza): complete me
+    when 'station'
+      write_config station_config.default_config, args.force
+    when 'ledger'
+      -- TODO(kcza): complete me
+    when 'display'
+      -- TODO(kcza): complete me
+    else
+      error "internal error: unrecognised what type '#{args.what}'"
+
+  config_is_valid = false
+  while not config_is_valid
+    print 'press [ENTER] edit fat.toml'
+    io.read '*l'
+
+    if shell?
+      shell?.run 'edit fat.toml'
+    else
+      os.execute 'nvim fat.toml'
+
+    config_is_valid = validate_config args.what
+
+  print "#{args.what} configured"
+  return
+
+validate_config = F '(string) -> boolean', (what) ->
+  local raw_config
+  with assert io.open 'fat.toml', 'r'
+    raw_config = assert \read '*a'
+    assert \close!
+
+  config = parse_toml raw_config
+
+  if not config[what]?
+    print "config does not contain #{what} section"
+    return false
+
+  true

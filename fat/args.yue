@@ -22,6 +22,7 @@ export class Args
         \add with Param 'filter'
           \description 'run only tests matching this pattern'
           \default nil
+      \add (require 'fat.init.main').subcommand
       \add (require 'fat.install.main').subcommand
       \add (require 'fat.start.main').subcommand
       \add (require 'fat.uninstall.main').subcommand

@@ -14,6 +14,7 @@ import 'spec'
 import F from require 'quicktype'
 import detect_and_use_monitor from require 'fat.monitor'
 
+init = require 'fat.init.main'
 install = require 'fat.install.main'
 uninstall = require 'fat.uninstall.main'
 start = require 'fat.start.main'
@@ -42,6 +43,8 @@ main = (raw_args) ->
   else if args.start?
     detect_and_use_monitor!
     start.main args.start
+  else if args.init?
+    init.main args.init
   else if args.install?
     install.main args.install
   else if args.uninstall?
