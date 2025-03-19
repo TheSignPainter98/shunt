@@ -414,6 +414,7 @@ export class Subcommand
 
         longest_subommand_repr_len = math.max unpack [ #sc\_repr! for sc in *@_subcommands ]
         sorted_subcommands = [ sc for sc in *@_subcommands ]
+        table.sort sorted_subcommands, (sc1, sc2) -> sc1._name < sc2._name
         for subcommand in *sorted_subcommands
           repr = subcommand\_repr!
           if description = subcommand._description
