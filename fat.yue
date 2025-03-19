@@ -14,6 +14,7 @@ import 'spec'
 import F from require 'quicktype'
 import detect_and_use_monitor from require 'fat.monitor'
 
+clean = require 'fat.clean.main'
 disable = require 'fat.disable.main'
 enable = require 'fat.enable.main'
 init = require 'fat.init.main'
@@ -45,6 +46,8 @@ main = (raw_args) ->
     start.main args.start
   else if args.init?
     init.main args.init
+  else if args.clean?
+    clean.main args.clean
   else if args.enable?
     enable.main args.enable
   else if args.disable?
