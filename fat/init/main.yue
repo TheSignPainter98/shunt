@@ -5,7 +5,9 @@ import write_config from require 'fat.config'
 import parse_toml from require 'fat.toml'
 import F from require 'quicktype'
 
+display = require 'fat.display.main'
 station_config = require 'fat.station.config'
+ledger = require 'fat.ledger.main'
 
 export subcommand = with Subcommand 'init'
   \description 'initialise fat node'
@@ -14,23 +16,21 @@ export subcommand = with Subcommand 'init'
   \add with Param 'what'
     \description 'the type of node to initialise'
     \options
-      * 'controller'
       * 'station'
       * 'ledger'
       * 'display'
 
 export main = F '({}) -> <>', (args) ->
-  switch args.what
-    when 'controller'
-      -- TODO(kcza): complete me
+  default_config = switch args.what
     when 'station'
-      write_config station_config.default_config, args.force
+      station_config.default_config
     when 'ledger'
-      -- TODO(kcza): complete me
+      ledger.default_config
     when 'display'
-      -- TODO(kcza): complete me
+      display.default_config
     else
       error "internal error: unrecognised what type '#{args.what}'"
+  write_config default_config, args.force
 
   config_is_valid = false
   while not config_is_valid
