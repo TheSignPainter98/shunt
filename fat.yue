@@ -7,14 +7,18 @@ import declare_type from require 'quicktype'
 declare_type 'Self', 'some'
 
 import Args from require 'fat.args'
-display = require 'fat.display.main'
-ledger = require 'fat.ledger.main'
-station = require 'fat.station.main'
 import run_tests from require 'spec'
 import 'fat.logger'
 import log from require 'fat.logger'
 import 'spec'
 import F from require 'quicktype'
+import detect_and_use_monitor from require 'fat.monitor'
+
+clean = require 'fat.clean.main'
+disable = require 'fat.disable.main'
+enable = require 'fat.enable.main'
+init = require 'fat.init.main'
+start = require 'fat.start.main'
 
 require 'fat.state' -- TODO(kcza): remove me, just for testing
 require 'fat.peripheral.uplink' -- TODO(kcza): remove me, just for testing
@@ -32,77 +36,34 @@ main = (raw_args) ->
   logger.set_log_verbosity args.verbose
   spec.set_log_verbosity args.verbose
 
-  if monitor = peripheral?.find 'monitor'
-    log -> 'see monitor'
-    monitor.clear!
-    term.redirect monitor
+  if args.test?
+    detect_and_use_monitor!
 
-  with? args.test
-    skip_minecraft_tests = .no_minecraft
-    run_tests .filter
-    return
-  if not args.no_install
-    install_startup_script raw_args
-
-  spam args.no_reattempt, ->
-    if args.display?
-      display.main args.display
-    else if args.station?
-      station.main args.station
-    else if args.ledger?
-      ledger.main args.ledger
-
-install_startup_script = (raw_args) ->
-  stringified_args = {}
-  for arg in *raw_args
-    if arg\match "'"
-      error "args cannot contain \"'\": got #{arg}"
-    stringified_args[] = "'#{arg}'"
-
-  script = "
-    shell.run('set motd.enable false')
-    shell.execute('fat', #{table.concat stringified_args, ', '})
-  "
-  with assert io.open 'startup.lua', 'w+'
-    assert \write script
-    assert \close!
-
-spam = F '(boolean, () -> <>) -> <>', (no_reattempt, fn) ->
-  if no_reattempt
-    fn!
-    return
-
-  attempt = 1
-  done = false
-  while not done
-    attempt += 1
-    try
-      fn!
-      done = true
-    catch err
-      colour = term?.getTextColor!
-      term?.setTextColor colors.red
-      print debug.traceback err
-      term?.setTextColor colour
-
-      print "[failed]"
-      sleep 1
-      term?.clear!
-      print "[attempt #{attempt}]"
-
-sleep = F '(number) -> <>', (n_secs) ->
-  if os.sleep?
-    os.sleep n_secs
+    skip_minecraft_tests = args.test.no_minecraft
+    run_tests args.test.filter
+  else if args.start?
+    detect_and_use_monitor!
+    start.main args.start
+  else if args.init?
+    init.main args.init
+  else if args.clean?
+    clean.main args.clean
+  else if args.enable?
+    enable.main args.enable
+  else if args.disable?
+    disable.main args.disable
   else
-    os.execute "sleep #{n_secs}s"
+    error 'internal error: no command recognised'
+
+spec.spec ->
+  import describe, it from require 'spec'
+
+  describe 'compat', ->
+    it 'passes checks', ->
+      test_compat!
 
 args = {...}
 try
   main args
 catch err
   print debug.traceback err
-
-spec.spec ->
-  describe 'compat', ->
-    it 'passes checks', ->
-      test_compat!

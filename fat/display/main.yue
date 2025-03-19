@@ -9,5 +9,10 @@ export subcommand = with Subcommand 'display'
       * 'stations'
       * 'throughput'
 
+export default_config = [=[
+[display.ledger]
+kind = 'all-events'
+]=]
+
 export main = (args, global_args) ->
   print "hello, display! Displaying: #{args.what}"

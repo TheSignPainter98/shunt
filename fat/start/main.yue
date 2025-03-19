@@ -1,0 +1,63 @@
+local *
+
+import Flag, Subcommand from require 'clap'
+import config from require 'fat.config'
+import F from require 'quicktype'
+
+display = require 'fat.display.main'
+ledger = require 'fat.ledger.main'
+station = require 'fat.station.main'
+
+export subcommand = with Subcommand 'start'
+  \description 'start this fat instance'
+  \add with Flag 'fragile'
+    \description 'exit on failure, rather than reattempting'
+    \short nil
+    \dest 'no_reattempt'
+
+export main = F '({}) -> <>', (args) ->
+  cfg = config!
+  if not cfg?
+    print 'cannot start fat: config missing\ntry running `fat init <instance-type>` first'
+    return
+
+  to_spam = if cfg.display?
+    -> display.main cfg
+  else if cfg.station?
+    -> station.main cfg
+  else if cfg.ledger?
+    -> ledger.main cfg
+  else
+    print 'cannot detect instance type'
+    return
+  spam args.no_reattempt, ->
+
+spam = F '(boolean, () -> <>) -> <>', (no_reattempt, fn) ->
+  if no_reattempt
+    fn!
+    return
+
+  attempt = 1
+  done = false
+  while not done
+    try
+      fn!
+      done = true
+    catch err
+      colour = term?.getTextColor!
+      term?.setTextColor colors.red
+      print debug.traceback err
+      term?.setTextColor colour
+
+      print "[failed]"
+      sleep 1
+      term?.clear!
+
+      attempt += 1
+      print "[attempt #{attempt}]"
+
+sleep = F '(number) -> <>', (n_secs) ->
+  if os.sleep?
+    os.sleep n_secs
+  else
+    os.execute "sleep #{n_secs}s"

@@ -2,6 +2,11 @@ local *
 
 import ArgParser, Flag, Param, Subcommand from require 'clap'
 
+macro build_date = ->
+  date = os.date '%Y-%m-%d@%H:%M:%S'
+  "\"#{date}\""
+export VERSION = "0.1 (#{$build_date!})"
+
 export class Args
   @parse: (args) =>
     arg_parser = @_arg_parser!
@@ -9,16 +14,8 @@ export class Args
 
   @_arg_parser: =>
     with ArgParser 'fat'
-      \version '0.1'
+      \version VERSION
       \description 'an automatic cargo router'
-      \add with Flag 'no-install'
-        \description 'skip installing startup script'
-        \global!
-      \add with Flag 'fragile'
-        \description 'exit on failure, rather than reattempting'
-        \short nil
-        \dest 'no_reattempt'
-        \global!
       \add with Flag 'verbose'
         \description 'log verbosely'
         \global!
@@ -30,6 +27,8 @@ export class Args
         \add with Param 'filter'
           \description 'run only tests matching this pattern'
           \default nil
-      \add (require 'fat.display.main').subcommand
-      \add (require 'fat.station.main').subcommand
-      \add (require 'fat.ledger.main').subcommand
+      \add (require 'fat.clean.main').subcommand
+      \add (require 'fat.disable.main').subcommand
+      \add (require 'fat.enable.main').subcommand
+      \add (require 'fat.init.main').subcommand
+      \add (require 'fat.start.main').subcommand
