@@ -5,8 +5,5 @@ import default_config from require 'fat.station.config'
 import F from require 'quicktype'
 import spec from require 'spec'
 
-export subcommand = with Subcommand 'station'
-  \description 'run a station'
-
 export main = F '({}) -> <>', (args) ->
 

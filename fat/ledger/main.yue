@@ -6,12 +6,6 @@ import parse_toml from require 'fat.toml'
 import declare_type, F, T from require 'quicktype'
 import spec from require 'spec'
 
-export subcommand = with Subcommand 'ledger'
-  \description 'show system status log'
-  \add with Flag 'show-history'
-    \short nil
-    \description 'at the start, print all history'
-
 export default_config = [=[
 [ledger]
 retained-events = 1000

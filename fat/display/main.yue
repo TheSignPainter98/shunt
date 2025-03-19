@@ -11,8 +11,16 @@ export subcommand = with Subcommand 'display'
 
 export default_config = [=[
 [display.ledger]
-kind = 'all-events'
+kind = 'events'
 ]=]
 
-export main = (args, global_args) ->
+declare_type 'DisplayConfig', [[{
+  display: {
+    ledger: {
+      kind: "trains"|"stations"|"throughput"|"events",
+    },
+  },
+}]]
+export main = F '(DisplayConfig) -> <>', (config) ->
   print "hello, display! Displaying: #{args.what}"
+  return
