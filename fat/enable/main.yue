@@ -3,7 +3,7 @@ local *
 import Flag, Subcommand from require 'clap'
 import F from require 'quicktype'
 
-export subcommand = with Subcommand 'install'
+export subcommand = with Subcommand 'enable'
   \description 'enable fat on startup'
   \add with Flag 'force'
     \description 'overwrite existing config'
@@ -12,7 +12,7 @@ export main = F '({}) -> <>', (args) ->
   if not args.force
     with? io.open 'startup.lua', 'r'
       \close!
-      print 'cannot install fat: existing config detected\nre-run with --force to overwrite'
+      print 'cannot enable fat: existing startup script detected\nre-run with --force to overwrite'
       return
 
   with assert io.open 'startup.lua', 'w+'

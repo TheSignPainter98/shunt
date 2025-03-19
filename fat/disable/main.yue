@@ -1,14 +1,13 @@
 local *
 
 import Flag, Subcommand from require 'clap'
-import _startup_script from require 'fat.install.main'
+import _startup_script from require 'fat.enable.main'
 import F from require 'quicktype'
 
-export subcommand = with Subcommand 'uninstall'
+export subcommand = with Subcommand 'disable'
   \description 'disable fat on startup'
-  -- TODO(kcza): this does more!
   \add with Flag 'force'
-    \description 'delete existing config'
+    \description 'delete edited config'
 
 export main = F '({}) -> <>', (args) ->
   if args.force
@@ -20,11 +19,11 @@ export main = F '({}) -> <>', (args) ->
     content = assert \read '*a'
     assert \close!
   if not content?
-    print 'cannot uninstall fat: startup.lua missing'
+    print 'cannot disable fat: startup.lua missing'
     return
 
   if content != _startup_script
-    print 'cannot uninstall fat: startup script contains changes\nrerun with --force to delete anyway'
+    print 'cannot disable fat: startup script contains changes\nrerun with --force to delete anyway'
     return
 
   remove_files false

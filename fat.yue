@@ -14,9 +14,9 @@ import 'spec'
 import F from require 'quicktype'
 import detect_and_use_monitor from require 'fat.monitor'
 
+disable = require 'fat.disable.main'
+enable = require 'fat.enable.main'
 init = require 'fat.init.main'
-install = require 'fat.install.main'
-uninstall = require 'fat.uninstall.main'
 start = require 'fat.start.main'
 
 require 'fat.state' -- TODO(kcza): remove me, just for testing
@@ -45,10 +45,10 @@ main = (raw_args) ->
     start.main args.start
   else if args.init?
     init.main args.init
-  else if args.install?
-    install.main args.install
-  else if args.uninstall?
-    uninstall.main args.uninstall
+  else if args.enable?
+    enable.main args.enable
+  else if args.disable?
+    disable.main args.disable
   else
     error 'internal error: no command recognised'
 
