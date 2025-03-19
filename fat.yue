@@ -12,6 +12,7 @@ import 'fat.logger'
 import log from require 'fat.logger'
 import 'spec'
 import F from require 'quicktype'
+import detect_and_use_monitor from require 'fat.monitor'
 
 install = require 'fat.install.main'
 uninstall = require 'fat.uninstall.main'
@@ -33,15 +34,13 @@ main = (raw_args) ->
   logger.set_log_verbosity args.verbose
   spec.set_log_verbosity args.verbose
 
-  if monitor = peripheral?.find 'monitor'
-    log -> 'see monitor'
-    monitor.clear!
-    term.redirect monitor
-
   if args.test?
+    detect_and_use_monitor!
+
     skip_minecraft_tests = args.test.no_minecraft
     run_tests args.test.filter
   else if args.start?
+    detect_and_use_monitor!
     start.main args.start
   else if args.install?
     install.main args.install

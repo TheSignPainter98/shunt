@@ -1,0 +1,7 @@
+local *
+
+export detect_and_use_monitor = ->
+  if monitor = peripheral?.find 'monitor'
+    print 'see monitor'
+    monitor.clear!
+    term.redirect monitor
