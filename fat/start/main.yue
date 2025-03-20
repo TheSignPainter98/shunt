@@ -30,7 +30,7 @@ export main = F '({}) -> <>', (args) ->
   else
     print 'cannot detect instance type'
     return
-  spam args.no_reattempt, ->
+  spam args.no_reattempt, to_spam
 
 spam = F '(boolean, () -> <>) -> <>', (no_reattempt, fn) ->
   if no_reattempt
