@@ -12,6 +12,10 @@ declare_type 'SlotInfo', [[{
   count: number,
   displayName: string,
 }]]
+
+declare_type 'Stockpile', [[{
+  info: () => StockpileInfo,
+}]]
 export class Stockpile
   new: F '(?StockpileBackend) => <>', (@backend=MinecraftBackend!) =>
 

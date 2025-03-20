@@ -1,4 +1,7 @@
+local *
+
 import Param, Subcommand from require 'clap'
+import declare_type, F from require 'quicktype'
 
 export subcommand = with Subcommand 'display'
   \description 'display system status'

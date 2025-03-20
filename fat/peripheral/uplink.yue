@@ -11,6 +11,12 @@ declare_type 'UplinkBackend', [[{
   broadcast: (any, ?string) => <>,
 }]]
 
+declare_type 'Uplink', [[{
+  broadcast: (Packet) => <>,
+  send_to: (number, Packet) => <>,
+  receive_from_any: (Packet, ?UplinkReceiveOpts) => <number, Packet>,
+  receive_from: (number, Packet, ?UplinkReceiveOpts) => <number, Packet>,
+}]]
 export class Uplink
   new: F '(?UplinkBackend) => <>', (@backend=MinecraftBackend!) =>
 
