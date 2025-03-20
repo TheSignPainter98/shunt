@@ -38,3 +38,7 @@ install: scripts/install.sh $(BINARIES)
 uninstall: scripts/uninstall.sh
 	./$<
 .PHONY: uninstall
+
+fat/version.lua: .FORCE
+.FORCE:
+.PHONY: .FORCE

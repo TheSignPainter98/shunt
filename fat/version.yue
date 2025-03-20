@@ -1,0 +1,6 @@
+local *
+
+macro build_date = ->
+  date = os.date '%Y-%m-%d@%H:%M:%S'
+  "\"#{date}\""
+export VERSION = "0.1 (#{$build_date!})"

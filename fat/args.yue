@@ -1,11 +1,7 @@
 local *
 
 import ArgParser, Flag, Param, Subcommand from require 'clap'
-
-macro build_date = ->
-  date = os.date '%Y-%m-%d@%H:%M:%S'
-  "\"#{date}\""
-export VERSION = "0.1 (#{$build_date!})"
+import VERSION from require 'fat.version'
 
 export class Args
   @parse: (args) =>
