@@ -37,7 +37,7 @@ declare_type 'Resource', [[{
 }]]
 
 declare_type 'Platform', [[{
-  nam =>e: () => PlatformName,
+  name: () => PlatformName,
   train_present: () => boolean,
   apply_schedule: (Schedule) => <>,
 }]]
