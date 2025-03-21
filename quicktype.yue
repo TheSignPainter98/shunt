@@ -1093,7 +1093,7 @@ export declare_type = (name, type_spec) ->
 
 export deactivate = ->
   T = (_, value) -> value
-  F = (_, fn) ->
+  F = (_, fn) -> fn
 
 export stats = ->
   stats_arr = [:instruction, :count for instruction, count in pairs instruction_counts]
