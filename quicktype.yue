@@ -56,7 +56,7 @@ export F = (type_spec, fn) ->
     for i = 1, n_param_types
       err = check param_types[i], (select i, ...)
       if err?
-        error "argument #{i} incorrect: #{err} but got #{repr select i, ...}", 3
+        error "argument #{i} incorrect: #{err}", 3
     for i = n_param_types+1, select '#', ...
       checker = param_types[i]
       if not checker?
