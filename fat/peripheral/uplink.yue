@@ -3,6 +3,7 @@ local *
 import F, declare_type from require 'quicktype'
 import spec from require 'spec'
 
+declare_type 'TIMEOUT', '{}'
 TIMEOUT = <tostring>: => "<timeout>"
 
 declare_type 'UplinkBackend', [[{
@@ -28,25 +29,25 @@ export class Uplink
     if not ok
       error "failed to send #{message\protocol!}"
 
-  receive_from_any: F '(Packet, ?UplinkReceiveOpts) => <number, Packet>', (message_type, opts={}) =>
+  receive_from_any: F '(Packet, ?UplinkReceiveOpts) => <?number, Packet|TIMEOUT>', (message_type, opts={}) =>
     @_receive_from nil, message_type, opts
 
-  receive_from: F '(number, Packet, ?UplinkReceiveOpts) => <number, Packet>', (from_id, message_type, opts={}) =>
+  receive_from: F '(number, Packet, ?UplinkReceiveOpts) => <?number, Packet|TIMEOUT>', (from_id, message_type, opts={}) =>
     @_receive_from from_id, message_type, opts
 
-  _receive_from: F '(?number, Packet, ?UplinkReceiveOpts) => <number, Packet>', (from_id, message_type, opts={}) =>
+  _receive_from: F '(?number, Packet, ?UplinkReceiveOpts) => <?number, Packet|TIMEOUT>', (from_id, message_type, opts={}) =>
     {:timeout=5} = opts
 
-    local id, message
+    local id, message, protocol
     protocol_filter = message_type?::protocol!
     while true
-      id, message = @backend\receive protocol_filter, timeout
+      id, message, protocol = @backend\receive protocol_filter, timeout
       if not id?
         return nil, TIMEOUT
       if not from_id? or id == from_id
         break
 
-    data, ok = message_type::from message
+    data, ok = message_type::from message, protocol
     if not ok
       error "unexpected message #{message}, expected #{message_type::protocol!}"
     id, data
@@ -64,7 +65,7 @@ class MinecraftBackend
   send: F '(number, any, ?string) => boolean', (recipient, message, protocol) =>
     rednet.send recipient, message, protocol
 
-  receive: F '(?string, ?number) => <number, any, ?string>', (protocol, timeout) =>
+  receive: F '(?string, ?number) => <?number, ?any, ?string>', (protocol, timeout) =>
     rednet.receive protocol, timeout
 
   broadcast: F '(any, ?string) => <>', (message, protocol) =>
@@ -79,8 +80,9 @@ export class Packet
 
   protocol: F '() => string', => @@protocol!
 
-  @from: F '(Packet) => <?Packet, boolean>', (raw) =>
-    if raw\protocol! == @@protocol!
+  @from: F '({}, string) => <?Packet, boolean>', (raw, raw_protocol) =>
+    if raw_protocol == @@protocol!
+      raw.<> = __index: @
       raw, true
     else
       nil, false
@@ -216,10 +218,10 @@ spec ->
     it 'survives roundtrip', ->
       original = TestPacket 'hello'
 
-      correct_decode, ok = TestPacket::from original
+      correct_decode, ok = TestPacket::from original, TestPacket\protocol!
       expect_that correct_decode, deep_eq {data: 'hello'}
       expect_that ok, eq true
 
-      incorrect_decode, ok = TestPacket2::from {protocol: ->}
+      incorrect_decode, ok = TestPacket2::from {protocol: ->}, TestPacket\protocol!
       expect_that incorrect_decode, eq nil
       expect_that ok, eq false
