@@ -1,10 +1,10 @@
 local *
 
-import F, declare_type from require 'quicktype'
+import F, declare_type, declare_singleton_type from require 'quicktype'
 import spec from require 'spec'
 
-declare_type 'TIMEOUT', '{}'
-TIMEOUT = <tostring>: => "<timeout>"
+TIMEOUT = <tostring>: => "Timeout"
+declare_singleton_type TIMEOUT
 
 declare_type 'UplinkBackend', [[{
   send: (number, any, ?string) => boolean,
