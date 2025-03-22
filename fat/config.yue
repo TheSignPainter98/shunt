@@ -3,7 +3,7 @@ local *
 import parse_toml from require 'fat.toml'
 import F from require 'quicktype'
 
-CONFIG_FILE = 'fat.toml'
+export CONFIG_FILE = 'fat.toml'
 
 cached_config = nil
 tried_to_get_config = false
@@ -20,16 +20,6 @@ export config = F '() -> ?{}', ->
       cached_config = parse_toml raw_content
 
   cached_config
-
-export write_config = F '(string, ?boolean) -> <>', (raw_toml, force=false) ->
-  if not force and exists CONFIG_FILE
-    error "#{CONFIG_FILE} already exists"
-
-  with assert io.open CONFIG_FILE, 'w'
-    import repr from require 'spec'
-    assert \write raw_toml
-    \close!
-  return
 
 exists = F '(string) -> boolean', (path) ->
   with? io.open CONFIG_FILE, 'r'

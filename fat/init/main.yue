@@ -1,7 +1,7 @@
 local *
 
 import Flag, Param, Subcommand from require 'clap'
-import write_config from require 'fat.config'
+import CONFIG_FILE from require 'fat.config'
 import parse_toml from require 'fat.toml'
 import F from require 'quicktype'
 
@@ -30,26 +30,49 @@ export main = F '({}) -> <>', (args) ->
       display.default_config
     else
       error "internal error: unrecognised instance type '#{args.instance_type}'"
-  write_config default_config, args.force
+
+  if not args.force
+    with? io.open CONFIG_FILE, 'r'
+      \close!
+      print "#{CONFIG_FILE} already exists"
+      return
+
+  temp_config_path = os.tmpname!
+  with assert io.open temp_config_path, 'w+'
+    assert \write default_config
+    assert \close!
 
   config_is_valid = false
   while not config_is_valid
-    print 'press [ENTER] edit fat.toml'
-    io.read '*l'
+    while true
+      print 'press [ENTER] edit fat.toml, [q] to abort'
+      resp = io.read '*l'
+      switch resp
+        when 'q'
+          print 'aborted'
+          return
+        when ''
+          break
 
     if shell?
-      shell?.run 'edit fat.toml'
+      shell.execute 'edit', temp_config_path
     else
-      os.execute 'nvim fat.toml'
+      os.execute "nvim '#{temp_config_path}'"
 
-    config_is_valid = validate_config args.instance_type
+    config_is_valid = validate_config temp_config_path, args.instance_type
+
+  os_rename_assert = (...) ->
+    if 0 == select '#', ...
+      return
+    assert ...
+  os_rename_assert os.rename temp_config_path, CONFIG_FILE
 
   print "#{args.instance_type} configured"
   return
 
-validate_config = F '(string) -> boolean', (instance_type) ->
+validate_config = F '(string, string) -> boolean', (file, instance_type) ->
   local raw_config
-  with assert io.open 'fat.toml', 'r'
+  with assert io.open file, 'r'
     raw_config = assert \read '*a'
     assert \close!
 

@@ -4,16 +4,24 @@ compat_applied = false
 export apply_compat = ->
   compat_applied = true
 
-  if not os.tmpname?
-    os.tmpname = ->
-      ".lua_#{'%x'\format math.random 1, 100000}"
+  os.tmpname ??= ->
+    while true
+      f = ".lua_#{'%x'\format math.random 1, 100000}"
+      with? io.open f, 'r'
+        \close!
+        continue
+      return f
 
-    os.remove = (path) ->
-      try
-        fs.delete path
-        return true
-      catch _
-        return false
+  os.remove ??= (path) ->
+    try
+      fs.delete path
+      return true
+    catch _
+      return false
+
+  os.rename ??= (src, dest) ->
+    print "MOVING #{src} -> #{dest}"
+    fs.move src, dest
 
 export test_compat = ->
   if not compat_applied
