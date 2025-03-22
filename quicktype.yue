@@ -947,6 +947,7 @@ macro check_error = (msg) ->
     [] = 'bailing = true'
   table.concat lines, '\n'
 check = (check_prog, value, root=true) ->
+  print 'checking'
   if root
     -- Prime stack.
     stack_size = 1
@@ -1074,7 +1075,8 @@ check = (check_prog, value, root=true) ->
       print "FINAL stack state #{check_prog[pc-2]}@#{pc-2} [#{stack_size}]:\n\t#{table.concat [ "#{i}:\t#{repr stack[i]}" for i = 1, stack_size], '\n\t'}"
 
     assert num_running_checkers == initial_num_running_checkers, "internal error: checker depth incorrectly handled: expected #{initial_num_running_checkers} but got #{num_running_checkers}"
-    assert stack_size == initial_stack_size, "internal error: value stack incorrectly handled"
+    print "#{stack_size}, #{initial_stack_size}"
+    assert stack_size == initial_stack_size, "internal error: value stack incorrectly handled (#{repr check_prog})"
     if root
       -- Reset stack.
       stack[1] = nil
@@ -1100,20 +1102,17 @@ export declare_type = (name, type_spec) ->
   user_types[name] = parsed_type
   type_checkers[name] = parsed_type\checker!\build!
 
-export declare_singleton_type = (name, value) ->
-  if not name?
-    error "declare_singleton_type requires a name"
-  if 'string' != type name
-    error "declare_singleton_type requires a string name"
+export declare_singleton_type = (value) ->
   if not value?
     error "declare_singleton_type requires a value"
   if 'table' != type value
     error "declare_singleton_type requires a table value"
-  if name != tostring value
-    error "cannot declare singleton type: name '#{name}' does not match value name '#{tostring value}'"
 
+  name = tostring value
   if not (name\sub 1, 1)\match '^[A-Z_]$'
     error "cannot declare type '#{name}': user types must start with an uppercase letter or '_'"
+  if not name\match '^[a-zA-Z0-9_]*$'
+    error "cannot declare type '#{name}': not a valid identifier"
   if user_types[name]?
     error "cannot redefine type '#{name}'"
 
@@ -1413,7 +1412,7 @@ spec ->
     it 'checks singleton types', ->
       make_singleton = (name) -> <tostring>: => name
       SINGLETON = make_singleton 'Singleton'
-      declare_singleton_type 'Singleton', SINGLETON
+      declare_singleton_type SINGLETON
 
       expect_that (-> T 'Singleton', SINGLETON), no_errors!
 
@@ -1547,23 +1546,20 @@ spec ->
 
   describe 'declare_singleton_type', ->
     it 'requires a valid name', ->
-      expect_that declare_singleton_type, errors matches 'requires a name'
-      expect_that (-> declare_singleton_type 'Incorrect', {}), errors matches "cannot declare singleton type: name 'Incorrect' does not match value name 'table"
-      expect_that (-> declare_singleton_type 'lowercase', <tostring>: => 'lowercase'), errors matches "user types must start with an uppercase letter or '_'"
+      expect_that declare_singleton_type, errors matches 'requires a value'
+
+      expect_that (-> declare_singleton_type {}), errors matches "user types must start with an uppercase letter"
+      expect_that (-> declare_singleton_type <tostring>: => 'Has space'), errors matches "cannot declare type 'Has space': not a valid identifier"
+      expect_that (-> declare_singleton_type <tostring>: => 'SingletonTable'), no_errors!
 
     it 'requires a unique name', ->
       NAME = 'UniqueSingleton'
-      declare_singleton_type NAME, <tostring>: => NAME
-      expect_that (-> declare_singleton_type 'UniqueSingleton', <tostring>: => NAME), errors matches "cannot redefine type '#{NAME}'"
+      declare_singleton_type <tostring>: => NAME
+      expect_that (-> declare_singleton_type <tostring>: => NAME), errors matches "cannot redefine type '#{NAME}'"
 
     it 'rejects primitives', ->
-      expect_that (-> declare_singleton_type 'PrimitiveNumber', 123), errors matches 'declare_singleton_type requires a table value'
-      expect_that (-> declare_singleton_type 'PrimitiveString', 'hello'), errors matches 'declare_singleton_type requires a table value'
-
-    it 'accepts appropriate tables', ->
-      expect_that (-> declare_singleton_type 'SingletonTable', {}), errors matches "name 'SingletonTable' does not match value name"
-      expect_that (-> declare_singleton_type 'SingletonTable', <tostring>: => 'something else'), errors matches "name 'SingletonTable' does not match value name"
-      expect_that (-> declare_singleton_type 'SingletonTable', <tostring>: => 'SingletonTable'), no_errors!
+      expect_that (-> declare_singleton_type 123), errors matches 'declare_singleton_type requires a table value'
+      expect_that (-> declare_singleton_type 'hello'), errors matches 'declare_singleton_type requires a table value'
 
   describe 'F', ->
     it 'requires two arguments', ->
