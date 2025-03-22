@@ -554,6 +554,15 @@ class UserType using Is
         parsed_user_type\checker checker_builder
         \pop_building @
 
+class SingletonType using Is
+  new: (@name, @value) =>
+
+  __tostring: => @name
+
+  checker: (checker_builder=CheckerBuilder!) =>
+    with checker_builder
+      \add C_ASSERT_EQ, @value
+
 class NumberType using Is
   new: (@value) =>
 
@@ -1091,6 +1100,27 @@ export declare_type = (name, type_spec) ->
   user_types[name] = parsed_type
   type_checkers[name] = parsed_type\checker!\build!
 
+export declare_singleton_type = (name, value) ->
+  if not name?
+    error "declare_singleton_type requires a name"
+  if 'string' != type name
+    error "declare_singleton_type requires a string name"
+  if not value?
+    error "declare_singleton_type requires a value"
+  if 'table' != type value
+    error "declare_singleton_type requires a table value"
+  if name != tostring value
+    error "cannot declare singleton type: name '#{name}' does not match value name '#{tostring value}'"
+
+  if not (name\sub 1, 1)\match '^[A-Z_]$'
+    error "cannot declare type '#{name}': user types must start with an uppercase letter or '_'"
+  if user_types[name]?
+    error "cannot redefine type '#{name}'"
+
+  ty = SingletonType name, value
+  user_types[name] = ty
+  type_checkers[name] = ty\checker!\build!
+
 export deactivate = ->
   T = (_, value) -> value
   F = (_, fn) -> fn
@@ -1380,6 +1410,17 @@ spec ->
       expect_that (-> T '"hello"', 'hello'), no_errors!
       expect_that (-> T '"hello"', 'world'), errors matches "incorrect type: expected string 'hello'"
 
+    it 'checks singleton types', ->
+      make_singleton = (name) -> <tostring>: => name
+      SINGLETON = make_singleton 'Singleton'
+      declare_singleton_type 'Singleton', SINGLETON
+
+      expect_that (-> T 'Singleton', SINGLETON), no_errors!
+
+      expect_that (-> T 'Singleton', nil), errors matches "incorrect type: expected table Singleton"
+      expect_that (-> T 'Singleton', {}), errors matches "incorrect type: expected table Singleton"
+      expect_that (-> T 'Singleton', make_singleton 'Singleton'), errors matches "incorrect type: expected table Singleton"
+
     it 'checks optionals', ->
       expect_that (-> T '?number', nil), no_errors!
       expect_that (-> T '?number', 123), no_errors!
@@ -1503,6 +1544,26 @@ spec ->
       declare_type 'MutuallyRecursive2', 'MutuallyRecursive1'
       expect_that (-> T 'MutuallyRecursive1', nil), no_errors!
       expect_that (-> T 'MutuallyRecursive1', 'asdf'), errors matches 'type checker recursed too many times'
+
+  describe 'declare_singleton_type', ->
+    it 'requires a valid name', ->
+      expect_that declare_singleton_type, errors matches 'requires a name'
+      expect_that (-> declare_singleton_type 'Incorrect', {}), errors matches "cannot declare singleton type: name 'Incorrect' does not match value name 'table"
+      expect_that (-> declare_singleton_type 'lowercase', <tostring>: => 'lowercase'), errors matches "user types must start with an uppercase letter or '_'"
+
+    it 'requires a unique name', ->
+      NAME = 'UniqueSingleton'
+      declare_singleton_type NAME, <tostring>: => NAME
+      expect_that (-> declare_singleton_type 'UniqueSingleton', <tostring>: => NAME), errors matches "cannot redefine type '#{NAME}'"
+
+    it 'rejects primitives', ->
+      expect_that (-> declare_singleton_type 'PrimitiveNumber', 123), errors matches 'declare_singleton_type requires a table value'
+      expect_that (-> declare_singleton_type 'PrimitiveString', 'hello'), errors matches 'declare_singleton_type requires a table value'
+
+    it 'accepts appropriate tables', ->
+      expect_that (-> declare_singleton_type 'SingletonTable', {}), errors matches "name 'SingletonTable' does not match value name"
+      expect_that (-> declare_singleton_type 'SingletonTable', <tostring>: => 'something else'), errors matches "name 'SingletonTable' does not match value name"
+      expect_that (-> declare_singleton_type 'SingletonTable', <tostring>: => 'SingletonTable'), no_errors!
 
   describe 'F', ->
     it 'requires two arguments', ->
