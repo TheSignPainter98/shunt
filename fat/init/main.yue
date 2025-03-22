@@ -49,6 +49,7 @@ export main = F '({}) -> <>', (args) ->
       resp = io.read '*l'
       switch resp
         when 'q'
+          assert os.remove temp_config_path
           print 'aborted'
           return
         when ''
