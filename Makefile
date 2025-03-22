@@ -39,6 +39,10 @@ uninstall: scripts/uninstall.sh
 	./$<
 .PHONY: uninstall
 
+test: fat.lua
+	@$(LUA) $< test
+.PHONY: .FORCE
+
 fat/version.lua: .FORCE
 .FORCE:
 .PHONY: .FORCE
