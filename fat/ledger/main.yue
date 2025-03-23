@@ -13,17 +13,19 @@ retained-events = 1000
 
 -- TODO(kcza): define config
 export main = F '({}) -> <>', (config) ->
-  term_width, term_height = term?.getSize!
-  term_width ??= 80
-  term_height ??= 20
-
-  ledger = Ledger term_height - 1
-  ledger\add { 'hello', 'world', 'hfjdkla' }
-  ledger\add { 'hello2', 'world', 'hfjdkla' }
-  ledger\add { 'hello3', 'world', 'hfjdkla' }
-  ledger\emit
-    max_rows: term_height - 1
-    width: term_width
+  print 'hello, ledger!'
+  return
+  -- term_width, term_height = term?.getSize!
+  -- term_width ??= 80
+  -- term_height ??= 20
+  --
+  -- ledger = Ledger term_height - 1
+  -- ledger\add { 'hello', 'world', 'hfjdkla' }
+  -- ledger\add { 'hello2', 'world', 'hfjdkla' }
+  -- ledger\add { 'hello3', 'world', 'hfjdkla' }
+  -- ledger\emit
+  --   max_rows: term_height - 1
+  --   width: term_width
 
 declare_type 'Ledger', [[{
   iter: () => thread,
