@@ -29,23 +29,28 @@ export class Uplink
     if not ok
       error "failed to send #{message\protocol!}"
 
-  receive_from_any: F '(Packet, ?UplinkReceiveOpts) => <?number, Packet|TIMEOUT>', (message_type, opts={}) =>
+  receive_from_any: F '(?Packet, ?UplinkReceiveOpts) => <?number, Packet|TIMEOUT>', (message_type, opts={}) =>
     @_receive_from nil, message_type, opts
 
-  receive_from: F '(number, Packet, ?UplinkReceiveOpts) => <?number, Packet|TIMEOUT>', (from_id, message_type, opts={}) =>
+  receive_from: F '(number, ?Packet, ?UplinkReceiveOpts) => <?number, Packet|TIMEOUT>', (from_id, message_type, opts={}) =>
     @_receive_from from_id, message_type, opts
 
-  _receive_from: F '(?number, Packet, ?UplinkReceiveOpts) => <?number, Packet|TIMEOUT>', (from_id, message_type, opts={}) =>
+  _receive_from: F '(?number, ?Packet, ?UplinkReceiveOpts) => <?number, Packet|TIMEOUT>', (from_id, message_type, opts={}) =>
     {:timeout=5} = opts
 
     local id, message, protocol
     protocol_filter = message_type?::protocol!
     while true
       id, message, protocol = @backend\receive protocol_filter, timeout
+
       if not id?
         return nil, TIMEOUT
       if not from_id? or id == from_id
         break
+
+    if not message_type?
+      message.<> = __index: protocol: => protocol
+      return id, message
 
     data, ok = message_type::from message, protocol
     if not ok

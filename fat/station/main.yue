@@ -1,9 +1,69 @@
 local *
 
 import Flag, Subcommand from require 'clap'
+import Platform from require 'fat.peripheral.platform'
+import Stockpile from require 'fat.peripheral.stockpile'
+import Packet, Uplink from require 'fat.peripheral.uplink'
 import default_config from require 'fat.station.config'
-import F from require 'quicktype'
+import declare_type, F from require 'quicktype'
 import spec from require 'spec'
 
-export main = F '({}) -> <>', (args) ->
+export main = F '({}) -> <>', (config) ->
+  print 'starting station'
+  with Station {Platform!}, Stockpile!, Uplink!
+    \run!
 
+class Station
+  new: F '([Platform], Stockpile, Uplink) => <>', (@platforms, @stockpile, @uplink) =>
+
+  run: F '() => !', =>
+    while true
+      from_id, message = @uplink\receive_from_any!
+      if not from_id?
+        continue
+
+      import repr from require 'spec'
+      print repr message
+      switch message\protocol!
+        when 'StockpileRequest'
+          @on_stockpile_request from_id, message
+        when 'ScheduleRequest'
+          @on_schedule_request from_id, message
+        when 'InfoRequest'
+          @on_info_request from_id, message
+        else
+          print "ignoring #{message\protocol!} message"
+
+  on_stockpile_request: (requester, request) =>
+    log -> 'handling stockpile request'
+
+    info = @stockpile\info!
+    @uplink\send_to requester, StockpileResponse info
+
+  on_schedule_request: (requester, request) =>
+    log -> 'handling schedule request'
+
+    import repr from require 'spec'
+    print repr request
+
+  on_info_request: (requester, request) =>
+    log -> 'handling info request'
+
+    import repr from require 'spec'
+    print repr request
+
+class StockpileRequest extends Packet
+
+class StockpileResponse extends Packet
+  new: F '(StockpileInfo) => <>', (@info) =>
+
+class ScheduleRequest extends Packet
+  new: F '(Schedule) => <>', (@schedule) =>
+
+class ScheduleResponse extends Packet
+  new: F '(?string) => <>', (@error_reason) =>
+
+class InfoRequest extends Packet
+
+class InfoResponse extends Packet
+  new: F '(StationInfo) => <>', (@info) =>

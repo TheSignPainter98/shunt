@@ -21,10 +21,6 @@ init = require 'fat.init.main'
 start = require 'fat.start.main'
 
 require 'fat.state' -- TODO(kcza): remove me, just for testing
-require 'fat.peripheral.uplink' -- TODO(kcza): remove me, just for testing
-require 'fat.peripheral.platform' -- TODO(kcza): remove me, just for testing
-require 'fat.peripheral.stockpile' -- TODO(kcza): remove me, just for testing
-require 'fat.config' -- TODO(kcza): remove me, just for testing
 
 global skip_minecraft_tests = false
 
