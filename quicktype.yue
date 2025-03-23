@@ -13,7 +13,11 @@ export T = (type_spec, value) ->
     error err, 2
   value
 
-export DEBUG = false
+macro debug = (block) ->
+  if false
+    return block
+  ''
+
 export COLLECT_STATS = false
 
 type_checkers = {}
@@ -941,13 +945,18 @@ macro check_error = (msg) ->
     [] = '  stack[i] = nil'
     [] = 'stack_size = new_size'
 
-    [] = 'if num_unions == 0'
+    [] = 'if num_unions == initial_unions'
     [] = '  return msg'
     [] = 'pc = union_bail_jumps[num_unions] - 2'
     [] = 'bailing = true'
   table.concat lines, '\n'
 check = (check_prog, value, root=true) ->
-  print 'checking'
+  $debug do
+    if root
+      print '='\rep 80
+    else
+      print '-'\rep 80
+
   if root
     -- Prime stack.
     stack_size = 1
@@ -955,13 +964,15 @@ check = (check_prog, value, root=true) ->
     num_running_checkers = 1
     root_union = 0
     num_unions = 0
+    initial_unions = 0
   initial_stack_size = stack_size
   initial_num_running_checkers = num_running_checkers
+  initial_unions = num_unions
 
   if num_running_checkers >= MAX_CHECKER_DEPTH
     return "type checker recursed too many times (#{num_running_checkers} times). If this is okay, increase the MAX_CHECKER_DEPTH"
 
-  if DEBUG
+  $debug do
     print "running checker:\n\t#{checker_program_repr check_prog}"
   with check_prog
     local pc
@@ -980,8 +991,9 @@ check = (check_prog, value, root=true) ->
         else
           1
 
-      if DEBUG
-        print "stack state #{instruction}@#{pc} [#{stack_size}]:\n\t#{table.concat [ "#{i}:\t#{repr stack[i]}" for i = 1, stack_size], '\n\t'}"
+      $debug do
+        print "stack state #{instruction}@#{pc} [#{stack_size}]:\n\t#{table.concat [ repr stack[i] for i = 1, stack_size], ', '}"
+        -- print "stack state #{instruction}@#{pc} [#{stack_size}]:\n\t#{table.concat [ "#{i}:\t#{repr stack[i]}" for i = 1, stack_size], '\n\t'}"
 
       switch instruction
         when C_PUSH
@@ -1063,26 +1075,28 @@ check = (check_prog, value, root=true) ->
           union_depths[num_unions] = nil
           num_unions -= 1
 
-          if bailing
-            if num_unions == 0
-              $check_error "incorrect type: expected #{root_union} but got #{type stack[stack_size]} (#{repr stack[stack_size]})"
-            else
-              $check_error! -- Unwind.
-
+          tmp_root_union = root_union
           if num_unions == 0
             root_union = nil
+          if bailing
+            if num_unions == 0
+              $check_error "incorrect type: expected #{tmp_root_union} but got #{type stack[stack_size]} (#{repr stack[stack_size]})"
+            else
+              $check_error! -- Unwind.
         else
           error "internal error: illegal type-checker VM instruction #{[pc]}@#{pc}"
-    if DEBUG
+    $debug do
       print "FINAL stack state #{check_prog[pc-2]}@#{pc-2} [#{stack_size}]:\n\t#{table.concat [ "#{i}:\t#{repr stack[i]}" for i = 1, stack_size], '\n\t'}"
 
-    assert num_running_checkers == initial_num_running_checkers, "internal error: checker depth incorrectly handled: expected #{initial_num_running_checkers} but got #{num_running_checkers}"
-    print "#{stack_size}, #{initial_stack_size}"
-    assert stack_size == initial_stack_size, "internal error: value stack incorrectly handled (#{repr check_prog})"
+    -- print "#{stack_size}, #{initial_stack_size}"
+    -- print 'root', root
+    ending_stack_size = stack_size
     if root
       -- Reset stack.
       stack[1] = nil
       stack_size = 0
+    assert num_running_checkers == initial_num_running_checkers, "internal error: checker depth incorrectly handled: expected #{initial_num_running_checkers} but got #{num_running_checkers}"
+    assert ending_stack_size == initial_stack_size, "internal error: value stack incorrectly handled (#{repr check_prog})"
   nil
 
 user_types = {}

@@ -189,6 +189,13 @@ spec ->
           * { 2, TestPacket 'message-2' }
           * { 3, TestPacket 'message-3' }
 
+      it 'gracefully handles timeout', ->
+        uplink = Uplink TestBackend
+          receive: F '(?string, ?number) => <?number, ?any, ?string>', (_, _) -> nil, nil, nil
+        id, err = uplink\receive_from_any TestPacket
+        expect_that id, eq nil
+        expect_that err, eq TIMEOUT
+
     describe '\\receive_from', ->
       it 'receives the only given packet', ->
         frames =
