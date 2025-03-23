@@ -97,7 +97,7 @@ declare_type 'TestUplinkBackendOpts', [[{
   receive: ?(?string, ?number) => <?number, any, ?string>,
   broadcast: ?(any, ?string) => <>,
 }]]
-export class TestBackend
+export class TestUplinkBackend
   new: F '(TestUplinkBackendOpts) => <>', (opts) =>
     {
       :send=-> error 'send unimplemented'
@@ -132,7 +132,7 @@ spec ->
     describe '\\broadcast', ->
       it 'sends the given packet', ->
         broadcasted = {}
-        uplink = Uplink TestBackend
+        uplink = Uplink TestUplinkBackend
           broadcast: F '(any, ?string) => <>', (message, protocol) =>
             broadcasted[] = :message, :protocol
 
@@ -149,7 +149,7 @@ spec ->
     describe '\\send_to', ->
       it 'sends the given packet', ->
         sent = {}
-        uplink = Uplink TestBackend
+        uplink = Uplink TestUplinkBackend
           send: F '(number, any, ?string) => boolean', (recipient, message, protocol) =>
             sent[] = :recipient, :message, :protocol
             true
@@ -162,7 +162,7 @@ spec ->
           * recipient: 2, protocol: 'TestPacket', message: TestPacket 'message-2'
 
       it 'handles transmission failure', ->
-        uplink = Uplink TestBackend
+        uplink = Uplink TestUplinkBackend
           send: -> false
 
         expect_that (-> uplink\send_to 1, TestPacket 'message-1'), errors matches "failed to send TestPacket"
@@ -175,7 +175,7 @@ spec ->
           * sender: 3, protocol: 'TestPacket', message: TestPacket 'message-3'
           * sender: 4, protocol: 'TestPacket2', message: TestPacket2 'message-4'
         num_received = 0
-        uplink = Uplink TestBackend
+        uplink = Uplink TestUplinkBackend
           receive: F '(?string, ?number) => <?number, ?any, ?string>', (protocol, timeout) =>
             local frame
             repeat
@@ -195,7 +195,7 @@ spec ->
           * { 3, TestPacket 'message-3' }
 
       it 'gracefully handles timeout', ->
-        uplink = Uplink TestBackend
+        uplink = Uplink TestUplinkBackend
           receive: F '(?string, ?number) => <?number, ?any, ?string>', (_, _) -> nil, nil, nil
         id, err = uplink\receive_from_any TestPacket
         expect_that id, eq nil
@@ -209,7 +209,7 @@ spec ->
           * sender: 3, protocol: 'TestPacket', message: TestPacket 'message-3'
           * sender: 4, protocol: 'TestPacket2', message: TestPacket2 'message-4'
         num_received = 0
-        uplink = Uplink TestBackend
+        uplink = Uplink TestUplinkBackend
           receive: F '(?string, ?number) => <?number, ?any, ?string>', (protocol, timeout) =>
             local frame
             repeat

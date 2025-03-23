@@ -112,7 +112,7 @@ declare_type 'TestPlatformBackendOpts', [[{
   train_schedule: ?() => Schedule,
   train_set_schedule: ?(Schedule) => <>,
 }]]
-export class TestBackend
+export class TestPlatformBackend
   new: F '(TestPlatformBackendOpts) => <>', (opts) =>
     {
       :name=-> error 'name unimplemented'
@@ -139,7 +139,7 @@ spec ->
   describe 'Platform', ->
     describe '\\apply_schedule', ->
       it 'accepts valid schedules', ->
-        platform = Platform TestBackend
+        platform = Platform TestPlatformBackend
           train_set_schedule: F '(any) => <>', (schedule) =>
             T 'Schedule', schedule
             return
