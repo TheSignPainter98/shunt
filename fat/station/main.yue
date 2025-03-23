@@ -114,7 +114,6 @@ spec ->
         station\step!
 
       expect_that sent, len eq 1
-
       expect_that sent[1], has_fields
         recipient: eq SERVER_ID
         message: has_fields
