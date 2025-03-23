@@ -91,22 +91,21 @@ spec ->
         station: {}
       platforms = {Platform TestPlatformBackend!}
       stockpile = Stockpile TestStockpileBackend
-        size: F '() => number', => 1
-        slot_content: F '(number) => SlotInfo', (i) =>
+        size: => 1
+        slot_content: (i) =>
           assert_that i, eq 1
           count: 32, displayName: 'Stone Bricks'
-        slot_capacity: F '(number) => number', (i) =>
+        slot_capacity: (i) =>
           assert_that i, eq 1
           64
-
       uplink = Uplink TestUplinkBackend
-        receive: F '(?string, ?number) => <?number, ?any, ?string>', (_, _) =>
+        receive: (_, _) =>
           @count ??= 1
           if @count == 1
             @count += 1
             return SERVER_ID, {}, 'StockpileRequest'
           nil, nil, nil
-        send: F '(number, any, ?string) => boolean', (recipient, message, protocol) =>
+        send: (recipient, message, protocol) =>
           sent[] = :recipient, :message, :protocol
           true
       station = Station config, platforms, stockpile, uplink

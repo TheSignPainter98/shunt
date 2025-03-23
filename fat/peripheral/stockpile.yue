@@ -75,9 +75,9 @@ export class TestStockpileBackend
       :slot_content=-> error 'slot_content unimplemented'
       :slot_capacity=-> error 'slot_capacity unimplemented'
     } = opts
-    @size = size
-    @slot_content = slot_content
-    @slot_capacity = slot_capacity
+    @size = F '() => number', size
+    @slot_content = F '(number) => SlotInfo', slot_content
+    @slot_capacity = F '(number) => number', slot_capacity
 
 spec ->
   import describe, expect_that, it, matchers from require 'spec'

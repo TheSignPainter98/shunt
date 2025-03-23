@@ -123,13 +123,13 @@ export class TestPlatformBackend
       :train_schedule=-> error 'train_schedule unimplemented'
       :train_set_schedule=-> error 'train_set_schedule unimplemented'
     } = opts
-    @name = name
-    @set_name = set_name
-    @train_present = train_present
-    @train_enroute = train_enroute
-    @train_has_schedule = train_has_schedule
-    @train_schedule = train_schedule
-    @train_set_schedule = train_set_schedule
+    @name = F '() => PlatformName', name
+    @set_name = F '(PlatformName) => <>', set_name
+    @train_present = F '() => boolean', train_present
+    @train_enroute = F '() => boolean', train_enroute
+    @train_has_schedule = F '() => boolean', train_has_schedule
+    @train_schedule = F '() => Schedule', train_schedule
+    @train_set_schedule = F '(Schedule) => <>', train_set_schedule
 
 spec ->
   import T from require 'quicktype'
@@ -140,7 +140,7 @@ spec ->
     describe '\\apply_schedule', ->
       it 'accepts valid schedules', ->
         platform = Platform TestPlatformBackend
-          train_set_schedule: F '(any) => <>', (schedule) =>
+          train_set_schedule: (schedule) =>
             T 'Schedule', schedule
             return
 

@@ -104,9 +104,9 @@ export class TestUplinkBackend
       :receive=-> error 'receive unimplemented'
       :broadcast=-> error 'broadcast unimplemented'
     } = opts
-    @send = send
-    @receive = receive
-    @broadcast = broadcast
+    @send = F '(number, any, ?string) => boolean', send
+    @receive = F '(?string, ?number) => <?number, any, ?string>', receive
+    @broadcast = F '(any, ?string) => <>', broadcast
 
 spec ->
   import describe, expect_that, it, matchers from require 'spec'
@@ -133,7 +133,7 @@ spec ->
       it 'sends the given packet', ->
         broadcasted = {}
         uplink = Uplink TestUplinkBackend
-          broadcast: F '(any, ?string) => <>', (message, protocol) =>
+          broadcast: (message, protocol) =>
             broadcasted[] = :message, :protocol
 
         class TestPacket extends Packet
@@ -150,7 +150,7 @@ spec ->
       it 'sends the given packet', ->
         sent = {}
         uplink = Uplink TestUplinkBackend
-          send: F '(number, any, ?string) => boolean', (recipient, message, protocol) =>
+          send: (recipient, message, protocol) =>
             sent[] = :recipient, :message, :protocol
             true
 
@@ -176,7 +176,7 @@ spec ->
           * sender: 4, protocol: 'TestPacket2', message: TestPacket2 'message-4'
         num_received = 0
         uplink = Uplink TestUplinkBackend
-          receive: F '(?string, ?number) => <?number, ?any, ?string>', (protocol, timeout) =>
+          receive: (protocol, timeout) =>
             local frame
             repeat
               num_received += 1
@@ -196,7 +196,7 @@ spec ->
 
       it 'gracefully handles timeout', ->
         uplink = Uplink TestUplinkBackend
-          receive: F '(?string, ?number) => <?number, ?any, ?string>', (_, _) -> nil, nil, nil
+          receive: (_, _) -> nil, nil, nil
         id, err = uplink\receive_from_any TestPacket
         expect_that id, eq nil
         expect_that err, eq TIMEOUT
@@ -210,7 +210,7 @@ spec ->
           * sender: 4, protocol: 'TestPacket2', message: TestPacket2 'message-4'
         num_received = 0
         uplink = Uplink TestUplinkBackend
-          receive: F '(?string, ?number) => <?number, ?any, ?string>', (protocol, timeout) =>
+          receive: (protocol, timeout) =>
             local frame
             repeat
               num_received += 1
