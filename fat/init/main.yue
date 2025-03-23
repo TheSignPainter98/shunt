@@ -77,7 +77,14 @@ validate_config = F '(string, string) -> boolean', (file, instance_type) ->
     raw_config = assert \read '*a'
     assert \close!
 
-  config = parse_toml raw_config
+  local config, err
+  try
+    config = parse_toml raw_config
+  catch err2
+    err = err2
+  if err?
+    print err
+    return false
 
   if not config[instance_type]?
     print "config does not contain #{instance_type} section"
