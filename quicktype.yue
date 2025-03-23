@@ -953,6 +953,8 @@ check = (check_prog, value, root=true) ->
     stack_size = 1
     stack[1] = value
     num_running_checkers = 1
+    root_union = 0
+    num_unions = 0
   initial_stack_size = stack_size
   initial_num_running_checkers = num_running_checkers
 
