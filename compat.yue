@@ -20,7 +20,6 @@ export apply_compat = ->
       return false
 
   os.rename ??= (src, dest) ->
-    print "MOVING #{src} -> #{dest}"
     fs.move src, dest
 
 export test_compat = ->
