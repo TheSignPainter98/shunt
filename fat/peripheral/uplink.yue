@@ -15,8 +15,8 @@ declare_type 'UplinkBackend', [[{
 declare_type 'Uplink', [[{
   broadcast: (Packet) => <>,
   send_to: (number, Packet) => <>,
-  receive_from_any: (Packet, ?UplinkReceiveOpts) => <number, Packet>,
-  receive_from: (number, Packet, ?UplinkReceiveOpts) => <number, Packet>,
+  receive_from_any: (Packet, ?UplinkReceiveOpts) => <?number, Packet|TIMEOUT>,
+  receive_from: (number, Packet, ?UplinkReceiveOpts) => <?number, Packet|TIMEOUT>,
 }]]
 export class Uplink
   new: F '(?UplinkBackend) => <>', (@backend=MinecraftBackend!) =>

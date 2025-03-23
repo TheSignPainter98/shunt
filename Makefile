@@ -27,6 +27,8 @@ bin/%.lua.packed: %.lua $(OBJECTS) moonpack.lua
 	yue --target=5.1 -l -s $< -o $@
 .PRECIOUS: %.lua
 
+fat.yue: compat.lua
+
 clean:
 	$(RM) $(DIAGRAMS) $(OBJECTS) startup.lua packed/fat fat.goo $(BINARIES) bin/*
 .PHONY: clean
@@ -39,7 +41,7 @@ uninstall: scripts/uninstall.sh
 	./$<
 .PHONY: uninstall
 
-test: fat.lua
+test: fat.lua $(OBJECTS)
 	@$(LUA) $< test
 .PHONY: .FORCE
 
