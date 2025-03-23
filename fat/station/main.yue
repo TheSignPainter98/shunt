@@ -4,7 +4,7 @@ import Flag, Subcommand from require 'clap'
 import log from require 'fat.logger'
 import Platform from require 'fat.peripheral.platform'
 import Stockpile from require 'fat.peripheral.stockpile'
-import Packet, Uplink from require 'fat.peripheral.uplink'
+import IdempotenceToken, Packet, Uplink from require 'fat.peripheral.uplink'
 import declare_type, F from require 'quicktype'
 import spec from require 'spec'
 
@@ -25,6 +25,9 @@ export main = F '({}) -> <>', (config) ->
 
 class Station
   new: F '({}, [Platform], Stockpile, Uplink) => <>', (@config, @platforms, @stockpile, @uplink) =>
+
+  name: F '() => string', =>
+    @config.station.name
 
   run: F '() => !', =>
     while true
@@ -49,7 +52,7 @@ class Station
     log -> 'handling stockpile request'
 
     info = @stockpile\info!
-    @uplink\send_to requester, StockpileResponse info
+    @uplink\send_to requester, StockpileResponse request.idemp_tok, info
 
   on_schedule_request: F '(number, Packet) => <>', (requester, request) =>
     log -> 'handling schedule request'
@@ -57,39 +60,48 @@ class Station
 
   on_info_request: F '(number, Packet) => <>', (requester, request) =>
     log -> 'handling info request'
-    error 'todo'
+
+    stockpile_info = @stockpile\info!
+    print 'a'
+    platform_infos = [ platform\info! for platform in *@platforms ]
+    print 'b'
+    response = InfoResponse request.idemp_tok, @name!, platform_infos, stockpile_info
+    @uplink\send_to requester, response
 
 class StockpileRequest extends Packet
+  new: F '(IdempotenceToken) => <>', (@idemp_tok) =>
 
 class StockpileResponse extends Packet
-  new: F '(StockpileInfo) => <>', (@info) =>
+  new: F '(IdempotenceToken, StockpileInfo) => <>', (@idemp_tok, @info) =>
 
 class ScheduleRequest extends Packet
-  new: F '(Schedule) => <>', (@schedule) =>
+  new: F '(IdempotenceToken, Schedule) => <>', (@idemp_tok, @schedule) =>
 
 class ScheduleResponse extends Packet
-  new: F '(?string) => <>', (@error_reason) =>
+  new: F '(IdempotenceToken, ?string) => <>', (@idemp_tok, @error_reason) =>
 
 class InfoRequest extends Packet
+  new: F '(IdempotenceToken) => <>', (@idemp_tok) =>
 
 class InfoResponse extends Packet
-  new: F '(StationInfo) => <>', (@info) =>
+  new: F '(IdempotenceToken, string, [PlatformInfo], StockpileInfo) => <>', (@idemp_tok, @name, @platform_infos, @stockpile_info) =>
 
 spec ->
   import TestPlatformBackend from require 'fat.peripheral.platform'
   import TestStockpileBackend from require 'fat.peripheral.stockpile'
   import TestUplinkBackend from require 'fat.peripheral.uplink'
   import assert_that, describe, expect_that, it, matchers from require 'spec'
-  import eq, has_fields, len from matchers
+  import deep_eq, eq, has_fields, len from matchers
 
   describe 'Station', ->
     it 'responds to stockpile requests', ->
       sent = {}
       SERVER_ID = 12345
+      idemp_tok = IdempotenceToken!
 
-      config =
-        station: {}
-      platforms = {Platform TestPlatformBackend!}
+      config = {}
+      platforms =
+        * Platform TestPlatformBackend!
       stockpile = Stockpile TestStockpileBackend
         size: => 1
         slot_content: (i) =>
@@ -103,7 +115,7 @@ spec ->
           @count ??= 1
           if @count == 1
             @count += 1
-            return SERVER_ID, {}, 'StockpileRequest'
+            return SERVER_ID, (StockpileRequest idemp_tok), StockpileRequest\protocol!
           nil, nil, nil
         send: (recipient, message, protocol) =>
           sent[] = :recipient, :message, :protocol
@@ -117,8 +129,79 @@ spec ->
       expect_that sent[1], has_fields
         recipient: eq SERVER_ID
         message: has_fields
+          idemp_tok: eq idemp_tok
           info: has_fields
             item: eq 'Stone Bricks'
             stored: eq 32
             capacity: eq 64
-        protocol: eq 'StockpileResponse'
+        protocol: eq StockpileResponse\protocol!
+
+    it 'responds to info requests', ->
+      sent = {}
+      SERVER_ID = 12345
+      idemp_tok = IdempotenceToken!
+
+      config =
+        station:
+          name: 'test-station-name'
+      platforms =
+        * Platform TestPlatformBackend
+            name: => 'test-platform-name'
+            train_name: =>
+              @count ??= 1
+              if @count == 1
+                @count += 1
+                'test-train-name'
+              else
+                nil
+      stockpile = Stockpile TestStockpileBackend
+        size: => 1
+        slot_content: (i) =>
+          assert_that i, eq 1
+          count: 32, displayName: 'Stone Bricks'
+        slot_capacity: (i) =>
+          assert_that i, eq 1
+          64
+      uplink = Uplink TestUplinkBackend
+        receive: (_, _) =>
+          @count ??= 1
+          if @count <= 2
+            @count += 1
+            SERVER_ID, (InfoRequest idemp_tok), InfoRequest\protocol!
+          else
+            nil, nil, nil
+        send: (recipient, message, protocol) =>
+          sent[] = :recipient, :message, :protocol
+          true
+      station = Station config, platforms, stockpile, uplink
+
+      for _ = 1, 10
+        station\step!
+
+      expect_that sent, len eq 2
+      expect_that sent[1], has_fields
+        recipient: eq SERVER_ID
+        message: has_fields
+          idemp_tok: eq idemp_tok
+          name: eq 'test-station-name'
+          platform_infos: deep_eq
+            * name: 'test-platform-name'
+              train_name: 'test-train-name'
+          stockpile_info: has_fields
+            item: eq 'Stone Bricks'
+            stored: eq 32
+            capacity: eq 64
+        protocol: eq InfoResponse\protocol!
+      expect_that sent[2], has_fields
+        recipient: eq SERVER_ID
+        message: has_fields
+          idemp_tok: eq idemp_tok
+          name: eq 'test-station-name'
+          platform_infos: deep_eq
+            * name: 'test-platform-name'
+              train_name: nil
+          stockpile_info: has_fields
+            item: eq 'Stone Bricks'
+            stored: eq 32
+            capacity: eq 64
+        protocol: eq InfoResponse\protocol!

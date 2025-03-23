@@ -11,6 +11,7 @@ declare_type 'PlatformBackend', [[{
   train_has_schedule: () => boolean,
   train_schedule: () => Schedule,
   train_set_schedule: (Schedule) => <>,
+  train_name: () => ?string,
 }]]
 declare_type 'PlatformName', 'string'
 declare_type 'Schedule', [[{
@@ -41,6 +42,10 @@ declare_type 'Platform', [[{
   train_present: () => boolean,
   apply_schedule: (Schedule) => <>,
 }]]
+declare_type 'PlatformInfo', [[{
+  name: PlatformName,
+  train_name: ?string,
+}]]
 export class Platform
   new: F '(?PlatformBackend) => <>', (@backend=MinecraftBackend!) =>
 
@@ -49,6 +54,11 @@ export class Platform
 
   train_present: F '() => boolean', =>
     @backend\train_present!
+
+  info: F '() => PlatformInfo', =>
+    with {}
+      .name = @backend\name!
+      .train_name = @backend\train_name!
 
   apply_schedule: F '(Schedule) => <>', (schedule) =>
     @backend\train_set_schedule schedule
@@ -103,6 +113,14 @@ class MinecraftBackend
   train_set_schedule: F '(Schedule) => <>', (schedule) =>
     @platform\setSchedule schedule
 
+  train_name: F '() => ?string', =>
+    name = nil
+    try
+      @platform\getTrainName!
+    catch err
+      -- Ignore
+    name
+
 declare_type 'TestPlatformBackendOpts', [[{
   name: ?() => PlatformName,
   set_name: ?(PlatformName) => <>,
@@ -111,6 +129,7 @@ declare_type 'TestPlatformBackendOpts', [[{
   train_has_schedule: ?() => boolean,
   train_schedule: ?() => Schedule,
   train_set_schedule: ?(Schedule) => <>,
+  train_name: ?() => ?string,
 }]]
 export class TestPlatformBackend
   new: F '(?TestPlatformBackendOpts) => <>', (opts={}) =>
@@ -122,6 +141,7 @@ export class TestPlatformBackend
       :train_has_schedule=-> error 'train_set_schedule unimplemented'
       :train_schedule=-> error 'train_schedule unimplemented'
       :train_set_schedule=-> error 'train_set_schedule unimplemented'
+      :train_name=-> error 'train_name unimplemented'
     } = opts
     @name = F '() => PlatformName', name
     @set_name = F '(PlatformName) => <>', set_name
@@ -130,6 +150,7 @@ export class TestPlatformBackend
     @train_has_schedule = F '() => boolean', train_has_schedule
     @train_schedule = F '() => Schedule', train_schedule
     @train_set_schedule = F '(Schedule) => <>', train_set_schedule
+    @train_name = F '() => ?string', train_name
 
 spec ->
   import T from require 'quicktype'

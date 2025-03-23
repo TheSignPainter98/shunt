@@ -108,6 +108,9 @@ export class TestUplinkBackend
     @receive = F '(?string, ?number) => <?number, any, ?string>', receive
     @broadcast = F '(any, ?string) => <>', broadcast
 
+declare_type 'IdempotenceToken', '{}'
+export class IdempotenceToken
+
 spec ->
   import describe, expect_that, it, matchers from require 'spec'
   import deep_eq, eq, errors, matches, no_errors from matchers
