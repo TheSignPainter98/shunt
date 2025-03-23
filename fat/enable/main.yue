@@ -7,6 +7,9 @@ export subcommand = with Subcommand 'enable'
   \description 'enable fat on startup'
   \add with Flag 'force'
     \description 'overwrite existing config'
+  \add with Flag 'start'
+    \short nil
+    \description 'start running immediately'
 
 export main = F '({}) -> <>', (args) ->
   if not args.force
@@ -18,6 +21,9 @@ export main = F '({}) -> <>', (args) ->
   with assert io.open 'startup.lua', 'w+'
     assert \write _startup_script
     assert \close!
+
+  if args.start
+    os.reboot?!
   return
 
 export _startup_script = [[
