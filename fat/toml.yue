@@ -102,7 +102,7 @@ class Ast
     tab
 
 class Section
-  new: (@header, @entries) =>
+  new: (@header, @entries={}) =>
 
   construct_value_in: (tab) =>
     tab = @header\acquire_target tab
