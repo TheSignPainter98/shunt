@@ -5,8 +5,8 @@ import spec from require 'spec'
 
 declare_type 'StockpileBackend', [[{
   size: () => number,
-  slot_content: (number) => number,
-  slot_capacity: (number) => SlotInfo,
+  slot_capacity: (number) => number,
+  slot_content: (number) => SlotInfo,
 }]]
 declare_type 'SlotInfo', [[{
   count: number,
@@ -65,11 +65,11 @@ class MinecraftBackend
 
 declare_type 'TestStockpileBackendOpts', [[{
   size: ?() => number,
-  slot_content: ?(number) => number,
-  slot_capacity: ?(number) => SlotInfo,
+  slot_content: ?(number) => SlotInfo,
+  slot_capacity: ?(number) => number,
 }]]
-export class TestBackend
-  new: F '(TestStockpileBackendOpts) => <>', (opts) =>
+export class TestStockpileBackend
+  new: F '(?TestStockpileBackendOpts) => <>', (opts={}) =>
     {
       :size=-> error 'size unimplemented'
       :slot_content=-> error 'slot_content unimplemented'
@@ -86,7 +86,7 @@ spec ->
   describe 'Stockpile', ->
     describe '\\info', ->
       it 'returns correctly on valid inventory', ->
-        stockpile = Stockpile TestBackend
+        stockpile = Stockpile TestStockpileBackend
           size: => 4
           slot_content: (slot_id) =>
             {
@@ -104,7 +104,7 @@ spec ->
         }
 
       it 'rejects impure inventories', ->
-        stockpile = Stockpile TestBackend
+        stockpile = Stockpile TestStockpileBackend
           size: => 2
           slot_content: (slot_id) =>
             displayName = switch slot_id

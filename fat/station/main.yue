@@ -1,6 +1,7 @@
 local *
 
 import Flag, Subcommand from require 'clap'
+import log from require 'fat.logger'
 import Platform from require 'fat.peripheral.platform'
 import Stockpile from require 'fat.peripheral.stockpile'
 import Packet, Uplink from require 'fat.peripheral.uplink'
@@ -27,39 +28,36 @@ class Station
 
   run: F '() => !', =>
     while true
-      from_id, message = @uplink\receive_from_any!
-      if not from_id?
-        continue
+      @step!
 
-      import repr from require 'spec'
-      print repr message
-      switch message\protocol!
-        when 'StockpileRequest'
-          @on_stockpile_request from_id, message
-        when 'ScheduleRequest'
-          @on_schedule_request from_id, message
-        when 'InfoRequest'
-          @on_info_request from_id, message
-        else
-          print "ignoring #{message\protocol!} message"
+  step: F '() => <>', =>
+    from_id, message = @uplink\receive_from_any!
+    if not from_id?
+      return
 
-  on_stockpile_request: (requester, request) =>
+    switch message\protocol!
+      when 'StockpileRequest'
+        @on_stockpile_request from_id, message
+      when 'ScheduleRequest'
+        @on_schedule_request from_id, message
+      when 'InfoRequest'
+        @on_info_request from_id, message
+      else
+        print "ignoring #{message\protocol!} message"
+
+  on_stockpile_request: F '(number, Packet) => <>', (requester, request) =>
     log -> 'handling stockpile request'
 
     info = @stockpile\info!
     @uplink\send_to requester, StockpileResponse info
 
-  on_schedule_request: (requester, request) =>
+  on_schedule_request: F '(number, Packet) => <>', (requester, request) =>
     log -> 'handling schedule request'
+    error 'todo'
 
-    import repr from require 'spec'
-    print repr request
-
-  on_info_request: (requester, request) =>
+  on_info_request: F '(number, Packet) => <>', (requester, request) =>
     log -> 'handling info request'
-
-    import repr from require 'spec'
-    print repr request
+    error 'todo'
 
 class StockpileRequest extends Packet
 
@@ -76,3 +74,53 @@ class InfoRequest extends Packet
 
 class InfoResponse extends Packet
   new: F '(StationInfo) => <>', (@info) =>
+
+spec ->
+  import TestPlatformBackend from require 'fat.peripheral.platform'
+  import TestStockpileBackend from require 'fat.peripheral.stockpile'
+  import TestUplinkBackend from require 'fat.peripheral.uplink'
+  import assert_that, describe, expect_that, it, matchers from require 'spec'
+  import eq, has_fields, len from matchers
+
+  describe 'Station', ->
+    it 'responds to stockpile requests', ->
+      sent = {}
+      SERVER_ID = 12345
+
+      config =
+        station: {}
+      platforms = {Platform TestPlatformBackend!}
+      stockpile = Stockpile TestStockpileBackend
+        size: F '() => number', => 1
+        slot_content: F '(number) => SlotInfo', (i) =>
+          assert_that i, eq 1
+          count: 32, displayName: 'Stone Bricks'
+        slot_capacity: F '(number) => number', (i) =>
+          assert_that i, eq 1
+          64
+
+      uplink = Uplink TestUplinkBackend
+        receive: F '(?string, ?number) => <?number, ?any, ?string>', (_, _) =>
+          @count ??= 1
+          if @count == 1
+            @count += 1
+            return SERVER_ID, {}, 'StockpileRequest'
+          nil, nil, nil
+        send: F '(number, any, ?string) => boolean', (recipient, message, protocol) =>
+          sent[] = :recipient, :message, :protocol
+          true
+      station = Station config, platforms, stockpile, uplink
+
+      for _ = 1, 10
+        station\step!
+
+      expect_that sent, len eq 1
+
+      expect_that sent[1], has_fields
+        recipient: eq SERVER_ID
+        message: has_fields
+          info: has_fields
+            item: eq 'Stone Bricks'
+            stored: eq 32
+            capacity: eq 64
+        protocol: eq 'StockpileResponse'
