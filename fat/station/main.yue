@@ -4,17 +4,26 @@ import Flag, Subcommand from require 'clap'
 import Platform from require 'fat.peripheral.platform'
 import Stockpile from require 'fat.peripheral.stockpile'
 import Packet, Uplink from require 'fat.peripheral.uplink'
-import default_config from require 'fat.station.config'
 import declare_type, F from require 'quicktype'
 import spec from require 'spec'
 
+export default_config = [=[
+[station]
+name = '<station-name>'
+
+[[platforms]]
+name = '<platform-name>'
+# produces = '<resource-name>'
+# consumes = '<resource-name>'
+]=]
+
 export main = F '({}) -> <>', (config) ->
   print 'starting station'
-  with Station {Platform!}, Stockpile!, Uplink!
+  with Station config, {Platform!}, Stockpile!, Uplink!
     \run!
 
 class Station
-  new: F '([Platform], Stockpile, Uplink) => <>', (@platforms, @stockpile, @uplink) =>
+  new: F '({}, [Platform], Stockpile, Uplink) => <>', (@config, @platforms, @stockpile, @uplink) =>
 
   run: F '() => !', =>
     while true

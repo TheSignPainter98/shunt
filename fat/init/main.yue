@@ -4,9 +4,10 @@ import Flag, Param, Subcommand from require 'clap'
 import CONFIG_FILE from require 'fat.config'
 import parse_toml from require 'fat.toml'
 import F from require 'quicktype'
+import spec from require 'spec'
 
 display = require 'fat.display.main'
-station_config = require 'fat.station.config'
+station = require 'fat.station.main'
 ledger = require 'fat.ledger.main'
 
 export subcommand = with Subcommand 'init'
@@ -20,16 +21,15 @@ export subcommand = with Subcommand 'init'
       * 'ledger'
       * 'display'
 
+default_config_by_type =
+  display: (require 'fat.display.main').default_config
+  station: (require 'fat.station.main').default_config
+  ledger: (require 'fat.ledger.main').default_config
+
 export main = F '({}) -> <>', (args) ->
-  default_config = switch args.instance_type
-    when 'station'
-      station_config.default_config
-    when 'ledger'
-      ledger.default_config
-    when 'display'
-      display.default_config
-    else
-      error "internal error: unrecognised instance type '#{args.instance_type}'"
+  default_config = default_config_by_type[args.instance_type]
+  if not default_config?
+    error "internal error: unrecognised instance type '#{args.instance_type}'"
 
   if not args.force
     with? io.open CONFIG_FILE, 'r'
@@ -84,3 +84,19 @@ validate_config = F '(string, string) -> boolean', (file, instance_type) ->
     return false
 
   true
+
+spec ->
+  import assert_that, describe, expect_that, it, matchers from require 'spec'
+  import has_fields, has_type, no_errors from matchers
+
+  configs = [:name, :raw for name, raw in pairs default_config_by_type]
+  table.sort configs, (a, b) -> a.name < b.name
+
+  for config in *configs
+    describe "default #{config.name} config", ->
+      it 'is valid toml', ->
+        parsed_default_config = parse_toml config.raw
+
+        expect_that parsed_default_config, has_type 'table'
+        expect_that parsed_default_config, has_fields
+          [config.name]: has_type 'table'
