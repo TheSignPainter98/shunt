@@ -1,7 +1,7 @@
 local *
 
 import log from require 'fat.logger'
-import Platform from require 'fat.peripheral.platform'
+import Station from require 'fat.peripheral.station'
 import Stockpile from require 'fat.peripheral.stockpile'
 import IdempotenceToken, Packet, Uplink from require 'fat.peripheral.uplink'
 import declare_type, F from require 'quicktype'
@@ -12,19 +12,19 @@ export default_config = [=[
 name = '<factory-name>'
 network = 'mainline'
 
-[[platforms]]
-name = '<platform-name>'
+[[stations]]
+name = '<station-name>'
 # produces = '<resource-name>'
 # consumes = '<resource-name>'
 ]=]
 
 export main = F '({}) -> <>', (config) ->
   print 'starting factory'
-  with Factory config, {Platform!}, Stockpile!, Uplink!
+  with Factory config, {Station!}, Stockpile!, Uplink!
     \run!
 
 class Factory
-  new: F '({}, [Platform], Stockpile, Uplink) => <>', (@config, @platforms, @stockpile, @uplink) =>
+  new: F '({}, [Station], Stockpile, Uplink) => <>', (@config, @stations, @stockpile, @uplink) =>
 
   name: F '() => string', =>
     @config.factory.name
@@ -63,8 +63,8 @@ class Factory
     log -> 'handling info request'
 
     stockpile_info = @stockpile\info!
-    platform_infos = [ platform\info! for platform in *@platforms ]
-    response = InfoResponse request.idemp_tok, @name!, platform_infos, stockpile_info
+    station_infos = [ station\info! for station in *@stations ]
+    response = InfoResponse request.idemp_tok, @name!, station_infos, stockpile_info
     @uplink\send_to requester, response
 
 class StockpileRequest extends Packet
@@ -83,10 +83,10 @@ class InfoRequest extends Packet
   new: F '(IdempotenceToken) => <>', (@idemp_tok) =>
 
 class InfoResponse extends Packet
-  new: F '(IdempotenceToken, string, [PlatformInfo], StockpileInfo) => <>', (@idemp_tok, @name, @platform_infos, @stockpile_info) =>
+  new: F '(IdempotenceToken, string, [StationInfo], StockpileInfo) => <>', (@idemp_tok, @name, @station_infos, @stockpile_info) =>
 
 spec ->
-  import TestPlatformBackend from require 'fat.peripheral.platform'
+  import TestStationBackend from require 'fat.peripheral.station'
   import TestStockpileBackend from require 'fat.peripheral.stockpile'
   import TestUplinkBackend from require 'fat.peripheral.uplink'
   import assert_that, describe, expect_that, it, matchers from require 'spec'
@@ -99,8 +99,8 @@ spec ->
       idemp_tok = IdempotenceToken!
 
       config = {}
-      platforms =
-        * Platform TestPlatformBackend!
+      stations =
+        * Station TestStationBackend!
       stockpile = Stockpile TestStockpileBackend
         size: => 1
         slot_content: (i) =>
@@ -119,7 +119,7 @@ spec ->
         send: (recipient, message, protocol) =>
           sent[] = :recipient, :message, :protocol
           true
-      factory = Factory config, platforms, stockpile, uplink
+      factory = Factory config, stations, stockpile, uplink
 
       for _ = 1, 10
         factory\step!
@@ -143,9 +143,9 @@ spec ->
       config =
         factory:
           name: 'test-factory-name'
-      platforms =
-        * Platform TestPlatformBackend
-            name: => 'test-platform-name'
+      stations =
+        * Station TestStationBackend
+            name: => 'test-station-name'
             train_name: =>
               @count ??= 1
               if @count == 1
@@ -172,7 +172,7 @@ spec ->
         send: (recipient, message, protocol) =>
           sent[] = :recipient, :message, :protocol
           true
-      factory = Factory config, platforms, stockpile, uplink
+      factory = Factory config, stations, stockpile, uplink
 
       for _ = 1, 10
         factory\step!
@@ -183,8 +183,8 @@ spec ->
         message: has_fields
           idemp_tok: eq idemp_tok
           name: eq 'test-factory-name'
-          platform_infos: deep_eq
-            * name: 'test-platform-name'
+          station_infos: deep_eq
+            * name: 'test-station-name'
               train_name: 'test-train-name'
           stockpile_info: has_fields
             item: eq 'Stone Bricks'
@@ -196,8 +196,8 @@ spec ->
         message: has_fields
           idemp_tok: eq idemp_tok
           name: eq 'test-factory-name'
-          platform_infos: deep_eq
-            * name: 'test-platform-name'
+          station_infos: deep_eq
+            * name: 'test-station-name'
               train_name: nil
           stockpile_info: has_fields
             item: eq 'Stone Bricks'
