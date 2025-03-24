@@ -4,6 +4,7 @@ import Flag, Subcommand from require 'clap'
 import config from require 'fat.config'
 import F from require 'quicktype'
 
+controller = require 'fat.controller.main'
 display = require 'fat.display.main'
 ledger = require 'fat.ledger.main'
 station = require 'fat.station.main'
@@ -21,7 +22,9 @@ export main = F '({}) -> <>', (args) ->
     print 'cannot start fat: config missing\ntry running `fat init <instance-type>` first'
     return
 
-  to_spam = if cfg.display?
+  to_spam = if cfg.controller?
+    -> controller.main cfg
+  else if cfg.display?
     -> display.main cfg
   else if cfg.station?
     -> station.main cfg

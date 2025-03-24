@@ -20,8 +20,6 @@ enable = require 'fat.enable.main'
 init = require 'fat.init.main'
 start = require 'fat.start.main'
 
-require 'fat.state' -- TODO(kcza): remove me, just for testing
-
 global skip_minecraft_tests = false
 
 main = (raw_args) ->

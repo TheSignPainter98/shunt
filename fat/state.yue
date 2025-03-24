@@ -5,7 +5,7 @@ import declare_type, F, T from require 'quicktype'
 
 UNIMPLEMENTED = <call>: (...) ->
 
-class StateMachineBuilder
+export class StateMachineBuilder
   new: =>
     @_states = T '{string -> table}', {}
     @_initial_state_name = T '?string', nil
@@ -112,7 +112,7 @@ declare_type 'StateSpec', [[{
   _transitions: {string},
   _fields: {string -> string},
 }]]
-class StateSpec
+export class StateSpec
   new: F '(string) => <>', (@_name) =>
     if not valid_state_name @_name
       error "cannot build state machine: state name '#{@_name}' not a valid identifier"

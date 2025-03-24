@@ -1,6 +1,5 @@
 local *
 
-import Flag, Subcommand from require 'clap'
 import log from require 'fat.logger'
 import Platform from require 'fat.peripheral.platform'
 import Stockpile from require 'fat.peripheral.stockpile'
@@ -14,6 +13,7 @@ name = '<station-name>'
 
 [[platforms]]
 name = '<platform-name>'
+network = 'mainline'
 # produces = '<resource-name>'
 # consumes = '<resource-name>'
 ]=]
@@ -62,9 +62,7 @@ class Station
     log -> 'handling info request'
 
     stockpile_info = @stockpile\info!
-    print 'a'
     platform_infos = [ platform\info! for platform in *@platforms ]
-    print 'b'
     response = InfoResponse request.idemp_tok, @name!, platform_infos, stockpile_info
     @uplink\send_to requester, response
 

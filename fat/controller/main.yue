@@ -1,0 +1,62 @@
+local *
+
+import log from require 'fat.logger'
+import Uplink from require 'fat.peripheral.uplink'
+import StateMachineBuilder, StateSpec from require 'fat.state'
+import toml_parse from require 'fat.toml'
+import declare_type, F from require 'quicktype'
+
+export default_config = [=[
+[controller]
+
+[[networks]]
+name = 'mainline'
+description = 'default train network'
+]=]
+
+export main = F '({}) -> <>', (config) ->
+  log -> 'starting controller'
+
+  state = nil
+  with? io.open '.fat-state.toml'
+    state = toml_parse assert \read '*a'
+    assert \close!
+
+  with Controller config, Uplink!
+    \run!
+
+declare_type 'Network', [[{
+  name: string,
+  stations: Station,
+}]]
+declare_type 'Station', [[{
+  stockpile: StockpileInfo,
+}]]
+declare_type 'Train', [[{
+  name: string,
+  state: StateMachine,
+}]]
+
+class Controller
+  new: F '({}, Uplink) => <>', (@config, @uplink) =>
+
+  @state_machine: F '() => StateMachine', =>
+    StateMachineBuilder!
+      \set_initial_state 'initing'
+      \add_state with StateSpec 'initing'
+        \add_transition_to 'waiting'
+      \add_state StateSpec 'waiting'
+        \add_field 'networks', '[Network]'
+        \add_field 'trains', '{string->Train}'
+        \add_field 'station_names', '{string}'
+      \build!
+
+  run: F '(?StateMachine) => !', (state=@@state_machine!) =>
+    @i = 1
+    while true
+      @step!
+
+  step: F '() => <>', =>
+    print @i
+    @i += 1
+    os.sleep 1

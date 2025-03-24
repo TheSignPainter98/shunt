@@ -17,11 +17,13 @@ export subcommand = with Subcommand 'init'
   \add with Param 'instance-type'
     \description 'the type of instance to initialise'
     \options
+      * 'controller'
       * 'station'
       * 'ledger'
       * 'display'
 
 default_config_by_type =
+  controller: (require 'fat.controller.main').default_config
   display: (require 'fat.display.main').default_config
   station: (require 'fat.station.main').default_config
   ledger: (require 'fat.ledger.main').default_config
