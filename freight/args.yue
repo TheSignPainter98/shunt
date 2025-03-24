@@ -28,3 +28,4 @@ export class Args
       \add (require 'freight.enable.main').subcommand
       \add (require 'freight.init.main').subcommand
       \add (require 'freight.start.main').subcommand
+      \add (require 'freight.upgrade.main').subcommand

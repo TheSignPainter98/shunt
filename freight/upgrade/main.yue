@@ -1,0 +1,10 @@
+local *
+
+import Flag, Subcommand from require 'clap'
+import F from require 'quicktype'
+
+export subcommand = with Subcommand 'upgrade'
+  \description 'upgrade all freight versions across all networks'
+
+export main = F '({}) -> <>', (args) ->
+  print 'upgrading!'

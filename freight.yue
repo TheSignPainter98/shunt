@@ -19,6 +19,7 @@ disable = require 'freight.disable.main'
 enable = require 'freight.enable.main'
 init = require 'freight.init.main'
 start = require 'freight.start.main'
+upgrade = require 'freight.upgrade.main'
 
 global skip_minecraft_tests = false
 
@@ -46,6 +47,8 @@ main = (raw_args) ->
     enable.main args.enable
   else if args.disable?
     disable.main args.disable
+  else if args.upgrade?
+    upgrade.main args.upgrade
   else
     error 'internal error: no command recognised'
 

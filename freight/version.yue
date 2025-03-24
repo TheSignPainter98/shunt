@@ -1,5 +1,7 @@
 local *
 
+-- TODO(kcza): get version from tag
+
 macro build_date = ->
   date = os.date '%Y-%m-%d@%H:%M:%S'
   "\"#{date}\""
