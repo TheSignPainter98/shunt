@@ -1,7 +1,7 @@
 local *
 
 import ArgParser, Flag, Param, Subcommand from require 'clap'
-import VERSION from require 'fat.version'
+import VERSION from require 'freight.version'
 
 export class Args
   @parse: (args) =>
@@ -9,7 +9,7 @@ export class Args
     arg_parser\parse args
 
   @_arg_parser: =>
-    with ArgParser 'fat'
+    with ArgParser 'freight'
       \version VERSION
       \description 'an automatic cargo router'
       \add with Flag 'verbose'
@@ -23,8 +23,8 @@ export class Args
         \add with Param 'filter'
           \description 'run only tests matching this pattern'
           \default nil
-      \add (require 'fat.clean.main').subcommand
-      \add (require 'fat.disable.main').subcommand
-      \add (require 'fat.enable.main').subcommand
-      \add (require 'fat.init.main').subcommand
-      \add (require 'fat.start.main').subcommand
+      \add (require 'freight.clean.main').subcommand
+      \add (require 'freight.disable.main').subcommand
+      \add (require 'freight.enable.main').subcommand
+      \add (require 'freight.init.main').subcommand
+      \add (require 'freight.start.main').subcommand

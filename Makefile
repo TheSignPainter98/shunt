@@ -3,7 +3,7 @@ LUA = luajit
 DIAGRAMS = $(shell ls docs/*.dot | sed 's/\.dot$$/.svg/')
 SOURCES = $(shell find -name '*.yue')
 OBJECTS = $(patsubst %.yue,%.lua,$(SOURCES))
-BINARIES = bin/fat bin/goo
+BINARIES = bin/freight bin/goo
 
 NODE_FONTNAME = C059
 EDGE_FONTNAME = $(NODE_FONTNAME)
@@ -27,10 +27,10 @@ bin/%.lua.packed: %.lua $(OBJECTS) moonpack.lua
 	yue --target=5.1 -l -s $< -o $@
 .PRECIOUS: %.lua
 
-fat.yue: compat.lua
+freight.yue: compat.lua
 
 clean:
-	$(RM) $(DIAGRAMS) $(OBJECTS) startup.lua packed/fat fat.goo $(BINARIES) bin/*
+	$(RM) $(DIAGRAMS) $(OBJECTS) startup.lua packed/freight freight.goo $(BINARIES) bin/*
 .PHONY: clean
 
 install: scripts/install.sh $(BINARIES)
@@ -41,10 +41,10 @@ uninstall: scripts/uninstall.sh
 	./$<
 .PHONY: uninstall
 
-test: fat.lua $(OBJECTS)
+test: freight.lua $(OBJECTS)
 	@$(LUA) $< test
 .PHONY: .FORCE
 
-fat/version.lua: .FORCE
+freight/version.lua: .FORCE
 .FORCE:
 .PHONY: .FORCE

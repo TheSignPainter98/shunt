@@ -1,9 +1,9 @@
 local *
 
-import log from require 'fat.logger'
-import Uplink from require 'fat.peripheral.uplink'
-import StateMachineBuilder, StateSpec from require 'fat.state'
-import toml_parse from require 'fat.toml'
+import log from require 'freight.logger'
+import Uplink from require 'freight.peripheral.uplink'
+import StateMachineBuilder, StateSpec from require 'freight.state'
+import toml_parse from require 'freight.toml'
 import declare_type, F from require 'quicktype'
 
 export default_config = [=[
@@ -18,7 +18,7 @@ export main = F '({}) -> <>', (config) ->
   log -> 'starting controller'
 
   state = nil
-  with? io.open '.fat-state.toml'
+  with? io.open '.freight-state.toml'
     state = toml_parse assert \read '*a'
     assert \close!
 

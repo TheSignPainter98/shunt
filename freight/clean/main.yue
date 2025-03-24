@@ -4,9 +4,9 @@ import Flag, Subcommand from require 'clap'
 import F from require 'quicktype'
 
 export subcommand = with Subcommand 'clean'
-  \description 'remove all files associated with fat'
+  \description 'remove all files associated with freight'
 
 export main = F '({}) -> <>', (args) ->
   os.remove 'startup.lua'
-  os.remove 'fat.toml'
+  os.remove 'freight.toml'
   return

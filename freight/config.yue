@@ -1,9 +1,9 @@
 local *
 
-import parse_toml from require 'fat.toml'
+import parse_toml from require 'freight.toml'
 import F from require 'quicktype'
 
-export CONFIG_FILE = 'fat.toml'
+export CONFIG_FILE = 'freight.toml'
 
 cached_config = nil
 tried_to_get_config = false

@@ -1,17 +1,17 @@
 local *
 
 import Flag, Param, Subcommand from require 'clap'
-import CONFIG_FILE from require 'fat.config'
-import parse_toml from require 'fat.toml'
+import CONFIG_FILE from require 'freight.config'
+import parse_toml from require 'freight.toml'
 import F from require 'quicktype'
 import spec from require 'spec'
 
-display = require 'fat.display.main'
-factory = require 'fat.factory.main'
-ledger = require 'fat.ledger.main'
+display = require 'freight.display.main'
+factory = require 'freight.factory.main'
+ledger = require 'freight.ledger.main'
 
 export subcommand = with Subcommand 'init'
-  \description 'initialise this fat instance'
+  \description 'initialise this freight instance'
   \add with Flag 'force'
     \description 'overwrite existing config'
   \add with Param 'instance-type'
@@ -23,10 +23,10 @@ export subcommand = with Subcommand 'init'
       * 'display'
 
 default_config_by_type =
-  controller: (require 'fat.controller.main').default_config
-  display: (require 'fat.display.main').default_config
-  factory: (require 'fat.factory.main').default_config
-  ledger: (require 'fat.ledger.main').default_config
+  controller: (require 'freight.controller.main').default_config
+  display: (require 'freight.display.main').default_config
+  factory: (require 'freight.factory.main').default_config
+  ledger: (require 'freight.ledger.main').default_config
 
 export main = F '({}) -> <>', (args) ->
   default_config = default_config_by_type[args.instance_type]
@@ -47,7 +47,7 @@ export main = F '({}) -> <>', (args) ->
   config_is_valid = false
   while not config_is_valid
     while true
-      print 'press [ENTER] edit fat.toml, [q] to abort'
+      print 'press [ENTER] edit freight.toml, [q] to abort'
       resp = io.read '*l'
       switch resp
         when 'q'

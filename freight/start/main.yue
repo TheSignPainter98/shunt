@@ -1,16 +1,16 @@
 local *
 
 import Flag, Subcommand from require 'clap'
-import config from require 'fat.config'
+import config from require 'freight.config'
 import F from require 'quicktype'
 
-controller = require 'fat.controller.main'
-display = require 'fat.display.main'
-factory = require 'fat.factory.main'
-ledger = require 'fat.ledger.main'
+controller = require 'freight.controller.main'
+display = require 'freight.display.main'
+factory = require 'freight.factory.main'
+ledger = require 'freight.ledger.main'
 
 export subcommand = with Subcommand 'start'
-  \description 'start this fat instance'
+  \description 'start this freight instance'
   \add with Flag 'fragile'
     \description 'exit on failure, rather than reattempting'
     \short nil
@@ -19,7 +19,7 @@ export subcommand = with Subcommand 'start'
 export main = F '({}) -> <>', (args) ->
   cfg = config!
   if not cfg?
-    print 'cannot start fat: config missing\ntry running `fat init <instance-type>` first'
+    print 'cannot start freight: config missing\ntry running `freight init <instance-type>` first'
     return
 
   to_spam = if cfg.controller?

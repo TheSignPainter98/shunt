@@ -1,11 +1,11 @@
 local *
 
 import Flag, Subcommand from require 'clap'
-import _startup_script from require 'fat.enable.main'
+import _startup_script from require 'freight.enable.main'
 import F from require 'quicktype'
 
 export subcommand = with Subcommand 'disable'
-  \description 'disable fat on startup'
+  \description 'disable freight on startup'
   \add with Flag 'force'
     \description 'delete edited config'
 
@@ -19,11 +19,11 @@ export main = F '({}) -> <>', (args) ->
     content = assert \read '*a'
     assert \close!
   if not content?
-    print 'cannot disable fat: startup.lua missing'
+    print 'cannot disable freight: startup.lua missing'
     return
 
   if content != _startup_script
-    print 'cannot disable fat: startup script contains changes\nrerun with --force to delete anyway'
+    print 'cannot disable freight: startup script contains changes\nrerun with --force to delete anyway'
     return
 
   remove_files false
@@ -40,4 +40,4 @@ remove_files = F '(boolean) -> <>', (force) ->
       return
 
   remove_with_force 'startup.lua'
-  remove_with_force 'fat.toml'
+  remove_with_force 'freight.toml'

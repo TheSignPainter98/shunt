@@ -1,9 +1,9 @@
 local *
 
-import log from require 'fat.logger'
-import Station from require 'fat.peripheral.station'
-import Stockpile from require 'fat.peripheral.stockpile'
-import IdempotenceToken, Packet, Uplink from require 'fat.peripheral.uplink'
+import log from require 'freight.logger'
+import Station from require 'freight.peripheral.station'
+import Stockpile from require 'freight.peripheral.stockpile'
+import IdempotenceToken, Packet, Uplink from require 'freight.peripheral.uplink'
 import declare_type, F from require 'quicktype'
 import spec from require 'spec'
 
@@ -86,9 +86,9 @@ class InfoResponse extends Packet
   new: F '(IdempotenceToken, string, [StationInfo], StockpileInfo) => <>', (@idemp_tok, @name, @station_infos, @stockpile_info) =>
 
 spec ->
-  import TestStationBackend from require 'fat.peripheral.station'
-  import TestStockpileBackend from require 'fat.peripheral.stockpile'
-  import TestUplinkBackend from require 'fat.peripheral.uplink'
+  import TestStationBackend from require 'freight.peripheral.station'
+  import TestStockpileBackend from require 'freight.peripheral.stockpile'
+  import TestUplinkBackend from require 'freight.peripheral.uplink'
   import assert_that, describe, expect_that, it, matchers from require 'spec'
   import deep_eq, eq, has_fields, len from matchers
 

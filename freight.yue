@@ -6,19 +6,19 @@ apply_compat!
 import declare_type from require 'quicktype'
 declare_type 'Self', 'some'
 
-import Args from require 'fat.args'
+import Args from require 'freight.args'
 import run_tests from require 'spec'
-import 'fat.logger'
-import log from require 'fat.logger'
+import 'freight.logger'
+import log from require 'freight.logger'
 import 'spec'
 import F from require 'quicktype'
-import detect_and_use_monitor from require 'fat.monitor'
+import detect_and_use_monitor from require 'freight.monitor'
 
-clean = require 'fat.clean.main'
-disable = require 'fat.disable.main'
-enable = require 'fat.enable.main'
-init = require 'fat.init.main'
-start = require 'fat.start.main'
+clean = require 'freight.clean.main'
+disable = require 'freight.disable.main'
+enable = require 'freight.enable.main'
+init = require 'freight.init.main'
+start = require 'freight.start.main'
 
 global skip_minecraft_tests = false
 

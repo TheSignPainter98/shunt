@@ -1,8 +1,8 @@
 local *
 
 import Flag, Subcommand from require 'clap'
-import Queue from require 'fat.data.queue'
-import parse_toml from require 'fat.toml'
+import Queue from require 'freight.data.queue'
+import parse_toml from require 'freight.toml'
 import declare_type, F, T from require 'quicktype'
 import spec from require 'spec'
 
