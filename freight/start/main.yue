@@ -4,10 +4,10 @@ import Flag, Subcommand from require 'clap'
 import config from require 'freight.config'
 import F from require 'quicktype'
 
-controller = require 'freight.controller.main'
 display = require 'freight.display.main'
 factory = require 'freight.factory.main'
 ledger = require 'freight.ledger.main'
+marshal = require 'freight.marshal.main'
 
 export subcommand = with Subcommand 'start'
   \description 'start this freight instance'
@@ -22,8 +22,8 @@ export main = F '({}) -> <>', (args) ->
     print 'cannot start freight: config missing\ntry running `freight init <instance-type>` first'
     return
 
-  to_spam = if cfg.controller?
-    -> controller.main cfg
+  to_spam = if cfg.marshal?
+    -> marshal.main cfg
   else if cfg.display?
     -> display.main cfg
   else if cfg.factory?

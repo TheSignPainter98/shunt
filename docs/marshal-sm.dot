@@ -1,6 +1,6 @@
 #!/usr/bin/sfdp
 digraph {
-	label = "controller state machine"
+	label = "marshal state machine"
 	bgcolor = black // 313244
 	color = white
 	node [

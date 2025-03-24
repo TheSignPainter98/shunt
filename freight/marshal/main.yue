@@ -7,7 +7,7 @@ import toml_parse from require 'freight.toml'
 import declare_type, F from require 'quicktype'
 
 export default_config = [=[
-[controller]
+[marshal]
 
 [[networks]]
 name = 'mainline'
@@ -15,14 +15,14 @@ description = 'default train network'
 ]=]
 
 export main = F '({}) -> <>', (config) ->
-  log -> 'starting controller'
+  log -> 'starting marshal'
 
   state = nil
   with? io.open '.freight-state.toml'
     state = toml_parse assert \read '*a'
     assert \close!
 
-  with Controller config, Uplink!
+  with Marshal config, Uplink!
     \run!
 
 declare_type 'Network', [[{
@@ -38,7 +38,7 @@ declare_type 'Train', [[{
   state: StateMachine,
 }]]
 
-class Controller
+class Marshal
   new: F '({}, Uplink) => <>', (@config, @uplink) =>
 
   @state_machine: F '() => StateMachine', =>
