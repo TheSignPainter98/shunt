@@ -1,6 +1,6 @@
 #!/usr/bin/sfdp
 digraph {
-	label = "station state machine"
+	label = "factory state machine"
 	bgcolor = black
 	color = white
 	node [

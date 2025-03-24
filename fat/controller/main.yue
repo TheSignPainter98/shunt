@@ -27,9 +27,10 @@ export main = F '({}) -> <>', (config) ->
 
 declare_type 'Network', [[{
   name: string,
-  stations: Station,
+  factories: [Factory],
+  stations: [Station],
 }]]
-declare_type 'Station', [[{
+declare_type 'Factory', [[{
   stockpile: StockpileInfo,
 }]]
 declare_type 'Train', [[{
@@ -45,10 +46,11 @@ class Controller
       \set_initial_state 'initing'
       \add_state with StateSpec 'initing'
         \add_transition_to 'waiting'
-      \add_state StateSpec 'waiting'
-        \add_field 'networks', '[Network]'
+      \add_state with StateSpec 'waiting'
+        \add_field 'networks', '{string->Network}'
         \add_field 'trains', '{string->Train}'
-        \add_field 'station_names', '{string}'
+        \add_field 'station_networks', '{string->string}'
+        \add_field 'factory_names', '{string}'
       \build!
 
   run: F '(?StateMachine) => !', (state=@@state_machine!) =>

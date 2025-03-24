@@ -8,28 +8,29 @@ import declare_type, F from require 'quicktype'
 import spec from require 'spec'
 
 export default_config = [=[
-[station]
-name = '<station-name>'
+[factory]
+name = '<factory-name>'
+network = 'mainline'
 
 [[platforms]]
 name = '<platform-name>'
-network = 'mainline'
 # produces = '<resource-name>'
 # consumes = '<resource-name>'
 ]=]
 
 export main = F '({}) -> <>', (config) ->
-  print 'starting station'
-  with Station config, {Platform!}, Stockpile!, Uplink!
+  print 'starting factory'
+  with Factory config, {Platform!}, Stockpile!, Uplink!
     \run!
 
-class Station
+class Factory
   new: F '({}, [Platform], Stockpile, Uplink) => <>', (@config, @platforms, @stockpile, @uplink) =>
 
   name: F '() => string', =>
-    @config.station.name
+    @config.factory.name
 
   run: F '() => !', =>
+    -- TODO(kcza): register self, repeat every 10s until ready
     while true
       @step!
 
@@ -91,7 +92,7 @@ spec ->
   import assert_that, describe, expect_that, it, matchers from require 'spec'
   import deep_eq, eq, has_fields, len from matchers
 
-  describe 'Station', ->
+  describe 'Factory', ->
     it 'responds to stockpile requests', ->
       sent = {}
       SERVER_ID = 12345
@@ -118,10 +119,10 @@ spec ->
         send: (recipient, message, protocol) =>
           sent[] = :recipient, :message, :protocol
           true
-      station = Station config, platforms, stockpile, uplink
+      factory = Factory config, platforms, stockpile, uplink
 
       for _ = 1, 10
-        station\step!
+        factory\step!
 
       expect_that sent, len eq 1
       expect_that sent[1], has_fields
@@ -140,8 +141,8 @@ spec ->
       idemp_tok = IdempotenceToken!
 
       config =
-        station:
-          name: 'test-station-name'
+        factory:
+          name: 'test-factory-name'
       platforms =
         * Platform TestPlatformBackend
             name: => 'test-platform-name'
@@ -171,17 +172,17 @@ spec ->
         send: (recipient, message, protocol) =>
           sent[] = :recipient, :message, :protocol
           true
-      station = Station config, platforms, stockpile, uplink
+      factory = Factory config, platforms, stockpile, uplink
 
       for _ = 1, 10
-        station\step!
+        factory\step!
 
       expect_that sent, len eq 2
       expect_that sent[1], has_fields
         recipient: eq SERVER_ID
         message: has_fields
           idemp_tok: eq idemp_tok
-          name: eq 'test-station-name'
+          name: eq 'test-factory-name'
           platform_infos: deep_eq
             * name: 'test-platform-name'
               train_name: 'test-train-name'
@@ -194,7 +195,7 @@ spec ->
         recipient: eq SERVER_ID
         message: has_fields
           idemp_tok: eq idemp_tok
-          name: eq 'test-station-name'
+          name: eq 'test-factory-name'
           platform_infos: deep_eq
             * name: 'test-platform-name'
               train_name: nil

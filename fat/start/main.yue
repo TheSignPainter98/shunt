@@ -6,8 +6,8 @@ import F from require 'quicktype'
 
 controller = require 'fat.controller.main'
 display = require 'fat.display.main'
+factory = require 'fat.factory.main'
 ledger = require 'fat.ledger.main'
-station = require 'fat.station.main'
 
 export subcommand = with Subcommand 'start'
   \description 'start this fat instance'
@@ -26,8 +26,8 @@ export main = F '({}) -> <>', (args) ->
     -> controller.main cfg
   else if cfg.display?
     -> display.main cfg
-  else if cfg.station?
-    -> station.main cfg
+  else if cfg.factory?
+    -> factory.main cfg
   else if cfg.ledger?
     -> ledger.main cfg
   else

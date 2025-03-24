@@ -9,7 +9,7 @@ export subcommand = with Subcommand 'display'
     \description 'what to display'
     \options
       * 'trains'
-      * 'stations'
+      * 'factories'
       * 'throughput'
 
 export default_config = [=[
@@ -20,7 +20,7 @@ kind = 'events'
 declare_type 'DisplayConfig', [[{
   display: {
     ledger: {
-      kind: "trains"|"stations"|"throughput"|"events",
+      kind: "trains"|"factories"|"throughput"|"events",
     },
   },
 }]]
