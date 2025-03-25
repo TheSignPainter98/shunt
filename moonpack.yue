@@ -121,7 +121,7 @@ class SourceFile
         [] = @fmt_line lineno, line
 
   fmt_line: (lineno, line) =>
-    if line\match '-- [0-9]+$'
+    if line\match '%-%- [0-9]+$'
       "#{line} -- #{@path}:#{lineno}"
     else
       line
