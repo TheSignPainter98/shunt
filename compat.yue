@@ -22,6 +22,22 @@ export apply_compat = ->
   os.rename ??= (src, dest) ->
     fs.move src, dest
 
+  if not fs?
+    global fs = {}
+
+  fs.makeDir ??= (path) ->
+    os.execute "mkdir -p '#{path}'"
+
+  if not shell?
+    global shell = {}
+
+  shell.execute ??= (...) ->
+    for i = 1, select '#', ...
+      assert 'string' == type select i, ...
+
+    args = [ "'#{arg}'" for arg in *{ 'luajit', ... } ]
+    os.execute table.concat args, ' '
+
 export test_compat = ->
   if not compat_applied
     error 'call apply_compat before testing compat'
