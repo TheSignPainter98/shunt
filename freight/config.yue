@@ -22,7 +22,7 @@ export config = F '() -> ?{}', ->
   cached_config
 
 exists = F '(string) -> boolean', (path) ->
-  with? io.open CONFIG_FILE, 'r'
+  with? io.open path, 'r'
     assert \close!
     return true
   false
