@@ -1,0 +1,17 @@
+#!/bin/bash
+
+set -e
+
+if [[ ! -d release/ ]]; then
+	mkdir release
+fi
+
+cp $@ release/
+
+pushd release/
+
+git add .
+git commit -S -m "release @$(date +%Y-%m-%d@%H:%M:%S)"
+git push
+
+popd
