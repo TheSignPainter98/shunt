@@ -59,4 +59,3 @@ class ReleaseDownloader
       error 'internal error: no version found in downloaded file'
 
     :file, :version, :content
-

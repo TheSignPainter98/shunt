@@ -110,48 +110,6 @@ spec ->
   import describe, expect_that, it, matchers from require 'spec'
   import deep_eq, errors, matches from matchers
 
-  -- class TestBinarySourceBackend
-  --   new: F '({string->string}) => <>', (@files) =>
-  --
-  --   get_file: F '(string) => <?string, ?string>', (file) =>
-  --     content = @files[file]
-  --     if content?
-  --       content, nil
-  --     else
-  --       nil, "no such file: #{file}"
-  --
-  -- class TestFSBackend
-  --   new: F '() => <>', =>
-  --     @fs = {}
-  --
-  --   read: F '(string) -> <?string, ?string>', (file) =>
-  --     entry = @fs[file]
-  --     if not entry?
-  --       return nil, "no such file or directory: #{file}"
-  --     if entry.kind == 'dir'
-  --       return nil, "cannot read directory: #{file}"
-  --     if entry.kind != 'file'
-  --       error "internal error: unknown entry kind: #{entry.kind}"
-  --     dir = file\gmatch '^(.*)/[^/]*'
-  --     if not @fs[dir]?
-  --       return nil, "directory does not yet exist: #{dir}"
-  --     entry.content, nil
-  --
-  --   write: F '(string, string) => <>', (file, content) =>
-  --     @fs[file] = kind: 'file', :content
-  --
-  --   mkdir: F '(string) => <>', (path) =>
-  --     @fs[path] = kind: 'dir'
-  --
-  --   exists: F '(string) => boolean', (path) =>
-  --     @fs[path]?
-  --
-  --   move: F '(string, string) => <>', (src, dest) =>
-  --     if not @fs[src]?
-  --       error "no such file or directory: #{src}"
-  --     @fs[dest] = @fs[src]
-  --     @fs[src] = nil
-
   class TestRebooter
     @marker: 'REBOOTING'
 
@@ -179,9 +137,14 @@ spec ->
           (protocol, id) =>
             i += 1
             1, RebootRequest!, RebootRequest\protocol!
-        broadcast: (packet, protocol) ->
+        broadcast: (packet, protocol) =>
           broadcasted[] = :packet, :protocol
 
       rebooter = TestRebooter!
       upgrader = with Instigator cfg, release, uplink, rebooter
         expect_that (-> \upgrade false), errors matches TestRebooter.marker
+      expect_that sent, deep_eq {}
+      expect_that broadcasted, deep_eq
+        * protocol: 'MarshalBumpRelease'
+          packet:
+            :release
