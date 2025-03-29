@@ -114,8 +114,10 @@ export class TestUplinkBackend
     @receive = F '(?string, ?number) => <?number, any, ?string>', receive
     @broadcast = F '(any, ?string) => <>', broadcast
 
-declare_type 'IdempotenceToken', '{}'
-export class IdempotenceToken
+declare_type 'IdempotenceToken', 'number'
+IDEMP_TOK_MAX = bit.lshift 1, 30
+export IdempotenceToken = F '() -> IdempotenceToken', ->
+  math.random 1, IDEMP_TOK_MAX
 
 spec ->
   import describe, expect_that, it, matchers from require 'spec'

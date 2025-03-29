@@ -56,6 +56,8 @@ export apply_compat = ->
     rc = os.execute table.concat args, ' '
     rc == 0
 
+  bit.lshift ??= bit.blshift
+
 export test_compat = ->
   if not compat_applied
     error 'call apply_compat before testing compat'

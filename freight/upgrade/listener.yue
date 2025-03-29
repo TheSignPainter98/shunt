@@ -2,7 +2,7 @@ local *
 
 import log from require 'freight.logger'
 import CurrentReleaseRequest, CurrentReleaseResponse from require 'freight.upgrade.monitor'
-import MarshalBumpVersion from require 'freight.upgrade.instigator'
+import MarshalBumpRelease from require 'freight.upgrade.instigator'
 import MinecraftRebooter, RebootRequest from require 'freight.upgrade.rebooter'
 import Tester from require 'freight.upgrade.tester'
 import VERSION from require 'freight.version'
@@ -40,7 +40,14 @@ export class UpgradeListener using Tester
 
   listen_for_release_bumps: F '() => !', =>
     while true
-      _, { :release } = @uplink\receive_from_any MarshalBumpBinary
+      _, pkt = @uplink\receive_from_any MarshalBumpRelease
+
+      import repr from require 'spec'
+      for key in pairs pkt
+        print 'k', key
+      print pkt\protocol!
+
+      {:release} = pkt
       assert os.remove release.file -- TODO(kcza): DANGEROUS! Increase disk space
 
       if #release.content > fs.getFreeSpace '/'
@@ -64,9 +71,9 @@ export class UpgradeListener using Tester
 
   listen_for_release_requests: F '() => !', =>
     while true
-      requester_id, _ = @uplink\receive_from_any CurrentReleaseRequest
+      requester_id, { :idemp_tok } = @uplink\receive_from_any CurrentReleaseRequest
       print "sending current release info to ##{requester_id}"
-      @uplink\send CurrentReleaseResponse @current_release
+      @uplink\send_to requester_id, CurrentReleaseResponse idemp_tok, @current_release!
 
   current_release: F '() => Release', =>
     if @kind != 'leader'
@@ -75,12 +82,11 @@ export class UpgradeListener using Tester
       return @_current_release
 
     content = do
-      local content
       with assert io.open 'freight', 'r'
         content = assert \read '*a'
         assert \close!
       content
-    @_current_release = name: 'freight', version: VERSION, :content
+    @_current_release = T 'Release', file: 'freight', version: VERSION, :content
     @_current_release
 
   listen_as_follower: F '() => !', =>
