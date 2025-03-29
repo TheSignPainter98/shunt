@@ -657,4 +657,3 @@ export run_tests = (filter) ->
   if Test.num_failures > 0
     print "#{Test.num_failures} checks failed!"
     os.exit 1
-  os.exit 0

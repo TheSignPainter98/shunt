@@ -1,0 +1,74 @@
+local *
+
+import execute from require 'freight.execute'
+import log from require 'freight.logger'
+import F from require 'quicktype'
+import spec from require 'spec'
+
+export class Tester
+  test: F '(Release) => <boolean, ?string>', (release) =>
+    log -> 'testing...'
+    log ->
+      "writing #{#release.content} bytes into disk with #{fs.getFreeSpace '/'}/#{fs.getCapacity '/'}"
+
+    tmp_path = os.tmpname!
+    with assert io.open tmp_path, 'w+'
+      \write release.content
+      assert \close!
+    write_ok = false
+    with? io.open tmp_path, 'r'
+      write_ok = release.content == \read '*a'
+      assert \close!
+    local testing_ok
+    if write_ok
+      testing_ok = execute tmp_path, 'test'
+    assert os.remove tmp_path
+
+    if not write_ok
+      return false, "cannot test upgrade: could could not write file to disk"
+    if not testing_ok
+      return false, "testing failed"
+    true, nil
+
+spec ->
+  import describe, expect_that, it, matchers from require 'spec'
+  import eq, has_type from matchers
+
+  describe 'Tester', ->
+    it 'accepts valid releases', ->
+      release =
+        file: 'freight'
+        version: '12345'
+        content: [[]]
+
+      ok, err = Tester!\test release
+      expect_that ok, eq true
+      expect_that err, eq nil
+
+    it 'rejects invalid releases', ->
+      release =
+        file: 'freight'
+        version: '12345'
+        content: [[
+          error('MARKER_ERROR')
+        ]]
+
+      ok, err = Tester!\test release
+      expect_that ok, eq false
+      expect_that err, has_type 'string'
+
+    it 'executes the test command', ->
+      release =
+        file: 'frieght'
+        version: '12345'
+        content: [[
+          for i = 1, select('#', ...) do
+            if select(i, ...) == 'test' then
+              return
+            end
+          end
+          error("must pass 'test' to freight")
+        ]]
+      ok, err = Tester!\test release
+      expect_that ok, eq true
+      expect_that err, eq nil

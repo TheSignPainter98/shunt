@@ -32,8 +32,6 @@ main = (raw_args) ->
   spec.set_log_verbosity args.verbose
 
   if args.test?
-    detect_and_use_monitor!
-
     skip_minecraft_tests = args.test.no_minecraft
     run_tests args.test.filter
   else if args.start?
@@ -60,7 +58,12 @@ spec.spec ->
       test_compat!
 
 args = {...}
+ok = true
 try
   main args
 catch err
-  print debug.traceback err
+  if err != 'EXIT(0)'
+    print debug.traceback err
+    ok = false
+if not ok
+  os.exit 1

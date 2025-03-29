@@ -36,7 +36,7 @@ export class Uplink
     @_receive_from from_id, message_type, opts
 
   _receive_from: F '(?number, ?Packet, ?UplinkReceiveOpts) => <?number, Packet|TIMEOUT>', (from_id, message_type, opts={}) =>
-    {:timeout=5} = opts
+    {:timeout} = opts
 
     local id, message, protocol
     protocol_filter = message_type?::protocol!

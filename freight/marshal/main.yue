@@ -2,6 +2,7 @@ local *
 
 import log from require 'freight.logger'
 import Uplink from require 'freight.peripheral.uplink'
+import UpgradeListener from require 'freight.upgrade.listener'
 import StateMachineBuilder, StateSpec from require 'freight.state'
 import toml_parse from require 'freight.toml'
 import declare_type, F from require 'quicktype'
@@ -22,7 +23,9 @@ export main = F '({}) -> <>', (config) ->
     state = toml_parse assert \read '*a'
     assert \close!
 
-  with Marshal config, Uplink!
+  uplink = Uplink!
+  upgrade_listener = UpgradeListener config, uplink
+  with Marshal config, uplink, upgrade_listener
     \run!
 
 declare_type 'Network', [[{
@@ -39,7 +42,7 @@ declare_type 'Train', [[{
 }]]
 
 class Marshal
-  new: F '({}, Uplink) => <>', (@config, @uplink) =>
+  new: F '({}, Uplink, UpgradeListener) => <>', (@config, @uplink, @upgrade_listener) =>
 
   @state_machine: F '() => StateMachine', =>
     StateMachineBuilder!
@@ -54,6 +57,10 @@ class Marshal
       \build!
 
   run: F '(?StateMachine) => !', (state=@@state_machine!) =>
+    parallel.waitForAny @\run_steps,
+      @upgrade_listener\listen,
+
+  run_steps: F '() => !', =>
     @i = 1
     while true
       @step!

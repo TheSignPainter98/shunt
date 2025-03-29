@@ -8,5 +8,7 @@ declare_type 'Rebooter', [[{
 }]]
 
 export class MinecraftRebooter
-  reboot: F '() => <>', =>
+  reboot: F '() => !', =>
     os.reboot!
+
+export class RebootRequest extends Packet

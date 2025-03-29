@@ -1,0 +1,44 @@
+local *
+
+import Packet from require 'freight.peripheral.uplink'
+import MarshalBumpVersion from require 'freight.upgrade.instigator'
+import MinecraftRebooter, RebootRequest from require 'freight.upgrade.rebooter'
+import Tester from require 'freight.upgrade.tester'
+import declare_type, F from require 'quicktype'
+
+declare_type 'UpgradeListenerKind', '"leader"|"follower"'
+
+declare_type 'UpgradeListenerConfig', [[{
+  marshal: ?{},
+}]]
+
+export class UpgradeListener using Tester
+  new: F '(UpgradeListenerConfig, Uplink, ?Rebooter) => <>', (config, @uplink, @rebooter=MinecraftRebooter!) =>
+    @kind = T 'UpgradeListenerKind', if config.marshal?
+      'leader'
+    else
+      'follower'
+
+  listen: F '() => !', =>
+    switch @kind
+      when 'leader'
+        @listen_as_leader!
+      when 'follower'
+        @listen_as_follower!
+      else
+        error "internal error: unknown listener kind '#{@kind}'"
+
+  listen_as_leader: F '() => !', =>
+    while true
+      _, { :release } = @uplink\receive_from_any MarshalBumpVersion
+      ok, err = @test release
+      if not ok
+        print "cannot apply update: #{err}"
+        continue
+      -- TODO(kcza): set the current release version!
+      @uplink\broadcast RebootRequest!
+      @rebooter\reboot!
+
+  listen_as_follower: F '() => !', =>
+    @uplink\receive_from_any RebootRequest!
+    @rebooter\reboot!

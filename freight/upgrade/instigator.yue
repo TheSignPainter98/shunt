@@ -1,24 +1,25 @@
 local *
+local MarshalBumpVersion -- TODO(kcza): move me
 
 import log from require 'freight.logger'
 import IdempotenceToken, Packet, TIMEOUT, Uplink from require 'freight.peripheral.uplink'
-import MinecraftRebooter from require 'freight.upgrade.rebooter'
+import MinecraftRebooter, RebootRequest from require 'freight.upgrade.rebooter'
+import Tester from require 'freight.upgrade.tester'
 import F from require 'quicktype'
 import spec from require 'spec'
 
-export class Instigator
+export class Instigator using Tester
   new: F '(?{}, Release, ?Uplink, ?Rebooter) => <>', (@config, @release, @uplink=Uplink!, @rebooter=MinecraftRebooter!) =>
     if config?.marshal?
       error 'cannot instigate upgrade from marshal computer'
 
   upgrade: F '(?boolean) => <>', (prompt=true) =>
-    @test @release
+    assert @test @release
 
     if prompt
       local resp
       while resp != ''
-        print 'upgrade deployed'
-        print 'press [ENTER] to reboot network'
+        print 'press [ENTER] to deploy upgrade'
         resp = io.read '*l'
     @bump_marshal @release
 
@@ -31,24 +32,6 @@ export class Instigator
   --     @fs\mkdir TMP_DIR
   --   @fs\write "#{TMP_DIR}/freight", release
   --   true, nil
-
-  test: F '(Release) => <>', (release) =>
-    log -> 'testing...'
-
-    tmp_path = os.tmpname!
-
-    with assert io.open tmp_path, 'w+'
-      assert \write release.content
-      assert \close!
-
-    ok = shell.execute tmp_path, 'test'
-
-    assert os.remove tmp_path
-
-    print 'ok', ok
-    if not ok
-      print "testing failed"
-      os.exit 1
 
   -- prepare_remotes: F '({number->string}, string) => <boolean, ?string>', (remotes, release) =>
   --   log -> 'preparing remote instances'
@@ -99,29 +82,29 @@ export class Instigator
 
   bump_marshal: F '(Release) => <>', (release) =>
     log -> 'bumping marshal...'
-    @uplink\broadcast BumpVersion release
+    @uplink\broadcast MarshalBumpVersion release
     return
 
   await_reboot_request: F '() => boolean', =>
     log -> 'awaiting reboot request...'
-    ATTEMPTS = 10
-    for i = 1, ATTEMPTS
-      ok, err = @uplink\receive_from_any RebootRequest
+    MAX_ATTEMPTS = 3
+    for i = 1, MAX_ATTEMPTS
+      if i > 1
+        print "awaiting reboot request (attempt #{i}/#{MAX_ATTEMPTS})"
+      ok, err = @uplink\receive_from_any RebootRequest, timeout: 5
       if ok
         return true
       if err != TIMEOUT
         error err
-    print "marshal did not issue reboot after #{ATTEMPTS} attempts listening"
+    print "marshal did not issue reboot request"
     false
 
   reboot: F '() => !', =>
     log -> 'rebooting...'
     @rebooter\reboot!
 
-class BumpVersion extends Packet
+export class MarshalBumpVersion extends Packet
   new: F '(Release) => <>', (@release) =>
-
-class RebootRequest extends Packet
 
 spec ->
   import TestUplinkBackend from require 'freight.peripheral.uplink'
@@ -182,14 +165,7 @@ spec ->
       release =
         file: 'freight'
         version: '9999999999999999'
-        content: [[
-          for i = 1, select('#', ...) do
-            if select(i, ...) == 'test' then
-              return
-            end
-          end
-          error("must pass 'test' to freight")
-        ]]
+        content: 'print("hello, world!")'
 
       sent = {}
       broadcasted = {}
