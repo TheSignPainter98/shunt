@@ -1,6 +1,10 @@
 local *
 
-macro build_date = ->
-  date = os.date '%Y-%m-%d@%H:%M:%S'
-  "\"#{date}\""
-export VERSION = "0.1 (#{$build_date!})"
+-- TODO(kcza): get version from tag
+
+macro version = ->
+  build_date = os.date '%Y-%m-%d@%H:%M:%S'
+  "'0.1 (#{build_date})'"
+
+-- NB: versions must be lexicographically ordered.
+export VERSION = $version!

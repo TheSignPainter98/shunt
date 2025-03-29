@@ -3,7 +3,7 @@ local *
 import F, declare_type, declare_singleton_type from require 'quicktype'
 import spec from require 'spec'
 
-TIMEOUT = <tostring>: => "Timeout"
+export TIMEOUT = <tostring>: => "Timeout"
 declare_singleton_type TIMEOUT
 
 declare_type 'UplinkBackend', [[{
@@ -20,6 +20,10 @@ declare_type 'Uplink', [[{
 }]]
 export class Uplink
   new: F '(?UplinkBackend) => <>', (@backend=MinecraftBackend!) =>
+    @deaf = false
+
+  deafen: F '() => <>', =>
+    @deaf = true
 
   broadcast: F '(Packet) => <>', (message) =>
     @backend\broadcast message, message\protocol!
@@ -36,12 +40,14 @@ export class Uplink
     @_receive_from from_id, message_type, opts
 
   _receive_from: F '(?number, ?Packet, ?UplinkReceiveOpts) => <?number, Packet|TIMEOUT>', (from_id, message_type, opts={}) =>
-    {:timeout=5} = opts
+    {:timeout} = opts
 
     local id, message, protocol
     protocol_filter = message_type?::protocol!
     while true
       id, message, protocol = @backend\receive protocol_filter, timeout
+      if @deaf
+        continue
 
       if not id?
         return nil, TIMEOUT
@@ -108,8 +114,10 @@ export class TestUplinkBackend
     @receive = F '(?string, ?number) => <?number, any, ?string>', receive
     @broadcast = F '(any, ?string) => <>', broadcast
 
-declare_type 'IdempotenceToken', '{}'
-export class IdempotenceToken
+declare_type 'IdempotenceToken', 'number'
+IDEMP_TOK_MAX = bit.lshift 1, 30
+export IdempotenceToken = F '() -> IdempotenceToken', ->
+  math.random 1, IDEMP_TOK_MAX
 
 spec ->
   import describe, expect_that, it, matchers from require 'spec'

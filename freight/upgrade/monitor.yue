@@ -1,0 +1,59 @@
+local *
+local CurrentReleaseRequest
+local CurrentReleaseResponse
+
+import log from require 'freight.logger'
+import IdempotenceToken, Packet, TIMEOUT from require 'freight.peripheral.uplink'
+import VERSION from require 'freight.version'
+import declare_type, F from require 'quicktype'
+
+declare_type 'UpgradeMonitorConfig', [[{
+  marshal: ?{},
+}]]
+
+export class UpgradeMonitor
+  new: F '(UpgradeMonitorConfig, Uplink) => <>', (config, @uplink) =>
+    @is_marshal = config.marshal?
+    @new_release = nil
+
+  upgrade_available: F '() => boolean', =>
+    if @is_marshal
+      return false
+
+    release = @get_latest_release!
+    if release.version <= VERSION
+      return false
+    @new_release = release
+    true
+
+  upgrade_now: F '() => !', =>
+    log -> "upgrading to version #{@new_release.version}"
+    @uplink\deafen!
+    with assert io.open @new_release.file, 'w+'
+      \write @new_release.content
+      assert \close!
+    os.reboot!
+
+  get_latest_release: F '() => Release', =>
+    attempt = 0
+    while true
+      attempt += 1
+      if attempt > 1
+        print "getting release from marshal, attempt #{attempt}"
+
+      idemp_tok = IdempotenceToken!
+      @uplink\broadcast CurrentReleaseRequest idemp_tok
+      marshal_id, pkt_or_err = @uplink\receive_from_any CurrentReleaseResponse, timeout: 10
+      if not marshal_id?
+        if pkt_or_err != TIMEOUT
+          print "ignoring error whilst getting update: #{pkt_or_err}"
+      else if pkt_or_err.idemp_tok != idemp_tok
+        continue
+      else
+        return pkt_or_err.release
+
+export class CurrentReleaseRequest extends Packet
+  new: F '(IdempotenceToken) => <>', (@idemp_tok) =>
+
+export class CurrentReleaseResponse extends Packet
+  new: F '(IdempotenceToken, Release) => <>', (@idemp_tok, @release) =>

@@ -1,0 +1,96 @@
+local *
+local MarshalBumpRelease
+
+import log from require 'freight.logger'
+import IdempotenceToken, Packet, TIMEOUT, Uplink from require 'freight.peripheral.uplink'
+import MinecraftRebooter, RebootRequest from require 'freight.upgrade.rebooter'
+import Tester from require 'freight.upgrade.tester'
+import F from require 'quicktype'
+import spec from require 'spec'
+
+export class Instigator using Tester
+  new: F '(?{}, Release, ?Uplink, ?Rebooter) => <>', (@config, @release, @uplink=Uplink!, @rebooter=MinecraftRebooter!) =>
+    if config?.marshal?
+      error 'cannot instigate upgrade from marshal'
+
+  upgrade: F '(?boolean) => <>', (prompt=true) =>
+    assert @test @release
+
+    if prompt
+      local resp
+      while resp != ''
+        print "ready to upgrade to version #{@release.version}"
+        print 'press [ENTER] to deploy'
+        resp = io.read '*l'
+    @bump_marshal @release
+
+    if @await_reboot_request!
+      @reboot!
+
+  bump_marshal: F '(Release) => <>', (release) =>
+    log -> 'bumping marshal...'
+    @uplink\broadcast MarshalBumpRelease release
+    return
+
+  await_reboot_request: F '() => boolean', =>
+    log -> 'awaiting reboot request...'
+    MAX_ATTEMPTS = 3
+    for i = 1, MAX_ATTEMPTS
+      print "awaiting reboot request (attempt #{i}/#{MAX_ATTEMPTS})"
+      ok, err = @uplink\receive_from_any RebootRequest, timeout: 5
+      if ok
+        return true
+      if err != TIMEOUT
+        error err
+    print "marshal did not issue reboot request"
+    false
+
+  reboot: F '() => !', =>
+    @rebooter\reboot!
+
+export class MarshalBumpRelease extends Packet
+  new: F '(Release) => <>', (@release) =>
+
+spec ->
+  import TestUplinkBackend from require 'freight.peripheral.uplink'
+  import describe, expect_that, it, matchers from require 'spec'
+  import deep_eq, errors, matches from matchers
+
+  class TestRebooter
+    @marker: 'REBOOTING'
+
+    reboot: =>
+      error @@marker
+
+  describe 'Instigator', ->
+    it 'instigates valid updates', ->
+      cfg = {}
+      release =
+        file: 'freight'
+        version: '9999999999999999'
+        content: 'print("hello, world!")'
+
+      sent = {}
+      broadcasted = {}
+      last_idemp_tok = nil
+      uplink = Uplink TestUplinkBackend
+        send: (id, packet, protocol) =>
+          send[] = :id, :packet, :protocol
+          last_idemp_tok = packet.idemp_tok
+          true
+        receive: do
+          i = 0
+          (protocol, id) =>
+            i += 1
+            1, RebootRequest!, RebootRequest\protocol!
+        broadcast: (packet, protocol) =>
+          broadcasted[] = :packet, :protocol
+
+      rebooter = TestRebooter!
+      upgrader = with Instigator cfg, release, uplink, rebooter
+        expect_that (-> \upgrade false), errors matches TestRebooter.marker
+      expect_that sent, deep_eq {}
+      expect_that broadcasted, deep_eq
+        * protocol: 'MarshalBumpRelease'
+          packet:
+            :release

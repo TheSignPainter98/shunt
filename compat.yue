@@ -1,12 +1,20 @@
 local *
 
+detect_host = ->
+  if collectgarbage?
+    'native'
+  else
+    'minecraft'
+export HOST = detect_host!
+export LUA = 'luajit'
+
 compat_applied = false
 export apply_compat = ->
   compat_applied = true
 
   os.tmpname ??= ->
     while true
-      f = ".lua_#{'%x'\format math.random 1, 100000}"
+      f = "lua_#{'%x'\format math.random 1, 100000}"
       with? io.open f, 'r'
         \close!
         continue
@@ -21,6 +29,34 @@ export apply_compat = ->
 
   os.rename ??= (src, dest) ->
     fs.move src, dest
+
+  os.exit ??= (code) ->
+    error "EXIT(#{code})"
+
+  if not fs?
+    global fs = {}
+
+  fs.makeDir ??= (path) ->
+    os.execute "mkdir -p '#{path}'"
+
+  fs.getFreeSpace ??= (path) ->
+    1000000
+
+  fs.getCapacity ??= (path) ->
+    1000000
+
+  if not shell?
+    global shell = {}
+
+  shell.execute ??= (...) ->
+    for i = 1, select '#', ...
+      assert 'string' == type select i, ...
+
+    args = [ "'#{arg}'" for arg in *{ LUA, ... } ]
+    rc = os.execute table.concat args, ' '
+    rc == 0
+
+  bit.lshift ??= bit.blshift
 
 export test_compat = ->
   if not compat_applied
@@ -43,6 +79,11 @@ export test_compat = ->
         with? io.open TEST_FILE, 'r'
           \close!
           error "expected test file '#{TEST_FILE}' to have been removed after calling os.remove"
+    * name: 'HOST is unchanged'
+      check: ->
+        host = detect_host!
+        if HOST != host
+          error "host detection heuristic changed"
   failed = false
   for test in *tests
     try

@@ -1,0 +1,16 @@
+local *
+
+import log from require 'freight.logger'
+import Packet from require 'freight.peripheral.uplink'
+import declare_type, F from require 'quicktype'
+
+declare_type 'Rebooter', [[{
+  reboot: () => !,
+}]]
+
+export class MinecraftRebooter
+  reboot: F '() => !', =>
+    log -> 'rebooting'
+    os.reboot!
+
+export class RebootRequest extends Packet

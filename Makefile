@@ -48,3 +48,7 @@ test: freight.lua $(OBJECTS)
 freight/version.lua: .FORCE
 .FORCE:
 .PHONY: .FORCE
+
+release: bin/freight ./scripts/release
+	./scripts/release $<
+.PHONY: release

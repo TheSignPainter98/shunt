@@ -1,0 +1,61 @@
+local *
+
+import Flag, Subcommand from require 'clap'
+import config from require 'freight.config'
+import log from require 'freight.logger'
+import Instigator from require 'freight.upgrade.instigator'
+import VERSION from require 'freight.version'
+import declare_type, F from require 'quicktype'
+import spec from require 'spec'
+
+export subcommand = with Subcommand 'upgrade'
+  \description 'upgrade all freight versions across all networks'
+  \add with Flag 'force'
+    \short nil
+    \description 'skip version check'
+  \add with Flag 'yes'
+    \description 'skip confirmation'
+
+export main = F '({}) -> <>', (args) ->
+  local release
+  RELEASE_REPO_URL = 'https://gitlab.legitcorp.com/kcza/freight/-/raw/master'
+  with ReleaseDownloader RELEASE_REPO_URL
+    release, err = \get_file 'freight'
+    if err?
+      error err
+  if not args.force and release.version <= VERSION
+    print 'already up to date'
+    return
+
+  with Instigator config!, release
+    \upgrade not args.yes
+  return
+
+export TMP_DIR = '.upgrade_tmp'
+
+declare_type 'Release', [[{
+  file: string,
+  version: string,
+  content: string,
+}]]
+
+class ReleaseDownloader
+  new: (@release_repo_url) =>
+
+  get_file: F '(string) => Release', (file) =>
+    log -> "getting #{file}..."
+
+    local content
+    with assert http.get "#{@release_repo_url}/#{file}"
+      content = \readAll!
+      \close!
+
+    version = nil
+    for v in content\gmatch [=[VERSION = ['"]([0-9][^'"]*)['"]]=]
+      if version?
+        error 'internal error: multiple versions found in downloaded file'
+      version = v
+    if not version?
+      error 'internal error: no version found in downloaded file'
+
+    :file, :version, :content

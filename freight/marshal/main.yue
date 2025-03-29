@@ -2,12 +2,13 @@ local *
 
 import log from require 'freight.logger'
 import Uplink from require 'freight.peripheral.uplink'
+import UpgradeListener from require 'freight.upgrade.listener'
 import StateMachineBuilder, StateSpec from require 'freight.state'
 import toml_parse from require 'freight.toml'
 import declare_type, F from require 'quicktype'
 
 export default_config = [=[
-[controller]
+[marshal]
 
 [[networks]]
 name = 'mainline'
@@ -15,15 +16,19 @@ description = 'default train network'
 ]=]
 
 export main = F '({}) -> <>', (config) ->
-  log -> 'starting controller'
+  log -> 'starting marshal'
 
   state = nil
   with? io.open '.freight-state.toml'
     state = toml_parse assert \read '*a'
     assert \close!
 
-  with Controller config, Uplink!
+  uplink = Uplink!
+  upgrade_listener = UpgradeListener config, uplink
+  with Marshal config, uplink, upgrade_listener
     \run!
+
+STEP_INTERVAL = 60
 
 declare_type 'Network', [[{
   name: string,
@@ -38,8 +43,8 @@ declare_type 'Train', [[{
   state: StateMachine,
 }]]
 
-class Controller
-  new: F '({}, Uplink) => <>', (@config, @uplink) =>
+class Marshal
+  new: F '({}, Uplink, UpgradeListener) => <>', (@config, @uplink, @upgrade_listener) =>
 
   @state_machine: F '() => StateMachine', =>
     StateMachineBuilder!
@@ -54,6 +59,10 @@ class Controller
       \build!
 
   run: F '(?StateMachine) => !', (state=@@state_machine!) =>
+    parallel.waitForAny @upgrade_listener\listen,
+      @\run_steps,
+
+  run_steps: F '() => !', =>
     @i = 1
     while true
       @step!
@@ -61,4 +70,4 @@ class Controller
   step: F '() => <>', =>
     print @i
     @i += 1
-    os.sleep 1
+    os.sleep STEP_INTERVAL

@@ -1,0 +1,35 @@
+local *
+
+import HOST, LUA from require 'compat'
+import F from require 'quicktype'
+
+export execute = F '(string, string...) -> boolean', (prog, ...) ->
+  cmd_parts = { prog, ... }
+  for cmd_part in *cmd_parts
+    if cmd_part\match '["\']'
+      error "cannot execute #{prog}: argument '#{cmd_part}' invalid"
+
+  switch HOST
+    when 'native'
+      execute_native prog, ...
+    when 'minecraft'
+      execute_minecraft prog, ...
+    else
+      error "internal error: unknown host #{HOST}"
+
+execute_native = F '(string, string...) -> boolean', (...) ->
+  if _VERSION == 'Lua 5.1'
+    rc = os.execute table.concat { LUA, ... }, ' '
+    return rc == 0
+
+  -- NB: The following doesn't work on luajit as \close! always returns true.
+  cmd = table.concat { LUA, ... }, ' '
+  local ok
+  with assert io.popen cmd
+    \read '*a' -- Await completion
+    ok, _, _ = \close!
+  ok ?? false
+
+execute_minecraft = F '(string, string...) -> boolean', (...) ->
+  rc = shell.execute ...
+  rc
