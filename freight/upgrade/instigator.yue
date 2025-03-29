@@ -11,7 +11,7 @@ import spec from require 'spec'
 export class Instigator using Tester
   new: F '(?{}, Release, ?Uplink, ?Rebooter) => <>', (@config, @release, @uplink=Uplink!, @rebooter=MinecraftRebooter!) =>
     if config?.marshal?
-      error 'cannot instigate upgrade from marshal computer'
+      error 'cannot instigate upgrade from marshal'
 
   upgrade: F '(?boolean) => <>', (prompt=true) =>
     assert @test @release
@@ -19,7 +19,8 @@ export class Instigator using Tester
     if prompt
       local resp
       while resp != ''
-        print 'press [ENTER] to deploy upgrade'
+        print "ready to upgrade to version #{@release.version}"
+        print 'press [ENTER] to deploy'
         resp = io.read '*l'
     @bump_marshal @release
 

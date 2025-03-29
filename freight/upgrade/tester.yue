@@ -8,8 +8,7 @@ import spec from require 'spec'
 export class Tester
   test: F '(Release) => <boolean, ?string>', (release) =>
     log -> 'testing...'
-    log ->
-      "writing #{#release.content} bytes into disk with #{fs.getFreeSpace '/'}/#{fs.getCapacity '/'}"
+    log -> "writing #{#release.content} bytes into disk with #{fs.getFreeSpace '/'}/#{fs.getCapacity '/'} free space"
 
     tmp_path = os.tmpname!
     with assert io.open tmp_path, 'w+'

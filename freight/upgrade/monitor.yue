@@ -2,6 +2,7 @@ local *
 local CurrentReleaseRequest
 local CurrentReleaseResponse
 
+import log from require 'freight.logger'
 import IdempotenceToken, Packet, TIMEOUT from require 'freight.peripheral.uplink'
 import VERSION from require 'freight.version'
 import declare_type, F from require 'quicktype'
@@ -26,6 +27,7 @@ export class UpgradeMonitor
     true
 
   upgrade_now: F '() => !', =>
+    log -> "upgrading to version #{@new_release.version}"
     @uplink\deafen!
     with assert io.open @new_release.file, 'w+'
       \write @new_release.content
