@@ -40,16 +40,7 @@ export class UpgradeListener using Tester
 
   listen_for_release_bumps: F '() => !', =>
     while true
-      _, pkt = @uplink\receive_from_any MarshalBumpRelease
-
-      import repr from require 'spec'
-      for key in pairs pkt
-        print 'k', key
-      print pkt\protocol!
-
-      {:release} = pkt
-      assert os.remove release.file -- TODO(kcza): DANGEROUS! Increase disk space
-
+      _, { :release } = @uplink\receive_from_any MarshalBumpRelease
       if #release.content > fs.getFreeSpace '/'
         error "cannot upgrade: too little space, need #{#release.content}, but only #{fs.getFreeSpace '/'}/#{fs.getCapacity '/'} available"
 

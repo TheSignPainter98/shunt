@@ -27,60 +27,6 @@ export class Instigator using Tester
     if @await_reboot_request!
       @reboot!
 
-  -- prime_local: F '(string) => <boolean, ?string>', (release) =>
-  --   log -> 'priming local...'
-  --   if not @fs\exists TMP_DIR
-  --     @fs\mkdir TMP_DIR
-  --   @fs\write "#{TMP_DIR}/freight", release
-  --   true, nil
-
-  -- prepare_remotes: F '({number->string}, string) => <boolean, ?string>', (remotes, release) =>
-  --   log -> 'preparing remote instances'
-  --
-  --   idemp_tok = IdempotenceToken!
-  --   @uplink\broadcast PrepareUpgradeRequest idemp_tok, release
-  --   responses = @collect_responses 1, PrepareUpgradeResponse, F '(Packet) -> boolean', (packet) ->
-  --     packet.idemp_tok == idemp_tok
-  --
-  --   true, nil
-
-  -- get_remotes: F '() => {number -> string}', =>
-  --   log -> 'finding remotes...'
-  --
-  --   idemp_tok = IdempotenceToken!
-  --   @uplink\broadcast DeclareSelfRequest idemp_tok
-  --   responses = @collect_responses 1, DeclareSelfResponse, F '(Packet) -> boolean', (packet) ->
-  --     packet.idemp_tok == idemp_tok
-  --
-  --   { from_id, packet for { :from_id, packet: { :name } } in *responses }
-
-  -- collect_responses: F '(number, Packet, (Packet) -> boolean) => [Packet]', (packet_type, window_seconds, filter) =>
-  --   with {}
-  --     abort = false
-  --     parallel.waitForAny
-  --       * ->
-  --         os.sleep window_seconds
-  --       * ->
-  --         while not abort
-  --           from_id, packet_or_error = @uplink\receive_from_any packet_type
-  --           if not from_id?
-  --             if packet_or_error == TIMEOUT
-  --               continue
-  --             error packet_or_error
-  --
-  --           if filter? and not filter packet_or_error
-  --             continue
-  --           [] = :from_id, packet: packet_or_error
-  --     abort = true
-
-  -- transition_local: F '() => <boolean, ?string>', =>
-  --   local err
-  --   try
-  --     @fs\move "#{TMP_DIR}/freight", 'freight'
-  --   catch err2
-  --     err = err2
-  --   not err?, err
-
   bump_marshal: F '(Release) => <>', (release) =>
     log -> 'bumping marshal...'
     @uplink\broadcast MarshalBumpRelease release
