@@ -1,23 +1,28 @@
 local *
 
-import Packet from require 'freight.peripheral.uplink'
+import log from require 'freight.logger'
+import CurrentReleaseRequest, CurrentReleaseResponse from require 'freight.upgrade.monitor'
 import MarshalBumpVersion from require 'freight.upgrade.instigator'
 import MinecraftRebooter, RebootRequest from require 'freight.upgrade.rebooter'
 import Tester from require 'freight.upgrade.tester'
-import declare_type, F from require 'quicktype'
+import VERSION from require 'freight.version'
+import declare_type, F, T from require 'quicktype'
 
+declare_type 'UpgradeListener', [[{
+  listen: () => !,
+}]]
 declare_type 'UpgradeListenerKind', '"leader"|"follower"'
-
 declare_type 'UpgradeListenerConfig', [[{
   marshal: ?{},
 }]]
-
 export class UpgradeListener using Tester
   new: F '(UpgradeListenerConfig, Uplink, ?Rebooter) => <>', (config, @uplink, @rebooter=MinecraftRebooter!) =>
     @kind = T 'UpgradeListenerKind', if config.marshal?
       'leader'
     else
       'follower'
+
+    @_current_release = nil
 
   listen: F '() => !', =>
     switch @kind
@@ -29,16 +34,56 @@ export class UpgradeListener using Tester
         error "internal error: unknown listener kind '#{@kind}'"
 
   listen_as_leader: F '() => !', =>
+    log -> "listening for upgrades as leader"
+    parallel.waitForAny @\listen_for_release_bumps,
+      @\listen_for_release_requests
+
+  listen_for_release_bumps: F '() => !', =>
     while true
-      _, { :release } = @uplink\receive_from_any MarshalBumpVersion
+      _, { :release } = @uplink\receive_from_any MarshalBumpBinary
+      assert os.remove release.file -- TODO(kcza): DANGEROUS! Increase disk space
+
+      if #release.content > fs.getFreeSpace '/'
+        error "cannot upgrade: too little space, need #{#release.content}, but only #{fs.getFreeSpace '/'}/#{fs.getCapacity '/'} available"
+
       ok, err = @test release
       if not ok
         print "cannot apply update: #{err}"
         continue
-      -- TODO(kcza): set the current release version!
+
+      print "bumping release to version #{release.version}"
+      @_current_release = release
+      with assert io.open release.file, 'w+'
+        \write release.content
+        assert \close!
+
+      print "issuing reboot broadcast"
+      @uplink\deafen!
       @uplink\broadcast RebootRequest!
       @rebooter\reboot!
 
+  listen_for_release_requests: F '() => !', =>
+    while true
+      requester_id, _ = @uplink\receive_from_any CurrentReleaseRequest
+      print "sending current release info to ##{requester_id}"
+      @uplink\send CurrentReleaseResponse @current_release
+
+  current_release: F '() => Release', =>
+    if @kind != 'leader'
+      error 'internal error: non-leader requested current release'
+    if @_current_release?
+      return @_current_release
+
+    content = do
+      local content
+      with assert io.open 'freight', 'r'
+        content = assert \read '*a'
+        assert \close!
+      content
+    @_current_release = name: 'freight', version: VERSION, :content
+    @_current_release
+
   listen_as_follower: F '() => !', =>
+    log -> "listening for upgrades as follower"
     @uplink\receive_from_any RebootRequest!
     @rebooter\reboot!

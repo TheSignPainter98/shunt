@@ -29,5 +29,4 @@ export main = F '({}) -> <>', (args) ->
 export _startup_script = [[
 shell.run('set motd.enable false')
 shell.run('freight start')
-shell.exit()
 ]]

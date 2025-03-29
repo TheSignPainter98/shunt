@@ -28,6 +28,8 @@ export main = F '({}) -> <>', (config) ->
   with Marshal config, uplink, upgrade_listener
     \run!
 
+STEP_INTERVAL = 60
+
 declare_type 'Network', [[{
   name: string,
   factories: [Factory],
@@ -57,8 +59,8 @@ class Marshal
       \build!
 
   run: F '(?StateMachine) => !', (state=@@state_machine!) =>
-    parallel.waitForAny @\run_steps,
-      @upgrade_listener\listen,
+    parallel.waitForAny @upgrade_listener\listen,
+      @\run_steps,
 
   run_steps: F '() => !', =>
     @i = 1
@@ -68,4 +70,4 @@ class Marshal
   step: F '() => <>', =>
     print @i
     @i += 1
-    os.sleep 1
+    os.sleep STEP_INTERVAL

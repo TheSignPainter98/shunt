@@ -2,6 +2,8 @@ local *
 
 import Flag, Subcommand from require 'clap'
 import config from require 'freight.config'
+import Uplink from require 'freight.peripheral.uplink'
+import UpgradeMonitor from require 'freight.upgrade.monitor'
 import F from require 'quicktype'
 
 display = require 'freight.display.main'
@@ -21,6 +23,10 @@ export main = F '({}) -> <>', (args) ->
   if not cfg?
     print 'cannot start freight: config missing\ntry running `freight init <instance-type>` first'
     return
+
+  with UpgradeMonitor cfg, Uplink!
+    if \upgrade_available!
+      \upgrade_now!
 
   to_spam = if cfg.marshal?
     -> marshal.main cfg

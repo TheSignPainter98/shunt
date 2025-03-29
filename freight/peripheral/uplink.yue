@@ -20,6 +20,10 @@ declare_type 'Uplink', [[{
 }]]
 export class Uplink
   new: F '(?UplinkBackend) => <>', (@backend=MinecraftBackend!) =>
+    @deaf = false
+
+  deafen: F '() => <>', =>
+    @deaf = true
 
   broadcast: F '(Packet) => <>', (message) =>
     @backend\broadcast message, message\protocol!
@@ -42,6 +46,8 @@ export class Uplink
     protocol_filter = message_type?::protocol!
     while true
       id, message, protocol = @backend\receive protocol_filter, timeout
+      if @deaf
+        continue
 
       if not id?
         return nil, TIMEOUT

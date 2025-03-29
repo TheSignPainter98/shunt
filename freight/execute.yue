@@ -8,7 +8,6 @@ export execute = F '(string, string...) -> boolean', (prog, ...) ->
   for cmd_part in *cmd_parts
     if cmd_part\match '["\']'
       error "cannot execute #{prog}: argument '#{cmd_part}' invalid"
-  print "running #{table.concat cmd_parts, ' '}"
 
   switch HOST
     when 'native'

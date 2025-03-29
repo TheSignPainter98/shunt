@@ -89,8 +89,7 @@ export class Instigator using Tester
     log -> 'awaiting reboot request...'
     MAX_ATTEMPTS = 3
     for i = 1, MAX_ATTEMPTS
-      if i > 1
-        print "awaiting reboot request (attempt #{i}/#{MAX_ATTEMPTS})"
+      print "awaiting reboot request (attempt #{i}/#{MAX_ATTEMPTS})"
       ok, err = @uplink\receive_from_any RebootRequest, timeout: 5
       if ok
         return true

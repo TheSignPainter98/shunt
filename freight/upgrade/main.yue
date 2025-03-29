@@ -13,6 +13,8 @@ export subcommand = with Subcommand 'upgrade'
   \add with Flag 'force'
     \short nil
     \description 'skip version check'
+  \add with Flag 'yes'
+    \description 'skip confirmation'
 
 export main = F '({}) -> <>', (args) ->
   local release
@@ -26,7 +28,7 @@ export main = F '({}) -> <>', (args) ->
     return
 
   with Instigator config!, release
-    \upgrade!
+    \upgrade not args.yes
   return
 
 export TMP_DIR = '.upgrade_tmp'
