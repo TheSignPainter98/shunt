@@ -1,10 +1,30 @@
 local *
 
--- TODO(kcza): get version from tag
+import spec from require 'spec'
 
 macro version = ->
-  build_date = os.date '%Y-%m-%d@%H:%M:%S'
-  "'0.1 (#{build_date})'"
+  local version_string
+  with assert io.open '.version.txt', 'r'
+    version_string = assert \read '*l'
+    assert \close!
+  "'#{version_string}'"
 
 -- NB: versions must be lexicographically ordered.
 export VERSION = $version!
+
+spec ->
+  import describe, expect_that, it, matchers from require 'spec'
+  import lt from matchers
+
+  describe 'version', ->
+    it 'has a standard form', ->
+      if VERSION\match '^%d+%.%d+$'
+        return
+      if VERSION\match '^%d+%.%d+ %(%d%d%d%d-%d%d-%d%d@%d%d:%d%d:%d%d%)$'
+        return
+      error "version '#{VERSION}'does not have a standard form"
+
+    it 'is ordered', ->
+      lesser = '0.1'
+      greater = '0.1 (2025-01-01@12:00:00)'
+      expect_that lesser, lt greater

@@ -1,0 +1,11 @@
+#!/bin/bash
+
+latest_tag=$(git describe --tags $(git rev-list --tags --max-count 1))
+if git describe --tags HEAD >/dev/null 2>/dev/null; then
+	# The project is in a release build state
+	echo $latest_tag
+else
+	# The project is in a debug build state
+	date=$(date +%Y-%m-%d@%H:%M:%S)
+	echo "$latest_tag ($date)"
+fi

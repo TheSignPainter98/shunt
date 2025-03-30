@@ -45,7 +45,11 @@ test: freight.lua $(OBJECTS)
 	@$(LUA) $< test
 .PHONY: .FORCE
 
-freight/version.lua: .FORCE
+freight/version.lua: .version.txt
+
+.version.txt: scripts/version .FORCE
+	./$< > $@
+
 .FORCE:
 .PHONY: .FORCE
 
