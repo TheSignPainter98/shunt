@@ -17,6 +17,9 @@ export class Pc
   name: F '() => string', =>
     @backend\name!
 
+  set_name: F '(string) => <>', (name) =>
+    @backend\set_name name
+
 class MinecraftBackend
   id: F '() => number', =>
     os.getComputerId!
@@ -24,9 +27,13 @@ class MinecraftBackend
   name: F '() => string', =>
     os.getComputerLabel!
 
+  set_name: F '(string) => <>', (name) =>
+    os.setComputerLabel name
+
 declare_type 'TestPcBackendOpts', [[{
   id: ?() => number,
   name: ?() => string,
+  set_name: ?(string) => <>,
 }]]
 
 export class TestPcBackend
@@ -34,9 +41,11 @@ export class TestPcBackend
     {
       :id=-> error 'id unimplemented'
       :name=-> error 'name unimplemented'
+      :set_name=-> error 'set_name unimplemented'
     } = opts
     @id = F '() => number', id
     @name = F '() => string', name
+    @set_name = F '(string) => <>', set_name
 
 spec ->
   import describe, expect_that, it, matchers from require 'spec'

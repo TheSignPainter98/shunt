@@ -26,6 +26,9 @@ export main = F '({}) -> <>', (config) ->
 
 class Factory
   new: F '({}, Pc, [Station], Stockpile, Uplink) => <>', (@config, @pc, @stations, @stockpile, @uplink) =>
+    name = @name!
+    if @pc\name! != name
+      @pc\set_name name
 
   name: F '() => string', =>
     @config.factory.name
@@ -126,6 +129,26 @@ spec ->
   import deep_eq, eq, has_fields, len from matchers
 
   describe 'Factory', ->
+    it 'resolves label and name mismatches', ->
+      CONFIG_NAME = 'config-name'
+      PC_NAME = 'pc-name'
+      new_name = nil
+
+      config =
+        factory:
+          name: CONFIG_NAME
+      pc = Pc TestPcBackend
+        name: => PC_NAME
+        set_name: (name) =>
+          new_name = name
+      stations = {}
+      stockpile = Stockpile TestStockpileBackend!
+      uplink = Uplink TestUplinkBackend!
+
+      Factory config, pc, stations, stockpile, uplink
+
+      expect_that new_name, eq CONFIG_NAME
+
     it 'responds to stockpile requests', ->
       sent = {}
       SERVER_ID = 12345
@@ -133,7 +156,9 @@ spec ->
 
       PC_ID = 54321
       PC_NAME = 'test-pc-name'
-      config = {}
+      config =
+        factory:
+          name: PC_NAME
       stations =
         * Station TestStationBackend!
       pc = Pc TestPcBackend
