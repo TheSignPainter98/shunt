@@ -14,18 +14,29 @@ name = '<factory-name>'
 network = 'mainline'
 
 [[stations]]
-name = '<station-name>'
-# produces = '<resource-name>'
-# consumes = '<resource-name>'
+name = 'station-1'
+role = 'requester' # or 'supplier'
+handles = '<resource-id>'
 ]=]
 
-export main = F '({}) -> <>', (config) ->
+export main = F '(FactoryConfig) -> <>', (config) ->
   print 'starting factory'
   with Factory config, {Station!}, Stockpile!, Uplink!
     \run!
 
+declare_type 'FactoryConfig', [[{
+  factory: {
+    name: string,
+    network: string,
+  },
+  stations: [{
+    name: string,
+    role: "requester"|"supplier",
+    handles: string,
+  }],
+}]]
 class Factory
-  new: F '({}, Pc, [Station], Stockpile, Uplink) => <>', (@config, @pc, @stations, @stockpile, @uplink) =>
+  new: F '(FactoryConfig, Pc, [Station], Stockpile, Uplink) => <>', (@config, @pc, @stations, @stockpile, @uplink) =>
     name = @name!
     if @pc\name! != name
       @pc\set_name name
@@ -137,6 +148,8 @@ spec ->
       config =
         factory:
           name: CONFIG_NAME
+          network: 'mainline'
+        stations: {}
       pc = Pc TestPcBackend
         name: => PC_NAME
         set_name: (name) =>
@@ -159,6 +172,8 @@ spec ->
       config =
         factory:
           name: PC_NAME
+          network: 'mainline'
+        stations: {}
       stations =
         * Station TestStationBackend!
       pc = Pc TestPcBackend
@@ -217,6 +232,8 @@ spec ->
       config =
         factory:
           name: PC_NAME
+          network: 'mainline'
+        stations: {}
       pc = Pc TestPcBackend
         id: => PC_ID
         name: => PC_NAME
@@ -268,6 +285,8 @@ spec ->
       config =
         factory:
           name: FACTORY_NAME
+          network: 'mainline'
+        stations: {}
       pc = Pc TestPcBackend
         id: => PC_ID
         name: => FACTORY_NAME
@@ -304,6 +323,8 @@ spec ->
       config =
         factory:
           name: PC_NAME
+          network: 'mainline'
+        stations: {}
       pc = Pc TestPcBackend
         id: => PC_ID
         name: => PC_NAME
@@ -380,6 +401,8 @@ spec ->
         config =
           factory:
             name: PC_NAME
+            network: 'mainline'
+          stations: {}
         pc = Pc TestPcBackend
           id: => PC_ID
           name: => PC_NAME
