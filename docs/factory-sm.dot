@@ -41,8 +41,6 @@ digraph {
 	reporting_train_scheduled -> waiting [label="train_scheduled_reported()"]
 
 	reporting_train_schedule_failed -> waiting [label="train_schedule_failure_reported()"]
-
-	// TODO(kcza): detect train status!
 }
 // digraph {
 // 	init[shape=point]
