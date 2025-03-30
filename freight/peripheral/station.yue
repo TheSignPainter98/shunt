@@ -8,9 +8,9 @@ declare_type 'StationBackend', [[{
   set_name: (StationName) => <>,
   train_present: () => boolean,
   train_enroute: () => boolean,
-  train_has_schedule: () => boolean,
-  train_schedule: () => Schedule,
-  train_set_schedule: (Schedule) => <>,
+  train_has_schedule: () => ?boolean,
+  train_schedule: () => ?Schedule,
+  train_set_schedule: (Schedule) => boolean,
   train_name: () => ?string,
 }]]
 declare_type 'StationName', 'string'
@@ -40,7 +40,7 @@ declare_type 'Resource', [[{
 declare_type 'Station', [[{
   name: () => StationName,
   train_present: () => boolean,
-  apply_schedule: (Schedule) => <>,
+  apply_schedule: (Schedule) => boolean,
 }]]
 declare_type 'StationInfo', [[{
   name: StationName,
@@ -60,7 +60,7 @@ export class Station
       .name = @backend\name!
       .train_name = @backend\train_name!
 
-  apply_schedule: F '(Schedule) => <>', (schedule) =>
+  apply_schedule: F '(Schedule) => boolean', (schedule) =>
     @backend\train_set_schedule schedule
 
 time_units =
@@ -104,19 +104,35 @@ class MinecraftBackend
   train_enroute: F '() => boolean', =>
     @station\isTrainEnroute!
 
-  train_has_schedule: F '() => boolean', =>
-    @station\hasSchedule!
+  train_has_schedule: F '() => ?boolean', =>
+    ret = nil
+    try
+      ret = @station\hasSchedule!
+    catch _
+      -- Ignore
+    return ret
 
-  train_schedule: F '() => Schedule', =>
-    @station\getSchedule!
+  train_schedule: F '() => ?Schedule', =>
+    schedule = nil
+    try
+      schedule = @station\getSchedule!
+    catch _
+      -- Ignore
+    return schedule
 
-  train_set_schedule: F '(Schedule) => <>', (schedule) =>
-    @station\setSchedule schedule
+  train_set_schedule: F '(Schedule) => boolean', (schedule) =>
+    local ret
+    try
+      @station\setSchedule schedule
+      ret = true
+    catch _
+      ret = false
+    return ret
 
   train_name: F '() => ?string', =>
     name = nil
     try
-      @station\getTrainName!
+      name = @station\getTrainName!
     catch err
       -- Ignore
     name
@@ -126,9 +142,9 @@ declare_type 'TestStationBackendOpts', [[{
   set_name: ?(StationName) => <>,
   train_present: ?() => boolean,
   train_enroute: ?() => boolean,
-  train_has_schedule: ?() => boolean,
-  train_schedule: ?() => Schedule,
-  train_set_schedule: ?(Schedule) => <>,
+  train_has_schedule: ?() => ?boolean,
+  train_schedule: ?() => ?Schedule,
+  train_set_schedule: ?(Schedule) => boolean,
   train_name: ?() => ?string,
 }]]
 export class TestStationBackend
@@ -138,7 +154,7 @@ export class TestStationBackend
       :set_name=-> error 'set_name unimplemented'
       :train_present=-> error 'train_present unimplemented'
       :train_enroute=-> error 'train_enroute unimplemented'
-      :train_has_schedule=-> error 'train_set_schedule unimplemented'
+      :train_has_schedule=-> error 'train_has_schedule unimplemented'
       :train_schedule=-> error 'train_schedule unimplemented'
       :train_set_schedule=-> error 'train_set_schedule unimplemented'
       :train_name=-> error 'train_name unimplemented'
@@ -147,9 +163,9 @@ export class TestStationBackend
     @set_name = F '(StationName) => <>', set_name
     @train_present = F '() => boolean', train_present
     @train_enroute = F '() => boolean', train_enroute
-    @train_has_schedule = F '() => boolean', train_has_schedule
-    @train_schedule = F '() => Schedule', train_schedule
-    @train_set_schedule = F '(Schedule) => <>', train_set_schedule
+    @train_has_schedule = F '() => ?boolean', train_has_schedule
+    @train_schedule = F '() => ?Schedule', train_schedule
+    @train_set_schedule = F '(Schedule) => boolean', train_set_schedule
     @train_name = F '() => ?string', train_name
 
 spec ->
@@ -163,7 +179,7 @@ spec ->
         station = Station TestStationBackend
           train_set_schedule: (schedule) =>
             T 'Schedule', schedule
-            return
+            return true
 
         valid_schedule =
           cyclic: false

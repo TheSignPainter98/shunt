@@ -242,6 +242,7 @@ spec ->
           name: => STATION_NAME
           train_set_schedule: (schedule) =>
             applied_schedules[] = schedule
+            true
       stockpile = Stockpile TestStockpileBackend!
       uplink = Uplink TestUplinkBackend
         send: (recipient, message, protocol) =>
