@@ -9,13 +9,10 @@ import declare_type, F from require 'quicktype'
 
 export default_config = [=[
 [marshal]
-
-[[networks]]
-name = 'mainline'
-description = 'default train network'
+network = 'mainline'
 ]=]
 
-export main = F '({}) -> <>', (config) ->
+export main = F '(MarshalConfig) -> <>', (config) ->
   log -> 'starting marshal'
 
   state = nil
@@ -43,8 +40,13 @@ declare_type 'Train', [[{
   state: StateMachine,
 }]]
 
+declare_type 'MarshalConfig', [[{
+  marshal: {
+    network: string,
+  },
+}]]
 class Marshal
-  new: F '({}, Uplink, UpgradeListener) => <>', (@config, @uplink, @upgrade_listener) =>
+  new: F '(MarshalConfig, Uplink, UpgradeListener) => <>', (@config, @uplink, @upgrade_listener) =>
 
   @state_machine: F '() => StateMachine', =>
     StateMachineBuilder!

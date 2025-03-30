@@ -11,8 +11,12 @@ export default_config = [=[
 retained-events = 1000
 ]=]
 
--- TODO(kcza): define config
-export main = F '({}) -> <>', (config) ->
+declare_type 'LedgerConfig', [[{
+  ledger: {
+    retained-events: number,
+  },
+}]]
+export main = F '(LedgerConfig) -> <>', (config) ->
   print 'hello, ledger!'
   return
   -- term_width, term_height = term?.getSize!
