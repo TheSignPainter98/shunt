@@ -45,7 +45,7 @@ class Factory
     @config.factory.name
 
   run: F '() => !', =>
-    -- TODO(kcza): register self, repeat every 10s until ready
+    @send_heartbeat!
     parallel.waitForAny @\run_steps,
       @\run_heartbeats
 
