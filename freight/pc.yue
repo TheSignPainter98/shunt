@@ -1,0 +1,56 @@
+local *
+
+import declare_type, F from require 'quicktype'
+import spec from require 'spec'
+
+declare_type 'Pc', [[{
+  id: () => number,
+  name: () => string,
+}]]
+declare_type 'PcBackend', 'Pc'
+export class Pc
+  new: F '(?PcBackend) => <>', (@backend=MinecraftBackend!) =>
+
+  id: F '() => number', =>
+    @backend\id!
+
+  name: F '() => string', =>
+    @backend\name!
+
+class MinecraftBackend
+  id: F '() => number', =>
+    os.getComputerId!
+
+  name: F '() => string', =>
+    os.getComputerLabel!
+
+declare_type 'TestPcBackendOpts', [[{
+  id: ?() => number,
+  name: ?() => string,
+}]]
+
+export class TestPcBackend
+  new: F '(?TestPcBackendOpts) => <>', (opts={}) =>
+    {
+      :id=-> error 'id unimplemented'
+      :name=-> error 'name unimplemented'
+    } = opts
+    @id = F '() => number', id
+    @name = F '() => string', name
+
+spec ->
+  import describe, expect_that, it, matchers from require 'spec'
+  import eq from matchers
+
+  describe 'Pc', ->
+    it 'reports its id', ->
+      ID = 54321
+      pc = Pc TestPcBackend
+        id: => ID
+      expect_that pc\id!, eq ID
+
+    it 'reports its name', ->
+      NAME = 'test-pc-name'
+      pc = Pc TestPcBackend
+        name: => NAME
+      expect_that pc\name!, eq NAME

@@ -4,6 +4,7 @@ import log from require 'freight.logger'
 import Station from require 'freight.peripheral.station'
 import Stockpile from require 'freight.peripheral.stockpile'
 import IdempotenceToken, Packet, Uplink from require 'freight.peripheral.uplink'
+import Pc from require 'freight.pc'
 import declare_type, F from require 'quicktype'
 import spec from require 'spec'
 
@@ -24,13 +25,17 @@ export main = F '({}) -> <>', (config) ->
     \run!
 
 class Factory
-  new: F '({}, [Station], Stockpile, Uplink) => <>', (@config, @stations, @stockpile, @uplink) =>
+  new: F '({}, Pc, [Station], Stockpile, Uplink) => <>', (@config, @pc, @stations, @stockpile, @uplink) =>
 
   name: F '() => string', =>
     @config.factory.name
 
   run: F '() => !', =>
     -- TODO(kcza): register self, repeat every 10s until ready
+    parallel.waitForAny @\run_steps,
+      @\run_heartbeats
+
+  run_steps: F '() => !', =>
     while true
       @step!
 
@@ -81,6 +86,16 @@ class Factory
     response = InfoResponse request.idemp_tok, @name!, station_infos, stockpile_info
     @uplink\send_to requester, response
 
+  run_heartbeats: F '() => !', =>
+    HEARTBEAT_PERIOD = 10
+    while true
+      @send_heartbeat!
+      os.sleep HEARTBEAT_PERIOD
+
+  send_heartbeat: F '() => <>', =>
+    station_names = [ station\name! for station in *@stations ]
+    @uplink\broadcast FactoryHeartbeat @pc\id!, @name!, station_names
+
 class StockpileRequest extends Packet
   new: F '(IdempotenceToken) => <>', (@idemp_tok) =>
 
@@ -99,10 +114,14 @@ class InfoRequest extends Packet
 class InfoResponse extends Packet
   new: F '(IdempotenceToken, string, [StationInfo], StockpileInfo) => <>', (@idemp_tok, @name, @station_infos, @stockpile_info) =>
 
+class FactoryHeartbeat extends Packet
+  new: F '(number, string, [string]) => <>', (@pc_id, @name, @station_names) =>
+
 spec ->
   import TestStationBackend from require 'freight.peripheral.station'
   import TestStockpileBackend from require 'freight.peripheral.stockpile'
   import TestUplinkBackend from require 'freight.peripheral.uplink'
+  import TestPcBackend from require 'freight.pc'
   import assert_that, describe, expect_that, it, matchers from require 'spec'
   import deep_eq, eq, has_fields, len from matchers
 
@@ -112,9 +131,14 @@ spec ->
       SERVER_ID = 12345
       idemp_tok = IdempotenceToken!
 
+      PC_ID = 54321
+      PC_NAME = 'test-pc-name'
       config = {}
       stations =
         * Station TestStationBackend!
+      pc = Pc TestPcBackend
+        id: => PC_ID
+        name: => PC_NAME
       stockpile = Stockpile TestStockpileBackend
         size: => 1
         slot_content: (i) =>
@@ -133,7 +157,7 @@ spec ->
         send: (recipient, message, protocol) =>
           sent[] = :recipient, :message, :protocol
           true
-      factory = Factory config, stations, stockpile, uplink
+      factory = Factory config, pc, stations, stockpile, uplink
 
       for _ = 1, 10
         factory\step!
@@ -164,9 +188,13 @@ spec ->
               data: text: STATION_NAME
             conditions: {}
 
+      PC_NAME = 'test-factory-name'
       config =
         factory:
-          name: 'test-factory-name'
+          name: PC_NAME
+      pc = Pc TestPcBackend
+        id: => PC_ID
+        name: => PC_NAME
       stations =
         * Station TestStationBackend
           name: => STATION_NAME
@@ -184,7 +212,7 @@ spec ->
             SERVER_ID, (ScheduleRequest idemp_tok, STATION_NAME, schedule), ScheduleRequest\protocol!
           else
             nil, nil, nil
-      factory = Factory config, stations, stockpile, uplink
+      factory = Factory config, pc, stations, stockpile, uplink
 
       for _ = 1, 10
         factory\step!
@@ -215,6 +243,9 @@ spec ->
       config =
         factory:
           name: FACTORY_NAME
+      pc = Pc TestPcBackend
+        id: => PC_ID
+        name: => FACTORY_NAME
       stations = {}
       stockpile = Stockpile TestStockpileBackend!
       uplink = Uplink TestUplinkBackend
@@ -228,7 +259,7 @@ spec ->
             SERVER_ID, (ScheduleRequest idemp_tok, STATION_NAME, schedule), ScheduleRequest\protocol!
           else
             nil, nil, nil
-      factory = Factory config, stations, stockpile, uplink
+      factory = Factory config, pc, stations, stockpile, uplink
 
       for _ = 1, 10
         factory\step!
@@ -244,9 +275,13 @@ spec ->
       SERVER_ID = 12345
       idemp_tok = IdempotenceToken!
 
+      PC_NAME = 'test-factory-name'
       config =
         factory:
-          name: 'test-factory-name'
+          name: PC_NAME
+      pc = Pc TestPcBackend
+        id: => PC_ID
+        name: => PC_NAME
       stations =
         * Station TestStationBackend
             name: => 'test-station-name'
@@ -276,7 +311,7 @@ spec ->
         send: (recipient, message, protocol) =>
           sent[] = :recipient, :message, :protocol
           true
-      factory = Factory config, stations, stockpile, uplink
+      factory = Factory config, pc, stations, stockpile, uplink
 
       for _ = 1, 10
         factory\step!
@@ -308,3 +343,41 @@ spec ->
             stored: eq 32
             capacity: eq 64
         protocol: eq InfoResponse\protocol!
+
+    describe '\\send_heartbeat', ->
+      it 'sends a heartbeat', ->
+        sent = {}
+        broadcasted = {}
+        SERVER_ID = 12345
+        PC_ID = 54321
+        PC_NAME = 'test-factory-name'
+
+        config =
+          factory:
+            name: PC_NAME
+        pc = Pc TestPcBackend
+          id: => PC_ID
+          name: => PC_NAME
+        stations =
+          * Station TestStationBackend
+              name: => 'test-station-1'
+          * Station TestStationBackend
+              name: => 'test-station-2'
+        stockpile = Stockpile TestStockpileBackend!
+        uplink = Uplink TestUplinkBackend
+          send: (recipient, message, protocol) =>
+            sent[] = :recipient, :message, :protocol
+            true
+          broadcast: (message, protocol) =>
+            broadcasted[] = :message, :protocol
+        with Factory config, pc, stations, stockpile, uplink
+          \send_heartbeat!
+
+        expect_that sent, deep_eq {}
+
+        expect_that broadcasted, len eq 1
+        expect_that broadcasted[1], has_fields
+          protocol: eq FactoryHeartbeat\protocol!
+          message: do
+            station_names = [ station\name! for station in *stations ]
+            deep_eq FactoryHeartbeat PC_ID, PC_NAME, station_names
