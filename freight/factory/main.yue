@@ -57,7 +57,21 @@ class Factory
 
   on_schedule_request: F '(number, Packet) => <>', (requester, request) =>
     log -> 'handling schedule request'
-    error 'todo'
+
+    { :idemp_tok, :station_name, :schedule } = request
+    station = @get_station station_name
+    if not station?
+      @uplink\send_to requester, ScheduleResponse idemp_tok, "no such station: #{station_name} at #{@name!}"
+      return
+
+    station\apply_schedule schedule
+    @uplink\send_to requester, ScheduleResponse idemp_tok, nil
+
+  get_station: F '(string) => ?Station', (name) =>
+    for station in *@stations
+      if station\name! == name
+        return station
+    nil
 
   on_info_request: F '(number, Packet) => <>', (requester, request) =>
     log -> 'handling info request'
@@ -74,7 +88,7 @@ class StockpileResponse extends Packet
   new: F '(IdempotenceToken, StockpileInfo) => <>', (@idemp_tok, @info) =>
 
 class ScheduleRequest extends Packet
-  new: F '(IdempotenceToken, Schedule) => <>', (@idemp_tok, @schedule) =>
+  new: F '(IdempotenceToken, string, Schedule) => <>', (@idemp_tok, @station_name, @schedule) =>
 
 class ScheduleResponse extends Packet
   new: F '(IdempotenceToken, ?string) => <>', (@idemp_tok, @error_reason) =>
@@ -134,6 +148,96 @@ spec ->
             stored: eq 32
             capacity: eq 64
         protocol: eq StockpileResponse\protocol!
+
+    it 'responds to valid schedule requests', ->
+      sent = {}
+      SERVER_ID = 12345
+      idemp_tok = IdempotenceToken!
+      applied_schedules = {}
+
+      STATION_NAME = 'test-station-name'
+      schedule =
+        cyclic: false
+        entries:
+          * instruction:
+              id: 'create:destination'
+              data: text: STATION_NAME
+            conditions: {}
+
+      config =
+        factory:
+          name: 'test-factory-name'
+      stations =
+        * Station TestStationBackend
+          name: => STATION_NAME
+          train_set_schedule: (schedule) =>
+            applied_schedules[] = schedule
+      stockpile = Stockpile TestStockpileBackend!
+      uplink = Uplink TestUplinkBackend
+        send: (recipient, message, protocol) =>
+          sent[] = :recipient, :message, :protocol
+          true
+        receive: (_, _) =>
+          @count ??= 1
+          if @count <= 1
+            @count += 1
+            SERVER_ID, (ScheduleRequest idemp_tok, STATION_NAME, schedule), ScheduleRequest\protocol!
+          else
+            nil, nil, nil
+      factory = Factory config, stations, stockpile, uplink
+
+      for _ = 1, 10
+        factory\step!
+
+      expect_that sent, deep_eq
+        * recipient: SERVER_ID
+          protocol: ScheduleResponse\protocol!
+          message: ScheduleResponse idemp_tok, nil
+      expect_that applied_schedules, len eq 1
+      expect_that applied_schedules, deep_eq {schedule}
+
+    it 'responds to invalid schedule requests', ->
+      sent = {}
+      SERVER_ID = 12345
+      idemp_tok = IdempotenceToken!
+      applied_schedules = {}
+
+      STATION_NAME = 'test-station-name'
+      schedule =
+        cyclic: false
+        entries:
+          * instruction:
+              id: 'create:destination'
+              data: text: STATION_NAME
+            conditions: {}
+
+      FACTORY_NAME = 'test-factory-name'
+      config =
+        factory:
+          name: FACTORY_NAME
+      stations = {}
+      stockpile = Stockpile TestStockpileBackend!
+      uplink = Uplink TestUplinkBackend
+        send: (recipient, message, protocol) =>
+          sent[] = :recipient, :message, :protocol
+          true
+        receive: (_, _) =>
+          @count ??= 1
+          if @count <= 1
+            @count += 1
+            SERVER_ID, (ScheduleRequest idemp_tok, STATION_NAME, schedule), ScheduleRequest\protocol!
+          else
+            nil, nil, nil
+      factory = Factory config, stations, stockpile, uplink
+
+      for _ = 1, 10
+        factory\step!
+
+      expect_that sent, deep_eq
+        * recipient: SERVER_ID
+          protocol: ScheduleResponse\protocol!
+          message: ScheduleResponse idemp_tok, "no such station: #{STATION_NAME} at #{FACTORY_NAME}"
+      expect_that applied_schedules, deep_eq {}
 
     it 'responds to info requests', ->
       sent = {}
