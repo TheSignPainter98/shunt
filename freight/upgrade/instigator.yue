@@ -68,7 +68,7 @@ spec ->
       release =
         file: 'freight'
         version: '9999999999999999'
-        content: 'print("hello, world!")'
+        content: ''
 
       sent = {}
       broadcasted = {}

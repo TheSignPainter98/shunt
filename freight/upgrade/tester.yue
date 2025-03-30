@@ -44,30 +44,36 @@ spec ->
       expect_that ok, eq true
       expect_that err, eq nil
 
-    it 'rejects invalid releases', ->
-      release =
-        file: 'freight'
-        version: '12345'
-        content: [[
-          error('MARKER_ERROR')
-        ]]
-
-      ok, err = Tester!\test release
-      expect_that ok, eq false
-      expect_that err, has_type 'string'
-
-    it 'executes the test command', ->
-      release =
-        file: 'frieght'
-        version: '12345'
-        content: [[
-          for i = 1, select('#', ...) do
-            if select(i, ...) == 'test' then
-              return
-            end
-          end
-          error("must pass 'test' to freight")
-        ]]
-      ok, err = Tester!\test release
-      expect_that ok, eq true
-      expect_that err, eq nil
+    -- NOTE: the following two tests are deactivated as it is impossible to
+    -- both suppress the output of a subprocess and capture its return value
+    -- (even just as ok/!ok) in both Cobalt lua (used by CC:Tweaked) and luajit
+    -- (used for external testing). As such, these tests emit worrying error
+    -- output which will be very disconcerting for the user.
+    --
+    -- it 'rejects invalid releases', ->
+    --   release =
+    --     file: 'freight'
+    --     version: '12345'
+    --     content: [[
+    --       error('MARKER_ERROR')
+    --     ]]
+    --
+    --   ok, err = Tester!\test release
+    --   expect_that ok, eq false
+    --   expect_that err, has_type 'string'
+    --
+    -- it 'executes the test command', ->
+    --   release =
+    --     file: 'frieght'
+    --     version: '12345'
+    --     content: [[
+    --       for i = 1, select('#', ...) do
+    --         if select(i, ...) == 'test' then
+    --           return
+    --         end
+    --       end
+    --       error("must pass 'test' to freight")
+    --     ]]
+    --   ok, err = Tester!\test release
+    --   expect_that ok, eq true
+    --   expect_that err, eq nil
