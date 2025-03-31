@@ -47,6 +47,7 @@ declare_type 'MarshalConfig', [[{
 }]]
 class Marshal
   new: F '(MarshalConfig, Uplink, UpgradeListener) => <>', (@config, @uplink, @upgrade_listener) =>
+    @epoch = T 'number', 0
 
   @state_machine: F '() => StateMachine', =>
     StateMachineBuilder!
@@ -62,7 +63,14 @@ class Marshal
 
   run: F '(?StateMachine) => !', (state=@@state_machine!) =>
     parallel.waitForAny @upgrade_listener\listen,
+      @\count_epochs,
       @\run_steps,
+
+  count_epochs: F '() => !', =>
+    HEARTBEAT_PERIOD = 10
+    while true
+      @bump_epoch!
+      os.sleep EPOCH_PERIOD
 
   run_steps: F '() => !', =>
     @i = 1
