@@ -45,16 +45,16 @@ class Factory
     @config.factory.name
 
   run: F '() => !', =>
-    @send_heartbeat!
+    @do_heartbeat_step!
     parallel.waitForAny @\run_steps,
       @\run_heartbeats,
       @\run_train_detection
 
   run_steps: F '() => !', =>
     while true
-      @step!
+      @do_network_step!
 
-  step: F '() => <>', =>
+  do_network_step: F '() => <>', =>
     from_id, message = @uplink\receive_from_any!
     if not from_id?
       return
@@ -104,10 +104,10 @@ class Factory
   run_heartbeats: F '() => !', =>
     HEARTBEAT_PERIOD = 10
     while true
-      @send_heartbeat!
+      @do_heartbeat_step!
       os.sleep HEARTBEAT_PERIOD
 
-  send_heartbeat: F '() => <>', =>
+  do_heartbeat_step: F '() => <>', =>
     station_names = [ station\name! for station in *@stations ]
     @uplink\broadcast FactoryHeartbeat @pc\id!, @name!, station_names
 
@@ -222,7 +222,7 @@ spec ->
       factory = Factory config, pc, stations, stockpile, uplink
 
       for _ = 1, 10
-        factory\step!
+        factory\do_network_step!
 
       expect_that sent, len eq 1
       expect_that sent[1], has_fields
@@ -280,7 +280,7 @@ spec ->
       factory = Factory config, pc, stations, stockpile, uplink
 
       for _ = 1, 10
-        factory\step!
+        factory\do_network_step!
 
       expect_that sent, deep_eq
         * recipient: SERVER_ID
@@ -329,7 +329,7 @@ spec ->
       factory = Factory config, pc, stations, stockpile, uplink
 
       for _ = 1, 10
-        factory\step!
+        factory\do_network_step!
 
       expect_that sent, deep_eq
         * recipient: SERVER_ID
@@ -383,7 +383,7 @@ spec ->
       factory = Factory config, pc, stations, stockpile, uplink
 
       for _ = 1, 10
-        factory\step!
+        factory\do_network_step!
 
       expect_that sent, len eq 2
       expect_that sent[1], has_fields
@@ -413,7 +413,7 @@ spec ->
             capacity: eq 64
         protocol: eq InfoResponse\protocol!
 
-    describe '\\send_heartbeat', ->
+    describe '\\do_heartbeat_step', ->
       it 'sends a heartbeat', ->
         sent = {}
         broadcasted = {}
@@ -442,7 +442,7 @@ spec ->
           broadcast: (message, protocol) =>
             broadcasted[] = :message, :protocol
         with Factory config, pc, stations, stockpile, uplink
-          \send_heartbeat!
+          \do_heartbeat_step!
 
         expect_that sent, deep_eq {}
 
