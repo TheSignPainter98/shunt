@@ -39,7 +39,7 @@ declare_type 'Resource', [[{
 
 declare_type 'Station', [[{
   name: () => StationName,
-  train_present: () => boolean,
+  train_name: () => ?string,
   apply_schedule: (Schedule) => boolean,
 }]]
 declare_type 'StationInfo', [[{
@@ -52,8 +52,8 @@ export class Station
   name: F '() => StationName', =>
     @backend\name!
 
-  train_present: F '() => boolean', =>
-    @backend\train_present!
+  train_name: F '() => ?string', =>
+    @backend\train_name!
 
   info: F '() => StationInfo', =>
     with {}

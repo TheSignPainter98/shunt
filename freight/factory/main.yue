@@ -47,7 +47,8 @@ class Factory
   run: F '() => !', =>
     @send_heartbeat!
     parallel.waitForAny @\run_steps,
-      @\run_heartbeats
+      @\run_heartbeats,
+      @\run_train_detection
 
   run_steps: F '() => !', =>
     while true
@@ -110,6 +111,24 @@ class Factory
     station_names = [ station\name! for station in *@stations ]
     @uplink\broadcast FactoryHeartbeat @pc\id!, @name!, station_names
 
+  run_train_detection: F '() => !', =>
+    TRAIN_DETECTION_PERIOD = 5
+    present_trains = {}
+    while true
+      @do_train_detection_step!
+      os.sleep TRAIN_DETECTION_PERIOD
+
+  do_train_detection_step: F '() => <>', =>
+      @uplink\broadcast TrainsPresent @name!, @detect_trains!
+
+  detect_trains: F '() => {string->string}', =>
+    with {}
+      for station in *@stations
+        name = station\train_name!
+        if not name?
+          continue
+        [station\name!] = name
+
 class StockpileRequest extends Packet
   new: F '(IdempotenceToken) => <>', (@idemp_tok) =>
 
@@ -130,6 +149,9 @@ class InfoResponse extends Packet
 
 class FactoryHeartbeat extends Packet
   new: F '(number, string, [string]) => <>', (@pc_id, @name, @station_names) =>
+
+class TrainsPresent extends Packet
+  new: F '(string, {string->string}) => <>', (@factory_name, @trains_by_station) =>
 
 spec ->
   import TestStationBackend from require 'freight.peripheral.station'
@@ -430,3 +452,50 @@ spec ->
           message: do
             station_names = [ station\name! for station in *stations ]
             deep_eq FactoryHeartbeat PC_ID, PC_NAME, station_names
+
+    describe '\\send_trains_present', ->
+      it 'detects and sends trains', ->
+        sent = {}
+        broadcasted = {}
+        SERVER_ID = 12345
+        PC_ID = 54321
+        PC_NAME = 'test-factory-name'
+
+        config =
+          factory:
+            name: PC_NAME
+            network: 'mainline'
+          stations: {}
+        pc = Pc TestPcBackend
+          id: => PC_ID
+          name: => PC_NAME
+        stations =
+          * Station TestStationBackend
+              name: => 'mallard_station'
+              train_name: => 'mallard'
+          * Station TestStationBackend
+              name: => 'flying_scotsman_station'
+              train_name: => 'flying_scotsman'
+        stockpile = Stockpile TestStockpileBackend!
+        uplink = Uplink TestUplinkBackend
+          send: (recipient, message, protocol) =>
+            sent[] = :recipient, :message, :protocol
+            true
+          broadcast: (message, protocol) =>
+            broadcasted[] = :message, :protocol
+        factory = Factory config, pc, stations, stockpile, uplink
+        trains_by_station = factory\detect_trains!
+
+        expect_that sent, deep_eq {}
+        expect_that broadcasted, deep_eq {}
+        expect_that trains_by_station, deep_eq
+          mallard_station: 'mallard'
+          flying_scotsman_station: 'flying_scotsman'
+
+        factory\do_train_detection_step!
+        expect_that sent, deep_eq {}
+        expect_that broadcasted, deep_eq
+          * protocol: TrainsPresent\protocol!
+            message: TrainsPresent PC_NAME,
+              mallard_station: 'mallard'
+              flying_scotsman_station: 'flying_scotsman'
