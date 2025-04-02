@@ -298,9 +298,11 @@ class Matches
   new: (@pat) =>
 
   matches: (actual) =>
-    (actual\match @pat)?
+    actual? and (actual\match @pat)?
 
   explain_match: (actual) =>
+    if 'string' != type actual
+      return "which is a #{type actual}"
     "which #{@describe @matches actual}"
 
   describe: (is_match=true) =>
@@ -313,10 +315,14 @@ class Len
   new: (@inner) =>
 
   matches: (actual) =>
-    @inner\matches #actual
+    actual? and @inner\matches #actual
 
   explain_match: (actual) =>
-    "which has length #{#actual} #{@inner\explain_match #actual}"
+    switch type actual
+      when 'string', 'table'
+        "which has length #{#actual} #{@inner\explain_match #actual}"
+      else
+        "which is a #{type actual}"
 
   describe: (is_match=true) =>
     if is_match
@@ -429,7 +435,7 @@ class Contains
       @kind
 
   matches: (actual) =>
-    (@find_match actual)?
+    actual? and (@find_match actual)?
 
   find_match: (actual) =>
     for key, value in pairs actual
@@ -447,7 +453,9 @@ class Contains
     nil
 
   explain_match: (actual) =>
-    if match = @find_match actual
+    if 'table' != type actual
+      "which is a #{type actual}"
+    else if match = @find_match actual
       "which contains #{repr match} #{@inner\explain_match match}"
     else
       "which does not contain any #{@pretty_kind} which #{@inner\describe!}"
@@ -466,7 +474,7 @@ class Each
       @kind
 
   matches: (actual) =>
-    not (@find_non_match actual)?
+    actual? and not (@find_non_match actual)?
 
   find_non_match: (actual) =>
     for key, value in pairs actual
@@ -484,11 +492,12 @@ class Each
     nil
 
   explain_match: (actual) =>
-    non_match = @find_non_match actual
-    if not non_match?
-      "in which each element #{@inner\describe true}"
-    else
+    if 'table' != type actual
+      "is a #{actual}"
+    else  if non_match = @find_non_match actual
       "in which some element #{@inner\describe false}"
+    else
+      "in which each element #{@inner\describe true}"
 
   describe: (is_match=true) =>
     if is_match
@@ -507,7 +516,7 @@ class Fields
       a.field < b.field
 
   matches: (actual) =>
-    not (@find_non_match actual)?
+    actual? and not (@find_non_match actual)?
 
   find_non_match: (actual) =>
     for {:field, :matcher} in *@fields
@@ -516,6 +525,9 @@ class Fields
     nil
 
   explain_match: (actual) =>
+    if 'table' != type actual
+      return "is a #{type actual}"
+
     non_match_field, non_match_matcher = @find_non_match actual
     if not non_match_field?
       field_descriptions = [ "there is a field '#{field}' #{matcher\explain_match actual[field]}" for {:field, :matcher} in *@fields ]
