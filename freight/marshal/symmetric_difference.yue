@@ -1,0 +1,33 @@
+local *
+
+import F from require 'quicktype'
+import spec from require 'spec'
+
+export symmetric_difference = F '([some], [some]) -> <[some], [some]>', (xs, ys) ->
+  ys_set = { y, true for y in *ys }
+  xs_set = { x, true for x in *xs }
+
+  not_in_ys = [ x for x in *xs when not ys_set[x] ]
+  not_in_xs = [ y for y in *ys when not xs_set[y] ]
+
+  not_in_ys, not_in_xs
+
+spec ->
+  import describe, expect_that, it, matchers from require 'spec'
+  import deep_eq from matchers
+
+  describe 'symmetric_difference', ->
+    it 'handles empty inputs', ->
+      left, right = symmetric_difference {}, {}
+      expect_that left, deep_eq {}
+      expect_that right, deep_eq {}
+
+    it 'handles equal inputs', ->
+      left, right = symmetric_difference { 'a', 'b', 'c' }, { 'c', 'b', 'a' }
+      expect_that left, deep_eq {}
+      expect_that right, deep_eq {}
+
+    it 'handles non-empty, non-contained, intersecting inputs', ->
+      left, right = symmetric_difference { 'a', 'b' }, { 'b', 'c' }
+      expect_that left, deep_eq {'a'}
+      expect_that right, deep_eq {'c'}

@@ -1,11 +1,14 @@
 local *
 
 import log from require 'freight.logger'
-import Uplink from require 'freight.peripheral.uplink'
+import symmetric_difference from require 'freight.marshal.symmetric_difference'
+import Uplink, TestUplinkBackend from require 'freight.peripheral.uplink'
 import UpgradeListener from require 'freight.upgrade.listener'
 import StateMachineBuilder, StateSpec from require 'freight.state'
+import FactoryHeartbeat from require 'freight.factory.main'
 import toml_parse from require 'freight.toml'
-import declare_type, F from require 'quicktype'
+import declare_type, F, T from require 'quicktype'
+import spec from require 'spec'
 
 export default_config = [=[
 [marshal]
@@ -40,6 +43,24 @@ declare_type 'Train', [[{
   state: StateMachine,
 }]]
 
+declare_type 'FactoryStatus', [[{
+  -- Constant
+  name: string,
+  pc_id: number,
+  -- Variable
+  operational: boolean,
+  last_seen_epoch: number,
+  station_names: [string],
+}]]
+declare_type 'TrainStatus', [[{
+  -- Constant:
+  name: string,
+  -- Variable:
+  last_seen_epoch: number,
+  last_seen_at_factory: string,
+  last_seen_at_station: string,
+}]]
+
 declare_type 'MarshalConfig', [[{
   marshal: {
     network: string,
@@ -48,6 +69,10 @@ declare_type 'MarshalConfig', [[{
 class Marshal
   new: F '(MarshalConfig, Uplink, UpgradeListener) => <>', (@config, @uplink, @upgrade_listener) =>
     @epoch = T 'number', 0
+    -- TODO(kcza): load from stored initial state
+    @factories = T '{string->FactoryStatus}', {}
+    @station_names = T '{string}', {}
+    @trains = T '{string->TrainStatus}', {}
 
   @state_machine: F '() => StateMachine', =>
     StateMachineBuilder!
@@ -72,12 +97,226 @@ class Marshal
       @bump_epoch!
       os.sleep EPOCH_PERIOD
 
-  run_steps: F '() => !', =>
-    @i = 1
-    while true
-      @step!
+  bump_epoch: F '() => <>', =>
+    @epoch += 1
 
-  step: F '() => <>', =>
-    print @i
-    @i += 1
-    os.sleep STEP_INTERVAL
+  run_steps: F '() => !', =>
+    epoch = @epoch
+    while true
+      @do_network_step!
+
+      if epoch != @epoch
+        @on_new_epoch!
+        epoch = @epoch
+
+  on_new_epoch: F '() => <>', =>
+    @prune_factories!
+    @prune_trains!
+
+  prune_factories: F '() => <>', =>
+    LIFETIME_EPOCHS = 1
+    @factories = T '{string->FactoryStatus}', @prune_statuses @factories, LIFETIME_EPOCHS
+
+  prune_trains: F '() => <>', =>
+    LIFETIME_EPOCHS = 4
+    @trains = T '{string->TrainStatus}', @prune_statuses @trains, LIFETIME_EPOCHS
+
+  prune_statuses: F '({string->{last_seen_epoch: number}}, number) => {string->{}}', (statuses, lifetime_epochs) =>
+    death_horizon_epoch = @epoch - lifetime_epochs
+    with {}
+      for name, status in pairs statuses
+        if status.last_seen_epoch < death_horizon_epoch
+          continue -- Prune
+        [name] = status
+
+  do_network_step: F '() => <>', =>
+    from_id, message = @uplink\receive_from_any!
+    @on_message from_id, message
+
+  on_message: F '(number,  Packet) => <>', (from_id, message) =>
+    switch message\protocol!
+      when 'FactoryHeartbeat'
+        @on_factory_heartbeat from_id, message
+      else
+        log -> "ignoring #{message\protocol!} message"
+
+  on_factory_heartbeat: F '(number, FactoryHeartbeat) => <>', (from_id, message) =>
+    { :pc_id, :name, :station_names, :present_trains } = message
+    station_names_removed, station_names_added = symmetric_difference @station_names, station_names
+    for to_remove in *station_names_removed
+      @station_names[to_remove] = nil
+    for to_add in *station_names_added
+      @station_names[to_add] = true
+
+    factory_status = @factories[name]
+    seen_before = factory_status?
+    @factories[name] = T 'FactoryStatus', with factory_status ?? :name, :pc_id, operational: true
+      if seen_before and pc_id != .pc_id
+        log -> "temporarily ignoring possible imposter for factory #{name}: last known PC was ##{.pc_id}, got #{pc_id}"
+        return -- Ignore for this epoch.
+
+      .last_seen_epoch = @epoch
+      .station_names = station_names
+      .present_trains = present_trains
+
+    for station_name, train_name in pairs present_trains
+      @trains[train_name] = T 'TrainStatus', with @trains[train_name] ?? name: train_name
+        .last_seen_epoch = @epoch
+        .last_seen_at_factory = name
+        .last_seen_at_station = station_name
+
+  ut_epoch: F '() => number', => @epoch
+
+  ut_set_epoch: F '(number) => <>', (epoch) =>
+    @epoch = epoch
+
+  ut_factories: F '() => {string->FactoryStatus}', => @factories
+
+  ut_trains: F '() => {string->TrainStatus}', => @trains
+
+spec ->
+  import assert_that, describe, expect_that, it, matchers from require 'spec'
+  import deep_eq, eq, has_fields from matchers
+
+  describe 'Marshal', ->
+    describe '\\on_new_epoch', ->
+      it 'prunes lost factories', ->
+        test_phase = 'add-factories'
+
+        config =
+          marshal:
+            network: 'mainline'
+        uplink = Uplink TestUplinkBackend
+          receive: (_, _) =>
+            @count ??= 0
+            if test_phase != @last_test_phase
+              @count = 0
+            @last_test_phase = test_phase
+
+            if @count < 10
+              @count += 1
+              stations = switch test_phase
+                when 'add-factories'
+                  {"station_#{3*@count}", "station_#{3*@count+1}"}
+                when 'change-factory-stations'
+                  {"station_#{3*@count}", "station_#{3*@count+2}"}
+                else
+                  error "internal error: unrecognised test phase #{test_phase}"
+              message = FactoryHeartbeat @count, "factory_#{@count}", stations, {}
+              return @count, message, FactoryHeartbeat\protocol!
+            else
+              return nil, nil, nil
+        upgrade_listener = UpgradeListener config, uplink
+
+        with Marshal config, uplink, upgrade_listener
+          EXPECTED_FACTORIES = 4
+          for i = 1, EXPECTED_FACTORIES
+            \do_network_step!
+
+          epoch = \ut_epoch!
+          assert_that .factories, has_fields
+            factory_1: has_fields
+              name: eq 'factory_1'
+              pc_id: eq 1
+              last_seen_epoch: eq epoch
+              station_names: deep_eq
+                * "station_3"
+                * "station_4"
+            factory_2: has_fields
+              name: eq 'factory_2'
+              pc_id: eq 2
+              last_seen_epoch: eq epoch
+              station_names: deep_eq
+                * "station_6"
+                * "station_7"
+            factory_3: has_fields
+              name: eq 'factory_3'
+              pc_id: eq 3
+              last_seen_epoch: eq epoch
+              station_names: deep_eq
+                * "station_9"
+                * "station_10"
+            factory_4: has_fields
+              name: eq 'factory_4'
+              pc_id: eq 4
+              last_seen_epoch: eq epoch
+              station_names: deep_eq
+                * "station_12"
+                * "station_13"
+
+          test_phase = 'change-factory-stations'
+          for i = 1, EXPECTED_FACTORIES
+            \do_network_step!
+
+          assert_that \ut_factories!, has_fields
+            factory_1: has_fields
+              name: eq 'factory_1'
+              pc_id: eq 1
+              last_seen_epoch: eq epoch
+              station_names: deep_eq
+                * "station_3"
+                * "station_5"
+            factory_2: has_fields
+              name: eq 'factory_2'
+              pc_id: eq 2
+              last_seen_epoch: eq epoch
+              station_names: deep_eq
+                * "station_6"
+                * "station_8"
+            factory_3: has_fields
+              name: eq 'factory_3'
+              pc_id: eq 3
+              last_seen_epoch: eq epoch
+              station_names: deep_eq
+                * "station_9"
+                * "station_11"
+            factory_4: has_fields
+              name: eq 'factory_4'
+              pc_id: eq 4
+              last_seen_epoch: eq epoch
+              station_names: deep_eq
+                * "station_12"
+                * "station_14"
+
+          test_phase = 'global-disconnect'
+          \ut_set_epoch 10
+          \on_new_epoch!
+
+          assert_that \ut_factories!, deep_eq {}
+
+      it 'prunes lost trains', ->
+        config =
+          marshal:
+            network: 'mainline'
+        uplink = Uplink TestUplinkBackend
+          receive: (_, _) =>
+            @count ??= 0
+            if @count < 10
+              @count += 1
+              stations =
+                * 'station_1'
+                * 'station_2'
+              trains =
+                station_1: 'train_1'
+                station_2: 'train_2'
+              message = FactoryHeartbeat @count, "factory_#{@count}", stations, trains
+              return @count, message, FactoryHeartbeat\protocol!
+            else
+              return nil, nil, nil
+        upgrade_listener = UpgradeListener config, uplink
+
+        with Marshal config, uplink, upgrade_listener
+          \do_network_step!
+
+          epoch = \ut_epoch!
+          expect_that \ut_trains!, has_fields
+            train_1: has_fields
+              name: eq 'train_1'
+              last_seen_epoch: eq epoch
+              last_seen_at_factory: eq 'factory_1'
+              last_seen_at_station: eq 'station_1'
+            train_2: has_fields
+              name: eq 'train_2'
+              last_seen_epoch: eq epoch
+              last_seen_at_factory: eq 'factory_1'
+              last_seen_at_station: eq 'station_2'
