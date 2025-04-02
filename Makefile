@@ -33,11 +33,11 @@ clean:
 	$(RM) $(DIAGRAMS) $(OBJECTS) startup.lua packed/freight freight.goo $(BINARIES) bin/*
 .PHONY: clean
 
-install: scripts/install.sh $(BINARIES)
+install: scripts/install $(BINARIES)
 	./$<
 .PHONY: install
 
-uninstall: scripts/uninstall.sh
+uninstall: scripts/uninstall
 	./$<
 .PHONY: uninstall
 
