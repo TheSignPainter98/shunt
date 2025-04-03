@@ -1,8 +1,15 @@
 local *
 
-import F from require 'quicktype'
+import declare_type, F from require 'quicktype'
 import spec from require 'spec'
 
+declare_type 'Queue', [[{
+  len: () => number,
+  enqueue: (any) => <>,
+  dequeue: () => ?any,
+  peek: () => ?any,
+  iter: () => function,
+}]]
 export class Queue
   new: =>
     @entries = {}
@@ -12,7 +19,7 @@ export class Queue
   len: F '() => number', =>
     @back - @front
 
-  enqueue: F '(any) => nil', (elem) =>
+  enqueue: F '(any) => <>', (elem) =>
     @entries[@back] = elem
     @back += 1
 
