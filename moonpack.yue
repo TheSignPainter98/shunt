@@ -79,7 +79,7 @@ class SourceFile
 
       if require_call_arg = line\match 'require%(([^)]*)%)'
         mod = require_call_arg\sub 2, -2
-        if not mod\match '^[a-zA-Z0-9.]*$'
+        if not mod\match '^[a-zA-Z0-9._]*$'
           error "cannot use '#{mod}' as a module name"
         required_mods[] = mod
     @lines = lines
