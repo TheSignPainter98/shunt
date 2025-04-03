@@ -6,6 +6,8 @@ apply_compat!
 import declare_type from require 'quicktype'
 declare_type 'Self', 'some'
 
+require 'freight.data.multiplexer' -- TODO(kcza): for testing, remove once used.
+
 import Args from require 'freight.args'
 import run_tests from require 'spec'
 import 'freight.logger'

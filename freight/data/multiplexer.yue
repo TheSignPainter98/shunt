@@ -1,0 +1,85 @@
+local *
+
+import F, T from require 'quicktype'
+import spec from require 'spec'
+
+export class Multiplexer
+  new: F '(string) => <>', (@to_send_type) =>
+    @sources = T '{number->thread}', {}
+    @num_sources = T 'number', 0
+    @output_coroutine = T '?thread', nil
+    @running = T 'boolean', false
+
+  add: F '(() -> <>) => <>', (source_fn) =>
+    if @running
+      error 'cannot add multiplexer sources after starting polling'
+
+    @sources[@num_sources + 1] = coroutine.create source_fn
+    @num_sources += 1
+
+  send: F '(some) => <>', (to_send) =>
+    coroutine.yield (T @to_send_type, to_send)
+
+  iter: F '() => function', =>
+    @output_coroutine ??= coroutine.wrap ->
+      @running = true
+
+      source_resumed_this_iter = @num_source != 0
+      while source_resumed_this_iter
+        source_resumed_this_iter = false
+        for i = 1, @num_sources
+          source = @sources[i]
+          if not source?
+            continue
+          source_resumed_this_iter = true
+
+          switch coroutine.status source
+            when 'running', 'normal', 'suspended'
+              ok, ret = coroutine.resume source
+              if not ok
+                error ret
+              if ret?
+                coroutine.yield T @to_send_type, ret
+            when 'dead'
+              @sources[i] = nil
+    @output_coroutine
+
+spec ->
+  import describe, expect_that, it, matchers from require 'spec'
+  import deep_eq, eq from matchers
+
+  describe 'Multiplexer', ->
+    it 'handles no sources', ->
+      with Multiplexer 'string'
+        sent = [ v for v in \iter! ]
+        expect_that sent, deep_eq {}
+
+    it 'handles a single source', ->
+      with Multiplexer 'string'
+        source = ->
+          \send 'a'
+          \send 'b'
+          \send 'c'
+        expect_that (\add source), eq nil
+
+        sent = [ v for v in \iter! ]
+        expect_that sent, deep_eq
+          * 'a'
+          * 'b'
+          * 'c'
+
+    it 'round-robin-schedules other sources', ->
+      with Multiplexer 'string'
+        \add ->
+          \send 'my'
+          \send 'is'
+        \add ->
+          \send 'name'
+          \send 'methos'
+
+        sent = [ v for v in \iter! ]
+        expect_that sent, deep_eq
+          * 'my'
+          * 'name'
+          * 'is'
+          * 'methos'
