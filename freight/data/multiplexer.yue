@@ -46,7 +46,7 @@ export class Multiplexer
 
 spec ->
   import describe, expect_that, it, matchers from require 'spec'
-  import deep_eq, eq from matchers
+  import anything, deep_eq, errors, eq from matchers
 
   describe 'Multiplexer', ->
     it 'handles no sources', ->
@@ -68,6 +68,8 @@ spec ->
           * 'b'
           * 'c'
 
+        expect_that (-> [ v for v in \iter! ]), errors anything!
+
     it 'round-robin-schedules other sources', ->
       with Multiplexer 'string'
         \add ->
@@ -83,3 +85,5 @@ spec ->
           * 'name'
           * 'is'
           * 'methos'
+
+        expect_that (-> [ v for v in \iter! ]), errors anything!
