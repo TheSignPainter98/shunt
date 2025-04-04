@@ -124,8 +124,12 @@ class Test
       when 'string'
         cause
       when 'table'
-        { :location, :expected, :actual_repr, :explanation } = cause
-        "at: #{location}\nexpected: #{expected}\nactual: #{actual_repr},\n  #{reflow '  ', explanation, 70}"
+        { :value_label, :location, :expected, :actual_repr, :explanation } = cause
+        value_label_line = ''
+        if value_label?
+          value_label_line = "value: #{value_label}\n"
+
+        "#{value_label_line}expected: #{expected}\nactual: #{actual_repr},\n  #{reflow '  ', explanation, 70}\nat: #{location}"
       else
         error "internal error: invalid matcher return: #{repr cause}"
     if message?
@@ -138,20 +142,28 @@ class Test
     error FATAL_TEST_ERROR_MARKER
 
 export expect_that = (actual, matcher) ->
+  _expect_that nil, actual, matcher
+
+export _expect_that = (value_label, actual, matcher) ->
   if matcher\matches actual
     return
 
   Test::fail
+    :value_label
     location: get_caller_location 'expect_that'
     expected: matcher\describe!
     actual_repr: matcher\actual_repr?! ?? repr actual
     explanation: matcher\explain_match actual
 
 export assert_that = (actual, matcher) ->
+  _assert_that nil, actual, matcher
+
+export _assert_that = (value_label, actual, matcher) ->
   if matcher\matches actual
     return
 
   Test::fatal
+    :value_label
     location: get_caller_location 'assert_that'
     expected: matcher\describe!
     actual_repr: matcher.actual_repr?! ?? repr actual

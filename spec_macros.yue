@@ -1,0 +1,17 @@
+-- macro label = (expr) ->
+
+export macro expect_that = (expr, matcher) ->
+  eqs = '='
+  while expr\match eqs
+    eqs ..= '='
+  label = "[#{eqs}[#{expr}]#{eqs}]"
+
+  "(require 'spec')._expect_that #{label}, #{expr}, #{matcher}"
+
+export macro assert_that = (expr, matcher) ->
+  eqs = '='
+  while expr\match eqs
+    eqs ..= '='
+  label = "[#{eqs}[#{expr}]#{eqs}]"
+
+  "(require 'spec')._expect_that #{label}, #{expr}, #{matcher}"

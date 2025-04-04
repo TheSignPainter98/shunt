@@ -24,7 +24,8 @@ bin/%.lua.packed: %.lua $(OBJECTS) moonpack.lua
 .INTERMEDIATE: bin/%.lua.packed
 
 %.lua: %.yue
-	yue --target=5.1 -l -s $< -o $@
+	yue --target=5.1 -l -s --path="?.yue" $< -o $@
+	@touch $@
 .PRECIOUS: %.lua
 
 freight.yue: compat.lua
