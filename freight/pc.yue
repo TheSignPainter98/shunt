@@ -48,7 +48,8 @@ export class TestPcBackend
     @set_name = F '(string) => <>', set_name
 
 spec ->
-  import describe, expect_that, it, matchers from require 'spec'
+  import 'spec_macros' as $
+  import describe, it, matchers from require 'spec'
   import eq from matchers
 
   describe 'Pc', ->
@@ -56,10 +57,10 @@ spec ->
       ID = 54321
       pc = Pc TestPcBackend
         id: => ID
-      expect_that pc\id!, eq ID
+      $expect_that pc\id!, eq ID
 
     it 'reports its name', ->
       NAME = 'test-pc-name'
       pc = Pc TestPcBackend
         name: => NAME
-      expect_that pc\name!, eq NAME
+      $expect_that pc\name!, eq NAME
