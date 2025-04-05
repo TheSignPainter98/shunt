@@ -1,8 +1,8 @@
 local *
 
-import declare_type, F, T from require 'quicktype'
-import spec from require 'spec'
 import 'freight.data.queue' as :Queue
+import 'quicktype' as :declare_type, :F, :T
+import 'spec' as :spec
 
 declare_type 'Multiplexer', [[{
   add: (() -> <>) => <>,

@@ -1,7 +1,7 @@
 local *
 
-import spec from require 'spec'
-import declare_type, F, T from require 'quicktype'
+import 'quicktype' as :declare_type, :F, :T
+import 'spec' as :spec
 
 UNIMPLEMENTED = <call>: (...) ->
 

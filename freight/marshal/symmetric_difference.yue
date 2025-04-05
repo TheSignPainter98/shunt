@@ -1,7 +1,7 @@
 local *
 
-import F from require 'quicktype'
-import spec from require 'spec'
+import 'quicktype' as :F
+import 'spec' as :spec
 
 export symmetric_difference = F '([some], [some]) -> <[some], [some]>', (xs, ys) ->
   ys_set = { y, true for y in *ys }

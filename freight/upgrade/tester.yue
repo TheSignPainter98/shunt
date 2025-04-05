@@ -1,9 +1,9 @@
 local *
 
-import execute from require 'freight.execute'
-import log from require 'freight.logger'
-import F from require 'quicktype'
-import spec from require 'spec'
+import 'freight.execute' as :execute
+import 'freight.logger' as :log
+import 'quicktype' as :F
+import 'spec' as :spec
 
 export class Tester
   test: F '(Release) => <boolean, ?string>', (release) =>

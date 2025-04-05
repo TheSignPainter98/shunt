@@ -1,7 +1,7 @@
 local *
 
-import F, declare_type, Parser, Symbol from require 'quicktype'
-import spec from require 'spec'
+import 'quicktype' as :F, :declare_type, :Parser, :Symbol
+import 'spec' as :spec
 
 export parse_toml = (raw) ->
   parser = TomlParser Lexer raw

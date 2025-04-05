@@ -1,15 +1,15 @@
 local *
 
-import log from require 'freight.logger'
-import Multiplexer from require 'freight.data.multiplexer'
-import symmetric_difference from require 'freight.marshal.symmetric_difference'
-import Uplink, TestUplinkBackend from require 'freight.peripheral.uplink'
-import UpgradeListener from require 'freight.upgrade.listener'
-import StateMachineBuilder, StateSpec from require 'freight.state'
-import FactoryHeartbeat from require 'freight.factory.main'
-import toml_parse from require 'freight.toml'
-import declare_type, F, T from require 'quicktype'
-import spec from require 'spec'
+import 'freight.data.multiplexer' as :Multiplexer
+import 'freight.factory.main' as :FactoryHeartbeat
+import 'freight.logger' as :log
+import 'freight.marshal.symmetric_difference' as :symmetric_difference
+import 'freight.peripheral.uplink' as :Uplink, :TestUplinkBackend
+import 'freight.state' as :StateMachineBuilder, :StateSpec
+import 'freight.toml' as :toml_parse
+import 'freight.upgrade.listener' as :UpgradeListener
+import 'quicktype' as :declare_type, :F, :T
+import 'spec' as :spec
 
 export default_config = [=[
 [marshal]

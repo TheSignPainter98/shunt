@@ -1,6 +1,6 @@
 local *
 
-import spec from require 'spec'
+import 'spec' as :spec
 
 macro version = ->
   local version_string

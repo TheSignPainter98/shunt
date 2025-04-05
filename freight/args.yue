@@ -1,7 +1,7 @@
 local *
 
-import ArgParser, Flag, Param, Subcommand from require 'clap'
-import VERSION from require 'freight.version'
+import 'clap' as :ArgParser, :Flag, :Param, :Subcommand
+import 'freight.version' as :VERSION
 
 export class Args
   @parse: (args) =>

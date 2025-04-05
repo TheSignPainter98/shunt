@@ -1,7 +1,7 @@
 local *
 
-import F, declare_type from require 'quicktype'
-import spec from require 'spec'
+import 'quicktype' as :F, :declare_type
+import 'spec' as :spec
 
 declare_type 'StationBackend', [[{
   name: () => StationName,

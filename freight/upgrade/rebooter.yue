@@ -1,8 +1,8 @@
 local *
 
-import log from require 'freight.logger'
-import Packet from require 'freight.peripheral.uplink'
-import declare_type, F from require 'quicktype'
+import 'freight.logger' as :log
+import 'freight.peripheral.uplink' as :Packet
+import 'quicktype' as :declare_type, :F
 
 declare_type 'Rebooter', [[{
   reboot: () => !,

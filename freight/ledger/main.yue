@@ -1,10 +1,10 @@
 local *
 
-import Flag, Subcommand from require 'clap'
-import Queue from require 'freight.data.queue'
-import parse_toml from require 'freight.toml'
-import declare_type, F, T from require 'quicktype'
-import spec from require 'spec'
+import 'clap' as :Flag, :Subcommand
+import 'freight.data.queue' as :Queue
+import 'freight.toml' as :parse_toml
+import 'quicktype' as :declare_type, :F, :T
+import 'spec' as :spec
 
 export default_config = [=[
 [ledger]

@@ -1,7 +1,7 @@
 local *
 
-import Flag, Subcommand from require 'clap'
-import F from require 'quicktype'
+import 'clap' as :Flag, :Subcommand
+import 'quicktype' as :F
 
 export subcommand = with Subcommand 'clean'
   \description 'remove all files associated with freight'

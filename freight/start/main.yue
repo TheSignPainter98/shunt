@@ -1,10 +1,10 @@
 local *
 
-import Flag, Subcommand from require 'clap'
-import config from require 'freight.config'
-import Uplink from require 'freight.peripheral.uplink'
-import UpgradeMonitor from require 'freight.upgrade.monitor'
-import F from require 'quicktype'
+import 'clap' as :Flag, :Subcommand
+import 'freight.config' as :config
+import 'freight.peripheral.uplink' as :Uplink
+import 'freight.upgrade.monitor' as :UpgradeMonitor
+import 'quicktype' as :F
 
 display = require 'freight.display.main'
 factory = require 'freight.factory.main'

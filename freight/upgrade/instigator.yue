@@ -1,12 +1,12 @@
 local *
 local MarshalBumpRelease
 
-import log from require 'freight.logger'
-import IdempotenceToken, Packet, TIMEOUT, Uplink from require 'freight.peripheral.uplink'
-import MinecraftRebooter, RebootRequest from require 'freight.upgrade.rebooter'
-import Tester from require 'freight.upgrade.tester'
-import F from require 'quicktype'
-import spec from require 'spec'
+import 'freight.logger' as :log
+import 'freight.peripheral.uplink' as :IdempotenceToken, :Packet, :TIMEOUT, :Uplink
+import 'freight.upgrade.rebooter' as :MinecraftRebooter, :RebootRequest
+import 'freight.upgrade.tester' as :Tester
+import 'quicktype' as :F
+import 'spec' as :spec
 
 export class Instigator using Tester
   new: F '(?{}, Release, ?Uplink, ?Rebooter) => <>', (@config, @release, @uplink=Uplink!, @rebooter=MinecraftRebooter!) =>

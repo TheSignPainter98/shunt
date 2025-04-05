@@ -1,7 +1,7 @@
 local *
 
-import HOST, LUA from require 'compat'
-import F from require 'quicktype'
+import 'compat' as :HOST, :LUA
+import 'quicktype' as :F
 
 export execute = F '(string, string...) -> boolean', (prog, ...) ->
   cmd_parts = { prog, ... }

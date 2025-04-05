@@ -1,12 +1,12 @@
 local *
 
-import log from require 'freight.logger'
-import CurrentReleaseRequest, CurrentReleaseResponse from require 'freight.upgrade.monitor'
-import MarshalBumpRelease from require 'freight.upgrade.instigator'
-import MinecraftRebooter, RebootRequest from require 'freight.upgrade.rebooter'
-import Tester from require 'freight.upgrade.tester'
-import VERSION from require 'freight.version'
-import declare_type, F, T from require 'quicktype'
+import 'freight.logger' as :log
+import 'freight.upgrade.instigator' as :MarshalBumpRelease
+import 'freight.upgrade.monitor' as :CurrentReleaseRequest, :CurrentReleaseResponse
+import 'freight.upgrade.rebooter' as :MinecraftRebooter, :RebootRequest
+import 'freight.upgrade.tester' as :Tester
+import 'freight.version' as :VERSION
+import 'quicktype' as :declare_type, :F, :T
 
 declare_type 'UpgradeListener', [[{
   listen: () => !,

@@ -1,7 +1,7 @@
 local *
 
-import declare_type, F from require 'quicktype'
-import spec from require 'spec'
+import 'quicktype' as :declare_type, :F
+import 'spec' as :spec
 
 declare_type 'Queue', [[{
   len: () => number,

@@ -1,7 +1,7 @@
 local *
 
-import F, declare_type, declare_singleton_type from require 'quicktype'
-import spec from require 'spec'
+import 'quicktype' as :F, :declare_type, :declare_singleton_type
+import 'spec' as :spec
 
 export TIMEOUT = <tostring>: => "Timeout"
 declare_singleton_type TIMEOUT

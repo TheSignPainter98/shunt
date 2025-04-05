@@ -1,10 +1,10 @@
 local *
 
-import Flag, Param, Subcommand from require 'clap'
-import CONFIG_FILE from require 'freight.config'
-import parse_toml from require 'freight.toml'
-import F from require 'quicktype'
-import spec from require 'spec'
+import 'clap' as :Flag, :Param, :Subcommand
+import 'freight.config' as :CONFIG_FILE
+import 'freight.toml' as :parse_toml
+import 'quicktype' as :F
+import 'spec' as :spec
 
 display = require 'freight.display.main'
 factory = require 'freight.factory.main'

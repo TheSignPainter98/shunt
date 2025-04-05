@@ -1,7 +1,7 @@
 local *
 
-import parse_toml from require 'freight.toml'
-import F from require 'quicktype'
+import 'freight.toml' as :parse_toml
+import 'quicktype' as :F
 
 export CONFIG_FILE = 'freight.toml'
 

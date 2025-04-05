@@ -1,8 +1,8 @@
 local *
 
-import Flag, Subcommand from require 'clap'
-import _startup_script from require 'freight.enable.main'
-import F from require 'quicktype'
+import 'clap' as :Flag, :Subcommand
+import 'freight.enable.main' as :_startup_script
+import 'quicktype' as :F
 
 export subcommand = with Subcommand 'disable'
   \description 'disable freight on startup'

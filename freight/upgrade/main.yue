@@ -1,11 +1,11 @@
 local *
 
-import Flag, Subcommand from require 'clap'
-import config from require 'freight.config'
-import log from require 'freight.logger'
-import Instigator from require 'freight.upgrade.instigator'
-import VERSION from require 'freight.version'
-import declare_type, F from require 'quicktype'
+import 'clap' as :Flag, :Subcommand
+import 'freight.config' as :config
+import 'freight.logger' as :log
+import 'freight.upgrade.instigator' as :Instigator
+import 'freight.version' as :VERSION
+import 'quicktype' as :declare_type, :F
 
 export subcommand = with Subcommand 'upgrade'
   \description 'upgrade all freight versions across all networks'

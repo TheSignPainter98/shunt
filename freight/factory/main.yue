@@ -8,13 +8,13 @@ local InfoResponse
 local FactoryHeartbeat
 local TrainsPresent
 
-import log from require 'freight.logger'
-import Station from require 'freight.peripheral.station'
-import Stockpile from require 'freight.peripheral.stockpile'
-import IdempotenceToken, Packet, Uplink from require 'freight.peripheral.uplink'
-import Pc from require 'freight.pc'
-import declare_type, F, T from require 'quicktype'
-import spec from require 'spec'
+import 'freight.logger' as :log
+import 'freight.pc' as :Pc
+import 'freight.peripheral.station' as :Station
+import 'freight.peripheral.stockpile' as :Stockpile
+import 'freight.peripheral.uplink' as :IdempotenceToken, :Packet, :Uplink
+import 'quicktype' as :declare_type, :F, :T
+import 'spec' as :spec
 
 export default_config = [=[
 [factory]
