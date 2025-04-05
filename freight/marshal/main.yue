@@ -1,6 +1,7 @@
 local *
 
 import log from require 'freight.logger'
+import Multiplexer from require 'freight.data.multiplexer'
 import symmetric_difference from require 'freight.marshal.symmetric_difference'
 import Uplink, TestUplinkBackend from require 'freight.peripheral.uplink'
 import UpgradeListener from require 'freight.upgrade.listener'
@@ -66,6 +67,10 @@ declare_type 'MarshalConfig', [[{
     network: string,
   },
 }]]
+declare_type 'MarshalEventType', [[
+  "new-epoch"
+  |"network-message"
+]]
 class Marshal
   new: F '(MarshalConfig, Uplink, UpgradeListener) => <>', (@config, @uplink, @upgrade_listener) =>
     @epoch = T 'number', 0
@@ -73,6 +78,11 @@ class Marshal
     @factories = T '{string->FactoryStatus}', {}
     @station_names = T '{string}', {}
     @trains = T '{string->TrainStatus}', {}
+    @do_count_epochs = T 'boolean', true
+
+    @events = T 'Multiplexer', with Multiplexer '{type: MarshalEventType}'
+      \add @\count_epochs
+      \add @\listen_to_network
 
   @state_machine: F '() => StateMachine', =>
     StateMachineBuilder!
@@ -88,28 +98,52 @@ class Marshal
 
   run: F '(?StateMachine) => !', (state=@@state_machine!) =>
     parallel.waitForAny @upgrade_listener\listen,
-      @\count_epochs,
-      @\run_steps,
+      @\handle_events
 
-  count_epochs: F '() => !', =>
-    HEARTBEAT_PERIOD = 10
+  count_epochs: F '() => !', (initial_epoch=1)=>
+    EPOCH_PERIOD = 10
+    epoch = initial_epoch
     while true
-      @bump_epoch!
-      os.sleep EPOCH_PERIOD
+      if @do_count_epochs
+        @send_new_epoch_event epoch
+        epoch += 1
+        os.sleep EPOCH_PERIOD
+      else
+        coroutine.yield!
 
-  bump_epoch: F '() => <>', =>
-    @epoch += 1
+  send_new_epoch_event: F '(number) => <>', (epoch) =>
+    @events\send type: 'new-epoch', :epoch
 
-  run_steps: F '() => !', =>
-    epoch = @epoch
+  listen_to_network: F '() => !', =>
     while true
-      @do_network_step!
+      @read_network!
 
-      if epoch != @epoch
-        @on_new_epoch!
-        epoch = @epoch
+  read_network: F '() => <>', =>
+    _, message = @uplink\receive_from_any!
+    switch message\protocol!
+      when 'FactoryHeartbeat'
+        @events\send type: 'network-message', :message
+      else
+        log -> "ignoring #{message\protocol!} message"
+    return
 
-  on_new_epoch: F '() => <>', =>
+  handle_events: F '() => !', =>
+    for event in @events\stream!
+      @handle_event event
+
+  handle_event: F '({type: MarshalEventType}) => <>', (event) =>
+    with event
+      switch .type
+        when 'new-epoch'
+          @on_new_epoch .epoch
+        when 'network-message'
+          @on_network_message .message
+        else
+          error "internal error: unrecognised multiplexer event type '#{.type}'"
+    return
+
+  on_new_epoch: F '(number) => <>', (epoch) =>
+    @epoch = epoch
     @prune_factories!
     @prune_trains!
 
@@ -129,18 +163,14 @@ class Marshal
           continue -- Prune
         [name] = status
 
-  do_network_step: F '() => <>', =>
-    from_id, message = @uplink\receive_from_any!
-    @on_message from_id, message
-
-  on_message: F '(number,  Packet) => <>', (from_id, message) =>
+  on_network_message: F '(Packet) => <>', (message) =>
     switch message\protocol!
       when 'FactoryHeartbeat'
-        @on_factory_heartbeat from_id, message
+        @on_factory_heartbeat message
       else
-        log -> "ignoring #{message\protocol!} message"
+        error "internal error: unexpected network message protocol reached marshal core '#{message\protocol!}'"
 
-  on_factory_heartbeat: F '(number, FactoryHeartbeat) => <>', (from_id, message) =>
+  on_factory_heartbeat: F '(FactoryHeartbeat) => <>', (message) =>
     { :pc_id, :name, :station_names, :present_trains } = message
     station_names_removed, station_names_added = symmetric_difference @station_names, station_names
     for to_remove in *station_names_removed
@@ -165,10 +195,17 @@ class Marshal
         .last_seen_at_factory = name
         .last_seen_at_station = station_name
 
+  ut_stop_counting_epochs: F '() => <>', =>
+    @do_count_epochs = false
+
+  ut_step: F '() => <>', =>
+    @handle_event @events\next!
+
   ut_epoch: F '() => number', => @epoch
 
   ut_set_epoch: F '(number) => <>', (epoch) =>
     @epoch = epoch
+    @send_new_epoch_event epoch
 
   ut_factories: F '() => {string->FactoryStatus}', => @factories
 
@@ -210,12 +247,13 @@ spec ->
         upgrade_listener = UpgradeListener config, uplink
 
         with Marshal config, uplink, upgrade_listener
+          \ut_stop_counting_epochs!
           EXPECTED_FACTORIES = 4
           for i = 1, EXPECTED_FACTORIES
-            \do_network_step!
+            \ut_step!
 
           epoch = \ut_epoch!
-          $assert_that .factories, has_fields
+          $assert_that \ut_factories!, has_fields
             factory_1: has_fields
               name: eq 'factory_1'
               pc_id: eq 1
@@ -247,7 +285,7 @@ spec ->
 
           test_phase = 'change-factory-stations'
           for i = 1, EXPECTED_FACTORIES
-            \do_network_step!
+            \ut_step!
 
           $assert_that \ut_factories!, has_fields
             factory_1: has_fields
@@ -281,7 +319,7 @@ spec ->
 
           test_phase = 'global-disconnect'
           \ut_set_epoch 10
-          \on_new_epoch!
+          \ut_step!
 
           $expect_that \ut_factories!, deep_eq {}
 
@@ -307,7 +345,8 @@ spec ->
         upgrade_listener = UpgradeListener config, uplink
 
         with Marshal config, uplink, upgrade_listener
-          \do_network_step!
+          \ut_stop_counting_epochs!
+          \ut_step!
 
           epoch = \ut_epoch!
           $expect_that \ut_trains!, has_fields
@@ -322,3 +361,7 @@ spec ->
               last_seen_at_factory: eq 'factory_1'
               last_seen_at_station: eq 'station_2'
 
+          \ut_set_epoch 10
+          \ut_step!
+
+          $expect_that \ut_trains!, deep_eq {}

@@ -1,14 +1,21 @@
 local *
 
-import F, T from require 'quicktype'
+import declare_type, F, T from require 'quicktype'
 import spec from require 'spec'
+import 'freight.data.queue' as :Queue
 
+declare_type 'Multiplexer', [[{
+  add: (() -> <>) => <>,
+  send: (some) => <>,
+  stream: () => function,
+}]]
 export class Multiplexer
   new: F '(string) => <>', (@to_send_type) =>
     @sources = T '{number->thread}', {}
     @num_sources = T 'number', 0
     @output_coroutine = T '?thread', nil
     @running = T 'boolean', false
+    @channel = T 'Queue', Queue!
 
   add: F '(() -> <>) => <>', (source_fn) =>
     if @running
@@ -18,9 +25,14 @@ export class Multiplexer
     @num_sources += 1
 
   send: F '(some) => <>', (to_send) =>
-    coroutine.yield (T @to_send_type, to_send)
+    @channel\enqueue T @to_send_type, to_send
+    if coroutine.running!?
+      coroutine.yield!
 
-  iter: F '() => function', =>
+  next: F '() => ?some', =>
+    @stream!!
+
+  stream: F '() => function', =>
     @output_coroutine ??= coroutine.wrap ->
       @running = true
 
@@ -35,9 +47,10 @@ export class Multiplexer
 
           switch coroutine.status source
             when 'running', 'normal', 'suspended'
-              ok, ret = coroutine.resume source
+              ok, err = coroutine.resume source
               if not ok
-                error ret
+                error err
+              ret = @channel\dequeue!
               if ret?
                 coroutine.yield T @to_send_type, ret
             when 'dead'
@@ -52,7 +65,7 @@ spec ->
   describe 'Multiplexer', ->
     it 'handles no sources', ->
       with Multiplexer 'string'
-        sent = [ v for v in \iter! ]
+        sent = [ v for v in \stream! ]
         $expect_that sent, deep_eq {}
 
     it 'handles a single source', ->
@@ -63,13 +76,13 @@ spec ->
           \send 'c'
         $expect_that (\add source), eq nil
 
-        sent = [ v for v in \iter! ]
+        sent = [ v for v in \stream! ]
         $expect_that sent, deep_eq
           * 'a'
           * 'b'
           * 'c'
 
-        $expect_that (-> [ v for v in \iter! ]), errors anything!
+        $expect_that (-> [ v for v in \stream! ]), errors anything!
 
     it 'round-robin-schedules other sources', ->
       with Multiplexer 'string'
@@ -80,11 +93,11 @@ spec ->
           \send 'name'
           \send 'methos'
 
-        sent = [ v for v in \iter! ]
+        sent = [ v for v in \stream! ]
         $expect_that sent, deep_eq
           * 'my'
           * 'name'
           * 'is'
           * 'methos'
 
-        $expect_that (-> [ v for v in \iter! ]), errors anything!
+        $expect_that (-> [ v for v in \stream! ]), errors anything!
