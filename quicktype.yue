@@ -1047,7 +1047,12 @@ check = (check_prog, value, root=true) ->
           arg = [pc + 1]
           checker = type_checkers[arg]
           if not checker?
-            return "cannot typecheck #{arg}: type not defined"
+            return "cannot typecheck: type #{arg} not defined"
+          if #checker == 2 and #check_prog == 2
+            -- Avoid infinite loop on undefined types
+            { ccmd, carg } = checker
+            if [pc] == ccmd and arg == carg
+              return "cannot typecheck: type #{arg} not defined"
 
           num_running_checkers += 1
           err = check checker, nil, false
@@ -1417,6 +1422,12 @@ spec ->
 
     it 'rejects never', ->
       expect_that (-> T '!', 123), errors matches 'never expected a value here'
+
+    it 'rejects nonexistent types', ->
+      expect_that (-> T 'IDoNotExist', 123), errors matches 'cannot typecheck: type IDoNotExist not defined'
+
+      declare_type 'ChildDoesNotExist', 'IDoNotExist'
+      expect_that (-> T 'ChildDoesNotExist', 123), errors matches 'cannot typecheck: type IDoNotExist not defined'
 
     it 'checks number types', ->
       expect_that (-> T '123', 123), no_errors!
