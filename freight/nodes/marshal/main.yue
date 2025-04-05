@@ -1,9 +1,9 @@
 local *
 
 import 'freight.data.multiplexer' as :Multiplexer
-import 'freight.factory.main' as :FactoryHeartbeat
 import 'freight.logger' as :log
-import 'freight.marshal.symmetric_difference' as :symmetric_difference
+import 'freight.nodes.factory.main' as :FactoryHeartbeat
+import 'freight.nodes.marshal.symmetric_difference' as :symmetric_difference
 import 'freight.peripheral.uplink' as :Uplink, :TestUplinkBackend
 import 'freight.state' as :StateMachineBuilder, :StateSpec
 import 'freight.toml' as :toml_parse

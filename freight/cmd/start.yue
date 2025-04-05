@@ -6,10 +6,10 @@ import 'freight.peripheral.uplink' as :Uplink
 import 'freight.upgrade.monitor' as :UpgradeMonitor
 import 'quicktype' as :F
 
-display = require 'freight.display.main'
-factory = require 'freight.factory.main'
-ledger = require 'freight.ledger.main'
-marshal = require 'freight.marshal.main'
+display = require 'freight.nodes.display.main'
+factory = require 'freight.nodes.factory.main'
+ledger = require 'freight.nodes.ledger.main'
+marshal = require 'freight.nodes.marshal.main'
 
 export subcommand = with Subcommand 'start'
   \description 'start this freight instance'
