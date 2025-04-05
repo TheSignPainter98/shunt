@@ -1,0 +1,149 @@
+local *
+
+import 'clap' as :ArgParser, :Param, :Subcommand
+import 'quicktype' as :declare_type, :F, :T
+import 'spec' as :run_tests, :spec
+
+main = (args) ->
+  args, ok = parse_args args
+  if not ok
+    return
+
+  if args.test?
+    run_tests!
+    return
+  if args.check?
+    check args.check
+
+parse_args = F '([string]) -> <?{}, boolean>', (args) ->
+  parser = with ArgParser 'ylint'
+    \version '1.0'
+    \description 'a very rudamentary yuescript linter'
+    \add with Subcommand 'check'
+      \description 'check for lint'
+      \add with Param 'file'
+        \description 'file to scan'
+    \add with Subcommand 'test'
+      \description 'run tests'
+  parser\parse args
+
+check = F '({}) -> <>', (args) ->
+  { :file } = args
+
+  lines = io.lines file
+  errs = run_checks file, lines,
+    * ImportForm!
+  for err in *errs
+    buf = {}
+    err\fmt buf
+    print table.concat buf
+
+run_checks = F '(string, function, [Check]) -> [Error]', (file, src_lines, checks) ->
+  with {}
+    line_no = 0
+    for src_line in src_lines
+      line_no += 1
+      for check in *checks
+        location = :file, row: line_no
+        line = :location, content: src_line
+
+        new_errs = check\on_line? line
+        if new_errs?
+          for new_err in *new_errs
+            [] = new_err
+
+    for check in *checks
+      new_errs = check\on_eof?!
+      if new_errs?
+        for new_err in *new_errs
+          [] = new_err
+
+declare_type 'Check', [[{
+  on_line: ?(Line) => ?[Error],
+  on_eof: ?() => ?[Error],
+}]]
+declare_type 'Line', [[{
+  location: Location,
+  content: string,
+}]]
+declare_type 'Location', [[{
+  file: string,
+  row: number,
+}]]
+
+class ImportForm
+  on_line: F '(Line) => ?[Error]', (line) =>
+    if not line.content\match '^%s*import'
+      return nil
+    if not line.content\match 'from require'
+      return nil
+    err = with Error 'non-standard import form'
+      \at line
+      \suggest [[use form `import 'foo' as :bar]]
+    { err }
+
+declare_type 'Error', [[{
+  fmt: ({string}) => <>,
+}]]
+class Error
+  new: F '(string) => <>', (@message) =>
+    @line = T '?Line', nil
+    @suggestion = T '?string', nil
+
+  at: F '(Line) => <>', (@line) =>
+
+  suggest: F '(string) => <>', (@suggestion) =>
+
+  fmt: F '({string}) => <>', (buf) =>
+    with buf
+      [] = 'warning: '
+      [] = @message
+      if @line?
+        [] = "\n --> #{@line.location.file}:#{@line.location.row}"
+        [] = '\n  |'
+        [] = '\n  | '
+        [] = @line.content
+        [] = '\n  |'
+
+      if @suggestion?
+        [] = '\n'
+        [] = '  * suggestion: '
+        [] = @suggestion
+    return
+
+line_is_empty = F '(Line) -> boolean', (line) ->
+  content = line.content
+  (content\match '^%s*$')? or (content\match '^%s*--.*$')?
+
+spec ->
+  import 'spec_macros' as $
+  import 'spec' as :describe, :it, :matchers
+  import deep_eq, eq, has_fields, len from matchers
+
+  run_check = F '(Check, string, string) -> [Error]', (check, file, content) ->
+    if '\n' != content\sub -1
+      content = content .. '\n'
+    lines = content\gmatch '(.-)\n'
+    run_checks file, lines, {check}
+
+  describe 'ImportForm', ->
+    it 'accepts proper form', ->
+      errs = run_check ImportForm!, 'test.yue', [[
+        import 'asdf' as :fdas
+        import "asdf" as :fdas
+      ]]
+      $expect_that errs, deep_eq {}
+
+    it 'rejects improper form', ->
+      file = 'test.yue'
+      errs = run_check ImportForm!, file, [[
+        import fdsa from require 'asdf'
+      ]]
+      $assert_that errs, len eq 1
+      $assert_that errs[1], has_fields
+        message: eq 'non-standard import form'
+        location: has_fields
+          file: eq file
+          row: eq 1
+
+main {...}
