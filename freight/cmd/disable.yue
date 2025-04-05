@@ -1,7 +1,7 @@
 local *
 
 import 'clap' as :Flag, :Subcommand
-import 'freight.enable.main' as :_startup_script
+import 'freight.cmd.enable' as :_startup_script
 import 'quicktype' as :F
 
 export subcommand = with Subcommand 'disable'

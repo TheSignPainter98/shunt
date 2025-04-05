@@ -14,12 +14,12 @@ import 'spec'
 import F from require 'quicktype'
 import detect_and_use_monitor from require 'freight.monitor'
 
-clean = require 'freight.clean.main'
-disable = require 'freight.disable.main'
-enable = require 'freight.enable.main'
-init = require 'freight.init.main'
-start = require 'freight.start.main'
-upgrade = require 'freight.upgrade.main'
+import 'freight.cmd.clean'
+import 'freight.cmd.disable'
+import 'freight.cmd.enable'
+import 'freight.cmd.init'
+import 'freight.cmd.start'
+import 'freight.cmd.upgrade'
 
 global skip_minecraft_tests = false
 
