@@ -992,7 +992,6 @@ check = (check_prog, value, root=true) ->
 
       $debug do
         print "stack state #{instruction}@#{pc} [#{stack_size}]:\n\t#{table.concat [ repr stack[i] for i = 1, stack_size], ', '}"
-        -- print "stack state #{instruction}@#{pc} [#{stack_size}]:\n\t#{table.concat [ "#{i}:\t#{repr stack[i]}" for i = 1, stack_size], '\n\t'}"
 
       switch instruction
         when C_PUSH
@@ -1087,8 +1086,6 @@ check = (check_prog, value, root=true) ->
     $debug do
       print "FINAL stack state #{check_prog[pc-2]}@#{pc-2} [#{stack_size}]:\n\t#{table.concat [ "#{i}:\t#{repr stack[i]}" for i = 1, stack_size], '\n\t'}"
 
-    -- print "#{stack_size}, #{initial_stack_size}"
-    -- print 'root', root
     ending_stack_size = stack_size
     if root
       -- Reset stack.
