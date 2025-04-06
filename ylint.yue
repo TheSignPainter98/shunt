@@ -34,8 +34,9 @@ check = F '({}) -> boolean', (args) ->
 
   lines = io.lines file
   errs = run_checks file, lines,
+    * ImportBlockKind!
+    * ImportBlockSorted!
     * ImportForm!
-    * ImportStatementsSorted!
     * ImportItemsSorted!
   for err in *errs
     buf = {}
@@ -82,34 +83,63 @@ class Declare
   @error: F '(Error) => <>', (err) =>
     @_errs[] = err
 
-class ImportForm
-  on_line: F '(Line) => <>', (line) =>
-    if not line.content\match '^%s*import'
-      return
-    if not line.content\match 'from require'
-      return
-    Declare::error with Error 'non-standard import form'
-      \at line
-      \help [[use form `import 'foo' as :bar]]
-
-class ImportStatementsSorted
+class ImportBlockCheck
   new: =>
     @current_import_block = T '[Line]', {}
 
   on_line: F '(Line) => <>', (line) =>
     if line_is_empty line
-      return @on_block_end!
+      @_on_block_end!
+      return
     if not line.content\match '^%s*import'
-      return @on_block_end!
+      @_on_block_end!
+      return
     @current_import_block[] = line
 
   on_eof: F '() => <>', (line) =>
-    @on_block_end!
+    @_on_block_end!
 
-  on_block_end: F '() => <>', =>
+  _on_block_end: F '() => <>', =>
+    if #@current_import_block != 0
+      @on_block_end @current_import_block
+    @current_import_block = {}
+
+class ImportBlockKind extends ImportBlockCheck
+  on_block_end: F '([Line]) => <>', (block) =>
+    if not @is_mixed_form block
+      return
+
+    Declare::error with Error 'import block has mixed form'
+      \at block[#block]
+
+  is_mixed_form: F '([Line]) => boolean', (block) =>
+    form = nil
+    for line in *block
+      line_form = if line.content\match 'import .* from require'
+        'import-from-require'
+      else if line.content\match 'import .* from %w+'
+        'import-from-value'
+      else if line.content\match 'import .* as '
+        'import-as'
+      else if line.content\match 'import'
+        'import'
+      else
+        Declare::error with Error 'non-standard import statement'
+          \at line
+          \help "use form `import 'foo' as :bar` or `import bar from foo"
+        return false
+
+      if not form?
+        form = line_form
+      if form != line_form
+        return true
+    false
+
+class ImportBlockSorted extends ImportBlockCheck
+  on_block_end: F '([Line]) => <>', (block) =>
     -- Check sorted
     packages = with {}
-      for line in *@current_import_block
+      for line in *block
         [] = line.content\match [[import '([^']*)']]
 
     sorted = true
@@ -121,9 +151,17 @@ class ImportStatementsSorted
       return
 
     Declare::error with Error 'import block not sorted'
-      \at @current_import_block[#@current_import_block]
+      \at block[#block]
 
-    @current_import_block = {}
+class ImportForm
+  on_line: F '(Line) => <>', (line) =>
+    if not line.content\match '^%s*import'
+      return
+    if not line.content\match 'from require'
+      return
+    Declare::error with Error 'non-standard import form'
+      \at line
+      \help [[use form `import 'foo' as :bar]]
 
 class ImportItemsSorted
   on_line: F '(Line) => <>', (line) =>
@@ -190,7 +228,7 @@ line_is_empty = F '(Line) -> boolean', (line) ->
 spec ->
   import 'spec_macros' as $
   import 'spec' as :describe, :it, :matchers
-  import deep_eq, eq, has_fields, len from matchers
+  import deep_eq, each_value, eq, has_fields, len from matchers
 
   run_check = F '(Check, string, string) -> [Error]', (check, file, content) ->
     if '\n' != content\sub -1
@@ -219,16 +257,16 @@ spec ->
             file: eq file
             row: eq 1
 
-  describe 'ImportStatementsSorted', ->
+  describe 'ImportBlockSorted', ->
     it 'accepts sorted imports', ->
-      errs = run_check ImportStatementsSorted!, 'test.yue', [[
+      errs = run_check ImportBlockSorted!, 'test.yue', [[
         import 'a'
         import 'b'
       ]]
       $expect_that errs, deep_eq {}
 
     it 'rejects unsorted imports', ->
-      errs = run_check ImportStatementsSorted!, 'test.yue', [[
+      errs = run_check ImportBlockSorted!, 'test.yue', [[
         import 'b'
         import 'a'
 
@@ -259,5 +297,28 @@ spec ->
           location: has_fields
             row: eq 1
 
+  describe 'ImportBlockKind', ->
+    it 'accepts homogenous blocks', ->
+      errs = run_check ImportBlockKind!, 'test.yue', [[
+        import 'a'
+
+        import 'b' as :c
+
+        import d from e
+      ]]
+      $expect_that errs, deep_eq {}
+
+    it 'rejects hetrogenous blocks', ->
+      errs = run_check ImportBlockKind!, 'test.yue', [[
+        import 'a'
+        import 'b' as :c
+      ]]
+      errs2 = run_check ImportBlockKind!, 'test.yue', [[
+        import 'b' as :c
+        import d from e
+      ]]
+      $expect_that errs, len eq 1
+      $expect_that errs, each_value has_fields
+        message: eq 'import block has mixed form'
 
 main {...}
