@@ -35,7 +35,7 @@ check = F '({}) -> boolean', (args) ->
   lines = io.lines file
   errs = run_checks file, lines,
     * ImportForm!
-    -- * ImportStatementsSorted!
+    * ImportStatementsSorted!
     -- * ImportItemsSorted!
   for err in *errs
     buf = {}
@@ -44,6 +44,8 @@ check = F '({}) -> boolean', (args) ->
   #errs == 0
 
 run_checks = F '(string, function, [Check]) -> [Error]', (file, src_lines, checks) ->
+  Declare::reset_errs!
+
   line_no = 0
   for src_line in src_lines
     line_no += 1
@@ -70,9 +72,12 @@ declare_type 'Location', [[{
 }]]
 
 class Declare
-  @errs: T '() => [Error]', => @_errs
-
   @_errs: T '[Error]', {}
+
+  @errs: F '() => [Error]', => @_errs
+
+  @reset_errs: F '() => <>', =>
+    @_errs = {}
 
   @error: F '(Error) => <>', (err) =>
     @_errs[] = err
@@ -87,24 +92,38 @@ class ImportForm
       \at line
       \help [[use form `import 'foo' as :bar]]
 
--- class ImportStatementsSorted
---   new: =>
---     @current_import_block = T '[Line]', {}
---
---   on_line: F '(Line) => <>', (line) =>
---     if line_is_empty line
---       return @on_block_end!
---     if not line\match '^%s*import'
---       return
---     @current_import_block[] = line
---     nil
---
---   on_eof: F '() => <>', (line) =>
---     @on_block_end!
---
---   on_block_end: F '() => ?Error', =>
---     @current_import_block = {}
---     nil
+class ImportStatementsSorted
+  new: =>
+    @current_import_block = T '[Line]', {}
+
+  on_line: F '(Line) => <>', (line) =>
+    if line_is_empty line
+      return @on_block_end!
+    if not line.content\match '^%s*import'
+      return @on_block_end!
+    @current_import_block[] = line
+
+  on_eof: F '() => <>', (line) =>
+    @on_block_end!
+
+  on_block_end: F '() => <>', =>
+    -- Check sorted
+    packages = with {}
+      for line in *@current_import_block
+        [] = line.content\match [[import '([^']*)']]
+
+    sorted = true
+    for i = 2, #packages
+      if packages[i-1] > packages[i]
+        sorted = false
+        break
+    if sorted
+      return
+
+    Declare::error with Error 'import block not sorted'
+      \at @current_import_block[#@current_import_block]
+
+    @current_import_block = {}
 
 -- class ImportItemsSorted -- TODO(kcza): complete me!
 
@@ -119,7 +138,6 @@ class Error
   at: F '(Line) => <>', (@line) =>
 
   help: F '(string) => <>', (@_help) =>
-
   fmt: F '({string}) => <>', (buf) =>
     with buf
       [] = 'warning: '
@@ -132,14 +150,13 @@ class Error
         [] = '\n  |'
 
       if @_help?
-        [] = '\n'
-        [] = '  * help: '
+        [] = '\n  * help: '
         [] = @_help
     return
 
 line_is_empty = F '(Line) -> boolean', (line) ->
   content = line.content
-  (content\match '^%s*$')? or (content\match '^%s*--.*$')?
+  not (content\match '^%s*$')? and not (content\match '^%s*--.*$')?
 
 spec ->
   import 'spec_macros' as $
@@ -168,8 +185,31 @@ spec ->
       $assert_that errs, len eq 1
       $assert_that errs[1], has_fields
         message: eq 'non-standard import form'
-        location: has_fields
-          file: eq file
-          row: eq 1
+        line: has_fields
+          location: has_fields
+            file: eq file
+            row: eq 1
+
+  describe 'ImportStatementsSorted', ->
+    it 'accepts sorted imports', ->
+      errs = run_check ImportStatementsSorted!, 'test.yue', [[
+        import 'a'
+        import 'b'
+      ]]
+      $expect_that errs, deep_eq {}
+
+    it 'rejects unsorted imports', ->
+      errs = run_check ImportStatementsSorted!, 'test.yue', [[
+        import 'b'
+        import 'a'
+
+        import 'd'
+        import 'c'
+      ]]
+      $assert_that errs, len eq 2
+      $expect_that errs[1], has_fields
+        message: eq 'import block not sorted'
+      $expect_that errs[2], has_fields
+        message: eq 'import block not sorted'
 
 main {...}
