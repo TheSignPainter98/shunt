@@ -43,9 +43,16 @@ uninstall: scripts/uninstall
 	./$<
 .PHONY: uninstall
 
-test: freight.lua $(OBJECTS)
+test: test_freight test_ylint
+.PHONY: test
+
+test_freight: freight.lua $(OBJECTS)
 	@$(LUA) $< test
-.PHONY: .FORCE
+.PHONY: test_freight
+
+test_ylint: ylint.lua
+	@$(LUA) ylint.lua test
+.PHONY: test_ylint
 
 freight/version.lua: .version.txt
 
