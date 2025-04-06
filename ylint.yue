@@ -207,19 +207,65 @@ class Error
 
   fmt: F '({string}) => <>', (buf) =>
     with buf
-      [] = 'warning: '
+      @fmt_stylise buf, 'warning', colour: 'yellow', weight: 'bold'
+      @fmt_stylise buf, ': ', weight: 'bold'
       [] = @message
       if @line?
-        [] = "\n --> #{@line.location.file}:#{@line.location.row}"
-        [] = '\n  |'
-        [] = '\n  | '
-        [] = @line.content
-        [] = '\n  |'
+        [] = '\n '
+        @fmt_stylise buf, '-->', colour: 'blue', weight: 'bold'
+        [] = " #{@line.location.file}:#{@line.location.row}"
+        @fmt_stylise buf, '\n  |', colour: 'blue'
+        @fmt_stylise buf, '\n  | ', colour: 'blue'
+        @fmt_stylise buf, (@line.content\match '^%s*(.*)$'), colour: 'cyan'
+        @fmt_stylise buf, '\n  | ', colour: 'blue'
 
       if @_help?
-        [] = '\n  * help: '
+        [] = '\n  * '
+        @fmt_stylise buf, 'help', colour: 'green', weight: 'bold'
+        @fmt_stylise buf, ': ', weight: 'bold'
         [] = @_help
     return
+
+  fmt_stylise: F '([string], string, Style) => <>', (buf, to_colourise, style) =>
+    with buf
+      colour_index = colour_indices[style.colour ?? 'white']
+      effect_index = effect_indices[style.weight ?? 'normal']
+      [] = "\x1b[#{effect_index};3#{colour_index}m"
+      [] = to_colourise
+      [] = '\x1b[0m'
+    return
+
+colour_indices =
+  black: 0
+  red: 1
+  green: 2
+  yellow: 3
+  blue: 4
+  purple: 5
+  cyan: 6
+  white: 7
+effect_indices =
+  normal: 0
+  bold: 1
+
+declare_type 'Style', [[{
+  colour: ?Colour,
+  weight: ?Weight,
+}]]
+declare_type 'Colour', [[
+  "black"
+  |"red"
+  |"green"
+  |"yellow"
+  |"blue"
+  |"purple"
+  |"cyan"
+  |"white"
+]]
+declare_type 'Weight', [[
+  "normal"
+  |"bold"
+]]
 
 line_is_empty = F '(Line) -> boolean', (line) ->
   content = line.content
