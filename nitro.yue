@@ -1,7 +1,7 @@
 local *
 
-import ArgParser, Param, Flag from require 'clap'
-import spec, run_tests from require 'spec'
+import 'clap' as :ArgParser, :Flag, :Param
+import 'spec' as :run_tests, :spec
 
 log = (...) -> -- Ignore.
 
@@ -55,7 +55,8 @@ to_bytecode = (code) ->
   string.dump assert loadstring code
 
 spec ->
-  import expect_that, describe, it, matchers from require 'spec'
+  import 'spec' as :describe, :expect_that, :it, :matchers
+
   import eq from matchers
 
   describe 'bytecode', ->

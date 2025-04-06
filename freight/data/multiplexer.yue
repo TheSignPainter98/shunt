@@ -59,7 +59,9 @@ export class Multiplexer
 
 spec ->
   import 'spec_macros' as $
-  import describe, it, matchers from require 'spec'
+
+  import 'spec' as :describe, :it, :matchers
+
   import anything, deep_eq, errors, eq from matchers
 
   describe 'Multiplexer', ->

@@ -1,6 +1,6 @@
 local *
 
-import 'quicktype' as :F, :declare_type
+import 'quicktype' as :declare_type, :F
 import 'spec' as :spec
 
 declare_type 'StationBackend', [[{
@@ -170,8 +170,10 @@ export class TestStationBackend
 
 spec ->
   import 'spec_macros' as $
-  import T from require 'quicktype'
-  import describe, it, matchers from require 'spec'
+
+  import 'quicktype' as :T
+  import 'spec' as :describe, :it, :matchers
+
   import anything, errors, no_errors from matchers
 
   describe 'Station', ->

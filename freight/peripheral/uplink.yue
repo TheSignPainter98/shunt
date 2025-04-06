@@ -1,6 +1,6 @@
 local *
 
-import 'quicktype' as :F, :declare_type, :declare_singleton_type
+import 'quicktype' as :declare_singleton_type, :declare_type, :F
 import 'spec' as :spec
 
 export TIMEOUT = <tostring>: => "Timeout"
@@ -121,7 +121,9 @@ export IdempotenceToken = F '() -> IdempotenceToken', ->
 
 spec ->
   import 'spec_macros' as $
-  import describe, it, matchers from require 'spec'
+
+  import 'spec' as :describe, :it, :matchers
+
   import deep_eq, eq, errors, matches, no_errors from matchers
 
   class TestPacket extends Packet

@@ -1,7 +1,7 @@
 local *
 local Symbol
 
-import spec, repr from require 'spec'
+import 'spec' as :repr, :spec
 
 export T = (type_spec, value) ->
   if not type_spec?
@@ -1153,7 +1153,10 @@ export stats = ->
   stats_arr
 
 spec ->
-  import assert_that, expect_that, describe, it, matchers from require 'spec'
+  import 'spec_macros' as $
+
+  import 'spec' as :describe, :it, :matchers
+
   import anything, contains_value, deep_eq, each_value, eq, errors, has_fields, ge, gt, len, match, matches, no_errors from matchers
 
   describe 'Lexer', ->
@@ -1174,17 +1177,17 @@ spec ->
         * 'any'
         * 'some'
       for simple_type in *simple_types
-        expect_that (tokens simple_type), deep_eq {
+        $expect_that (tokens simple_type), deep_eq {
           Symbol T_NAME, simple_type
         }
 
     it 'emits the never type', ->
-      expect_that (tokens '!'), deep_eq {
+      $expect_that (tokens '!'), deep_eq {
         Symbol T_BANG
       }
 
     it 'emits number types', ->
-      expect_that (tokens '123 456.654 .789 -123 -456.654 -.789'), deep_eq {
+      $expect_that (tokens '123 456.654 .789 -123 -456.654 -.789'), deep_eq {
         Symbol T_NUMBER, 123
         Symbol T_NUMBER, 456.654
         Symbol T_NUMBER, .789
@@ -1194,13 +1197,13 @@ spec ->
       }
 
     it 'emits string types', ->
-      expect_that (tokens '"hello" "world"'), deep_eq {
+      $expect_that (tokens '"hello" "world"'), deep_eq {
         Symbol T_STRING, 'hello'
         Symbol T_STRING, 'world'
       }
 
     it 'emits strucural tokens', ->
-      expect_that (tokens '(),{}[]:->=>...?+|'), deep_eq {
+      $expect_that (tokens '(),{}[]:->=>...?+|'), deep_eq {
         Symbol T_PAREN_OPEN
         Symbol T_PAREN_CLOSE
         Symbol T_COMMA
@@ -1218,7 +1221,7 @@ spec ->
       }
 
     it 'ignores whitespace', ->
-      expect_that (tokens ' (\tstr_ing\r)\n-> str-ing '), deep_eq {
+      $expect_that (tokens ' (\tstr_ing\r)\n-> str-ing '), deep_eq {
         Symbol T_PAREN_OPEN
         Symbol T_NAME, "str_ing"
         Symbol T_PAREN_CLOSE
@@ -1227,155 +1230,155 @@ spec ->
       }
 
     it 'ignores comments', ->
-      expect_that (tokens '-- hello\n--world!'), deep_eq {}
+      $expect_that (tokens '-- hello\n--world!'), deep_eq {}
 
     it 'rejects unexpected characters', ->
-      expect_that (-> tokens '~'), errors matches [[unexpected character '~']]
+      $expect_that (-> tokens '~'), errors matches [[unexpected character '~']]
 
     describe ':peek', ->
       it 'matches :next', ->
         lexer = Lexer '()'
-        assert_that lexer\peek!, deep_eq Symbol T_PAREN_OPEN
-        assert_that lexer\peek!, deep_eq Symbol T_PAREN_OPEN
-        assert_that lexer\next!, deep_eq Symbol T_PAREN_OPEN
-        assert_that lexer\peek!, deep_eq Symbol T_PAREN_CLOSE
-        assert_that lexer\peek!, deep_eq Symbol T_PAREN_CLOSE
-        assert_that lexer\next!, deep_eq Symbol T_PAREN_CLOSE
+        $assert_that lexer\peek!, deep_eq Symbol T_PAREN_OPEN
+        $assert_that lexer\peek!, deep_eq Symbol T_PAREN_OPEN
+        $assert_that lexer\next!, deep_eq Symbol T_PAREN_OPEN
+        $assert_that lexer\peek!, deep_eq Symbol T_PAREN_CLOSE
+        $assert_that lexer\peek!, deep_eq Symbol T_PAREN_CLOSE
+        $assert_that lexer\next!, deep_eq Symbol T_PAREN_CLOSE
 
       it 'returns nil at EOF', ->
         lexer = Lexer ''
-        expect_that lexer\peek!, eq nil
-        expect_that lexer\peek!, eq nil
+        $expect_that lexer\peek!, eq nil
+        $expect_that lexer\peek!, eq nil
 
   describe 'TypeSpecParser', ->
     describe 'run on simple types', ->
       it 'accepts primitives', ->
-        expect_that (parse 'nil'), deep_eq Primitive type nil
-        expect_that (parse 'number'), deep_eq Primitive type 0
-        expect_that (parse 'number'), deep_eq Primitive type 0.0
-        expect_that (parse 'string'), deep_eq Primitive type ""
-        expect_that (parse 'table'), deep_eq Primitive type {}
-        expect_that (parse 'function'), deep_eq Primitive type ->
-        expect_that (parse 'thread'), deep_eq Primitive type coroutine.create ->
-        expect_that (parse 'any'), deep_eq Any!
-        expect_that (parse 'some'), deep_eq Some!
-        expect_that (parse '!'), deep_eq Never!
+        $expect_that (parse 'nil'), deep_eq Primitive type nil
+        $expect_that (parse 'number'), deep_eq Primitive type 0
+        $expect_that (parse 'number'), deep_eq Primitive type 0.0
+        $expect_that (parse 'string'), deep_eq Primitive type ""
+        $expect_that (parse 'table'), deep_eq Primitive type {}
+        $expect_that (parse 'function'), deep_eq Primitive type ->
+        $expect_that (parse 'thread'), deep_eq Primitive type coroutine.create ->
+        $expect_that (parse 'any'), deep_eq Any!
+        $expect_that (parse 'some'), deep_eq Some!
+        $expect_that (parse '!'), deep_eq Never!
 
       it 'accepts user types', ->
-        expect_that (parse 'UserType'), deep_eq UserType 'UserType'
+        $expect_that (parse 'UserType'), deep_eq UserType 'UserType'
 
       it 'accepts number types', ->
-        expect_that (parse '123'), deep_eq NumberType 123
+        $expect_that (parse '123'), deep_eq NumberType 123
 
       it 'accepts string types', ->
-        expect_that (parse '"hello"'), deep_eq StringType 'hello'
+        $expect_that (parse '"hello"'), deep_eq StringType 'hello'
 
       it 'rejects unknown primitives', ->
-        expect_that (-> parse 'user'), errors matches [[cannot use 'user' as user type name: name must start with an uppercase letter]]
+        $expect_that (-> parse 'user'), errors matches [[cannot use 'user' as user type name: name must start with an uppercase letter]]
 
       it 'rejects incomplete types', ->
-        expect_that (-> parse '['), errors matches [[unexpected EOF]]
+        $expect_that (-> parse '['), errors matches [[unexpected EOF]]
 
       it 'rejects inputs with trailing errors', ->
-        expect_that (-> parse 'string]'), errors matches 'type spec has trailing characters'
+        $expect_that (-> parse 'string]'), errors matches 'type spec has trailing characters'
 
     describe 'run on composite types', ->
       it 'accepts optional', ->
-        expect_that (parse '?nil'), deep_eq Optional Primitive 'nil'
-        expect_that (parse '?string'), deep_eq Optional Primitive 'string'
-        expect_that (parse '?() -> nil'), deep_eq Optional Function {}, {Primitive 'nil'}
+        $expect_that (parse '?nil'), deep_eq Optional Primitive 'nil'
+        $expect_that (parse '?string'), deep_eq Optional Primitive 'string'
+        $expect_that (parse '?() -> nil'), deep_eq Optional Function {}, {Primitive 'nil'}
 
       it 'accepts arrays', ->
-        expect_that (parse '[string]'), deep_eq Array Primitive 'string'
-        expect_that (parse '[[string]]'), deep_eq Array Array Primitive 'string'
+        $expect_that (parse '[string]'), deep_eq Array Primitive 'string'
+        $expect_that (parse '[[string]]'), deep_eq Array Array Primitive 'string'
 
       it 'accepts tuples', ->
-        expect_that (parse '()'), deep_eq Tuple {}
-        expect_that (parse '(nil,)'), deep_eq Tuple { Primitive 'nil' }
-        expect_that (parse '(nil, number)'), deep_eq Tuple { (Primitive 'nil'), Primitive 'number' }
-        expect_that (parse '((nil, number), string, (User, table))'), deep_eq Tuple {
+        $expect_that (parse '()'), deep_eq Tuple {}
+        $expect_that (parse '(nil,)'), deep_eq Tuple { Primitive 'nil' }
+        $expect_that (parse '(nil, number)'), deep_eq Tuple { (Primitive 'nil'), Primitive 'number' }
+        $expect_that (parse '((nil, number), string, (User, table))'), deep_eq Tuple {
           Tuple { (Primitive 'nil'), (Primitive 'number') },
           Primitive 'string',
           Tuple { (UserType 'User'), (Primitive 'table') },
         }
 
       it 'accepts sets', ->
-        expect_that (parse '{string}'), deep_eq Set Primitive 'string'
-        expect_that (parse '{{string}}'), deep_eq Set Set Primitive 'string'
+        $expect_that (parse '{string}'), deep_eq Set Primitive 'string'
+        $expect_that (parse '{{string}}'), deep_eq Set Set Primitive 'string'
 
       it 'accepts mappings', ->
-        expect_that (parse '{boolean -> number}'), deep_eq Mapping (Primitive 'boolean'), Primitive 'number'
-        expect_that (parse '{{boolean -> number} -> {string -> thread}}'), deep_eq Mapping (Mapping (Primitive 'boolean'), Primitive 'number'), Mapping (Primitive 'string'), Primitive 'thread'
+        $expect_that (parse '{boolean -> number}'), deep_eq Mapping (Primitive 'boolean'), Primitive 'number'
+        $expect_that (parse '{{boolean -> number} -> {string -> thread}}'), deep_eq Mapping (Mapping (Primitive 'boolean'), Primitive 'number'), Mapping (Primitive 'string'), Primitive 'thread'
 
       it 'accepts structs', ->
-        expect_that (parse '{}'), deep_eq Struct {}
-        expect_that (parse '{field: boolean}'), deep_eq Struct
+        $expect_that (parse '{}'), deep_eq Struct {}
+        $expect_that (parse '{field: boolean}'), deep_eq Struct
           * Field 'field', Primitive 'boolean'
-        expect_that (parse '{field: boolean,}'), deep_eq Struct
+        $expect_that (parse '{field: boolean,}'), deep_eq Struct
           * Field 'field', Primitive 'boolean'
-        expect_that (parse '{field1: number, field2: string}'), deep_eq Struct
+        $expect_that (parse '{field1: number, field2: string}'), deep_eq Struct
           * Field 'field1', Primitive 'number'
           * Field 'field2', Primitive 'string'
-        expect_that (parse '{outer1: {inner1: boolean}, outer2: {inner2: boolean}}'), deep_eq Struct
+        $expect_that (parse '{outer1: {inner1: boolean}, outer2: {inner2: boolean}}'), deep_eq Struct
           * Field 'outer1', Struct
             * Field 'inner1', Primitive 'boolean'
           * Field 'outer2', Struct
             * Field 'inner2', Primitive 'boolean'
 
       it 'accepts functions', ->
-        expect_that (parse '() -> <>'), deep_eq Function {}, {}
-        expect_that (parse '() -> nil'), deep_eq Function {}, {Primitive 'nil'}
-        expect_that (parse '(string) -> number'), deep_eq Function {Primitive 'string'}, {Primitive 'number'}
-        expect_that (parse '(number, string) -> number'), deep_eq Function {(Primitive 'number'), (Primitive 'string')}, {Primitive 'number'}
-        expect_that (parse '(string) -> (number) -> boolean'), deep_eq Function {Primitive 'string'}, {Function {Primitive 'number'}, {Primitive 'boolean'}}
-        expect_that (parse '() -> <string>'), deep_eq Function {}, {(Primitive 'string')}
-        expect_that (parse '() -> <string,>'), deep_eq Function {}, { Primitive 'string' }
-        expect_that (parse '() -> <string, boolean>'), deep_eq Function {}, {(Primitive 'string'), (Primitive 'boolean')}
+        $expect_that (parse '() -> <>'), deep_eq Function {}, {}
+        $expect_that (parse '() -> nil'), deep_eq Function {}, {Primitive 'nil'}
+        $expect_that (parse '(string) -> number'), deep_eq Function {Primitive 'string'}, {Primitive 'number'}
+        $expect_that (parse '(number, string) -> number'), deep_eq Function {(Primitive 'number'), (Primitive 'string')}, {Primitive 'number'}
+        $expect_that (parse '(string) -> (number) -> boolean'), deep_eq Function {Primitive 'string'}, {Function {Primitive 'number'}, {Primitive 'boolean'}}
+        $expect_that (parse '() -> <string>'), deep_eq Function {}, {(Primitive 'string')}
+        $expect_that (parse '() -> <string,>'), deep_eq Function {}, { Primitive 'string' }
+        $expect_that (parse '() -> <string, boolean>'), deep_eq Function {}, {(Primitive 'string'), (Primitive 'boolean')}
 
-        expect_that (parse '(string...) -> number...'), deep_eq Function {<index>: => Primitive 'string'}, {<index>: => Primitive 'number'}
-        expect_that (parse '(string...) -> <number...>'), deep_eq Function {<index>: => Primitive 'string'}, {<index>: => Primitive 'number'}
-        expect_that (parse '(boolean, string...) -> <thread, number...>'), deep_eq Function {(Primitive 'boolean'), <index>: => Primitive 'string'}, {(Primitive 'thread'), <index>: => Primitive 'number'}
-        expect_that (parse '() -> [string]...'), deep_eq Function {}, { <index>: => Array Primitive 'string' }
+        $expect_that (parse '(string...) -> number...'), deep_eq Function {<index>: => Primitive 'string'}, {<index>: => Primitive 'number'}
+        $expect_that (parse '(string...) -> <number...>'), deep_eq Function {<index>: => Primitive 'string'}, {<index>: => Primitive 'number'}
+        $expect_that (parse '(boolean, string...) -> <thread, number...>'), deep_eq Function {(Primitive 'boolean'), <index>: => Primitive 'string'}, {(Primitive 'thread'), <index>: => Primitive 'number'}
+        $expect_that (parse '() -> [string]...'), deep_eq Function {}, { <index>: => Array Primitive 'string' }
 
       it 'accepts methods', ->
-        expect_that (parse '() => <>'), deep_eq Method {}, {}
-        expect_that (parse '() => nil'), deep_eq Method {}, {Primitive 'nil'}
-        expect_that (parse '(string) => number'), deep_eq Method {Primitive 'string'}, {Primitive 'number'}
-        expect_that (parse '(number, string) => number'), deep_eq Method {(Primitive 'number'), (Primitive 'string')}, {Primitive 'number'}
-        expect_that (parse '(string) => (number) => boolean'), deep_eq Method {Primitive 'string'}, {Method {Primitive 'number'}, {Primitive 'boolean'}}
-        expect_that (parse '() => <string>'), deep_eq Method {}, {(Primitive 'string')}
-        expect_that (parse '() => <string,>'), deep_eq Method {}, { Primitive 'string' }
-        expect_that (parse '() => <string, boolean>'), deep_eq Method {}, {(Primitive 'string'), (Primitive 'boolean')}
+        $expect_that (parse '() => <>'), deep_eq Method {}, {}
+        $expect_that (parse '() => nil'), deep_eq Method {}, {Primitive 'nil'}
+        $expect_that (parse '(string) => number'), deep_eq Method {Primitive 'string'}, {Primitive 'number'}
+        $expect_that (parse '(number, string) => number'), deep_eq Method {(Primitive 'number'), (Primitive 'string')}, {Primitive 'number'}
+        $expect_that (parse '(string) => (number) => boolean'), deep_eq Method {Primitive 'string'}, {Method {Primitive 'number'}, {Primitive 'boolean'}}
+        $expect_that (parse '() => <string>'), deep_eq Method {}, {(Primitive 'string')}
+        $expect_that (parse '() => <string,>'), deep_eq Method {}, { Primitive 'string' }
+        $expect_that (parse '() => <string, boolean>'), deep_eq Method {}, {(Primitive 'string'), (Primitive 'boolean')}
 
-        expect_that (parse '(string...) => number...'), deep_eq Method {<index>: => Primitive 'string'}, {<index>: => Primitive 'number'}
-        expect_that (parse '(string...) => <number...>'), deep_eq Method {<index>: => Primitive 'string'}, {<index>: => Primitive 'number'}
-        expect_that (parse '(boolean, string...) => <thread, number...>'), deep_eq Method {(Primitive 'boolean'), <index>: => Primitive 'string'}, {(Primitive 'thread'), <index>: => Primitive 'number'}
-        expect_that (parse '() => [string]...'), deep_eq Method {}, { <index>: => Array Primitive 'string' }
+        $expect_that (parse '(string...) => number...'), deep_eq Method {<index>: => Primitive 'string'}, {<index>: => Primitive 'number'}
+        $expect_that (parse '(string...) => <number...>'), deep_eq Method {<index>: => Primitive 'string'}, {<index>: => Primitive 'number'}
+        $expect_that (parse '(boolean, string...) => <thread, number...>'), deep_eq Method {(Primitive 'boolean'), <index>: => Primitive 'string'}, {(Primitive 'thread'), <index>: => Primitive 'number'}
+        $expect_that (parse '() => [string]...'), deep_eq Method {}, { <index>: => Array Primitive 'string' }
 
       it 'accepts conjunctions', ->
-        expect_that (parse '[string]+{number->string}+table+function'), deep_eq Conjunction
+        $expect_that (parse '[string]+{number->string}+table+function'), deep_eq Conjunction
           * Array Primitive 'string'
           * Mapping (Primitive 'number'), Primitive 'string'
           * Primitive 'table'
           * Primitive 'function'
 
       it 'accepts disjunctions', ->
-        expect_that (parse '[string]|{number->string}|table|function'), deep_eq Disjunction
+        $expect_that (parse '[string]|{number->string}|table|function'), deep_eq Disjunction
           * Array Primitive 'string'
           * Mapping (Primitive 'number'), Primitive 'string'
           * Primitive 'table'
           * Primitive 'function'
-        expect_that (parse '{string|number}'), deep_eq Set Disjunction
+        $expect_that (parse '{string|number}'), deep_eq Set Disjunction
           * Primitive 'string'
           * Primitive 'number'
 
       it 'gives precedence to conjunctions', ->
-        expect_that (parse 'string+number|boolean'), deep_eq Disjunction
+        $expect_that (parse 'string+number|boolean'), deep_eq Disjunction
           * Conjunction
             * Primitive 'string'
             * Primitive 'number'
           * Primitive 'boolean'
-        expect_that (parse 'string|number+boolean'), deep_eq Disjunction
+        $expect_that (parse 'string|number+boolean'), deep_eq Disjunction
           * Primitive 'string'
           * Conjunction
             * Primitive 'number'
@@ -1383,20 +1386,20 @@ spec ->
 
   describe 'T', ->
     it 'requires two arguments', ->
-      expect_that (-> T!), errors matches 'cannot typecheck: no type spec provided'
+      $expect_that (-> T!), errors matches 'cannot typecheck: no type spec provided'
 
     it 'returns its second argument', ->
       value = {}
-      expect_that (T '{}', value), eq value
+      $expect_that (T '{}', value), eq value
 
     it 'checks primitives', ->
-      expect_that (-> T 'nil', nil), no_errors!
-      expect_that (-> T 'number', 123), no_errors!
-      expect_that (-> T 'string', 'some-string'), no_errors!
+      $expect_that (-> T 'nil', nil), no_errors!
+      $expect_that (-> T 'number', 123), no_errors!
+      $expect_that (-> T 'string', 'some-string'), no_errors!
 
-      expect_that (-> T 'nil', 123), errors matches 'incorrect type: expected nil but got number'
-      expect_that (-> T 'number', nil), errors matches 'incorrect type: expected number but got nil'
-      expect_that (-> T 'string', 123), errors matches 'incorrect type: expected string but got number'
+      $expect_that (-> T 'nil', 123), errors matches 'incorrect type: expected nil but got number'
+      $expect_that (-> T 'number', nil), errors matches 'incorrect type: expected number but got nil'
+      $expect_that (-> T 'string', 123), errors matches 'incorrect type: expected string but got number'
 
     it 'checks any', ->
       values =
@@ -1406,8 +1409,8 @@ spec ->
         * ->
         * coroutine.create ->
       for value in *values
-        expect_that (-> T 'any', value), no_errors!
-      expect_that (-> T 'any', nil), no_errors!
+        $expect_that (-> T 'any', value), no_errors!
+      $expect_that (-> T 'any', nil), no_errors!
 
     it 'checks some', ->
       values =
@@ -1417,249 +1420,249 @@ spec ->
         * ->
         * coroutine.create ->
       for value in *values
-        expect_that (-> T 'some', value), no_errors!
-      expect_that (-> T 'some', nil), errors matches "incorrect type: expected some but got nil"
+        $expect_that (-> T 'some', value), no_errors!
+      $expect_that (-> T 'some', nil), errors matches "incorrect type: expected some but got nil"
 
     it 'rejects never', ->
-      expect_that (-> T '!', 123), errors matches 'never expected a value here'
+      $expect_that (-> T '!', 123), errors matches 'never expected a value here'
 
     it 'rejects nonexistent types', ->
-      expect_that (-> T 'IDoNotExist', 123), errors matches 'cannot typecheck: type IDoNotExist not defined'
+      $expect_that (-> T 'IDoNotExist', 123), errors matches 'cannot typecheck: type IDoNotExist not defined'
 
       declare_type 'ChildDoesNotExist', 'IDoNotExist'
-      expect_that (-> T 'ChildDoesNotExist', 123), errors matches 'cannot typecheck: type IDoNotExist not defined'
+      $expect_that (-> T 'ChildDoesNotExist', 123), errors matches 'cannot typecheck: type IDoNotExist not defined'
 
     it 'checks number types', ->
-      expect_that (-> T '123', 123), no_errors!
-      expect_that (-> T '123', 0), errors matches "incorrect type: expected number 123"
-      expect_that (-> T '123', {}), errors matches "incorrect type: expected number but got table"
+      $expect_that (-> T '123', 123), no_errors!
+      $expect_that (-> T '123', 0), errors matches "incorrect type: expected number 123"
+      $expect_that (-> T '123', {}), errors matches "incorrect type: expected number but got table"
 
     it 'checks string types', ->
-      expect_that (-> T '"hello"', 'hello'), no_errors!
-      expect_that (-> T '"hello"', 'world'), errors matches "incorrect type: expected string 'hello'"
+      $expect_that (-> T '"hello"', 'hello'), no_errors!
+      $expect_that (-> T '"hello"', 'world'), errors matches "incorrect type: expected string 'hello'"
 
     it 'checks singleton types', ->
       make_singleton = (name) -> <tostring>: => name
       SINGLETON = make_singleton 'Singleton'
       declare_singleton_type SINGLETON
 
-      expect_that (-> T 'Singleton', SINGLETON), no_errors!
+      $expect_that (-> T 'Singleton', SINGLETON), no_errors!
 
-      expect_that (-> T 'Singleton', nil), errors matches "incorrect type: expected table Singleton"
-      expect_that (-> T 'Singleton', {}), errors matches "incorrect type: expected table Singleton"
-      expect_that (-> T 'Singleton', make_singleton 'Singleton'), errors matches "incorrect type: expected table Singleton"
+      $expect_that (-> T 'Singleton', nil), errors matches "incorrect type: expected table Singleton"
+      $expect_that (-> T 'Singleton', {}), errors matches "incorrect type: expected table Singleton"
+      $expect_that (-> T 'Singleton', make_singleton 'Singleton'), errors matches "incorrect type: expected table Singleton"
 
     it 'checks optionals', ->
-      expect_that (-> T '?number', nil), no_errors!
-      expect_that (-> T '?number', 123), no_errors!
-      expect_that (-> T '?number', 'str'), errors matches 'incorrect type: expected number but got string'
-      expect_that (-> T '?(number)', 'str'), errors matches 'incorrect type: expected table but got string'
+      $expect_that (-> T '?number', nil), no_errors!
+      $expect_that (-> T '?number', 123), no_errors!
+      $expect_that (-> T '?number', 'str'), errors matches 'incorrect type: expected number but got string'
+      $expect_that (-> T '?(number)', 'str'), errors matches 'incorrect type: expected table but got string'
 
     it 'checks arrays', ->
-      expect_that (-> T '[number]', {}), no_errors!
-      expect_that (-> T '[number]', {123, 312}), no_errors!
-      expect_that (-> T '[[number]]', {{123}, {312}}), no_errors!
+      $expect_that (-> T '[number]', {}), no_errors!
+      $expect_that (-> T '[number]', {123, 312}), no_errors!
+      $expect_that (-> T '[[number]]', {{123}, {312}}), no_errors!
 
-      expect_that (-> T '[string]', 123), errors matches 'incorrect type: expected table but got number'
-      expect_that (-> T '[[number]]', {{123}, {'asdf'}}), errors matches 'incorrect type: expected number but got string'
+      $expect_that (-> T '[string]', 123), errors matches 'incorrect type: expected table but got number'
+      $expect_that (-> T '[[number]]', {{123}, {'asdf'}}), errors matches 'incorrect type: expected number but got string'
 
       hybrid = {123, 456, 789, field: 'a'}
       if #hybrid != 3
-        expect_that (-> T '[string]', hybrid), no_errors!
+        $expect_that (-> T '[string]', hybrid), no_errors!
       else
-        expect_that (-> T '[string]', hybrid), errors matches 'incorrect type: expected string but got number'
+        $expect_that (-> T '[string]', hybrid), errors matches 'incorrect type: expected string but got number'
 
     it 'checks tuples', ->
-      expect_that (-> T '()', {}), no_errors!
-      expect_that (-> T '(number, boolean, string)', {123, true, 'hello'}), no_errors!
-      expect_that (-> T '(number, boolean, string)', {123, true, 'hello', coroutine.create ->}), no_errors!
-      expect_that (-> T '((number, boolean), (string, thread))', {{123, true}, {'hello', coroutine.create ->}}), no_errors!
+      $expect_that (-> T '()', {}), no_errors!
+      $expect_that (-> T '(number, boolean, string)', {123, true, 'hello'}), no_errors!
+      $expect_that (-> T '(number, boolean, string)', {123, true, 'hello', coroutine.create ->}), no_errors!
+      $expect_that (-> T '((number, boolean), (string, thread))', {{123, true}, {'hello', coroutine.create ->}}), no_errors!
 
-      expect_that (-> T '(number, boolean, string)', nil), errors matches 'incorrect type: expected table but got nil'
-      expect_that (-> T '(number, boolean, string)', {}), errors matches 'incorrect type: expected number but got nil'
-      expect_that (-> T '(number, boolean, string)', {123}), errors matches 'incorrect type: expected boolean but got nil'
-      expect_that (-> T '(number, boolean, string)', {'interloper'}), errors matches 'incorrect type: expected number but got string'
+      $expect_that (-> T '(number, boolean, string)', nil), errors matches 'incorrect type: expected table but got nil'
+      $expect_that (-> T '(number, boolean, string)', {}), errors matches 'incorrect type: expected number but got nil'
+      $expect_that (-> T '(number, boolean, string)', {123}), errors matches 'incorrect type: expected boolean but got nil'
+      $expect_that (-> T '(number, boolean, string)', {'interloper'}), errors matches 'incorrect type: expected number but got string'
 
     it 'checks sets', ->
-      expect_that (-> T '{number}', {}), no_errors!
-      expect_that (-> T '{number}', {[123]: true, [321]: {}}), no_errors!
-      expect_that (-> T '{{number}}', {[{123}]: true}), no_errors!
+      $expect_that (-> T '{number}', {}), no_errors!
+      $expect_that (-> T '{number}', {[123]: true, [321]: {}}), no_errors!
+      $expect_that (-> T '{{number}}', {[{123}]: true}), no_errors!
 
-      expect_that (-> T '{number}', nil), errors matches 'incorrect type: expected table but got nil'
-      expect_that (-> T '{number}', {[123]: false}), errors matches 'incorrect type: expected a truthy value but got false'
-      expect_that (-> T '{{number}}', {[{['asdf']: true}]: true}), errors matches 'incorrect type: expected number but got string'
+      $expect_that (-> T '{number}', nil), errors matches 'incorrect type: expected table but got nil'
+      $expect_that (-> T '{number}', {[123]: false}), errors matches 'incorrect type: expected a truthy value but got false'
+      $expect_that (-> T '{{number}}', {[{['asdf']: true}]: true}), errors matches 'incorrect type: expected number but got string'
 
     it 'checks mappings', ->
-      expect_that (-> T '{string -> number}', {}), no_errors!
-      expect_that (-> T '{number -> string}', {'hello', [10]: 'world'}), no_errors!
-      expect_that (-> T '{{boolean -> number} -> {string -> thread}}', {[{[true]: 123}]: {asdf: coroutine.create ->}}), no_errors!
+      $expect_that (-> T '{string -> number}', {}), no_errors!
+      $expect_that (-> T '{number -> string}', {'hello', [10]: 'world'}), no_errors!
+      $expect_that (-> T '{{boolean -> number} -> {string -> thread}}', {[{[true]: 123}]: {asdf: coroutine.create ->}}), no_errors!
 
-      expect_that (-> T '{number -> string}', nil), errors matches 'incorrect type: expected table but got nil'
-      expect_that (-> T '{number -> string}', {123}), errors matches 'incorrect type: expected string but got number'
-      expect_that (-> T '{number -> string}', {'hello', 'world', 'foo', 'bar', 'baz', 123}), errors matches 'incorrect type: expected string but got number'
+      $expect_that (-> T '{number -> string}', nil), errors matches 'incorrect type: expected table but got nil'
+      $expect_that (-> T '{number -> string}', {123}), errors matches 'incorrect type: expected string but got number'
+      $expect_that (-> T '{number -> string}', {'hello', 'world', 'foo', 'bar', 'baz', 123}), errors matches 'incorrect type: expected string but got number'
 
     it 'checks structs', ->
-      expect_that (-> T '{}', {}), no_errors!
-      expect_that (-> T '{}', {123}), no_errors!
-      expect_that (-> T '{}', {hello: 123}), no_errors!
-      expect_that (-> T '{hello: string}', {hello: 'hello'}), no_errors!
-      expect_that (-> T '{hello: {world: string}}', {hello: world: 'world'}), no_errors!
-      expect_that (-> T '{hello: {world: string}, foo: boolean}', hello: {world:'asdf'}, foo: true), no_errors!
+      $expect_that (-> T '{}', {}), no_errors!
+      $expect_that (-> T '{}', {123}), no_errors!
+      $expect_that (-> T '{}', {hello: 123}), no_errors!
+      $expect_that (-> T '{hello: string}', {hello: 'hello'}), no_errors!
+      $expect_that (-> T '{hello: {world: string}}', {hello: world: 'world'}), no_errors!
+      $expect_that (-> T '{hello: {world: string}, foo: boolean}', hello: {world:'asdf'}, foo: true), no_errors!
 
-      expect_that (-> T '{}', 132), errors matches 'incorrect type: expected table but got number'
-      expect_that (-> T '{hello: string}', {}), errors matches 'incorrect type: expected string but got nil'
-      expect_that (-> T '{hello: string}', hello: 123), errors matches 'incorrect type: expected string but got number'
-      expect_that (-> T '{hello: {world: string}}', hello: 123), errors matches 'incorrect type: expected table but got number'
-      expect_that (-> T '{hello: {world: string}}', hello: {}), errors matches 'incorrect type: expected string but got nil'
-      expect_that (-> T '{hello: {world: string}}', hello: world: 123), errors matches 'incorrect type: expected string but got number'
-      expect_that (-> T '{hello: {world: string}, foo: boolean}', hello: {world:'asdf'}, foo: 123), errors matches 'incorrect type: expected boolean but got number'
+      $expect_that (-> T '{}', 132), errors matches 'incorrect type: expected table but got number'
+      $expect_that (-> T '{hello: string}', {}), errors matches 'incorrect type: expected string but got nil'
+      $expect_that (-> T '{hello: string}', hello: 123), errors matches 'incorrect type: expected string but got number'
+      $expect_that (-> T '{hello: {world: string}}', hello: 123), errors matches 'incorrect type: expected table but got number'
+      $expect_that (-> T '{hello: {world: string}}', hello: {}), errors matches 'incorrect type: expected string but got nil'
+      $expect_that (-> T '{hello: {world: string}}', hello: world: 123), errors matches 'incorrect type: expected string but got number'
+      $expect_that (-> T '{hello: {world: string}, foo: boolean}', hello: {world:'asdf'}, foo: 123), errors matches 'incorrect type: expected boolean but got number'
 
     it 'checks functions', ->
-      expect_that (-> T '() -> nil', ->), no_errors!
-      expect_that (-> T '() -> nil', -> nil), no_errors!
-      expect_that (-> T '() -> nil', {}), errors matches 'incorrect type: expected function but got table'
+      $expect_that (-> T '() -> nil', ->), no_errors!
+      $expect_that (-> T '() -> nil', -> nil), no_errors!
+      $expect_that (-> T '() -> nil', {}), errors matches 'incorrect type: expected function but got table'
 
     it 'checks conjunctions', ->
-      expect_that (-> T '[string]+{number}', {'a', 'b', 'c'}), no_errors!
+      $expect_that (-> T '[string]+{number}', {'a', 'b', 'c'}), no_errors!
 
-      expect_that (-> T 'string+number', 123), errors matches 'incorrect type: expected string but got number'
-      expect_that (-> T 'string+number', 'hello'), errors matches 'incorrect type: expected number but got string'
+      $expect_that (-> T 'string+number', 123), errors matches 'incorrect type: expected string but got number'
+      $expect_that (-> T 'string+number', 'hello'), errors matches 'incorrect type: expected number but got string'
 
     it 'checks disjunctions', ->
-      expect_that (-> T 'string|number', 'hello'), no_errors!
-      expect_that (-> T 'string|number', 123), no_errors!
-      expect_that (-> T 'string|number', true), errors matches 'incorrect type: expected string|number but got boolean'
+      $expect_that (-> T 'string|number', 'hello'), no_errors!
+      $expect_that (-> T 'string|number', 123), no_errors!
+      $expect_that (-> T 'string|number', true), errors matches 'incorrect type: expected string|number but got boolean'
 
     it 'checks nested inline disjunctions', ->
-      expect_that (-> T 'number|{string|number}|string', 'hello'), no_errors!
-      expect_that (-> T 'number|{string|number}|string', {hello: true}), no_errors!
-      expect_that (-> T 'number|{string|number}|string', {[1]: true}), no_errors!
-      expect_that (-> T 'number|{string|number}|string', ->), errors matches 'incorrect type: expected number|{string|number}|string but got function'
+      $expect_that (-> T 'number|{string|number}|string', 'hello'), no_errors!
+      $expect_that (-> T 'number|{string|number}|string', {hello: true}), no_errors!
+      $expect_that (-> T 'number|{string|number}|string', {[1]: true}), no_errors!
+      $expect_that (-> T 'number|{string|number}|string', ->), errors matches 'incorrect type: expected number|{string|number}|string but got function'
 
     it 'checks nested recursive disjunctions', ->
       declare_type 'InnerDisjunction', 'string|number'
-      expect_that (-> T 'boolean|InnerDisjunction|function', true), no_errors!
-      expect_that (-> T 'boolean|InnerDisjunction|function', 'hello'), no_errors!
-      expect_that (-> T 'boolean|InnerDisjunction|function', 123), no_errors!
-      expect_that (-> T 'boolean|InnerDisjunction|function', ->), no_errors!
+      $expect_that (-> T 'boolean|InnerDisjunction|function', true), no_errors!
+      $expect_that (-> T 'boolean|InnerDisjunction|function', 'hello'), no_errors!
+      $expect_that (-> T 'boolean|InnerDisjunction|function', 123), no_errors!
+      $expect_that (-> T 'boolean|InnerDisjunction|function', ->), no_errors!
 
-      expect_that (-> T 'boolean|InnerDisjunction|function', {}), errors matches 'incorrect type: expected boolean|InnerDisjunction|function but got table'
+      $expect_that (-> T 'boolean|InnerDisjunction|function', {}), errors matches 'incorrect type: expected boolean|InnerDisjunction|function but got table'
 
   describe 'declare_type', ->
     it 'requires two arguments', ->
-      expect_that (-> declare_type!), errors matches 'declare_type requires a name'
-      expect_that (-> declare_type 'TwoArgs'), errors matches 'declare_type requires a type_spec'
-      expect_that (-> declare_type 123, 'string'), errors matches 'declare_type requires a string name'
-      expect_that (-> declare_type 'TwoArgs', 123), errors matches 'declare_type requires a string type_spec'
+      $expect_that (-> declare_type!), errors matches 'declare_type requires a name'
+      $expect_that (-> declare_type 'TwoArgs'), errors matches 'declare_type requires a type_spec'
+      $expect_that (-> declare_type 123, 'string'), errors matches 'declare_type requires a string name'
+      $expect_that (-> declare_type 'TwoArgs', 123), errors matches 'declare_type requires a string type_spec'
 
     it 'rejects false primitives', ->
-      expect_that (-> declare_type 'user', 'string'), errors matches 'user types must start with uppercase'
+      $expect_that (-> declare_type 'user', 'string'), errors matches 'user types must start with uppercase'
 
     it 'rejects redefinition', ->
       declare_type 'AlreadyDefined', 'number'
-      expect_that (-> declare_type 'AlreadyDefined', 'string'), errors matches [[cannot redefine type 'AlreadyDefined']]
+      $expect_that (-> declare_type 'AlreadyDefined', 'string'), errors matches [[cannot redefine type 'AlreadyDefined']]
 
     it 'supports non-recursive types', ->
       declare_type 'NonRecursive', '[string]'
-      expect_that (-> T '[NonRecursive]', {{'hello'}}), no_errors!
+      $expect_that (-> T '[NonRecursive]', {{'hello'}}), no_errors!
 
     it 'supports recursive types', ->
       declare_type 'Recursive', '[?Recursive]'
-      expect_that (-> T 'Recursive', {{{{{nil}}}}}), no_errors!
-      expect_that (-> T 'Recursive', {{{{{'asdf'}}}}}), errors matches 'incorrect type: expected table but got string'
+      $expect_that (-> T 'Recursive', {{{{{nil}}}}}), no_errors!
+      $expect_that (-> T 'Recursive', {{{{{'asdf'}}}}}), errors matches 'incorrect type: expected table but got string'
 
       declare_type 'MutuallyRecursive1', '?MutuallyRecursive2'
       declare_type 'MutuallyRecursive2', 'MutuallyRecursive1'
-      expect_that (-> T 'MutuallyRecursive1', nil), no_errors!
-      expect_that (-> T 'MutuallyRecursive1', 'asdf'), errors matches 'type checker recursed too many times'
+      $expect_that (-> T 'MutuallyRecursive1', nil), no_errors!
+      $expect_that (-> T 'MutuallyRecursive1', 'asdf'), errors matches 'type checker recursed too many times'
 
   describe 'declare_singleton_type', ->
     it 'requires a valid name', ->
-      expect_that declare_singleton_type, errors matches 'requires a value'
+      $expect_that declare_singleton_type, errors matches 'requires a value'
 
-      expect_that (-> declare_singleton_type {}), errors matches "user types must start with an uppercase letter"
-      expect_that (-> declare_singleton_type <tostring>: => 'Has space'), errors matches "cannot declare type 'Has space': not a valid identifier"
-      expect_that (-> declare_singleton_type <tostring>: => 'SingletonTable'), no_errors!
+      $expect_that (-> declare_singleton_type {}), errors matches "user types must start with an uppercase letter"
+      $expect_that (-> declare_singleton_type <tostring>: => 'Has space'), errors matches "cannot declare type 'Has space': not a valid identifier"
+      $expect_that (-> declare_singleton_type <tostring>: => 'SingletonTable'), no_errors!
 
     it 'requires a unique name', ->
       NAME = 'UniqueSingleton'
       declare_singleton_type <tostring>: => NAME
-      expect_that (-> declare_singleton_type <tostring>: => NAME), errors matches "cannot redefine type '#{NAME}'"
+      $expect_that (-> declare_singleton_type <tostring>: => NAME), errors matches "cannot redefine type '#{NAME}'"
 
     it 'rejects primitives', ->
-      expect_that (-> declare_singleton_type 123), errors matches 'declare_singleton_type requires a table value'
-      expect_that (-> declare_singleton_type 'hello'), errors matches 'declare_singleton_type requires a table value'
+      $expect_that (-> declare_singleton_type 123), errors matches 'declare_singleton_type requires a table value'
+      $expect_that (-> declare_singleton_type 'hello'), errors matches 'declare_singleton_type requires a table value'
 
   describe 'F', ->
     it 'requires two arguments', ->
-      expect_that (-> F!), errors matches 'cannot typecheck: no type spec provided'
-      expect_that (-> F '() -> nil'), errors matches 'cannot typecheck: no function provided'
-      expect_that (-> F '() -> nil', 'interloper'), errors matches 'cannot typecheck: no function provided'
+      $expect_that (-> F!), errors matches 'cannot typecheck: no type spec provided'
+      $expect_that (-> F '() -> nil'), errors matches 'cannot typecheck: no function provided'
+      $expect_that (-> F '() -> nil', 'interloper'), errors matches 'cannot typecheck: no function provided'
 
     it 'returns its second argument', ->
       f = F '(number, number) -> number', (a, b) -> a + b
-      expect_that (f 1, 2), eq 3
+      $expect_that (f 1, 2), eq 3
 
     it 'accepts none returns', ->
-      expect_that (-> (F '() -> <>', ->)!), no_errors!
+      $expect_that (-> (F '() -> <>', ->)!), no_errors!
 
     it 'accepts nil returns', ->
-      expect_that (-> (F '() -> nil', -> nil)!), no_errors!
+      $expect_that (-> (F '() -> nil', -> nil)!), no_errors!
 
     it 'accepts absent optional arguments', ->
-      expect_that (-> (F '() -> ?string', ->)!), no_errors!
+      $expect_that (-> (F '() -> ?string', ->)!), no_errors!
 
     it 'accepts remainder arguments', ->
-      expect_that (-> (F '(string...) -> nil', ->)!), no_errors!
-      expect_that (-> (F '(string...) -> nil', ->) 'hello', 'world'), no_errors!
-      expect_that (-> (F '(number, string...) -> nil', ->) 123, 'hello', 'world'), no_errors!
+      $expect_that (-> (F '(string...) -> nil', ->)!), no_errors!
+      $expect_that (-> (F '(string...) -> nil', ->) 'hello', 'world'), no_errors!
+      $expect_that (-> (F '(number, string...) -> nil', ->) 123, 'hello', 'world'), no_errors!
 
-      expect_that (-> (F '(number, string...) -> nil', (...) ->) 123, 'hello', true), errors matches 'incorrect type: expected string but got boolean'
+      $expect_that (-> (F '(number, string...) -> nil', (...) ->) 123, 'hello', true), errors matches 'incorrect type: expected string but got boolean'
 
     it 'accepts absent optional returns', ->
-      expect_that (-> (F '() -> nil', ->)!), no_errors!
+      $expect_that (-> (F '() -> nil', ->)!), no_errors!
 
     it 'accepts multiple return values', ->
-      expect_that (-> (F '() -> <string, boolean>', -> 'a', true)!), no_errors!
+      $expect_that (-> (F '() -> <string, boolean>', -> 'a', true)!), no_errors!
 
     it 'accepts remainder return values', ->
-      expect_that (-> (F '() -> string...', ->)!), no_errors!
-      expect_that (-> (F '() -> string...', -> 'hello', 'world')!), no_errors!
-      expect_that (-> (F '() -> <number, string...>', -> 123, 'hello', 'world')!), no_errors!
+      $expect_that (-> (F '() -> string...', ->)!), no_errors!
+      $expect_that (-> (F '() -> string...', -> 'hello', 'world')!), no_errors!
+      $expect_that (-> (F '() -> <number, string...>', -> 123, 'hello', 'world')!), no_errors!
 
-      expect_that (-> (F '() -> <number, string...>', -> 123, 'hello', true)!), errors matches 'incorrect type: expected string but got boolean'
+      $expect_that (-> (F '() -> <number, string...>', -> 123, 'hello', true)!), errors matches 'incorrect type: expected string but got boolean'
 
     it 'prevents execution on invalid args', ->
-      expect_that (-> (F '(string) -> nil', -> error 'OH NO') 123), errors matches 'incorrect type: expected string but got number'
+      $expect_that (-> (F '(string) -> nil', -> error 'OH NO') 123), errors matches 'incorrect type: expected string but got number'
 
     it 'rejects non-function types', ->
-      expect_that (-> F '{}', ->), errors matches 'cannot typecheck: expected a function type'
+      $expect_that (-> F '{}', ->), errors matches 'cannot typecheck: expected a function type'
 
     it 'rejects incorrect-type arguments', ->
-      expect_that (-> (F '(string) -> table', ->) 123), errors matches 'incorrect type: expected string but got number'
+      $expect_that (-> (F '(string) -> table', ->) 123), errors matches 'incorrect type: expected string but got number'
 
     it 'rejects extra arguments', ->
-      expect_that (-> (F '(string) -> table', ->) 'a', 'b'), errors matches 'function given too many arguments'
+      $expect_that (-> (F '(string) -> table', ->) 'a', 'b'), errors matches 'function given too many arguments'
 
     it 'rejects incorrect-type return values', ->
-      expect_that (-> (F '(table) -> string', ->) {}), errors matches 'incorrect type: expected string but got nil'
+      $expect_that (-> (F '(table) -> string', ->) {}), errors matches 'incorrect type: expected string but got nil'
 
     it 'rejects extra return arguments', ->
-      expect_that (-> (F '() -> string', -> 'a', 'b')!), errors matches 'function returned too many values'
+      $expect_that (-> (F '() -> string', -> 'a', 'b')!), errors matches 'function returned too many values'
 
     it 'rejects multiple incorrect return values', ->
-      expect_that (-> (F '() -> <string, boolean>', -> {}, true)!), errors matches 'incorrect type: expected string but got table'
-      expect_that (-> (F '() -> <string, boolean>', -> 'asdf', {})!), errors matches 'incorrect type: expected boolean but got table'
+      $expect_that (-> (F '() -> <string, boolean>', -> {}, true)!), errors matches 'incorrect type: expected string but got table'
+      $expect_that (-> (F '() -> <string, boolean>', -> 'asdf', {})!), errors matches 'incorrect type: expected boolean but got table'
 
     it 'accepts methods', ->
-      expect_that (-> (F '(number) => <>', =>), {}, 123), no_errors!
-      expect_that (-> (F '(number) => <>', =>), 'recv', 123), no_errors!
+      $expect_that (-> (F '(number) => <>', =>), {}, 123), no_errors!
+      $expect_that (-> (F '(number) => <>', =>), 'recv', 123), no_errors!
 
     it 'requires a method receiver', ->
-      expect_that (-> (F '() => <>', =>)!), errors matches "incorrect type: expected some but got nil"
+      $expect_that (-> (F '() => <>', =>)!), errors matches "incorrect type: expected some but got nil"
 
     it 'checks never', ->
-      expect_that (-> (F '() -> !', ->)!), errors matches 'never expected a value here'
+      $expect_that (-> (F '() -> !', ->)!), errors matches 'never expected a value here'
 
   describe 'stats', ->
     it 'has the correct type', ->
@@ -1668,7 +1671,7 @@ spec ->
 
       T 'string', 'hello' -- Exercise the checker
       stats_arr = stats!
-      expect_that stats_arr, len gt 0
-      expect_that stats_arr, each_value has_fields count: ge 0
+      $expect_that stats_arr, len gt 0
+      $expect_that stats_arr, each_value has_fields count: ge 0
 
       COLLECT_STATS = prev_collect_stats

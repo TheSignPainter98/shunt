@@ -14,7 +14,9 @@ export symmetric_difference = F '([some], [some]) -> <[some], [some]>', (xs, ys)
 
 spec ->
   import 'spec_macros' as $
-  import describe, it, matchers from require 'spec'
+
+  import 'spec' as :describe, :it, :matchers
+
   import deep_eq from matchers
 
   describe 'symmetric_difference', ->

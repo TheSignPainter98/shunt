@@ -97,7 +97,9 @@ validate_config = F '(string, string) -> boolean', (file, instance_type) ->
 
 spec ->
   import 'spec_macros' as $
-  import describe, it, matchers from require 'spec'
+
+  import 'spec' as :describe, :it, :matchers
+
   import has_fields, has_type, no_errors from matchers
 
   configs = [:name, :raw for name, raw in pairs default_config_by_type]

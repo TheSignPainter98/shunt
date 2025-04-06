@@ -40,7 +40,9 @@ export class Queue
 
 spec ->
   import 'spec_macros' as $
-  import describe, it, matchers from require 'spec'
+
+  import 'spec' as :describe, :it, :matchers
+
   import contains, deep_eq, eq from matchers
 
   describe 'Queue', ->

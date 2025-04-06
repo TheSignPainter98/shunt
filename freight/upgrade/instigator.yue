@@ -53,8 +53,10 @@ export class MarshalBumpRelease extends Packet
 
 spec ->
   import 'spec_macros' as $
-  import TestUplinkBackend from require 'freight.peripheral.uplink'
-  import describe, it, matchers from require 'spec'
+
+  import 'freight.peripheral.uplink' as :TestUplinkBackend
+  import 'spec' as :describe, :it, :matchers
+
   import deep_eq, errors, matches from matchers
 
   class TestRebooter

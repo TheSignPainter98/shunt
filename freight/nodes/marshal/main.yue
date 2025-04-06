@@ -4,7 +4,7 @@ import 'freight.data.multiplexer' as :Multiplexer
 import 'freight.logger' as :log
 import 'freight.nodes.factory.main' as :FactoryHeartbeat
 import 'freight.nodes.marshal.symmetric_difference' as :symmetric_difference
-import 'freight.peripheral.uplink' as :Uplink, :TestUplinkBackend
+import 'freight.peripheral.uplink' as :TestUplinkBackend, :Uplink
 import 'freight.state' as :StateMachineBuilder, :StateSpec
 import 'freight.toml' as :toml_parse
 import 'freight.upgrade.listener' as :UpgradeListener
@@ -213,7 +213,9 @@ class Marshal
 
 spec ->
   import 'spec_macros' as $
-  import describe, it, matchers from require 'spec'
+
+  import 'spec' as :describe, :it, :matchers
+
   import deep_eq, eq, has_fields from matchers
 
   describe 'Marshal', ->

@@ -49,7 +49,9 @@ export class TestPcBackend
 
 spec ->
   import 'spec_macros' as $
-  import describe, it, matchers from require 'spec'
+
+  import 'spec' as :describe, :it, :matchers
+
   import eq from matchers
 
   describe 'Pc', ->

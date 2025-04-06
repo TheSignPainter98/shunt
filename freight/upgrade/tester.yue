@@ -31,7 +31,9 @@ export class Tester
 
 spec ->
   import 'spec_macros' as $
-  import describe, it, matchers from require 'spec'
+
+  import 'spec' as :describe, :it, :matchers
+
   import eq, has_type from matchers
 
   describe 'Tester', ->

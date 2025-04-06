@@ -11,6 +11,7 @@ main = (args) ->
 
   if args.test?
     run_tests!
+    return
   else if args.check?
     ok = check args.check
     if not ok
@@ -182,13 +183,13 @@ class ImportItemsSorted
 
     sorted = true
     for i = 2, #items
-      if items[i-1] > items[i]
+      if items[i-1]\lower! > items[i]\lower!
         sorted = false
         break
     if sorted
       return
 
-    table.sort items
+    table.sort items, (a, b) -> a\lower! < b\lower!
     Declare::error with Error 'import items not sorted'
       \at line
       \help "try sorting as #{table.concat items, ', '}"
