@@ -11,9 +11,11 @@ main = (args) ->
 
   if args.test?
     run_tests!
-    return
-  if args.check?
-    check args.check
+  else if args.check?
+    ok = check args.check
+    if not ok
+      os.exit 1
+  os.exit 0
 
 parse_args = F '([string]) -> <?{}, boolean>', (args) ->
   parser = with ArgParser 'ylint'
@@ -27,40 +29,36 @@ parse_args = F '([string]) -> <?{}, boolean>', (args) ->
       \description 'run tests'
   parser\parse args
 
-check = F '({}) -> <>', (args) ->
+check = F '({}) -> boolean', (args) ->
   { :file } = args
 
   lines = io.lines file
   errs = run_checks file, lines,
     * ImportForm!
+    -- * ImportStatementsSorted!
+    -- * ImportItemsSorted!
   for err in *errs
     buf = {}
     err\fmt buf
     print table.concat buf
+  #errs == 0
 
 run_checks = F '(string, function, [Check]) -> [Error]', (file, src_lines, checks) ->
-  with {}
-    line_no = 0
-    for src_line in src_lines
-      line_no += 1
-      for check in *checks
-        location = :file, row: line_no
-        line = :location, content: src_line
-
-        new_errs = check\on_line? line
-        if new_errs?
-          for new_err in *new_errs
-            [] = new_err
-
+  line_no = 0
+  for src_line in src_lines
+    line_no += 1
     for check in *checks
-      new_errs = check\on_eof?!
-      if new_errs?
-        for new_err in *new_errs
-          [] = new_err
+      location = :file, row: line_no
+      line = :location, content: src_line
+      check\on_line? line
+
+  for check in *checks
+    new_errs = check\on_eof?!
+  Declare::errs!
 
 declare_type 'Check', [[{
-  on_line: ?(Line) => ?[Error],
-  on_eof: ?() => ?[Error],
+  on_line: ?(Line) => <>,
+  on_eof: ?() => <>,
 }]]
 declare_type 'Line', [[{
   location: Location,
@@ -71,16 +69,44 @@ declare_type 'Location', [[{
   row: number,
 }]]
 
+class Declare
+  @errs: T '() => [Error]', => @_errs
+
+  @_errs: T '[Error]', {}
+
+  @error: F '(Error) => <>', (err) =>
+    @_errs[] = err
+
 class ImportForm
-  on_line: F '(Line) => ?[Error]', (line) =>
+  on_line: F '(Line) => <>', (line) =>
     if not line.content\match '^%s*import'
-      return nil
+      return
     if not line.content\match 'from require'
-      return nil
-    err = with Error 'non-standard import form'
+      return
+    Declare::error with Error 'non-standard import form'
       \at line
-      \suggest [[use form `import 'foo' as :bar]]
-    { err }
+      \help [[use form `import 'foo' as :bar]]
+
+-- class ImportStatementsSorted
+--   new: =>
+--     @current_import_block = T '[Line]', {}
+--
+--   on_line: F '(Line) => <>', (line) =>
+--     if line_is_empty line
+--       return @on_block_end!
+--     if not line\match '^%s*import'
+--       return
+--     @current_import_block[] = line
+--     nil
+--
+--   on_eof: F '() => <>', (line) =>
+--     @on_block_end!
+--
+--   on_block_end: F '() => ?Error', =>
+--     @current_import_block = {}
+--     nil
+
+-- class ImportItemsSorted -- TODO(kcza): complete me!
 
 declare_type 'Error', [[{
   fmt: ({string}) => <>,
@@ -88,11 +114,11 @@ declare_type 'Error', [[{
 class Error
   new: F '(string) => <>', (@message) =>
     @line = T '?Line', nil
-    @suggestion = T '?string', nil
+    @_help = T '?string', nil
 
   at: F '(Line) => <>', (@line) =>
 
-  suggest: F '(string) => <>', (@suggestion) =>
+  help: F '(string) => <>', (@_help) =>
 
   fmt: F '({string}) => <>', (buf) =>
     with buf
@@ -105,10 +131,10 @@ class Error
         [] = @line.content
         [] = '\n  |'
 
-      if @suggestion?
+      if @_help?
         [] = '\n'
-        [] = '  * suggestion: '
-        [] = @suggestion
+        [] = '  * help: '
+        [] = @_help
     return
 
 line_is_empty = F '(Line) -> boolean', (line) ->
