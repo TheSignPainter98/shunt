@@ -1,7 +1,6 @@
 local *
 
-import ArgParser, Flag, Param from require 'clap'
-import spec, run_tests from require 'spec'
+import 'spec' as :run_tests, :spec
 
 main = (args) ->
   args, ok = parse_args args
@@ -152,7 +151,7 @@ _G.fs ??= {
 }
 
 spec ->
-  import describe, it from require 'spec'
+  import 'spec' as :describe, :it
 
   describe 'module_name', ->
     it 'rejects non-lua files', ->

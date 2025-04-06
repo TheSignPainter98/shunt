@@ -1,6 +1,6 @@
 local *
 
-import ArgParser, Subcommand, Param, Flag from require 'clap'
+import 'clap' as :ArgParser, :Flag, :Param, :Subcommand
 
 DEFAULT_FILE_DIVIDER = (os.getenv? 'GOO_DIVIDER') ?? 'XXX---XXX===fdhsavcuyxio4321vdcp1234nhuvd---XXX===XXX'
 
