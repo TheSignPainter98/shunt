@@ -1,0 +1,370 @@
+local *
+
+import 'clap' as :ArgParser, :Param, :Subcommand
+import 'quicktype' as :declare_type, :F, :T
+import 'spec' as :run_tests, :spec
+
+main = (args) ->
+  args, ok = parse_args args
+  if not ok
+    return
+
+  if args.test?
+    run_tests!
+  else if args.check?
+    ok = check args.check
+    if not ok
+      os.exit 1
+  os.exit 0
+
+parse_args = F '([string]) -> <?{}, boolean>', (args) ->
+  parser = with ArgParser 'ylint'
+    \version '1.0'
+    \description 'a very rudamentary yuescript linter'
+    \add with Subcommand 'check'
+      \description 'check for lint'
+      \add with Param 'file'
+        \description 'file to scan'
+    \add with Subcommand 'test'
+      \description 'run tests'
+  parser\parse args
+
+check = F '({}) -> boolean', (args) ->
+  { :file } = args
+
+  lines = io.lines file
+  errs = run_checks file, lines,
+    * ImportBlockKind!
+    * ImportBlockSorted!
+    * ImportForm!
+    * ImportItemsSorted!
+  for err in *errs
+    buf = {}
+    err\fmt buf
+    print table.concat buf
+  #errs == 0
+
+run_checks = F '(string, function, [Check]) -> [Error]', (file, src_lines, checks) ->
+  Declare::reset_errs!
+
+  line_no = 0
+  for src_line in src_lines
+    line_no += 1
+    for check in *checks
+      location = :file, row: line_no
+      line = :location, content: src_line
+      check\on_line? line
+
+  for check in *checks
+    new_errs = check\on_eof?!
+  Declare::errs!
+
+declare_type 'Check', [[{
+  on_line: ?(Line) => <>,
+  on_eof: ?() => <>,
+}]]
+declare_type 'Line', [[{
+  location: Location,
+  content: string,
+}]]
+declare_type 'Location', [[{
+  file: string,
+  row: number,
+}]]
+
+class Declare
+  @_errs: T '[Error]', {}
+
+  @errs: F '() => [Error]', => @_errs
+
+  @reset_errs: F '() => <>', =>
+    @_errs = {}
+
+  @error: F '(Error) => <>', (err) =>
+    @_errs[] = err
+
+class ImportBlockCheck
+  new: =>
+    @current_import_block = T '[Line]', {}
+
+  on_line: F '(Line) => <>', (line) =>
+    if line_is_empty line
+      @_on_block_end!
+      return
+    if not line.content\match '^%s*import'
+      @_on_block_end!
+      return
+    @current_import_block[] = line
+
+  on_eof: F '() => <>', (line) =>
+    @_on_block_end!
+
+  _on_block_end: F '() => <>', =>
+    if #@current_import_block != 0
+      @on_block_end @current_import_block
+    @current_import_block = {}
+
+class ImportBlockKind extends ImportBlockCheck
+  on_block_end: F '([Line]) => <>', (block) =>
+    if not @is_mixed_form block
+      return
+
+    Declare::error with Error 'import block has mixed form'
+      \at block[1]
+
+  is_mixed_form: F '([Line]) => boolean', (block) =>
+    form = nil
+    for line in *block
+      line_form = if line.content\match 'import .* from require'
+        'import-from-require'
+      else if line.content\match 'import .* from %w+'
+        'import-from-value'
+      else if line.content\match 'import .* as '
+        'import-as'
+      else if line.content\match 'import'
+        'import'
+      else
+        Declare::error with Error 'non-standard import statement'
+          \at line
+          \help "use form `import 'foo' as :bar` or `import bar from foo"
+        return false
+
+      if not form?
+        form = line_form
+      if form != line_form
+        return true
+    false
+
+class ImportBlockSorted extends ImportBlockCheck
+  on_block_end: F '([Line]) => <>', (block) =>
+    -- Check sorted
+    packages = with {}
+      for line in *block
+        [] = line.content\match [[import '([^']*)']]
+
+    sorted = true
+    for i = 2, #packages
+      if packages[i-1] > packages[i]
+        sorted = false
+        break
+    if sorted
+      return
+
+    Declare::error with Error 'import block not sorted'
+      \at block[1]
+
+class ImportForm
+  on_line: F '(Line) => <>', (line) =>
+    if not line.content\match '^%s*import'
+      return
+    if not line.content\match 'from require'
+      return
+    Declare::error with Error 'non-standard import form'
+      \at line
+      \help [[use form `import 'foo' as :bar]]
+
+class ImportItemsSorted
+  on_line: F '(Line) => <>', (line) =>
+    if not line.content\match '^%s*import'
+      return
+
+    items = with {}
+      state = 'ignoring'
+      for word in line.content\gmatch '%S+'
+        switch state
+          when 'ignoring'
+            if word == 'as'
+              state = 'collecting'
+          when 'collecting'
+            if ',' == word\sub -1
+              word = word\sub 1, -2
+            [] = word
+
+    sorted = true
+    for i = 2, #items
+      if items[i-1] > items[i]
+        sorted = false
+        break
+    if sorted
+      return
+
+    table.sort items
+    Declare::error with Error 'import items not sorted'
+      \at line
+      \help "try sorting as #{table.concat items, ', '}"
+
+declare_type 'Error', [[{
+  fmt: ({string}) => <>,
+}]]
+class Error
+  new: F '(string) => <>', (@message) =>
+    @line = T '?Line', nil
+    @_help = T '?string', nil
+
+  at: F '(Line) => <>', (@line) =>
+
+  help: F '(string) => <>', (@_help) =>
+
+  fmt: F '({string}) => <>', (buf) =>
+    with buf
+      @fmt_stylise buf, 'warning', colour: 'yellow', weight: 'bold'
+      @fmt_stylise buf, ': ', weight: 'bold'
+      [] = @message
+      if @line?
+        [] = '\n '
+        @fmt_stylise buf, '-->', colour: 'blue', weight: 'bold'
+        [] = " #{@line.location.file}:#{@line.location.row}"
+        @fmt_stylise buf, '\n  |', colour: 'blue'
+        @fmt_stylise buf, '\n  | ', colour: 'blue'
+        @fmt_stylise buf, (@line.content\match '^%s*(.*)$'), colour: 'cyan'
+        @fmt_stylise buf, '\n  | ', colour: 'blue'
+
+      if @_help?
+        [] = '\n  * '
+        @fmt_stylise buf, 'help', colour: 'green', weight: 'bold'
+        @fmt_stylise buf, ': ', weight: 'bold'
+        [] = @_help
+    return
+
+  fmt_stylise: F '([string], string, Style) => <>', (buf, to_colourise, style) =>
+    with buf
+      colour_index = colour_indices[style.colour ?? 'white']
+      effect_index = effect_indices[style.weight ?? 'normal']
+      [] = "\x1b[#{effect_index};3#{colour_index}m"
+      [] = to_colourise
+      [] = '\x1b[0m'
+    return
+
+colour_indices =
+  black: 0
+  red: 1
+  green: 2
+  yellow: 3
+  blue: 4
+  purple: 5
+  cyan: 6
+  white: 7
+effect_indices =
+  normal: 0
+  bold: 1
+
+declare_type 'Style', [[{
+  colour: ?Colour,
+  weight: ?Weight,
+}]]
+declare_type 'Colour', [[
+  "black"
+  |"red"
+  |"green"
+  |"yellow"
+  |"blue"
+  |"purple"
+  |"cyan"
+  |"white"
+]]
+declare_type 'Weight', [[
+  "normal"
+  |"bold"
+]]
+
+line_is_empty = F '(Line) -> boolean', (line) ->
+  content = line.content
+  not (content\match '^%s*$')? and not (content\match '^%s*--.*$')?
+
+spec ->
+  import 'spec_macros' as $
+  import 'spec' as :describe, :it, :matchers
+  import deep_eq, each_value, eq, has_fields, len from matchers
+
+  run_check = F '(Check, string, string) -> [Error]', (check, file, content) ->
+    if '\n' != content\sub -1
+      content = content .. '\n'
+    lines = content\gmatch '(.-)\n'
+    run_checks file, lines, {check}
+
+  describe 'ImportForm', ->
+    it 'accepts proper form', ->
+      errs = run_check ImportForm!, 'test.yue', [[
+        import 'asdf' as :fdas
+        import "asdf" as :fdas
+      ]]
+      $expect_that errs, deep_eq {}
+
+    it 'rejects improper form', ->
+      file = 'test.yue'
+      errs = run_check ImportForm!, file, [[
+        import fdsa from require 'asdf'
+      ]]
+      $assert_that errs, len eq 1
+      $assert_that errs[1], has_fields
+        message: eq 'non-standard import form'
+        line: has_fields
+          location: has_fields
+            file: eq file
+            row: eq 1
+
+  describe 'ImportBlockSorted', ->
+    it 'accepts sorted imports', ->
+      errs = run_check ImportBlockSorted!, 'test.yue', [[
+        import 'a'
+        import 'b'
+      ]]
+      $expect_that errs, deep_eq {}
+
+    it 'rejects unsorted imports', ->
+      errs = run_check ImportBlockSorted!, 'test.yue', [[
+        import 'b'
+        import 'a'
+
+        import 'd'
+        import 'c'
+      ]]
+      $assert_that errs, len eq 2
+      $expect_that errs[1], has_fields
+        message: eq 'import block not sorted'
+      $expect_that errs[2], has_fields
+        message: eq 'import block not sorted'
+
+  describe 'ImportItemsSorted', ->
+    it 'accepts sorted import items', ->
+      errs = run_check ImportItemsSorted!, 'test.yue', [[
+        import 'asdf' as :a, :b, :c
+      ]]
+      $expect_that errs, deep_eq {}
+
+    it 'rejects unsorted import items', ->
+      errs = run_check ImportItemsSorted!, 'test.yue', [[
+        import 'asdf' as :c, :b, :a
+      ]]
+      $assert_that errs, len eq 1
+      $expect_that errs[1], has_fields
+        message: eq 'import items not sorted'
+        line: has_fields
+          location: has_fields
+            row: eq 1
+
+  describe 'ImportBlockKind', ->
+    it 'accepts homogenous blocks', ->
+      errs = run_check ImportBlockKind!, 'test.yue', [[
+        import 'a'
+
+        import 'b' as :c
+
+        import d from e
+      ]]
+      $expect_that errs, deep_eq {}
+
+    it 'rejects hetrogenous blocks', ->
+      errs = run_check ImportBlockKind!, 'test.yue', [[
+        import 'a'
+        import 'b' as :c
+      ]]
+      errs2 = run_check ImportBlockKind!, 'test.yue', [[
+        import 'b' as :c
+        import d from e
+      ]]
+      $expect_that errs, len eq 1
+      $expect_that errs, each_value has_fields
+        message: eq 'import block has mixed form'
+
+main {...}

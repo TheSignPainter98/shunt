@@ -23,8 +23,9 @@ bin/%.lua.packed: %.lua $(OBJECTS) moonpack.lua
 	$(LUA) ./moonpack.lua $< -o $@
 .INTERMEDIATE: bin/%.lua.packed
 
-%.lua: %.yue
+%.lua: %.yue ylint.yue
 	yue --target=5.1 -l -s --path="?.yue" $< -o $@
+	@if [ "$<" != "ylint.yue" ]; then yue -e ylint.yue check $<; fi
 	@touch $@
 .PRECIOUS: %.lua
 
@@ -42,9 +43,16 @@ uninstall: scripts/uninstall
 	./$<
 .PHONY: uninstall
 
-test: freight.lua $(OBJECTS)
+test: test_freight test_ylint
+.PHONY: test
+
+test_freight: freight.lua $(OBJECTS)
 	@$(LUA) $< test
-.PHONY: .FORCE
+.PHONY: test_freight
+
+test_ylint: ylint.lua
+	@$(LUA) ylint.lua test
+.PHONY: test_ylint
 
 freight/version.lua: .version.txt
 

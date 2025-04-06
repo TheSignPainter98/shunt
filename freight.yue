@@ -1,18 +1,16 @@
 local *
 
-import apply_compat, test_compat from require 'compat'
+import 'compat' as :apply_compat, :test_compat
 apply_compat!
 
-import declare_type from require 'quicktype'
+import 'quicktype' as :declare_type
 declare_type 'Self', 'some'
 
-import Args from require 'freight.args'
-import run_tests from require 'spec'
-import 'freight.logger'
-import log from require 'freight.logger'
-import 'spec'
-import F from require 'quicktype'
-import detect_and_use_monitor from require 'freight.monitor'
+import 'freight.args' as :Args
+import 'freight.logger' as :log
+import 'freight.monitor' as :detect_and_use_monitor
+import 'quicktype' as :F
+import 'spec' as :run_tests
 
 import 'freight.cmd.clean'
 import 'freight.cmd.disable'
@@ -20,6 +18,8 @@ import 'freight.cmd.enable'
 import 'freight.cmd.init'
 import 'freight.cmd.start'
 import 'freight.cmd.upgrade'
+import 'freight.logger'
+import 'spec'
 
 global skip_minecraft_tests = false
 
@@ -51,7 +51,7 @@ main = (raw_args) ->
     error 'internal error: no command recognised'
 
 spec.spec ->
-  import describe, it from require 'spec'
+  import 'spec' as :describe, :it
 
   describe 'compat', ->
     it 'passes checks', ->

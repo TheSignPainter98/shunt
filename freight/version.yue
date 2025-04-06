@@ -14,7 +14,9 @@ export VERSION = $version!
 
 spec ->
   import 'spec_macros' as $
-  import describe, expect_that, it, matchers from require 'spec'
+
+  import 'spec' as :describe, :expect_that, :it, :matchers
+
   import lt from matchers
 
   describe 'version', ->
