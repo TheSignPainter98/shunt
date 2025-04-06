@@ -36,7 +36,7 @@ check = F '({}) -> boolean', (args) ->
   errs = run_checks file, lines,
     * ImportForm!
     * ImportStatementsSorted!
-    -- * ImportItemsSorted!
+    * ImportItemsSorted!
   for err in *errs
     buf = {}
     err\fmt buf
@@ -125,7 +125,35 @@ class ImportStatementsSorted
 
     @current_import_block = {}
 
--- class ImportItemsSorted -- TODO(kcza): complete me!
+class ImportItemsSorted
+  on_line: F '(Line) => <>', (line) =>
+    if not line.content\match '^%s*import'
+      return
+
+    items = with {}
+      state = 'ignoring'
+      for word in line.content\gmatch '%S+'
+        switch state
+          when 'ignoring'
+            if word == 'as'
+              state = 'collecting'
+          when 'collecting'
+            if ',' == word\sub -1
+              word = word\sub 1, -2
+            [] = word
+
+    sorted = true
+    for i = 2, #items
+      if items[i-1] > items[i]
+        sorted = false
+        break
+    if sorted
+      return
+
+    table.sort items
+    Declare::error with Error 'import items not sorted'
+      \at line
+      \help "try sorting as #{table.concat items, ', '}"
 
 declare_type 'Error', [[{
   fmt: ({string}) => <>,
@@ -138,6 +166,7 @@ class Error
   at: F '(Line) => <>', (@line) =>
 
   help: F '(string) => <>', (@_help) =>
+
   fmt: F '({string}) => <>', (buf) =>
     with buf
       [] = 'warning: '
@@ -211,5 +240,24 @@ spec ->
         message: eq 'import block not sorted'
       $expect_that errs[2], has_fields
         message: eq 'import block not sorted'
+
+  describe 'ImportItemsSorted', ->
+    it 'accepts sorted import items', ->
+      errs = run_check ImportItemsSorted!, 'test.yue', [[
+        import 'asdf' as :a, :b, :c
+      ]]
+      $expect_that errs, deep_eq {}
+
+    it 'rejects unsorted import items', ->
+      errs = run_check ImportItemsSorted!, 'test.yue', [[
+        import 'asdf' as :c, :b, :a
+      ]]
+      $assert_that errs, len eq 1
+      $expect_that errs[1], has_fields
+        message: eq 'import items not sorted'
+        line: has_fields
+          location: has_fields
+            row: eq 1
+
 
 main {...}
