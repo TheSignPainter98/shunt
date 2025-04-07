@@ -83,11 +83,21 @@ OVERALL_TIMEOUT =
     value: 30
     time_unit: time_units.SECONDS
 
+declare_type 'MinecraftStationBackend', [[{
+  name: () => StationName,
+  set_name: (StationName) => <>,
+  train_present: () => boolean,
+  train_enroute: () => boolean,
+  train_has_schedule: () => ?boolean,
+  train_schedule: () => ?Schedule,
+  train_set_schedule: (Schedule) => boolean,
+  train_name: () => ?string,
+}]]
 declare_type 'StationPeripheral', [[{
-  getStationName: StationName,
+  getStationName: () => StationName,
 }]]
 export class MinecraftBackend
-  @find: F '() => [StationPeripheral]', =>
+  @find: F '() => [MinecraftStationBackend]', =>
     station_peripherals = { peripheral.find 'Create_Station' }
     [ MinecraftBackend peripheral for peripheral in *station_peripherals ]
 
