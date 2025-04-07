@@ -19,10 +19,10 @@ import 'spec' as :spec
 export default_config = [=[
 [factory]
 name = '<factory-name>'
-network = 'mainline'
 
 [[stations]]
 name = 'station-1'
+network = 'mainline'
 role = 'producer' # or 'consumer'
 handles = '<resource-id>'
 ]=]
@@ -35,12 +35,12 @@ export main = F '(FactoryConfig) -> <>', (config) ->
 declare_type 'FactoryConfig', [[{
   factory: {
     name: string,
-    network: string,
   },
   stations: [{
     name: string,
     role: "producer"|"consumer",
     handles: string,
+    network: string,
   }],
 }]]
 class Factory
