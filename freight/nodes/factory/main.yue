@@ -23,7 +23,7 @@ network = 'mainline'
 
 [[stations]]
 name = 'station-1'
-role = 'requester' # or 'supplier'
+role = 'producer' # or 'consumer'
 handles = '<resource-id>'
 ]=]
 
@@ -39,7 +39,7 @@ declare_type 'FactoryConfig', [[{
   },
   stations: [{
     name: string,
-    role: "requester"|"supplier",
+    role: "producer"|"consumer",
     handles: string,
   }],
 }]]
