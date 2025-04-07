@@ -1,5 +1,6 @@
 local *
 
+import 'clap' as :ArgParser, :Flag, :Param
 import 'spec' as :run_tests, :spec
 
 main = (args) ->
