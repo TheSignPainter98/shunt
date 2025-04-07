@@ -11,9 +11,8 @@ import 'freight.upgrade.listener' as :UpgradeListener
 import 'quicktype' as :declare_type, :F, :T
 import 'spec' as :spec
 
-export default_config = [=[
+export default_config = -> [=[
 [marshal]
-network = 'mainline'
 ]=]
 
 export main = F '(MarshalConfig) -> <>', (config) ->

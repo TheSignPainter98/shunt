@@ -6,7 +6,7 @@ import 'freight.toml' as :parse_toml
 import 'quicktype' as :declare_type, :F, :T
 import 'spec' as :spec
 
-export default_config = [=[
+export default_config = -> [=[
 [ledger]
 retained-events = 1000
 ]=]

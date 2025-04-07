@@ -12,7 +12,7 @@ export subcommand = with Subcommand 'display'
       * 'factories'
       * 'throughput'
 
-export default_config = [=[
+export default_config = -> [=[
 [display.ledger]
 kind = 'events'
 ]=]

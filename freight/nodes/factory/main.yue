@@ -8,24 +8,37 @@ local InfoResponse
 local FactoryHeartbeat
 local TrainsPresent
 
+import 'compat' as :HOST
 import 'freight.logger' as :log
 import 'freight.pc' as :Pc
-import 'freight.peripheral.station' as :Station
+import 'freight.peripheral.station' as :Station, MinecraftBackend: MinecraftStationBackend
 import 'freight.peripheral.stockpile' as :Stockpile
 import 'freight.peripheral.uplink' as :IdempotenceToken, :Packet, :Uplink
 import 'quicktype' as :declare_type, :F, :T
 import 'spec' as :spec
 
-export default_config = [=[
+export default_config = ->
+  root_config = [=[
 [factory]
 name = '<factory-name>'
-
-[[stations]]
-name = 'station-1'
+]=]
+  station_config = F '(string) -> string', (name) -> "[[stations]]
+name = '#{name}'
 network = 'mainline'
 role = 'producer' # or 'consumer'
 handles = '<resource-id>'
-]=]
+"
+  config_fragments = with { root_config }
+    station_names = switch HOST
+      when 'minecraft'
+        [ station\name! for station in *MinecraftStationBackend::find! ]
+      when 'native'
+        {'test-station'}
+      else
+        error "internal error: unknown host #{HOST}"
+    for station_name in *station_names
+      [] = station_config station_name
+  table.concat config_fragments, '\n'
 
 export main = F '(FactoryConfig) -> <>', (config) ->
   print 'starting factory'

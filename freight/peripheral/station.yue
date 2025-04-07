@@ -47,7 +47,7 @@ declare_type 'StationInfo', [[{
   train_name: ?string,
 }]]
 export class Station
-  new: F '(?StationBackend) => <>', (@backend=MinecraftBackend!) =>
+  new: F '(?StationBackend) => <>', (@backend) =>
 
   name: F '() => StationName', =>
     @backend\name!
@@ -83,14 +83,15 @@ OVERALL_TIMEOUT =
     value: 30
     time_unit: time_units.SECONDS
 
-class MinecraftBackend
-  new: =>
-    stations = { peripheral.find 'Create_Station' }
-    if #stations == 0
-      error 'cannot create Station: no stations attached'
-    if #stations > 1
-      error 'cannot create Station: too many stations attached'
-    { @station } = stations
+declare_type 'StationPeripheral', [[{
+  getStationName: StationName,
+}]]
+export class MinecraftBackend
+  @find: F '() => [StationPeripheral]', =>
+    station_peripherals = { peripheral.find 'Create_Station' }
+    [ MinecraftBackend peripheral for peripheral in *station_peripherals ]
+
+  new: F '(StationPeripheral) => <>', (@station) =>
 
   name: F '() => StationName', =>
     @station\getStationName!

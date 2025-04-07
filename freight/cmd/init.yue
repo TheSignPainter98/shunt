@@ -30,7 +30,7 @@ default_config_by_type =
   marshal: marshal.default_config
 
 export main = F '({}) -> <>', (args) ->
-  default_config = default_config_by_type[args.instance_type]
+  default_config = default_config_by_type[args.instance_type]?!
   if not default_config?
     error "internal error: unrecognised instance type '#{args.instance_type}'"
 
@@ -102,13 +102,13 @@ spec ->
 
   import has_fields, has_type, no_errors from matchers
 
-  configs = [:name, :raw for name, raw in pairs default_config_by_type]
+  configs = [:name, :raw_fn for name, raw_fn in pairs default_config_by_type]
   table.sort configs, (a, b) -> a.name < b.name
 
   for config in *configs
     describe "default #{config.name} config", ->
       it 'is valid toml', ->
-        parsed_default_config = parse_toml config.raw
+        parsed_default_config = parse_toml config.raw_fn!
 
         $expect_that parsed_default_config, has_type 'table'
         $expect_that parsed_default_config, has_fields
