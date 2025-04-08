@@ -24,6 +24,10 @@ export class Args
         \short nil
         \global!
         \hidden!
+      \add with Flag 'force-error-on-bad-exit'
+        \hidden!
+        \short nil
+        \global!
       \add with Subcommand 'test'
         \description 'test the program and exit'
         \add with Flag 'no-minecraft'

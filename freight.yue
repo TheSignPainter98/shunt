@@ -1,6 +1,6 @@
 local *
 
-import 'compat' as :apply_compat, :test_compat
+import 'compat' as :apply_compat, :HOST, :test_compat
 apply_compat!
 
 import 'quicktype' as :declare_type
@@ -24,6 +24,8 @@ import 'spec'
 
 global skip_minecraft_tests = false
 
+force_error_on_bad_exit = false
+
 main = (raw_args) ->
   args, ok = Args::parse raw_args
   if not ok
@@ -31,6 +33,8 @@ main = (raw_args) ->
 
   logger.set_log_verbosity args.verbose
   spec.set_log_verbosity args.verbose
+
+  force_error_on_bad_exit = args.force_error_on_bad_exit
 
   if args.instrument
     instrument -> run args
@@ -73,5 +77,12 @@ catch err
   if err != 'EXIT(0)'
     print debug.traceback err
     ok = false
-if not ok
-  os.exit 1
+switch HOST
+  when 'native'
+    if not ok
+      os.exit 1
+  when 'minecraft'
+    if not ok and force_error_on_bad_exit
+      os.exit 1
+  else
+    error "internal error: unrecognised host #{HOST}"
