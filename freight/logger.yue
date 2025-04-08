@@ -8,3 +8,10 @@ export set_log_verbosity = (v) ->
 export log = (fn) ->
   if verbose
     print fn!
+
+export fatal = (...) ->
+  fragments = with {}
+    for i = 1, select '#', ...
+      [] = tostring select i, ...
+  print table.concat fragments, ' '
+  os.exit 1

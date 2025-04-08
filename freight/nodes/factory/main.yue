@@ -9,7 +9,7 @@ local FactoryHeartbeat
 local TrainsPresent
 
 import 'compat' as :HOST
-import 'freight.logger' as :log
+import 'freight.logger' as :fatal, :log
 import 'freight.pc' as :Pc
 import 'freight.peripheral.station' as :Station, MinecraftBackend: MinecraftStationBackend
 import 'freight.peripheral.stockpile' as :Stockpile
@@ -35,15 +35,14 @@ handles = '<resource-id>'
         for station in *stations
           err = station\validate!
           if err?
-            print err
-            os.exit 1
+            fatal err
         [ station\name! for station in *stations ]
       when 'native'
         {'test-station'}
       else
         error "internal error: unknown host #{HOST}"
     if #station_names == 0
-      error "cannot find any stations"
+      fatal "cannot find any stations"
     for station_name in *station_names
       [] = station_config station_name
   table.concat config_fragments, '\n'

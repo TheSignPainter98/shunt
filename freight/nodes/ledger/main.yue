@@ -133,7 +133,7 @@ class Ledger
       * 10
     final_column_width = width - (sum column_widths) - #sep * #column_widths
     if final_column_width < 0
-      error "cannot display entry in width of #{width} chars, need at least #{sum column_widths + #sep * (#column_widths - 1)}"
+      error "internal error: cannot display entry in width of #{width} chars, need at least #{sum column_widths + #sep * (#column_widths - 1)}"
     column_widths[] = final_column_width
     assert #column_widths == #columns, 'internal error: different number columns and column widths'
 

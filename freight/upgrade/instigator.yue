@@ -1,7 +1,7 @@
 local *
 local MarshalBumpRelease
 
-import 'freight.logger' as :log
+import 'freight.logger' as :fatal, :log
 import 'freight.peripheral.uplink' as :IdempotenceToken, :Packet, :TIMEOUT, :Uplink
 import 'freight.upgrade.rebooter' as :MinecraftRebooter, :RebootRequest
 import 'freight.upgrade.tester' as :Tester
@@ -11,7 +11,7 @@ import 'spec' as :spec
 export class Instigator using Tester
   new: F '(?{}, Release, ?Uplink, ?Rebooter) => <>', (@config, @release, @uplink=Uplink!, @rebooter=MinecraftRebooter!) =>
     if config?.marshal?
-      error 'cannot instigate upgrade from marshal'
+      fatal 'cannot instigate upgrade from marshal'
 
   upgrade: F '(?boolean) => <>', (prompt=true) =>
     assert @test @release
@@ -41,7 +41,7 @@ export class Instigator using Tester
       if ok
         return true
       if err != TIMEOUT
-        error err
+        fatal err
     print "marshal did not issue reboot request"
     false
 
