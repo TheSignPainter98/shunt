@@ -33,6 +33,9 @@ export class Args
         \add with Flag 'no-minecraft'
           \description 'skip in-world tests'
           \short nil
+        \add with Flag 'run-ugly-tests'
+          \description 'tests with deliberate unsuppressible errors'
+          \short nil
         \add with Param 'filter'
           \description 'run only tests matching this pattern'
           \default nil

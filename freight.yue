@@ -23,6 +23,9 @@ import 'freight.logger'
 import 'spec'
 
 global skip_minecraft_tests = false
+-- Some tests have unsuppressible error output in valid cases. This is a hack
+-- to avoid mental false-positives by users.
+global run_ugly_tests = false
 
 force_error_on_bad_exit = false
 
@@ -43,6 +46,7 @@ main = (raw_args) ->
 
 run = (args) ->
   if args.test?
+    run_ugly_tests = args.test.run_ugly_tests
     skip_minecraft_tests = args.test.no_minecraft
     run_tests args.test.filter
   else if args.start?
