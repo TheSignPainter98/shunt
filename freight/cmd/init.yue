@@ -3,7 +3,7 @@ local *
 import 'clap' as :Flag, :Param, :Subcommand
 import 'freight.config' as :CONFIG_FILE
 import 'freight.toml' as :parse_toml
-import 'quicktype' as :F
+import 'quicktype' as :F, :T
 import 'spec' as :spec
 
 display = require 'freight.nodes.display.main'
@@ -23,7 +23,7 @@ export subcommand = with Subcommand 'init'
       * 'ledger'
       * 'marshal'
 
-default_config_by_type =
+default_config_by_type = T '{string->()-><?string, ?string>}',
   display: display.default_config
   factory: factory.default_config
   ledger: ledger.default_config

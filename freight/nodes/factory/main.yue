@@ -31,11 +31,19 @@ handles = '<resource-id>'
   config_fragments = with { root_config }
     station_names = switch HOST
       when 'minecraft'
-        [ station\name! for station in *MinecraftStationBackend::find! ]
+        stations = [ Station backend for backend in *MinecraftStationBackend::find! ]
+        for station in *stations
+          err = station\validate!
+          if err?
+            print err
+            os.exit 1
+        [ station\name! for station in *stations ]
       when 'native'
         {'test-station'}
       else
         error "internal error: unknown host #{HOST}"
+    if #station_names == 0
+      error "cannot find any stations"
     for station_name in *station_names
       [] = station_config station_name
   table.concat config_fragments, '\n'
