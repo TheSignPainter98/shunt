@@ -47,6 +47,7 @@ export class Flag
       nil
     @_global = false
     @_required = false
+    @_hidden = false
     @_description = nil
     @_options = nil
     @_transform = nil
@@ -54,6 +55,9 @@ export class Flag
   dest: (@_dest) => @
   short: (@_short) => @
   long: (@_long) => @
+  hidden: =>
+    @_hidden = true
+    @
   required: =>
     @_required = true
     @
@@ -369,6 +373,8 @@ export class Subcommand
     table.concat with {'Usage: ', path_repr, ' '}
       first_arg = true
       for flag in *@_sorted_flags!
+        if flag._hidden
+          continue
         if not first_arg
           [] = ' '
         first_arg = false
@@ -474,6 +480,9 @@ export class Subcommand
         longest_global_flag_repr_len = math.max 0, unpack [ #p\_long_repr! for p in *@_global_flags! ]
         longest_flag_repr_len = math.max longest_local_flag_repr_len, longest_global_flag_repr_len
         for flag in *@_sorted_flags!
+          if flag._hidden
+            continue
+
           repr = flag\_long_repr!
           if description = flag._description
             padding = ' '\rep longest_flag_repr_len - #repr
