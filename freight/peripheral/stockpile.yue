@@ -3,11 +3,6 @@ local *
 import 'quicktype' as :declare_type, :F, :T
 import 'spec' as :spec
 
-declare_type 'StockpileBackend', [[{
-  size: () => number,
-  slot_capacity: (number) => number,
-  slot_content: (number) => SlotInfo,
-}]]
 declare_type 'SlotInfo', [[{
   count: number,
   displayName: string,
@@ -17,10 +12,31 @@ declare_type 'Stockpile', [[{
   info: () => StockpileInfo,
 }]]
 export class Stockpile
-  new: F '(?StockpileBackend) => <>', (@backend=MinecraftBackend!) =>
+  new: F '([Inventory]) => <>', (@inventories) =>
 
   info: F '() => [StockpileInfo]', =>
-    stockpile_by_item = with {}
+    stockpile_by_item = {}
+    for inventory in *@inventories
+      inventory\gather_info stockpile_by_item
+
+    stockpile = [ info for _, info in pairs stockpile_by_item ]
+    table.sort stockpile, (a, b) ->
+      a.item < b.item
+    stockpile
+
+declare_type 'Inventory', [[{
+  gather_info: ({string->StoredItemInfo}) => <>,
+}]]
+declare_type 'InventoryBackend', [[{
+  size: () => number,
+  slot_content: (number) => SlotInfo,
+  slot_capacity: (number) => number,
+}]]
+export class Inventory
+  new: F '(InventoryBackend) => <>', (@backend) =>
+
+  gather_info: F '({string->StoredItemInfo}) => <>', (stored_item_info_by_item) =>
+    with stored_item_info_by_item
       for i = 1, @backend\size!
         slot = @backend\slot_content i
         if not slot?
@@ -34,11 +50,7 @@ export class Stockpile
         with [item]
           .capacity += @backend\slot_capacity i
           .stored += slot.count
-
-    stockpile = [ info for _, info in pairs stockpile_by_item ]
-    table.sort stockpile, (a, b) ->
-      a.item < b.item
-    stockpile
+    return
 
 declare_type 'StockpileInfo', '[StoredItemInfo]'
 declare_type 'StoredItemInfo', [[{
@@ -47,13 +59,11 @@ declare_type 'StoredItemInfo', [[{
   capacity: number,
 }]]
 class MinecraftBackend
-  new: =>
-    inventories = { peripheral.find 'inventory' }
-    if #inventories == 0
-      error 'cannot create Stockpile: no inventories attached'
-    if #inventories > 1
-      error 'cannot create Stockpile: too many inventories attached'
-    { @inventory } = inventories
+  @find: F '() => [InventoryBackend]', =>
+    inventory_peripherals = { peripheral.find 'inventory' }
+    [ MinecraftBackend peripheral for peripheral in *inventory_peripherals]
+
+  new: (@inventory) =>
 
   size: F '() => number', =>
     @inventory\size!
@@ -65,13 +75,13 @@ class MinecraftBackend
     @inventory\getItemLimit slot_id
 
 
-declare_type 'TestStockpileBackendOpts', [[{
+declare_type 'TestInventoryBackendOpts', [[{
   size: ?() => number,
   slot_content: ?(number) => SlotInfo,
   slot_capacity: ?(number) => number,
 }]]
-export class TestStockpileBackend
-  new: F '(?TestStockpileBackendOpts) => <>', (opts={}) =>
+export class TestInventoryBackend
+  new: F '(?TestInventoryBackendOpts) => <>', (opts={}) =>
     {
       :size=-> error 'size unimplemented'
       :slot_content=-> error 'slot_content unimplemented'
@@ -90,10 +100,11 @@ spec ->
 
   describe 'Stockpile', ->
     describe '\\info', ->
-      it 'returns correctly on valid inventory', ->
+      it 'returns all info', ->
         item1 = 'Diamond Axe'
-        item2 = 'Fishing Rod'
-        stockpile = Stockpile TestStockpileBackend
+        item2 = 'Enchanting Table'
+        item3 = 'Fishing Rod'
+        inventory1 = Inventory TestInventoryBackend
           size: => 4
           slot_content: (slot_id) =>
             displayName = if slot_id % 2 == 1
@@ -106,6 +117,22 @@ spec ->
             }
           slot_capacity: (slot_id) =>
             32 * slot_id
+        inventory2 = Inventory TestInventoryBackend
+          size: => 4
+          slot_content: (slot_id) =>
+            displayName = if slot_id % 2 == 1
+              item2
+            else
+              item3
+            {
+              count: 3 + 16 * slot_id
+              :displayName
+            }
+          slot_capacity: (slot_id) =>
+            3 + 32 * slot_id
+        stockpile = Stockpile
+          * inventory1
+          * inventory2
 
         info = stockpile\info!
         $expect_that info, deep_eq {{
@@ -114,6 +141,10 @@ spec ->
           capacity: 32 * (1 + 3)
         }, {
           item: item2
-          stored: 16 * (2 + 4)
-          capacity: 32 * (2 + 4)
+          stored: 16 * (1 + 2 + 3 + 4) + 3 * 2
+          capacity: 32 * (1 + 2 + 3 + 4) + 3 * 2
+        }, {
+          item: item3
+          stored: 16 * (2 + 4) + 3 * 2
+          capacity: 32 * (2 + 4) + 3 * 2
         }}

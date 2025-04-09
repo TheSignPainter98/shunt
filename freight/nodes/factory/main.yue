@@ -49,7 +49,18 @@ handles = '<resource-id>'
 
 export main = F '(FactoryConfig) -> <>', (config) ->
   print 'starting factory'
-  with Factory config, {Station!}, Stockpile!, Uplink!
+
+  stations = [ Station backend for backend in *MinecraftStationBackend::find! ]
+  if #station_names == 0
+      fatal "cannot find any stations"
+
+  stockpile = do
+    inventories = [ Inventory backend for backend in *MinecraftBackend::find! ]
+    if #inventories == 0
+      fatal 'cannot find any inventories'
+    Stockpile inventories
+
+  with Factory config, stations, stockpile, Uplink!
     \run!
 
 declare_type 'FactoryConfig', [[{
@@ -185,7 +196,7 @@ spec ->
 
   import 'freight.pc' as :TestPcBackend
   import 'freight.peripheral.station' as :TestStationBackend
-  import 'freight.peripheral.stockpile' as :TestStockpileBackend
+  import 'freight.peripheral.stockpile' as :Inventory, :TestInventoryBackend
   import 'freight.peripheral.uplink' as :TestUplinkBackend
   import 'spec' as :describe, :it, :matchers
 
@@ -207,7 +218,7 @@ spec ->
         set_name: (name) =>
           new_name = name
       stations = {}
-      stockpile = Stockpile TestStockpileBackend!
+      stockpile = Stockpile { Inventory TestInventoryBackend! }
       uplink = Uplink TestUplinkBackend!
 
       Factory config, pc, stations, stockpile, uplink
@@ -231,14 +242,15 @@ spec ->
       pc = Pc TestPcBackend
         id: => PC_ID
         name: => PC_NAME
-      stockpile = Stockpile TestStockpileBackend
-        size: => 1
-        slot_content: (i) =>
-          $assert_that i, eq 1
-          count: 32, displayName: 'Stone Bricks'
-        slot_capacity: (i) =>
-          $assert_that i, eq 1
-          64
+      stockpile = Stockpile
+        * Inventory TestInventoryBackend
+          size: => 1
+          slot_content: (i) =>
+            $assert_that i, eq 1
+            count: 32, displayName: 'Stone Bricks'
+          slot_capacity: (i) =>
+            $assert_that i, eq 1
+            64
       uplink = Uplink TestUplinkBackend
         receive: (_, _) =>
           @count ??= 1
@@ -296,14 +308,15 @@ spec ->
           train_set_schedule: (schedule) =>
             applied_schedules[] = schedule
             true
-      stockpile = Stockpile TestStockpileBackend
-        size: => 1
-        slot_content: (i) =>
-          $assert_that i, eq 1
-          count: 32, displayName: 'Stone Bricks'
-        slot_capacity: (i) =>
-          $assert_that i, eq 1
-          64
+      stockpile = Stockpile
+        * Inventory TestInventoryBackend
+          size: => 1
+          slot_content: (i) =>
+            $assert_that i, eq 1
+            count: 32, displayName: 'Stone Bricks'
+          slot_capacity: (i) =>
+            $assert_that i, eq 1
+            64
       uplink = Uplink TestUplinkBackend
         send: (recipient, message, protocol) =>
           sent[] = :recipient, :message, :protocol
@@ -352,14 +365,15 @@ spec ->
         id: => PC_ID
         name: => FACTORY_NAME
       stations = {}
-      stockpile = Stockpile TestStockpileBackend
-        size: => 1
-        slot_content: (i) =>
-          $assert_that i, eq 1
-          count: 32, displayName: 'Stone Bricks'
-        slot_capacity: (i) =>
-          $assert_that i, eq 1
-          64
+      stockpile = Stockpile
+        * Inventory TestInventoryBackend
+          size: => 1
+          slot_content: (i) =>
+            $assert_that i, eq 1
+            count: 32, displayName: 'Stone Bricks'
+          slot_capacity: (i) =>
+            $assert_that i, eq 1
+            64
       uplink = Uplink TestUplinkBackend
         send: (recipient, message, protocol) =>
           sent[] = :recipient, :message, :protocol
@@ -406,14 +420,15 @@ spec ->
                 'test-train-name'
               else
                 nil
-      stockpile = Stockpile TestStockpileBackend
-        size: => 1
-        slot_content: (i) =>
-          $assert_that i, eq 1
-          count: 32, displayName: 'Stone Bricks'
-        slot_capacity: (i) =>
-          $assert_that i, eq 1
-          64
+      stockpile = Stockpile
+        * Inventory TestInventoryBackend
+          size: => 1
+          slot_content: (i) =>
+            $assert_that i, eq 1
+            count: 32, displayName: 'Stone Bricks'
+          slot_capacity: (i) =>
+            $assert_that i, eq 1
+            64
       uplink = Uplink TestUplinkBackend
         receive: (_, _) =>
           @count ??= 1
@@ -483,14 +498,15 @@ spec ->
           * Station TestStationBackend
               name: => 'test_station_2'
               train_name: => 'train_2'
-        stockpile = Stockpile TestStockpileBackend
-          size: => 1
-          slot_content: (i) =>
-            $assert_that i, eq 1
-            count: 32, displayName: 'Stone Bricks'
-          slot_capacity: (i) =>
-            $assert_that i, eq 1
-            64
+        stockpile = Stockpile
+          * Inventory TestInventoryBackend
+            size: => 1
+            slot_content: (i) =>
+              $assert_that i, eq 1
+              count: 32, displayName: 'Stone Bricks'
+            slot_capacity: (i) =>
+              $assert_that i, eq 1
+              64
         uplink = Uplink TestUplinkBackend
           send: (recipient, message, protocol) =>
             sent[] = :recipient, :message, :protocol
