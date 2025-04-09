@@ -17,6 +17,9 @@ export subcommand = with Subcommand 'start'
     \description 'exit on failure, rather than reattempting'
     \short nil
     \dest 'no_reattempt'
+  \add with Flag 'allow-outdated'
+    \description 'skip upgrade check'
+    \short nil
 
 export main = F '({}) -> <>', (args) ->
   cfg = config!
@@ -24,9 +27,10 @@ export main = F '({}) -> <>', (args) ->
     print 'cannot start freight: config missing\ntry running `freight init <instance-type>` first'
     return
 
-  with UpgradeMonitor cfg, Uplink!
-    if \upgrade_available!
-      \upgrade_now!
+  if not args.allow_outdated
+    with UpgradeMonitor cfg, Uplink!
+      if \upgrade_available!
+        \upgrade_now!
 
   to_spam = if cfg.marshal?
     -> marshal.main cfg
