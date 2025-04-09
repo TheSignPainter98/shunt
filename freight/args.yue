@@ -15,6 +15,10 @@ export class Args
       \add with Flag 'verbose'
         \description 'log verbosely'
         \global!
+      \add with Flag 'ignore-monitor'
+        \description 'log output on this computer'
+        \short nil
+        \global!
       \add with Subcommand 'test'
         \description 'test the program and exit'
         \add with Flag 'no-minecraft'

@@ -35,7 +35,8 @@ main = (raw_args) ->
     skip_minecraft_tests = args.test.no_minecraft
     run_tests args.test.filter
   else if args.start?
-    detect_and_use_monitor!
+    if not args.ignore_monitor
+      detect_and_use_monitor!
     start.main args.start
   else if args.init?
     init.main args.init
