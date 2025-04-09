@@ -33,17 +33,8 @@ STEP_INTERVAL = 60
 declare_type 'Network', [[{
   name: string,
   factories: [Factory],
-  stations: [Station],
 }]]
 declare_type 'Factory', [[{
-  stockpile: StockpileInfo,
-}]]
-declare_type 'Train', [[{
-  name: string,
-  state: StateMachine,
-}]]
-
-declare_type 'FactoryStatus', [[{
   -- Constant
   name: string,
   pc_id: number,
@@ -51,6 +42,7 @@ declare_type 'FactoryStatus', [[{
   operational: boolean,
   last_seen_epoch: number,
   station_names: [string],
+  stockpile: StockpileInfo,
 }]]
 declare_type 'TrainStatus', [[{
   -- Constant:
@@ -59,6 +51,11 @@ declare_type 'TrainStatus', [[{
   last_seen_epoch: number,
   last_seen_at_factory: string,
   last_seen_at_station: string,
+}]]
+
+declare_type 'Train', [[{
+  name: string,
+  state: StateMachine,
 }]]
 
 declare_type 'MarshalConfig', [[{
@@ -74,7 +71,7 @@ class Marshal
   new: F '(MarshalConfig, Uplink, UpgradeListener) => <>', (@config, @uplink, @upgrade_listener) =>
     @epoch = T 'number', 0
     -- TODO(kcza): load from stored initial state
-    @factories = T '{string->FactoryStatus}', {}
+    @factories = T '{string->Factory}', {}
     @station_names = T '{string}', {}
     @trains = T '{string->TrainStatus}', {}
     @do_count_epochs = T 'boolean', true
@@ -148,7 +145,7 @@ class Marshal
 
   prune_factories: F '() => <>', =>
     LIFETIME_EPOCHS = 1
-    @factories = T '{string->FactoryStatus}', @prune_statuses @factories, LIFETIME_EPOCHS
+    @factories = T '{string->Factory}', @prune_statuses @factories, LIFETIME_EPOCHS
 
   prune_trains: F '() => <>', =>
     LIFETIME_EPOCHS = 4
@@ -170,7 +167,7 @@ class Marshal
         error "internal error: unexpected network message protocol reached marshal core '#{message\protocol!}'"
 
   on_factory_heartbeat: F '(FactoryHeartbeat) => <>', (message) =>
-    { :pc_id, :name, :station_names, :present_trains } = message
+    { :pc_id, :name, :station_names, :present_trains, :stockpile } = message
     station_names_removed, station_names_added = symmetric_difference @station_names, station_names
     for to_remove in *station_names_removed
       @station_names[to_remove] = nil
@@ -179,7 +176,7 @@ class Marshal
 
     factory_status = @factories[name]
     seen_before = factory_status?
-    @factories[name] = T 'FactoryStatus', with factory_status ?? :name, :pc_id, operational: true
+    @factories[name] = T 'Factory', with factory_status ?? :name, :pc_id, operational: true
       if seen_before and pc_id != .pc_id
         log -> "temporarily ignoring possible imposter for factory #{name}: last known PC was ##{.pc_id}, got #{pc_id}"
         return -- Ignore for this epoch.
@@ -187,6 +184,7 @@ class Marshal
       .last_seen_epoch = @epoch
       .station_names = station_names
       .present_trains = present_trains
+      .stockpile = stockpile
 
     for station_name, train_name in pairs present_trains
       @trains[train_name] = T 'TrainStatus', with @trains[train_name] ?? name: train_name
@@ -206,7 +204,7 @@ class Marshal
     @epoch = epoch
     @send_new_epoch_event epoch
 
-  ut_factories: F '() => {string->FactoryStatus}', => @factories
+  ut_factories: F '() => {string->Factory}', => @factories
 
   ut_trains: F '() => {string->TrainStatus}', => @trains
 
@@ -241,7 +239,11 @@ spec ->
                   {"station_#{3*@count}", "station_#{3*@count+2}"}
                 else
                   error "internal error: unrecognised test phase #{test_phase}"
-              message = FactoryHeartbeat @count, "factory_#{@count}", stations, {}
+              stockpile_info =
+                * item: '<minecraft:dirt>'
+                  stored: 64
+                  capacity: 64
+              message = FactoryHeartbeat @count, "factory_#{@count}", stations, {}, stockpile_info
               return @count, message, FactoryHeartbeat\protocol!
             else
               return nil, nil, nil
@@ -339,7 +341,11 @@ spec ->
               trains =
                 station_1: 'train_1'
                 station_2: 'train_2'
-              message = FactoryHeartbeat @count, "factory_#{@count}", stations, trains
+              stockpile_info =
+                * item: '<minecraft:dirt>'
+                  stored: 64
+                  capacity: 64
+              message = FactoryHeartbeat @count, "factory_#{@count}", stations, trains, stockpile_info
               return @count, message, FactoryHeartbeat\protocol!
             else
               return nil, nil, nil

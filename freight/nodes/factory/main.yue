@@ -1,8 +1,8 @@
 local *
-local StockpileRequest
-local StockpileResponse
 local ScheduleRequest
 local ScheduleResponse
+local StockpileRequest
+local StockpileResponse
 local InfoRequest
 local InfoResponse
 local FactoryHeartbeat
@@ -141,7 +141,8 @@ class Factory
   do_heartbeat_step: F '() => <>', =>
     station_names = [ station\name! for station in *@stations ]
     present_trains = @detect_trains!
-    @uplink\broadcast FactoryHeartbeat @pc\id!, @name!, station_names, present_trains
+    stockpile_info = @stockpile\info!
+    @uplink\broadcast FactoryHeartbeat @pc\id!, @name!, station_names, present_trains, stockpile_info
 
   detect_trains: F '() => {string->string}', =>
     with {}
@@ -174,9 +175,10 @@ declare_type 'FactoryHeartbeat', [[{
   name: string,
   station_names: [string],
   present_trains: {string->string},
+  stockpile: StockpileInfo,
 }]]
 export class FactoryHeartbeat extends Packet
-  new: F '(number, string, [string], {string->string}) => <>', (@pc_id, @name, @station_names, @present_trains) =>
+  new: F '(number, string, [string], {string->string}, StockpileInfo) => <>', (@pc_id, @name, @station_names, @present_trains, @stockpile) =>
 
 spec ->
   import 'spec_macros' as $
@@ -258,9 +260,10 @@ spec ->
         message: has_fields
           idemp_tok: eq idemp_tok
           info: has_fields
-            item: eq 'Stone Bricks'
-            stored: eq 32
-            capacity: eq 64
+            * has_fields
+                item: eq 'Stone Bricks'
+                stored: eq 32
+                capacity: eq 64
         protocol: eq StockpileResponse\protocol!
 
     it 'responds to valid schedule requests', ->
@@ -293,7 +296,14 @@ spec ->
           train_set_schedule: (schedule) =>
             applied_schedules[] = schedule
             true
-      stockpile = Stockpile TestStockpileBackend!
+      stockpile = Stockpile TestStockpileBackend
+        size: => 1
+        slot_content: (i) =>
+          $assert_that i, eq 1
+          count: 32, displayName: 'Stone Bricks'
+        slot_capacity: (i) =>
+          $assert_that i, eq 1
+          64
       uplink = Uplink TestUplinkBackend
         send: (recipient, message, protocol) =>
           sent[] = :recipient, :message, :protocol
@@ -342,7 +352,14 @@ spec ->
         id: => PC_ID
         name: => FACTORY_NAME
       stations = {}
-      stockpile = Stockpile TestStockpileBackend!
+      stockpile = Stockpile TestStockpileBackend
+        size: => 1
+        slot_content: (i) =>
+          $assert_that i, eq 1
+          count: 32, displayName: 'Stone Bricks'
+        slot_capacity: (i) =>
+          $assert_that i, eq 1
+          64
       uplink = Uplink TestUplinkBackend
         send: (recipient, message, protocol) =>
           sent[] = :recipient, :message, :protocol
@@ -423,9 +440,10 @@ spec ->
             * name: 'test-station-name'
               train_name: 'test-train-name'
           stockpile_info: has_fields
-            item: eq 'Stone Bricks'
-            stored: eq 32
-            capacity: eq 64
+            * has_fields
+              item: eq 'Stone Bricks'
+              stored: eq 32
+              capacity: eq 64
         protocol: eq InfoResponse\protocol!
       $expect_that sent[2], has_fields
         recipient: eq SERVER_ID
@@ -436,9 +454,10 @@ spec ->
             * name: 'test-station-name'
               train_name: nil
           stockpile_info: has_fields
-            item: eq 'Stone Bricks'
-            stored: eq 32
-            capacity: eq 64
+            * has_fields
+              item: eq 'Stone Bricks'
+              stored: eq 32
+              capacity: eq 64
         protocol: eq InfoResponse\protocol!
 
     describe '\\do_heartbeat_step', ->
@@ -464,7 +483,14 @@ spec ->
           * Station TestStationBackend
               name: => 'test_station_2'
               train_name: => 'train_2'
-        stockpile = Stockpile TestStockpileBackend!
+        stockpile = Stockpile TestStockpileBackend
+          size: => 1
+          slot_content: (i) =>
+            $assert_that i, eq 1
+            count: 32, displayName: 'Stone Bricks'
+          slot_capacity: (i) =>
+            $assert_that i, eq 1
+            64
         uplink = Uplink TestUplinkBackend
           send: (recipient, message, protocol) =>
             sent[] = :recipient, :message, :protocol
@@ -487,7 +513,11 @@ spec ->
               test_station_1: 'train_1'
               test_station_2: 'train_2'
 
-            deep_eq FactoryHeartbeat PC_ID, PC_NAME, station_names, present_trains
+            stockpile_info =
+              * item: 'Stone Bricks'
+                stored: 32
+                capacity: 64
+            deep_eq FactoryHeartbeat PC_ID, PC_NAME, station_names, present_trains, stockpile_info
 
     -- describe '\\send_trains_present', ->
     --   it 'detects and sends trains', ->

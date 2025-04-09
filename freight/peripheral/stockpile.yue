@@ -1,6 +1,6 @@
 local *
 
-import 'quicktype' as :declare_type, :F
+import 'quicktype' as :declare_type, :F, :T
 import 'spec' as :spec
 
 declare_type 'StockpileBackend', [[{
@@ -19,27 +19,29 @@ declare_type 'Stockpile', [[{
 export class Stockpile
   new: F '(?StockpileBackend) => <>', (@backend=MinecraftBackend!) =>
 
-  info: F '() => StockpileInfo', =>
-    item = nil
-    stored = 0
-    capacity = 0
-    for i = 1, @backend\size!
-      capacity += @backend\slot_capacity i
+  info: F '() => [StockpileInfo]', =>
+    stockpile_by_item = with {}
+      for i = 1, @backend\size!
+        slot = @backend\slot_content i
+        if not slot?
+          continue
 
-      slot = @backend\slot_content i
-      if not slot?
-        continue
+        item = slot.displayName
+        [item] ??= T 'StockpileInfo',
+          :item
+          stored: 0
+          capacity: 0
+        with [item]
+          .capacity += @backend\slot_capacity i
+          .stored += slot.count
 
-      slot_item = slot.displayName
-      if not item?
-        item = slot_item
-      else if slot_item != item
-        error "stockpile impure: contains both #{item} and #{slot_item}"
+    stockpile = [ info for _, info in pairs stockpile_by_item ]
+    table.sort stockpile, (a, b) ->
+      a.item < b.item
+    stockpile
 
-      stored += slot.count
-    :item, :stored, :capacity
-
-declare_type 'StockpileInfo', [[{
+declare_type 'StockpileInfo', '[StoredItemInfo]'
+declare_type 'StoredItemInfo', [[{
   item: string,
   stored: number,
   capacity: number,
@@ -89,35 +91,29 @@ spec ->
   describe 'Stockpile', ->
     describe '\\info', ->
       it 'returns correctly on valid inventory', ->
+        item1 = 'Diamond Axe'
+        item2 = 'Fishing Rod'
         stockpile = Stockpile TestStockpileBackend
           size: => 4
           slot_content: (slot_id) =>
+            displayName = if slot_id % 2 == 1
+              item1
+            else
+              item2
             {
               count: 16 * slot_id
-              displayName: "Diamond Axe"
+              :displayName
             }
           slot_capacity: (slot_id) =>
             32 * slot_id
 
         info = stockpile\info!
-        $expect_that info, deep_eq {
-          item: 'Diamond Axe'
-          stored: 16 * (1 + 2 + 3 + 4)
-          capacity: 32 * (1 + 2 + 3 + 4)
-        }
-
-      it 'rejects impure inventories', ->
-        stockpile = Stockpile TestStockpileBackend
-          size: => 2
-          slot_content: (slot_id) =>
-            displayName = switch slot_id
-              when 1
-                "Diamond Axe"
-              when 2
-                "Iron Axe"
-              else
-                error "unexpected slot_id: #{slot_id}"
-            count: 1, :displayName
-          slot_capacity: (slot_id) => 1
-
-        $expect_that (-> stockpile\info!), errors matches 'stockpile impure: contains both Diamond Axe and Iron Axe'
+        $expect_that info, deep_eq {{
+          item: item1
+          stored: 16 * (1 + 3)
+          capacity: 32 * (1 + 3)
+        }, {
+          item: item2
+          stored: 16 * (2 + 4)
+          capacity: 32 * (2 + 4)
+        }}
