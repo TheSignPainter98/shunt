@@ -23,7 +23,7 @@ export class Queue
     @entries[@back] = elem
     @back += 1
 
-  dequeue: F '() => ?any', =>
+  dequeue: F '() => ?some', =>
     with? @entries[@front]
       @entries[@front] = nil
       @front += 1
