@@ -28,26 +28,34 @@ network = 'mainline'
 role = 'producer' # or 'consumer'
 handles = '<resource-id>'
 "
-  config_fragments = with { root_config }
-    station_names = switch HOST
-      when 'minecraft'
-        stations = [ Station backend for backend in *MinecraftStationBackend::find! ]
-        seen_station_names = {}
-        for station in *stations
-          err = station\validate!
-          if err?
-            fatal err
-          seen_station_names[station\name!] = true
+  station_names = switch HOST
+    when 'minecraft'
+      stations = [ Station backend for backend in *MinecraftStationBackend::find! ]
+      seen_station_names = {}
+      for station in *stations
+        err = station\validate!
+        if err?
+          fatal err
+        seen_station_names[station\name!] = true
 
-        station_names = [ station_name for station_name, _ in pairs seen_station_names ]
-        table.sort station_names
-        station_names
-      when 'native'
-        {'test-station'}
-      else
-        error "internal error: unknown host #{HOST}"
+      station_names = [ station_name for station_name, _ in pairs seen_station_names ]
+      table.sort station_names
+      station_names
+    when 'native'
+      {'test-station'}
+    else
+      error "internal error: unknown host #{HOST}"
+  config_fragments = with {}
     if #station_names == 0
-      fatal "cannot find any stations"
+      [] = '# No stations detected! Consider attaching'
+      [] = '# stations before running:'
+      [] = '#'
+      [] = '# > freight init factory --force'
+      [] = '#'
+      [] = '# which will overwrite this config file.'
+      [] = ''
+
+    [] = root_config
     for station_name in *station_names
       [] = station_config station_name
   table.concat config_fragments, '\n'
