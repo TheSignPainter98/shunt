@@ -59,9 +59,7 @@ declare_type 'Train', [[{
 }]]
 
 declare_type 'MarshalConfig', [[{
-  marshal: {
-    network: string,
-  },
+  marshal: {},
 }]]
 declare_type 'MarshalEventType', [[
   "new-epoch"
