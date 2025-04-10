@@ -36,7 +36,7 @@ export class Multiplexer
     @output_coroutine ??= coroutine.wrap ->
       @running = true
 
-      source_resumed_this_iter = @num_source != 0
+      source_resumed_this_iter = @num_sources != 0
       while source_resumed_this_iter
         source_resumed_this_iter = false
         for i = 1, @num_sources
