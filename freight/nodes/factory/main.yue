@@ -32,11 +32,16 @@ handles = '<resource-id>'
     station_names = switch HOST
       when 'minecraft'
         stations = [ Station backend for backend in *MinecraftStationBackend::find! ]
+        seen_station_names = {}
         for station in *stations
           err = station\validate!
           if err?
             fatal err
-        [ station\name! for station in *stations ]
+          seen_station_names[station\name!] = true
+
+        station_names = [ station_name for station_name, _ in pairs seen_station_names ]
+        table.sort station_names
+        station_names
       when 'native'
         {'test-station'}
       else
