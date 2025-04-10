@@ -169,8 +169,10 @@ class ImportItemsSorted
     if not line.content\match '^%s*import'
       return
 
-    items = with {}
+    items = {}
+    items = with items
       state = 'ignoring'
+      local expect_rename
       for word in line.content\gmatch '%S+'
         switch state
           when 'ignoring'
@@ -179,20 +181,44 @@ class ImportItemsSorted
           when 'collecting'
             if ',' == word\sub -1
               word = word\sub 1, -2
-            [] = word
+
+            if expect_rename
+              expect_rename = false
+              [#items].renamed_to = word
+            else
+              [] = ImportItem word
+            if ':' == word\sub -1
+              expect_rename = true
 
     sorted = true
     for i = 2, #items
-      if items[i-1]\lower! > items[i]\lower!
+      if items[i-1] > items[i]
         sorted = false
         break
     if sorted
       return
 
-    table.sort items, (a, b) -> a\lower! < b\lower!
+    table.sort items
+    pretty_items = [ tostring item for item in *items ]
     Declare::error with Error 'import items not sorted'
       \at line
-      \help "try sorting as #{table.concat items, ', '}"
+      \help "try sorting as #{table.concat pretty_items, ', '}"
+
+class ImportItem
+  new: (@item, @renamed_to) =>
+    @_sort_item = if ':' == @item\sub 1, 1
+      (@item\sub 2)\lower!
+    else
+      @item\lower!
+
+  __tostring: =>
+    if @renamed_to?
+      "#{@item} #{@renamed_to}"
+    else
+      "#{@item}"
+
+  __lt: (other) =>
+    @_sort_item < other._sort_item
 
 declare_type 'Error', [[{
   fmt: ({string}) => <>,

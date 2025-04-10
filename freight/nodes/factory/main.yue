@@ -11,8 +11,8 @@ local TrainsPresent
 import 'compat' as :HOST
 import 'freight.logger' as :fatal, :log
 import 'freight.pc' as :Pc
-import 'freight.peripheral.station' as :Station, MinecraftBackend: MinecraftStationBackend
-import 'freight.peripheral.stockpile' as :Stockpile
+import 'freight.peripheral.station' as MinecraftBackend: MinecraftStationBackend, :Station
+import 'freight.peripheral.stockpile' as :Inventory, MinecraftBackend: MinecraftInventoryBackend, :Stockpile
 import 'freight.peripheral.uplink' as :IdempotenceToken, :Packet, :Uplink
 import 'quicktype' as :declare_type, :F, :T
 import 'spec' as :spec
@@ -55,17 +55,21 @@ handles = '<resource-id>'
 export main = F '(FactoryConfig) -> <>', (config) ->
   print 'starting factory'
 
-  stations = [ Station backend for backend in *MinecraftStationBackend::find! ]
-  if #station_names == 0
+  pc = Pc!
+
+  stations = do
+    stations = [ Station backend for backend in *MinecraftStationBackend::find! ]
+    if #stations == 0
       fatal "cannot find any stations"
+    stations
 
   stockpile = do
-    inventories = [ Inventory backend for backend in *MinecraftBackend::find! ]
+    inventories = [ Inventory backend for backend in *MinecraftInventoryBackend::find! ]
     if #inventories == 0
       fatal 'cannot find any inventories'
     Stockpile inventories
 
-  with Factory config, stations, stockpile, Uplink!
+  with Factory config, pc, stations, stockpile, Uplink!
     \run!
 
 declare_type 'FactoryConfig', [[{
@@ -201,7 +205,7 @@ spec ->
 
   import 'freight.pc' as :TestPcBackend
   import 'freight.peripheral.station' as :TestStationBackend
-  import 'freight.peripheral.stockpile' as :Inventory, :TestInventoryBackend
+  import 'freight.peripheral.stockpile' as :TestInventoryBackend
   import 'freight.peripheral.uplink' as :TestUplinkBackend
   import 'spec' as :describe, :it, :matchers
 

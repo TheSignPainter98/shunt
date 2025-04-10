@@ -58,7 +58,7 @@ declare_type 'StoredItemInfo', [[{
   stored: number,
   capacity: number,
 }]]
-class MinecraftBackend
+export class MinecraftBackend
   @find: F '() => [InventoryBackend]', =>
     inventory_peripherals = { peripheral.find 'inventory' }
     [ MinecraftBackend peripheral for peripheral in *inventory_peripherals]
