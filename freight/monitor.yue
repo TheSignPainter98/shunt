@@ -2,6 +2,8 @@ local *
 
 export detect_and_use_monitor = ->
   if monitor = peripheral?.find 'monitor'
-    print 'see monitor'
     monitor.clear!
+
+    print 'see monitor'
     term.redirect monitor
+    term.setCursorPos 1, 1
