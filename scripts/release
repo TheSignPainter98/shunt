@@ -2,11 +2,23 @@
 
 set -e
 
+if [[ $# -ne 1 ]]; then
+	cat <<- EOF
+		expected usage: $0 <artifact>
+	EOF
+	exit 1
+fi
+
+if ! luajit $1 test --run-ugly-tests 2>/dev/null; then
+	echo 'some tests failed'
+	luajit $1 test --run-ugly-tests
+fi
+
 if [[ ! -d release/ ]]; then
 	mkdir release
 fi
 
-cp $@ release/
+cp $1 release/
 
 pushd release/
 

@@ -24,10 +24,17 @@ export class Args
         \short nil
         \global!
         \hidden!
+      \add with Flag 'force-error-on-bad-exit'
+        \hidden!
+        \short nil
+        \global!
       \add with Subcommand 'test'
         \description 'test the program and exit'
         \add with Flag 'no-minecraft'
           \description 'skip in-world tests'
+          \short nil
+        \add with Flag 'run-ugly-tests'
+          \description 'tests with deliberate unsuppressible errors'
           \short nil
         \add with Param 'filter'
           \description 'run only tests matching this pattern'
