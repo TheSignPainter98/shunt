@@ -107,6 +107,7 @@ class Marshal
 
   send_new_epoch_event: F '(number) => <>', (epoch) =>
     @events\send type: 'new-epoch', :epoch
+    return
 
   listen_to_network: F '() => !', =>
     while true
