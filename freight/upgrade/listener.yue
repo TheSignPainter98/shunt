@@ -39,26 +39,27 @@ export class UpgradeListener using Tester
       @\listen_for_release_requests
 
   listen_for_release_bumps: F '() => !', =>
+    local release
     while true
       _, { :release } = @uplink\receive_from_any MarshalBumpRelease
       if #release.content > fs.getFreeSpace '/'
         error "cannot upgrade: too little space, need #{#release.content}, but only #{fs.getFreeSpace '/'}/#{fs.getCapacity '/'} available"
 
       ok, err = @test release
-      if not ok
-        print "cannot apply update: #{err}"
-        continue
+      if ok
+        break
+      print "cannot apply update: #{err}"
 
-      print "bumping release to version #{release.version}"
-      @_current_release = release
-      with assert io.open release.file, 'w+'
-        \write release.content
-        assert \close!
+    print "bumping release to version #{release.version}"
+    @_current_release = release
+    with assert io.open release.file, 'w+'
+      \write release.content
+      assert \close!
 
-      print "issuing reboot broadcast"
-      @uplink\deafen!
-      @uplink\broadcast RebootRequest!
-      @rebooter\reboot!
+    print "issuing reboot broadcast"
+    @uplink\deafen!
+    @uplink\broadcast RebootRequest!
+    @rebooter\reboot!
 
   listen_for_release_requests: F '() => !', =>
     while true
