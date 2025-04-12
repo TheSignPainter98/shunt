@@ -105,7 +105,6 @@ class Factory
     @send_heartbeat!
     parallel.waitForAny @\run_steps,
       @\run_heartbeats,
-      @\run_train_detection,
       @\run_peripheral_detection,
       @\run_peripheral_detach_detection
       -- TODO(kcza): detect marshal ID, messages sent to nil marshal shall be ignored
