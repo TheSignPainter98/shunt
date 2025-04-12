@@ -43,7 +43,7 @@ export F = (type_spec, fn) ->
     for i = 1, n_return_types
       err = check return_types[i], select i, ...
       if err?
-        error "return value #{i} incorrect: #{err}", 2
+        error "return value #{i} incorrect: #{err} (checking #{fn_type})", 2
     for i = n_return_types+1, (select '#', ...)
       checker = return_types[i]
       if not checker?
