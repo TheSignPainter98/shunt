@@ -145,13 +145,14 @@ class Marshal
     @epoch = epoch
     @prune_factories!
     @prune_trains!
+    return
 
   prune_factories: F '() => <>', =>
     LIFETIME_EPOCHS = 1
     @factories = T '{string->Factory}', @prune_statuses @factories, LIFETIME_EPOCHS
 
   prune_trains: F '() => <>', =>
-    LIFETIME_EPOCHS = 4
+    LIFETIME_EPOCHS = 10
     @trains = T '{string->TrainStatus}', @prune_statuses @trains, LIFETIME_EPOCHS
 
   prune_statuses: F '({string->{last_seen_epoch: number}}, number) => {string->{}}', (statuses, lifetime_epochs) =>
