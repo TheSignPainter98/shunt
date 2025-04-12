@@ -19,7 +19,7 @@ export class Multiplexer
     @output_coroutine = T '?thread', nil
     @running = T 'boolean', false
     @channel = T 'Queue', Queue!
-    @no_yield_backoff_secs = T 'number', NO_YIELD_BACKOFF_SECS
+    @throttle = T 'boolean', HOST == 'minecraft'
 
   add: F '(() -> <>) => <>', (source_fn) =>
     if @running
@@ -63,8 +63,8 @@ export class Multiplexer
             when 'dead'
               @sources[i] = nil
 
-        if HOST == 'minecraft' and not yielded_this_iter
-          os.sleep @no_yield_backoff_secs -- Avoid CPU-hogging.
+        if not yielded_this_iter and @throttle
+          os.sleep 0.001 -- Avoid CPU-hogging.
     @output_coroutine
 
 spec ->

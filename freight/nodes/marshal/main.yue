@@ -1,5 +1,6 @@
 local *
 
+import 'compat' as :HOST
 import 'freight.data.multiplexer' as :Multiplexer
 import 'freight.logger' as :log
 import 'freight.nodes.factory.main' as :FactoryHeartbeat
@@ -74,6 +75,8 @@ class Marshal
     @trains = T '{string->TrainStatus}', {}
     @do_count_epochs = T 'boolean', true
 
+    @throttle = T 'boolean', HOST == 'minecraft'
+
     @events = T 'Multiplexer', with Multiplexer '{type: MarshalEventType}'
       \add @\count_epochs
       \add @\listen_to_network
@@ -130,6 +133,8 @@ class Marshal
         continue
 
       @handle_event event
+      if @throttle
+        os.sleep 0.001 -- Avoid CPU-hogging.
 
   handle_event: F '({type: MarshalEventType}) => <>', (event) =>
     with event
