@@ -4,6 +4,8 @@ import 'freight.data.queue' as :Queue
 import 'quicktype' as :declare_type, :F, :T
 import 'spec' as :spec
 
+NO_YIELD_BACKOFF_SECS = 0.1
+
 declare_type 'Multiplexer', [[{
   add: (() -> <>) => <>,
   send: (some) => <>,
@@ -39,6 +41,7 @@ export class Multiplexer
       source_resumed_this_iter = @num_sources != 0
       while source_resumed_this_iter
         source_resumed_this_iter = false
+        yielded_this_iter = false
         for i = 1, @num_sources
           source = @sources[i]
           if not source?
@@ -50,11 +53,14 @@ export class Multiplexer
               ok, err = coroutine.resume source
               if not ok
                 error err
-              ret = @channel\dequeue!
-              if ret?
-                coroutine.yield T @to_send_type, ret
+              while @channel\len! != 0
+                coroutine.yield @channel\dequeue!
+                yielded_this_iter = true
             when 'dead'
               @sources[i] = nil
+
+        if HOST == 'minecraft' and not yielded_this_iter
+          os.sleep NO_YIELD_BACKOFF_SECS -- Avoid CPU-hogging.
     @output_coroutine
 
 spec ->
