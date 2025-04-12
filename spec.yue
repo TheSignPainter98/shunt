@@ -678,5 +678,7 @@ export run_tests = (filter) ->
 
   log ->
     "#{Test.num_run} checks run"
-  if Test.num_failures > 0
+  ok = Test.num_failures == 0
+  if not ok
     print "#{Test.num_failures} checks failed!"
+  ok

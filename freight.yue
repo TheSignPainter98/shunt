@@ -48,7 +48,9 @@ run = (args) ->
   if args.test?
     run_ugly_tests = args.test.run_ugly_tests
     skip_minecraft_tests = args.test.no_minecraft
-    run_tests args.test.filter
+    ok = run_tests args.test.filter
+    if not ok
+      os.exit 1
   else if args.start?
     if not args.ignore_monitor
       detect_and_use_monitor!
