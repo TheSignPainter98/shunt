@@ -15,7 +15,7 @@ import 'freight.peripheral.station' as MinecraftBackend: MinecraftStationBackend
 import 'freight.peripheral.stockpile' as :Inventory, MinecraftBackend: MinecraftInventoryBackend, :Stockpile
 import 'freight.peripheral.uplink' as :IdempotenceToken, :Packet, :Uplink
 import 'quicktype' as :declare_type, :F, :T
-import 'spec' as :spec
+import 'spec' as :repr, :spec
 
 export default_config = ->
   root_config = [=[
@@ -97,6 +97,7 @@ class Factory
     if @pc\name! != name
       @pc\set_name name
     @present_trains = T '[string]', {}
+    @heartbeat_num = T 'number', 0
 
   name: F '() => string', =>
     @config.factory.name
@@ -180,7 +181,12 @@ class Factory
     station_names = [ station\name! for station in *@stations ]
     present_trains = @detect_trains!
     stockpile_info = @stockpile\info!
-    @uplink\broadcast FactoryHeartbeat @pc\id!, @name!, station_names, present_trains, stockpile_info
+    heartbeat = FactoryHeartbeat @pc\id!, @name!, station_names, present_trains, stockpile_info
+
+    @heartbeat_num += 1
+    log -> "sending heartbeat #{@heartbeat_num}: #{repr heartbeat}"
+
+    @uplink\broadcast heartbeat
 
   detect_trains: F '() => {string->string}', =>
     with {}
