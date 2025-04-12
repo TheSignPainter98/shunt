@@ -7,6 +7,7 @@ import 'quicktype' as :declare_type
 declare_type 'Self', 'some'
 
 import 'freight.args' as :Args
+import 'freight.instrument' as :instrument
 import 'freight.logger' as :log
 import 'freight.monitor' as :detect_and_use_monitor
 import 'quicktype' as :F
@@ -31,6 +32,12 @@ main = (raw_args) ->
   logger.set_log_verbosity args.verbose
   spec.set_log_verbosity args.verbose
 
+  if args.instrument
+    instrument -> run args
+  else
+    run args
+
+run = (args) ->
   if args.test?
     skip_minecraft_tests = args.test.no_minecraft
     run_tests args.test.filter

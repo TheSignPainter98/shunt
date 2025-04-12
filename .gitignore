@@ -5,6 +5,7 @@ packed/
 test.yue
 *.toml
 .version.txt
+*.csv
 
 # Binaries
 bin/*

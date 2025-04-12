@@ -19,6 +19,11 @@ export class Args
         \description 'log output on this computer'
         \short nil
         \global!
+      \add with Flag 'instrument'
+        \description 'gather performance data when executing'
+        \short nil
+        \global!
+        \hidden!
       \add with Subcommand 'test'
         \description 'test the program and exit'
         \add with Flag 'no-minecraft'

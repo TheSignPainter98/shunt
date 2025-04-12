@@ -1,0 +1,11 @@
+#!/bin/bash
+
+echo 'digraph {'
+
+prev=START
+while IFS= read -r line; do
+	echo "    line_$prev -> line_$line"
+	prev=$line
+done < /dev/stdin # <(cut -d: -f2 </dev/stdin)
+
+echo '}'
