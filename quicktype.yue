@@ -1096,8 +1096,10 @@ check = (check_prog, value, root=true) ->
       -- Reset stack.
       stack[1] = nil
       stack_size = 0
-    assert num_running_checkers == initial_num_running_checkers, "internal error: checker depth incorrectly handled: expected #{initial_num_running_checkers} but got #{num_running_checkers}"
-    assert ending_stack_size == initial_stack_size, "internal error: value stack incorrectly handled (#{repr check_prog})"
+    if num_running_checkers != initial_num_running_checkers
+      error "internal error: checker depth incorrectly handled: expected #{initial_num_running_checkers} but got #{num_running_checkers}"
+    if ending_stack_size != initial_stack_size
+      error "internal error: value stack incorrectly handled (#{repr check_prog})"
   nil
 
 user_types = {}
