@@ -72,6 +72,9 @@ class SourceFile
     SourceFile mod, path
 
   new: (@mod, @path) =>
+    @yue_path = if @path\match '%.lua$'
+      (@path\sub 1, -5) .. '.yue'
+
     lines = {}
     required_mods = {}
     for line in io.lines @path
@@ -121,8 +124,8 @@ class SourceFile
         [] = @fmt_line lineno, line
 
   fmt_line: (lineno, line) =>
-    if line\match '%-%- [0-9]+$'
-      "#{line} -- #{@path}:#{lineno}"
+    if line_content, src_lineno = line\match '(.*) %-%- ([0-9]+)$'
+      "#{line_content} -- #{@yue_path ?? @path}:#{src_lineno}"
     else
       line
 
