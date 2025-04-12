@@ -47,10 +47,10 @@ export F = (type_spec, fn) ->
     for i = n_return_types+1, (select '#', ...)
       checker = return_types[i]
       if not checker?
-        error "function returned too many values: expected #{n_return_types} but got #{select '#', ...}", 2
+        error "function returned too many values: expected #{n_return_types} but got #{select '#', ...} (checking #{fn_type})", 2
       err = check checker, (select i, ...)
       if err?
-        error "return value #{i} incorrect: #{err}", 2
+        error "return value #{i} incorrect: #{err} (checking #{fn_type})", 2
     ...
 
   param_types = fn_type\param_checkers!
@@ -59,14 +59,14 @@ export F = (type_spec, fn) ->
     for i = 1, n_param_types
       err = check param_types[i], (select i, ...)
       if err?
-        error "argument #{i} incorrect: #{err}", 3
+        error "argument #{i} incorrect: #{err} (checking #{fn_type})", 3
     for i = n_param_types+1, select '#', ...
       checker = param_types[i]
       if not checker?
-        error "function given too many arguments: expected #{n_param_types} but got #{select '#', ...}", 3
+        error "function given too many arguments: expected #{n_param_types} but got #{select '#', ...} (checking #{fn_type})", 3
       err = check checker, (select i, ...)
       if err?
-        error "argument #{i} incorrect: #{err}", 3
+        error "argument #{i} incorrect: #{err} (checking #{fn_type})", 3
 
     check_returns fn ...
 
