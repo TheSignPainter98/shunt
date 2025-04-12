@@ -99,21 +99,21 @@ export class MinecraftBackend
   new: F '(StationPeripheral) => <>', (@station) =>
 
   name: F '() => StationName', =>
-    @station\getStationName!
+    @station.getStationName!
 
   set_name: F '(StationName) => <>', (name) =>
-    @station\setStationName name
+    @station.setStationName name
 
   train_present: F '() => boolean', =>
-    @station\isTrainPresent!
+    @station.isTrainPresent!
 
   train_enroute: F '() => boolean', =>
-    @station\isTrainEnroute!
+    @station.isTrainEnroute!
 
   train_has_schedule: F '() => ?boolean', =>
     ret = nil
     try
-      ret = @station\hasSchedule!
+      ret = @station.hasSchedule!
     catch _
       -- Ignore
     return ret
@@ -121,7 +121,7 @@ export class MinecraftBackend
   train_schedule: F '() => ?Schedule', =>
     schedule = nil
     try
-      schedule = @station\getSchedule!
+      schedule = @station.getSchedule!
     catch _
       -- Ignore
     return schedule
@@ -129,7 +129,7 @@ export class MinecraftBackend
   train_set_schedule: F '(Schedule) => boolean', (schedule) =>
     local ret
     try
-      @station\setSchedule schedule
+      @station.setSchedule schedule
       ret = true
     catch _
       ret = false
@@ -138,7 +138,7 @@ export class MinecraftBackend
   train_name: F '() => ?string', =>
     name = nil
     try
-      name = @station\getTrainName!
+      name = @station.getTrainName!
     catch err
       -- Ignore
     name

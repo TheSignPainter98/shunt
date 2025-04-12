@@ -29,7 +29,7 @@ declare_type 'Inventory', [[{
 }]]
 declare_type 'InventoryBackend', [[{
   size: () => number,
-  slot_content: (number) => SlotInfo,
+  slot_content: (number) => ?SlotInfo,
   slot_capacity: (number) => number,
 }]]
 export class Inventory
@@ -66,18 +66,18 @@ export class MinecraftBackend
   new: (@inventory) =>
 
   size: F '() => number', =>
-    @inventory\size!
+    @inventory.size!
 
-  slot_content: F '(number) => number', (slot_id) =>
-    @inventory\getItemDetail slot_id
+  slot_content: F '(number) => ?SlotInfo', (slot_id) =>
+    @inventory.getItemDetail slot_id
 
-  slot_capacity: F '(number) => SlotInfo', (slot_id) =>
-    @inventory\getItemLimit slot_id
+  slot_capacity: F '(number) => number', (slot_id) =>
+    @inventory.getItemLimit slot_id
 
 
 declare_type 'TestInventoryBackendOpts', [[{
   size: ?() => number,
-  slot_content: ?(number) => SlotInfo,
+  slot_content: ?(number) => ?SlotInfo,
   slot_capacity: ?(number) => number,
 }]]
 export class TestInventoryBackend
@@ -88,7 +88,7 @@ export class TestInventoryBackend
       :slot_capacity=-> error 'slot_capacity unimplemented'
     } = opts
     @size = F '() => number', size
-    @slot_content = F '(number) => SlotInfo', slot_content
+    @slot_content = F '(number) => ?SlotInfo', slot_content
     @slot_capacity = F '(number) => number', slot_capacity
 
 spec ->

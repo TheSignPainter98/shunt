@@ -102,11 +102,12 @@ class Factory
     @config.factory.name
 
   run: F '() => !', =>
-    @do_train_detection_step!
-    @do_heartbeat_step!
+    @send_heartbeat!
     parallel.waitForAny @\run_steps,
       @\run_heartbeats,
-      @\run_train_detection
+      @\run_train_detection,
+      @\run_peripheral_detection,
+      @\run_peripheral_detach_detection
       -- TODO(kcza): detect marshal ID, messages sent to nil marshal shall be ignored
 
   run_steps: F '() => !', =>
@@ -163,10 +164,20 @@ class Factory
   run_heartbeats: F '() => !', =>
     HEARTBEAT_PERIOD = 10
     while true
-      @do_heartbeat_step!
+      @send_heartbeat!
       os.sleep HEARTBEAT_PERIOD
 
-  do_heartbeat_step: F '() => <>', =>
+  run_peripheral_detection: F '() => !', =>
+    while true
+      os.pullEvent 'peripheral'
+      @send_heartbeat!
+
+  run_peripheral_detach_detection: F '() => !', =>
+    while true
+      os.pullEvent 'peripheral_detach'
+      @send_heartbeat!
+
+  send_heartbeat: F '() => <>', =>
     station_names = [ station\name! for station in *@stations ]
     present_trains = @detect_trains!
     stockpile_info = @stockpile\info!
@@ -492,7 +503,7 @@ spec ->
               capacity: eq 64
         protocol: eq InfoResponse\protocol!
 
-    describe '\\do_heartbeat_step', ->
+    describe '\\send_heartbeat', ->
       it 'sends a heartbeat', ->
         sent = {}
         broadcasted = {}
@@ -531,7 +542,7 @@ spec ->
           broadcast: (message, protocol) =>
             broadcasted[] = :message, :protocol
         with Factory config, pc, stations, stockpile, uplink
-          \do_heartbeat_step!
+          \send_heartbeat!
 
         $expect_that sent, deep_eq {}
 

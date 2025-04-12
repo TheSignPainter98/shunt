@@ -5,7 +5,7 @@ import 'spec' as :spec
 
 declare_type 'Pc', [[{
   id: () => number,
-  name: () => string,
+  name: () => ?string,
 }]]
 declare_type 'PcBackend', 'Pc'
 export class Pc
@@ -14,7 +14,7 @@ export class Pc
   id: F '() => number', =>
     @backend\id!
 
-  name: F '() => string', =>
+  name: F '() => ?string', =>
     @backend\name!
 
   set_name: F '(string) => <>', (name) =>
@@ -22,9 +22,9 @@ export class Pc
 
 class MinecraftBackend
   id: F '() => number', =>
-    os.getComputerId!
+    os.getComputerID!
 
-  name: F '() => string', =>
+  name: F '() => ?string', =>
     os.getComputerLabel!
 
   set_name: F '(string) => <>', (name) =>
@@ -32,7 +32,7 @@ class MinecraftBackend
 
 declare_type 'TestPcBackendOpts', [[{
   id: ?() => number,
-  name: ?() => string,
+  name: ?() => ?string,
   set_name: ?(string) => <>,
 }]]
 
