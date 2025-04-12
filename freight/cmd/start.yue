@@ -63,14 +63,8 @@ spam = F '(boolean, () -> <>) -> <>', (no_reattempt, fn) ->
       term?.setTextColor colour
 
       print "[failed]"
-      sleep 10
+      os.sleep 10
       term?.clear!
 
       attempt += 1
       print "[attempt #{attempt}]"
-
-sleep = F '(number) -> <>', (n_secs) ->
-  if os.sleep?
-    os.sleep n_secs
-  else
-    os.execute "sleep #{n_secs}s"
