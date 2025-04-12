@@ -47,9 +47,7 @@ export class UpgradeMonitor
       if not marshal_id?
         if pkt_or_err != TIMEOUT
           print "ignoring error whilst getting update: #{pkt_or_err}"
-      else if pkt_or_err.idemp_tok != idemp_tok
-        continue
-      else
+      else if pkt_or_err.idemp_tok == idemp_tok
         return pkt_or_err.release
 
 export class CurrentReleaseRequest extends Packet
