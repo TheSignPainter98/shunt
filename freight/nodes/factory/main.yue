@@ -84,12 +84,17 @@ declare_type 'FactoryConfig', [[{
   factory: {
     name: string,
   },
-  stations: [{
-    name: string,
-    role: "producer"|"consumer",
-    handles: string,
-    network: string,
-  }],
+  stations: [StationConfig],
+}]]
+declare_type 'StationConfig', [[{
+  name: string,
+  role: "producer"|"consumer",
+  handles: string,
+  network: string,
+}]]
+declare_type 'DetectedStations', [[{
+  known: [StationConfig],
+  unknown: [string],
 }]]
 class Factory
   new: F '(FactoryConfig, Pc, [Station], Stockpile, Uplink) => <>', (@config, @pc, @stations, @stockpile, @uplink) =>
@@ -178,15 +183,38 @@ class Factory
       @send_heartbeat!
 
   send_heartbeat: F '() => <>', =>
-    station_names = [ station\name! for station in *@stations ]
+    stations = @detect_stations!
     present_trains = @detect_trains!
     stockpile_info = @stockpile\info!
-    heartbeat = FactoryHeartbeat @pc\id!, @name!, station_names, present_trains, stockpile_info
+    heartbeat = FactoryHeartbeat @pc\id!, @name!, stations, present_trains, stockpile_info
 
     @heartbeat_num += 1
     log -> "sending heartbeat #{@heartbeat_num}: #{repr heartbeat}"
 
     @uplink\broadcast heartbeat
+
+  detect_stations: F '() => DetectedStations', =>
+    -- TODO(kcza): get station detector backend to update @stations here
+
+    with known: {}, unknown: {}
+      seen = {}
+      for station in *@stations
+        name = station\name!
+        if seen[name]
+          continue
+        seen[name] = true
+
+        config = @get_station_config name
+        if config?
+          .known[] = config
+        else
+          .unknown[] = name
+
+  get_station_config: F '(string) => ?StationConfig', (name) =>
+    for station_config in *@config.stations
+      if station_config.name == name
+        return station_config
+    nil
 
   detect_trains: F '() => {string->string}', =>
     with {}
@@ -520,16 +548,20 @@ spec ->
           factory:
             name: PC_NAME
             network: 'mainline'
-          stations: {}
+          stations:
+            * name: 'known_station'
+              network: 'some-network'
+              role: 'consumer'
+              handles: 'Stone Bricks'
         pc = Pc TestPcBackend
           id: => PC_ID
           name: => PC_NAME
         stations =
           * Station TestStationBackend
-              name: => 'test_station_1'
+              name: => 'known_station'
               train_name: => 'train_1'
           * Station TestStationBackend
-              name: => 'test_station_2'
+              name: => 'unknown_station'
               train_name: => 'train_2'
         stockpile = Stockpile
           * Inventory TestInventoryBackend
@@ -555,17 +587,26 @@ spec ->
         $expect_that broadcasted[1], has_fields
           protocol: eq FactoryHeartbeat\protocol!
           message: do
-            station_names =
-              * 'test_station_1'
-              * 'test_station_2'
+            stations =
+              known:
+                * name: 'known_station'
+                  network: 'some-network'
+                  role: 'consumer'
+                  handles: 'Stone Bricks'
+              unknown:
+                * 'unknown_station'
             present_trains =
-              test_station_1: 'train_1'
-              test_station_2: 'train_2'
+              known_station: 'train_1'
+              unknown_station: 'train_2'
 
             stockpile_info =
               stored_items:
                 * item: 'Stone Bricks'
                   stored: 32
               estimated_capacity: 64
-            print PC_ID, PC_NAME, (repr station_names), (repr present_trains), repr stockpile_info
-            deep_eq FactoryHeartbeat PC_ID, PC_NAME, station_names, present_trains, stockpile_info
+            print PC_ID
+            print PC_NAME
+            print (repr stations)
+            print (repr present_trains)
+            print repr stockpile_info
+            deep_eq FactoryHeartbeat PC_ID, PC_NAME, stations, present_trains, stockpile_info
