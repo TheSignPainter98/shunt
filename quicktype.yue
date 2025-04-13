@@ -186,7 +186,7 @@ class TypeSpecParser extends Parser
   parse: =>
     ret = @parse_type!
     if @lexer\peek!
-      error 'type spec has trailing characters'
+      error "type spec has trailing characters: '#{@lexer.type_spec}'"
     ret
 
   parse_type: =>
@@ -383,7 +383,7 @@ T_NUMBER = <tostring>: => "<number>"
 T_STRING = <tostring>: => "<string>"
 
 class Lexer
-  new: (type_spec) =>
+  new: (@type_spec) =>
     @index = 1
     @done = false
     @peeked = nil
