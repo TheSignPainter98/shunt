@@ -42,7 +42,7 @@ declare_type 'Factory', [[{
   -- Variable
   operational: boolean,
   last_seen_epoch: number,
-  station_names: [string],
+  stations: DetectedStations,
   stockpile: StockpileInfo,
 }]]
 declare_type 'TrainStatus', [[{
@@ -71,10 +71,9 @@ class Marshal
     @epoch = T 'number', 0
     -- TODO(kcza): load from stored initial state
     @factories = T '{string->Factory}', {}
-    @station_names = T '{string}', {}
     @trains = T '{string->TrainStatus}', {}
-    @do_count_epochs = T 'boolean', true
 
+    @do_count_epochs = T 'boolean', true
     @throttle = T 'boolean', HOST == 'minecraft'
 
     @events = T 'Multiplexer', with Multiplexer '{type: MarshalEventType}'
@@ -177,12 +176,7 @@ class Marshal
         error "internal error: unexpected network message protocol reached marshal core '#{message\protocol!}'"
 
   on_factory_heartbeat: F '(FactoryHeartbeat) => <>', (message) =>
-    { :pc_id, :name, :station_names, :present_trains, :stockpile } = message
-    station_names_removed, station_names_added = symmetric_difference @station_names, station_names
-    for to_remove in *station_names_removed
-      @station_names[to_remove] = nil
-    for to_add in *station_names_added
-      @station_names[to_add] = true
+    { :pc_id, :name, :stations, :stockpile } = message
 
     factory_status = @factories[name]
     seen_before = factory_status?
@@ -192,15 +186,22 @@ class Marshal
         return -- Ignore for this epoch.
 
       .last_seen_epoch = @epoch
-      .station_names = station_names
+      .stations = stations
       .present_trains = present_trains
       .stockpile = stockpile
 
-    for station_name, train_name in pairs present_trains
-      @trains[train_name] = T 'TrainStatus', with @trains[train_name] ?? name: train_name
-        .last_seen_epoch = @epoch
-        .last_seen_at_factory = name
-        .last_seen_at_station = station_name
+    for station in *stations.known
+      for present_train in *station.present_trains
+        @declare_train_seen present_train, name, station.name
+    for station in *stations.unknown
+      for present_train in *station.present_trains
+        @declare_train_seen present_train, name, station.name
+
+  declare_train_seen: F '(string, string, string) => <>', (train_name, factory_name, station_name) =>
+    @trains[train_name] = T 'TrainStatus', with @trains[train_name] ?? name: train_name
+      .last_seen_epoch = @epoch
+      .last_seen_at_factory = factory_name
+      .last_seen_at_station = station_name
 
   ut_stop_counting_epochs: F '() => <>', =>
     @do_count_epochs = false
@@ -223,12 +224,17 @@ spec ->
 
   import 'spec' as :describe, :it, :matchers
 
-  import deep_eq, eq, has_fields from matchers
+  import deep_eq, eq, has_fields, len from matchers
 
   describe 'Marshal', ->
     describe '\\on_new_epoch', ->
       it 'prunes lost factories', ->
         test_phase = 'add-factories'
+        stockpile =
+          stored_items:
+            * item: '<minecraft:dirt>'
+              stored: 64
+          estimated_capacity: 64
 
         config =
           marshal:
@@ -242,19 +248,36 @@ spec ->
 
             if @count < 10
               @count += 1
-              stations = switch test_phase
+              stations = T 'DetectedStations', switch test_phase
                 when 'add-factories'
-                  {"station_#{3*@count}", "station_#{3*@count+1}"}
+                  known =
+                    * name: "station_#{3*@count}"
+                      network: 'network_1'
+                      role: 'producer'
+                      handles: 'dirt'
+                      present_trains: {}
+                    * name: "station_#{3*@count+1}"
+                      network: 'network_2'
+                      role: 'consumer'
+                      handles: 'dirt'
+                      present_trains: {}
+                  :known, unknown: {}
                 when 'change-factory-stations'
-                  {"station_#{3*@count}", "station_#{3*@count+2}"}
+                  known =
+                    * name: "station_#{3*@count}"
+                      network: 'network_1'
+                      role: 'producer'
+                      handles: 'dirt'
+                      present_trains: {}
+                    * name: "station_#{3*@count+2}"
+                      network: 'network_3'
+                      role: 'consumer'
+                      handles: 'dirt'
+                      present_trains: {}
+                  :known, unknown: {}
                 else
                   error "internal error: unrecognised test phase #{test_phase}"
-              stockpile_info =
-                stored_items:
-                  * item: '<minecraft:dirt>'
-                    stored: 64
-                estimated_capacity: 64
-              message = FactoryHeartbeat @count, "factory_#{@count}", stations, {}, stockpile_info
+              message = FactoryHeartbeat @count, "factory_#{@count}", stations, stockpile
               return @count, message, FactoryHeartbeat\protocol!
             else
               return nil, nil, nil
@@ -272,30 +295,42 @@ spec ->
               name: eq 'factory_1'
               pc_id: eq 1
               last_seen_epoch: eq epoch
-              station_names: deep_eq
-                * "station_3"
-                * "station_4"
+              stations: has_fields
+                known: has_fields
+                  * has_fields name: eq 'station_3'
+                  * has_fields name: eq 'station_4'
+                unknown: len eq 0
+              stockpile: deep_eq stockpile
             factory_2: has_fields
               name: eq 'factory_2'
               pc_id: eq 2
               last_seen_epoch: eq epoch
-              station_names: deep_eq
-                * "station_6"
-                * "station_7"
+              stations: has_fields
+                known: has_fields
+                  * has_fields name: eq "station_6"
+                  * has_fields name: eq "station_7"
+                unknown: len eq 0
+              stockpile: deep_eq stockpile
             factory_3: has_fields
               name: eq 'factory_3'
               pc_id: eq 3
               last_seen_epoch: eq epoch
-              station_names: deep_eq
-                * "station_9"
-                * "station_10"
+              stations: has_fields
+                known: has_fields
+                  * has_fields name: eq "station_9"
+                  * has_fields name: eq "station_10"
+                unknown: len eq 0
+              stockpile: deep_eq stockpile
             factory_4: has_fields
               name: eq 'factory_4'
               pc_id: eq 4
               last_seen_epoch: eq epoch
-              station_names: deep_eq
-                * "station_12"
-                * "station_13"
+              stations: has_fields {}
+                known: has_fields
+                  * has_fields name: eq "station_12"
+                  * has_fields name: eq "station_13"
+                unknown: len eq 0
+              stockpile: deep_eq stockpile
 
           test_phase = 'change-factory-stations'
           for i = 1, EXPECTED_FACTORIES
@@ -306,30 +341,42 @@ spec ->
               name: eq 'factory_1'
               pc_id: eq 1
               last_seen_epoch: eq epoch
-              station_names: deep_eq
-                * "station_3"
-                * "station_5"
+              stations: has_fields
+                known: has_fields
+                  * has_fields name: eq "station_3"
+                  * has_fields name: eq "station_5"
+                unknown: len eq 0
+              stockpile: deep_eq stockpile
             factory_2: has_fields
               name: eq 'factory_2'
               pc_id: eq 2
               last_seen_epoch: eq epoch
-              station_names: deep_eq
-                * "station_6"
-                * "station_8"
+              stations: has_fields
+                known: has_fields
+                  * has_fields name: eq "station_6"
+                  * has_fields name: eq "station_8"
+                unknown: len eq 0
+              stockpile: deep_eq stockpile
             factory_3: has_fields
               name: eq 'factory_3'
               pc_id: eq 3
               last_seen_epoch: eq epoch
-              station_names: deep_eq
-                * "station_9"
-                * "station_11"
+              stations: has_fields
+                known: has_fields
+                  * has_fields name: eq "station_9"
+                  * has_fields name: eq "station_11"
+                unknown: len eq 0
+              stockpile: deep_eq stockpile
             factory_4: has_fields
               name: eq 'factory_4'
               pc_id: eq 4
               last_seen_epoch: eq epoch
-              station_names: deep_eq
-                * "station_12"
-                * "station_14"
+              stations: has_fields
+                known: has_fields
+                  * has_fields name: eq "station_12"
+                  * has_fields name: eq "station_14"
+                unknown: len eq 0
+              stockpile: deep_eq stockpile
 
           test_phase = 'global-disconnect'
           \ut_set_epoch 10

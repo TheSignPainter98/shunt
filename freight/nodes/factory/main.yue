@@ -92,16 +92,11 @@ declare_type 'StationConfig', [[{
   handles: string,
   network: string,
 }]]
-declare_type 'DetectedStations', [[{
-  known: [StationConfig],
-  unknown: [string],
-}]]
 class Factory
   new: F '(FactoryConfig, Pc, [Station], Stockpile, Uplink) => <>', (@config, @pc, @stations, @stockpile, @uplink) =>
     name = @name!
     if @pc\name! != name
       @pc\set_name name
-    @present_trains = T '[string]', {}
     @heartbeat_num = T 'number', 0
 
   name: F '() => string', =>
@@ -184,9 +179,8 @@ class Factory
 
   send_heartbeat: F '() => <>', =>
     stations = @detect_stations!
-    present_trains = @detect_trains!
     stockpile_info = @stockpile\info!
-    heartbeat = FactoryHeartbeat @pc\id!, @name!, stations, present_trains, stockpile_info
+    heartbeat = FactoryHeartbeat @pc\id!, @name!, stations, stockpile_info
 
     @heartbeat_num += 1
     log -> "sending heartbeat #{@heartbeat_num}: #{repr heartbeat}"
@@ -196,33 +190,41 @@ class Factory
   detect_stations: F '() => DetectedStations', =>
     -- TODO(kcza): get station detector backend to update @stations here
 
-    with known: {}, unknown: {}
-      seen = {}
+    detected_station_info = with {}
       for station in *@stations
         name = station\name!
-        if seen[name]
-          continue
-        seen[name] = true
+        info = [name]
+        if not info?
+          [name] = do
+            config = @get_station_config name
+            known = config?
+            info = :name, :known, present_trains: {}
+            if known
+              info = { ...config, ...info }
+            info
 
-        config = @get_station_config name
-        if config?
-          .known[] = config
+        present_train = station\train_name!
+        if present_train?
+          info.present_trains[] = present_train
+
+    with known: {}, unknown: {}
+      for _, station_info in pairs detected_station_info
+        known = station_info.known
+        station_info.known = nil
+
+        if known
+          .known[] = station_info
         else
-          .unknown[] = name
+          .unknown[] = station_info
+
+      table.sort .known, (a, b) -> a.name < b.name
+      table.sort .unknown, (a, b) -> a.name < b.name
 
   get_station_config: F '(string) => ?StationConfig', (name) =>
     for station_config in *@config.stations
       if station_config.name == name
         return station_config
     nil
-
-  detect_trains: F '() => {string->string}', =>
-    with {}
-      for station in *@stations
-        name = station\train_name!
-        if not name?
-          continue
-        [station\name!] = name
 
 export class StockpileRequest extends Packet
   new: F '(IdempotenceToken) => <>', (@idemp_tok) =>
@@ -245,12 +247,23 @@ export class InfoResponse extends Packet
 declare_type 'FactoryHeartbeat', [[{
   pc_id: number,
   name: string,
-  station_names: [string],
-  present_trains: {string->string},
+  stations: DetectedStations,
   stockpile: StockpileInfo,
 }]]
+declare_type 'DetectedStations', [[{
+  known: [KnownDetectedStation],
+  unknown: [UnknownDetectedStation],
+}]]
+declare_type 'KnownDetectedStation', 'StationConfig + DetectedTrains'
+declare_type 'UnknownDetectedStation', [[
+  { name: string }
+  + DetectedTrains
+]]
+declare_type 'DetectedTrains', [[{
+  present_trains: [string],
+}]]
 export class FactoryHeartbeat extends Packet
-  new: F '(number, string, [string], {string->string}, StockpileInfo) => <>', (@pc_id, @name, @station_names, @present_trains, @stockpile) =>
+  new: F '(number, string, DetectedStations, StockpileInfo) => <>', (@pc_id, @name, @stations, @stockpile) =>
 
 spec ->
   import 'spec_macros' as $
@@ -593,20 +606,16 @@ spec ->
                   network: 'some-network'
                   role: 'consumer'
                   handles: 'Stone Bricks'
+                  present_trains:
+                    * 'train_1'
               unknown:
-                * 'unknown_station'
-            present_trains =
-              known_station: 'train_1'
-              unknown_station: 'train_2'
+                * name: 'unknown_station'
+                  present_trains:
+                    * 'train_2'
 
             stockpile_info =
               stored_items:
                 * item: 'Stone Bricks'
                   stored: 32
               estimated_capacity: 64
-            print PC_ID
-            print PC_NAME
-            print (repr stations)
-            print (repr present_trains)
-            print repr stockpile_info
-            deep_eq FactoryHeartbeat PC_ID, PC_NAME, stations, present_trains, stockpile_info
+            deep_eq FactoryHeartbeat PC_ID, PC_NAME, stations, stockpile_info
