@@ -30,8 +30,8 @@ default_config_by_type = T '{string->()-><?string, ?string>}',
   marshal: marshal.default_config
 
 export main = F '({}) -> <>', (args) ->
-  default_config = default_config_by_type[args.instance_type]?!
-  if not default_config?
+  default_config_fn = default_config_by_type[args.instance_type]
+  if not default_config_fn?
     error "internal error: unrecognised instance type '#{args.instance_type}'"
 
   if not args.force
@@ -41,6 +41,7 @@ export main = F '({}) -> <>', (args) ->
       return
 
   temp_config_path = os.tmpname!
+  default_config = default_config_fn!
   with assert io.open temp_config_path, 'w+'
     assert \write default_config
     assert \close!

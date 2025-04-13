@@ -253,12 +253,12 @@ spec ->
                   known =
                     * name: "station_#{3*@count}"
                       network: 'network_1'
-                      role: 'producer'
+                      type: 'outbound'
                       handles: 'dirt'
                       present_trains: {}
                     * name: "station_#{3*@count+1}"
                       network: 'network_2'
-                      role: 'consumer'
+                      type: 'inbound'
                       handles: 'dirt'
                       present_trains: {}
                   :known, unknown: {}
@@ -266,12 +266,12 @@ spec ->
                   known =
                     * name: "station_#{3*@count}"
                       network: 'network_1'
-                      role: 'producer'
+                      type: 'outbound'
                       handles: 'dirt'
                       present_trains: {}
                     * name: "station_#{3*@count+2}"
                       network: 'network_3'
-                      role: 'consumer'
+                      type: 'inbound'
                       handles: 'dirt'
                       present_trains: {}
                   :known, unknown: {}
