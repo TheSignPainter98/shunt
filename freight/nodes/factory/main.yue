@@ -566,6 +566,6 @@ spec ->
               stored_items:
                 * item: 'Stone Bricks'
                   stored: 32
-              total_capacity: 64
+              estimated_capacity: 64
             print PC_ID, PC_NAME, (repr station_names), (repr present_trains), repr stockpile_info
             deep_eq FactoryHeartbeat PC_ID, PC_NAME, station_names, present_trains, stockpile_info

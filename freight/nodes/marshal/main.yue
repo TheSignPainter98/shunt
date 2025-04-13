@@ -253,7 +253,7 @@ spec ->
                 stored_items:
                   * item: '<minecraft:dirt>'
                     stored: 64
-                total_capacity: 64
+                estimated_capacity: 64
               message = FactoryHeartbeat @count, "factory_#{@count}", stations, {}, stockpile_info
               return @count, message, FactoryHeartbeat\protocol!
             else

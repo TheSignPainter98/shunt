@@ -15,15 +15,15 @@ export class Stockpile
   new: F '([Inventory]) => <>', (@inventories) =>
 
   info: F '() => StockpileInfo', =>
-    total_capacity = 0
+    estimated_capacity = 0
     stored_items_by_name = {}
     for inventory in *@inventories
-      total_capacity += inventory\gather_info stored_items_by_name
+      estimated_capacity += inventory\gather_info stored_items_by_name
 
     stored_items = [ info for _, info in pairs stored_items_by_name ]
     table.sort stored_items, (a, b) ->
       a.item < b.item
-    :stored_items, :total_capacity
+    :stored_items, :estimated_capacity
 
 declare_type 'Inventory', [[{
   gather_info: ({string->StoredItemInfo}) => number,
@@ -64,7 +64,7 @@ export class Inventory
 
 declare_type 'StockpileInfo', [[{
   stored_items: [StoredItemInfo],
-  total_capacity: number,
+  estimated_capacity: number,
 }]]
 declare_type 'StoredItemInfo', [[{
   item: string,
@@ -108,7 +108,7 @@ spec ->
 
   import 'spec' as :describe, :it, :matchers
 
-  import deep_eq, eq, errors, has_fields, matches from matchers
+  import deep_eq, eq, errors, gt, has_fields, lt, matches from matchers
 
   describe 'Stockpile', ->
     describe '\\info', ->
@@ -148,7 +148,7 @@ spec ->
 
         info = stockpile\info!
         $expect_that info, has_fields
-          total_capacity: eq 0 +
+          estimated_capacity: eq 0 +
             32 * (1 + 3) +
             32 * (1 + 2 + 3 + 4) + 3 * 2 +
             32 * (2 + 4) + 3 * 2
@@ -159,3 +159,35 @@ spec ->
               stored: 16 * (1 + 2 + 3 + 4) + 3 * 2
             * item: item3
               stored: 16 * (2 + 4) + 3 * 2
+
+      it 'estimates remaining capacity', ->
+        inventory = Inventory TestInventoryBackend
+          size: => 3
+          slot_content: (slot_id) =>
+            switch slot_id
+              when 1
+                displayName: 'Oak Planks', count: 16
+              when 2
+                displayName: 'Oak Sign', count: 32
+              when 3
+                nil
+              else
+                error "internal error: unexpected slot_id: #{slot_id}"
+          slot_capacity: (slot_id) =>
+            switch slot_id
+              when 1
+                64
+              when 2
+                16
+              when 3
+                64
+              else
+                error "internal error: unexpected slot_id: #{slot_id}"
+        stockpile = Stockpile
+          * inventory
+
+        info = stockpile\info!
+        $expect_that info, has_fields
+          estimated_capacity: gt 64 + 16
+        $expect_that info, has_fields
+          estimated_capacity: lt 64 * 3
