@@ -305,10 +305,10 @@ spec ->
         message: has_fields
           idemp_tok: eq idemp_tok
           info: has_fields
-            * has_fields
-                item: eq 'Stone Bricks'
-                stored: eq 32
-                capacity: eq 64
+            stored_items: has_fields
+              * has_fields
+                  item: eq 'Stone Bricks'
+                  stored: eq 32
         protocol: eq StockpileResponse\protocol!
 
     it 'responds to valid schedule requests', ->
@@ -488,10 +488,10 @@ spec ->
             * name: 'test-station-name'
               train_name: 'test-train-name'
           stockpile_info: has_fields
-            * has_fields
-              item: eq 'Stone Bricks'
-              stored: eq 32
-              capacity: eq 64
+            stored_items: has_fields
+              * has_fields
+                  item: eq 'Stone Bricks'
+                  stored: eq 32
         protocol: eq InfoResponse\protocol!
       $expect_that sent[2], has_fields
         recipient: eq SERVER_ID
@@ -502,10 +502,10 @@ spec ->
             * name: 'test-station-name'
               train_name: nil
           stockpile_info: has_fields
-            * has_fields
-              item: eq 'Stone Bricks'
-              stored: eq 32
-              capacity: eq 64
+            stored_items: has_fields
+              * has_fields
+                  item: eq 'Stone Bricks'
+                  stored: eq 32
         protocol: eq InfoResponse\protocol!
 
     describe '\\send_heartbeat', ->
@@ -563,7 +563,9 @@ spec ->
               test_station_2: 'train_2'
 
             stockpile_info =
-              * item: 'Stone Bricks'
-                stored: 32
-                capacity: 64
+              stored_items:
+                * item: 'Stone Bricks'
+                  stored: 32
+              total_capacity: 64
+            print PC_ID, PC_NAME, (repr station_names), (repr present_trains), repr stockpile_info
             deep_eq FactoryHeartbeat PC_ID, PC_NAME, station_names, present_trains, stockpile_info

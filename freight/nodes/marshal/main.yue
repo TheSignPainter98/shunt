@@ -250,9 +250,10 @@ spec ->
                 else
                   error "internal error: unrecognised test phase #{test_phase}"
               stockpile_info =
-                * item: '<minecraft:dirt>'
-                  stored: 64
-                  capacity: 64
+                stored_items:
+                  * item: '<minecraft:dirt>'
+                    stored: 64
+                total_capacity: 64
               message = FactoryHeartbeat @count, "factory_#{@count}", stations, {}, stockpile_info
               return @count, message, FactoryHeartbeat\protocol!
             else
