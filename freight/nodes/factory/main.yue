@@ -124,10 +124,18 @@ declare_type 'FactoryConfig', [[{
   },
   stations: [StationConfig],
 }]]
-declare_type 'SurplusConfig', [[
+declare_type 'StockpileConfig', [[
   {name: string}
-  + {surplus_amount: number}
-    | {shortage_amount: number}
+  + StockpileLevelConfig
+]]
+declare_type 'StockpileLevelConfig', [[
+  {
+    surplus_amount: number,
+    shortage_amount: ?number,
+  } | {
+    surplus_amount: ?number,
+    shortage_amount: number,
+  }
 ]]
 declare_type 'StationConfig', [[{
   name: string,
