@@ -26,7 +26,7 @@ export class Stockpile
 
     stored_items = [ info for _, info in pairs stored_items_by_name ]
     table.sort stored_items, (a, b) ->
-      a.item < b.item
+      a.name < b.name
     :stored_items, :estimated_capacity
 
 declare_type 'Inventory', [[{
@@ -53,11 +53,11 @@ export class Inventory
         populated_slots += 1
         total_populated_capacity += @backend\slot_capacity i
 
-        item = slot.name
-        [item] ??= T 'StoredItemInfo',
-          :item
+        name = slot.name
+        [name] ??= T 'StoredItemInfo',
+          :name
           stored: 0
-        with [item]
+        with [name]
           .stored += slot.count
 
     total_populated_capacity * num_slots / populated_slots
@@ -67,7 +67,7 @@ declare_type 'StockpileInfo', [[{
   estimated_capacity: number,
 }]]
 declare_type 'StoredItemInfo', [[{
-  item: string,
+  name: string,
   stored: number,
 }]]
 export class MinecraftBackend
@@ -118,18 +118,18 @@ spec ->
   describe 'Stockpile', ->
     describe '\\info', ->
       it 'returns all info', ->
-        item1 = 'minecraft:diamond_axe'
-        item2 = 'minecraft:enchanting_table'
-        item3 = 'minecraft:fishing_rod'
+        name1 = 'minecraft:diamond_axe'
+        name2 = 'minecraft:enchanting_table'
+        name3 = 'minecraft:fishing_rod'
         inventory1 = Inventory TestInventoryBackend
           size: => 4
           list: =>
             with {}
               for i = 1, @size!
                 name = if i % 2 == 1
-                  item1
+                  name1
                 else
-                  item2
+                  name2
                 [i] = :name, count: 16 * i
           slot_capacity: (slot_id) =>
             32 * slot_id
@@ -139,9 +139,9 @@ spec ->
             with {}
               for i = 1, @size!
                 name = if i % 2 == 1
-                  item2
+                  name2
                 else
-                  item3
+                  name3
                 [i] = :name, count: 3 + 16 * i
           slot_capacity: (slot_id) =>
             3 + 32 * slot_id
@@ -156,11 +156,11 @@ spec ->
             32 * (1 + 2 + 3 + 4) + 3 * 2 +
             32 * (2 + 4) + 3 * 2
           stored_items: deep_eq
-            * item: item1
+            * name: name1
               stored: 16 * (1 + 3)
-            * item: item2
+            * name: name2
               stored: 16 * (1 + 2 + 3 + 4) + 3 * 2
-            * item: item3
+            * name: name3
               stored: 16 * (2 + 4) + 3 * 2
 
       it 'estimates remaining capacity', ->

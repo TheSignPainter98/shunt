@@ -391,7 +391,7 @@ spec ->
     --       info: has_fields
     --         stored_items: has_fields
     --           * has_fields
-    --               item: eq 'Stone Bricks'
+    --               name: eq 'Stone Bricks'
     --               stored: eq 32
     --     protocol: eq StockpileResponse\protocol!
 
@@ -566,7 +566,7 @@ spec ->
     --       stockpile_info: has_fields
     --         stored_items: has_fields
     --           * has_fields
-    --               item: eq 'Stone Bricks'
+    --               name: eq 'Stone Bricks'
     --               stored: eq 32
     --     protocol: eq InfoResponse\protocol!
     --   $expect_that sent[2], has_fields
@@ -580,7 +580,7 @@ spec ->
     --       stockpile_info: has_fields
     --         stored_items: has_fields
     --           * has_fields
-    --               item: eq 'Stone Bricks'
+    --               name: eq 'Stone Bricks'
     --               stored: eq 32
     --     protocol: eq InfoResponse\protocol!
 
@@ -653,7 +653,7 @@ spec ->
             stockpile_info =
               stored_items:
                 -- TODO(kcza): rename this field to 'name'
-                * item: 'minecraft:stone_bricks'
+                * name: 'minecraft:stone_bricks'
                   stored: 32
               estimated_capacity: 64
             deep_eq FactoryHeartbeat PC_ID, PC_NAME, stations, stockpile_info

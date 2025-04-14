@@ -232,7 +232,7 @@ spec ->
         test_phase = 'add-factories'
         stockpile =
           stored_items:
-            * item: '<minecraft:dirt>'
+            * name: '<minecraft:dirt>'
               stored: 64
           estimated_capacity: 64
 
@@ -399,7 +399,7 @@ spec ->
       --         station_1: 'train_1'
       --         station_2: 'train_2'
       --       stockpile_info =
-      --         * item: '<minecraft:dirt>'
+      --         * name: '<minecraft:dirt>'
       --           stored: 64
       --           capacity: 64
       --       message = FactoryHeartbeat @count, "factory_#{@count}", stations, trains, stockpile_info
