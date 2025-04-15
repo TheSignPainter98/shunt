@@ -13,24 +13,24 @@ declare_type 'SlotContent', [[{
 }]]
 
 declare_type 'Stockpile', [[{
-  info: () => StockpileInfo,
+  content: () => StockpileContent,
 }]]
 export class Stockpile
   new: F '([Inventory]) => <>', (@inventories) =>
 
-  info: F '() => StockpileInfo', =>
+  content: F '() => StockpileContent', =>
     estimated_capacity = 0
     stored_items_by_name = {}
     for inventory in *@inventories
-      estimated_capacity += inventory\gather_info stored_items_by_name
+      estimated_capacity += inventory\gather_content stored_items_by_name
 
-    stored_items = [ info for _, info in pairs stored_items_by_name ]
+    stored_items = [ content for _, content in pairs stored_items_by_name ]
     table.sort stored_items, (a, b) ->
       a.name < b.name
     :stored_items, :estimated_capacity
 
 declare_type 'Inventory', [[{
-  gather_info: ({string->StoredItemInfo}) => number,
+  gather_content: ({string->StoredItemInfo}) => number,
 }]]
 declare_type 'InventoryBackend', [[{
   size: () => number,
@@ -40,7 +40,7 @@ declare_type 'InventoryBackend', [[{
 export class Inventory
   new: F '(InventoryBackend) => <>', (@backend) =>
 
-  gather_info: F '({string->StoredItemInfo}) => number', (stored_items_by_name) =>
+  gather_content: F '({string->StoredItemInfo}) => number', (stored_items_by_name) =>
     total_populated_capacity = 0
     populated_slots = 0
     num_slots = @backend\size!
@@ -62,7 +62,7 @@ export class Inventory
 
     total_populated_capacity * num_slots / populated_slots
 
-declare_type 'StockpileInfo', [[{
+declare_type 'StockpileContent', [[{
   stored_items: [StoredItemInfo],
   estimated_capacity: number,
 }]]
@@ -116,8 +116,8 @@ spec ->
   import deep_eq, eq, errors, gt, has_fields, lt, matches from matchers
 
   describe 'Stockpile', ->
-    describe '\\info', ->
-      it 'returns all info', ->
+    describe '\\content', ->
+      it 'returns all content', ->
         name1 = 'minecraft:diamond_axe'
         name2 = 'minecraft:enchanting_table'
         name3 = 'minecraft:fishing_rod'
@@ -149,8 +149,8 @@ spec ->
           * inventory1
           * inventory2
 
-        info = stockpile\info!
-        $expect_that info, has_fields
+        content = stockpile\content!
+        $expect_that content, has_fields
           estimated_capacity: eq 0 +
             32 * (1 + 3) +
             32 * (1 + 2 + 3 + 4) + 3 * 2 +
@@ -184,8 +184,8 @@ spec ->
         stockpile = Stockpile
           * inventory
 
-        info = stockpile\info!
-        $expect_that info, has_fields
+        content = stockpile\content!
+        $expect_that content, has_fields
           estimated_capacity: gt 64 + 16
-        $expect_that info, has_fields
+        $expect_that content, has_fields
           estimated_capacity: lt 64 * 3

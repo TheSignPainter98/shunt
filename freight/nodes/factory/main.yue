@@ -38,7 +38,7 @@ network = 'mainline'
       inventories = [ Inventory backend for backend in *MinecraftInventoryBackend::find! ]
       stockpile = Stockpile inventories
 
-      resources = [ stored_item.item for stored_item in *stockpile\info!.stored_items ]
+      resources = [ stored_item.item for stored_item in *stockpile\content!.stored_items ]
       resources, #inventories > 0
     when 'native'
       {'test-resource'}, true
@@ -183,8 +183,8 @@ class Factory
   on_stockpile_request: F '(number, Packet) => <>', (requester, request) =>
     log -> 'handling stockpile request'
 
-    info = @stockpile\info!
-    @uplink\send_to requester, StockpileResponse request.idemp_tok, info
+    content = @stockpile\content!
+    @uplink\send_to requester, StockpileResponse request.idemp_tok, content
 
   on_schedule_request: F '(number, Packet) => <>', (requester, request) =>
     log -> 'handling schedule request'
@@ -207,7 +207,7 @@ class Factory
   on_info_request: F '(number, Packet) => <>', (requester, request) =>
     log -> 'handling info request'
 
-    stockpile_info = @stockpile\info!
+    stockpile_info = @stockpile\content!
     station_infos = [ station\info! for station in *@stations ]
     response = InfoResponse request.idemp_tok, @name!, station_infos, stockpile_info
     @uplink\send_to requester, response
@@ -230,8 +230,8 @@ class Factory
 
   send_heartbeat: F '() => <>', =>
     stations = @detect_stations!
-    stockpile_info = @stockpile\info!
-    heartbeat = FactoryHeartbeat @pc\id!, @name!, stations, stockpile_info
+    stockpile_content = @stockpile\content!
+    heartbeat = FactoryHeartbeat @pc\id!, @name!, stations, stockpile_content
 
     @heartbeat_num += 1
     log -> "sending heartbeat #{@heartbeat_num}: #{repr heartbeat}"
@@ -396,7 +396,7 @@ spec ->
     --     recipient: eq SERVER_ID
     --     message: has_fields
     --       idemp_tok: eq idemp_tok
-    --       info: has_fields
+    --       content: has_fields
     --         stored_items: has_fields
     --           * has_fields
     --               name: eq 'Stone Bricks'
