@@ -926,6 +926,7 @@ LABEL_PLACEHOLDER = <tostring>: => '<LABEL-PLACEHOLDER>'
 export MAX_CHECKER_DEPTH = 1000
 stack_size = 0
 stack = {}
+keys_used = {} -- NB: this is a {number->?Key}
 num_unions = 0
 union_depths = {}
 union_bail_jumps = {}
@@ -935,7 +936,14 @@ instruction_counts = {}
 macro check_error = (msg) ->
   lines = with {}
     [] = 'msg = if num_unions == 0'
-    [] = "  #{msg}"
+    [] = '  pretty_key_parts = {}'
+    [] = '  for i = 1, stack_size'
+    [] = '    pretty_key_parts[] = keys_used[i] -- Compact'
+    [] = '  if #pretty_key_parts > 0'
+    [] = '    pretty_key = "(at field .#{table.concat pretty_key_parts, "."})"'
+    [] = "    #{msg} .. ' ' .. pretty_key"
+    [] = '  else'
+    [] = "    #{msg}"
     [] = 'else'
     [] = '  nil'
 
@@ -1002,6 +1010,7 @@ check = (check_prog, value, root=true) ->
           stack[stack_size] = arg
         when C_POP
           stack[stack_size] = nil
+          keys_used[stack_size] = nil
           stack_size -= 1
         when C_ASSERT_NON_NIL
           if stack[stack_size] == nil
@@ -1027,6 +1036,7 @@ check = (check_prog, value, root=true) ->
         when C_GET_FIELD
           stack_size += 1
           stack[stack_size] = stack[stack_size-2][stack[stack_size-1]]
+          keys_used[stack_size] = stack[stack_size-1]
         when C_INCR
           stack[stack_size] += 1
         when C_DECR
