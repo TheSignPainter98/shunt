@@ -1,0 +1,30 @@
+local *
+
+import 'quicktype' as :F
+import 'spec' as :spec
+
+export pick = F '([any]) -> any', (options) ->
+  options[math.random #options]
+
+spec ->
+  import 'spec_macros' as $
+
+  import 'spec' as :describe, :it, :matchers
+
+  import eq, gt from matchers
+
+  describe 'pick', ->
+    it 'selects a present element', ->
+      $expect_that (pick {'a'}), eq 'a'
+
+    it 'selects different elements', ->
+      elems = [ tostring i for i = 1, 100 ]
+      seen = {}
+      unique_elems = {}
+      for i = 1, #elems
+        elem = pick elems
+        if not seen[elem]
+          unique_elems[] = elem
+        seen[elem] = true
+
+      $expect_that #unique_elems, gt 1
