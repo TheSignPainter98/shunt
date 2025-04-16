@@ -43,7 +43,7 @@ declare_type 'Factory', [[{
   operational: boolean,
   last_seen_epoch: number,
   stations: DetectedStations,
-  stockpile: StockpileInfo,
+  stockpile: DetectedStockpile,
 }]]
 declare_type 'TrainStatus', [[{
   -- Constant:
@@ -231,9 +231,13 @@ spec ->
       it 'prunes lost factories', ->
         test_phase = 'add-factories'
         stockpile =
-          stored_items:
-            * name: '<minecraft:dirt>'
+          known:
+            * name: 'minecraft:dirt'
               stored: 64
+              shortage_amount: 32
+          unknown:
+            * name: 'minecraft:wood_sword'
+              stored: 1
           estimated_capacity: 64
 
         config =
