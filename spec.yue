@@ -129,7 +129,7 @@ class Test
         if value_label?
           value_label_line = "value: #{value_label}\n"
 
-        "#{value_label_line}expected: #{expected}\nactual: #{actual_repr},\n  #{reflow '  ', explanation, 70}\nat: #{location}"
+        "#{value_label_line}expected: #{reflow '    ', expected, 70}\nactual: #{reflow '    ', actual_repr, 70},\n  #{reflow '  ', explanation, 70}\nat: #{location}"
       else
         error "internal error: invalid matcher return: #{repr cause}"
     if message?
