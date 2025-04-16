@@ -1,12 +1,7 @@
 local *
+local FactoryHeartbeat
 local ScheduleRequest
 local ScheduleResponse
-local StockpileRequest
-local StockpileResponse
-local InfoRequest
-local InfoResponse
-local FactoryHeartbeat
-local TrainsPresent
 
 import 'compat' as :HOST
 import 'freight.logger' as :fatal, :log
@@ -172,20 +167,10 @@ class Factory
       return
 
     switch message\protocol!
-      when 'StockpileRequest'
-        @on_stockpile_request from_id, message
       when 'ScheduleRequest'
         @on_schedule_request from_id, message
-      when 'InfoRequest'
-        @on_info_request from_id, message
       else
         log -> "ignoring #{message\protocol!} message"
-
-  on_stockpile_request: F '(number, Packet) => <>', (requester, request) =>
-    log -> 'handling stockpile request'
-
-    content = @stockpile\content!
-    @uplink\send_to requester, StockpileResponse request.idemp_tok, content
 
   on_schedule_request: F '(number, Packet) => <>', (requester, request) =>
     log -> 'handling schedule request'
@@ -204,14 +189,6 @@ class Factory
       if station\name! == name
         return station
     nil
-
-  on_info_request: F '(number, Packet) => <>', (requester, request) =>
-    log -> 'handling info request'
-
-    stockpile_info = @stockpile\content!
-    station_infos = [ station\info! for station in *@stations ]
-    response = InfoResponse request.idemp_tok, @name!, station_infos, stockpile_info
-    @uplink\send_to requester, response
 
   run_heartbeats: F '() => !', =>
     HEARTBEAT_PERIOD = 10
@@ -295,23 +272,11 @@ class Factory
         return stockpile_config
     nil
 
-export class StockpileRequest extends Packet
-  new: F '(IdempotenceToken) => <>', (@idemp_tok) =>
-
-export class StockpileResponse extends Packet
-  new: F '(IdempotenceToken, DetectedStockpile) => <>', (@idemp_tok, @info) =>
-
 export class ScheduleRequest extends Packet
   new: F '(IdempotenceToken, string, Schedule) => <>', (@idemp_tok, @station_name, @schedule) =>
 
 export class ScheduleResponse extends Packet
   new: F '(IdempotenceToken, ?string) => <>', (@idemp_tok, @error_reason) =>
-
-export class InfoRequest extends Packet
-  new: F '(IdempotenceToken) => <>', (@idemp_tok) =>
-
-export class InfoResponse extends Packet
-  new: F '(IdempotenceToken, string, [StationInfo], DetectedStockpile) => <>', (@idemp_tok, @name, @station_infos, @stockpile_info) =>
 
 declare_type 'FactoryHeartbeat', [[{
   pc_id: number,
@@ -374,59 +339,6 @@ spec ->
       Factory config, pc, stations, stockpile, uplink
 
       $expect_that new_name, eq CONFIG_NAME
-
-    -- it 'responds to stockpile requests', ->
-    --   sent = {}
-    --   SERVER_ID = 12345
-    --   idemp_tok = IdempotenceToken!
-    --
-    --   PC_ID = 54321
-    --   PC_NAME = 'test-pc-name'
-    --   config =
-    --     factory:
-    --       name: PC_NAME
-    --       network: 'mainline'
-    --     stations: {}
-    --   stations =
-    --     * Station TestStationBackend!
-    --   pc = Pc TestPcBackend
-    --     id: => PC_ID
-    --     name: => PC_NAME
-    --   stockpile = Stockpile
-    --     * Inventory TestInventoryBackend
-    --       size: => 1
-    --       slot_content: (i) =>
-    --         $assert_that i, eq 1
-    --         count: 32, displayName: 'Stone Bricks'
-    --       slot_capacity: (i) =>
-    --         $assert_that i, eq 1
-    --         64
-    --   uplink = Uplink TestUplinkBackend
-    --     receive: (_, _) =>
-    --       @count ??= 1
-    --       if @count == 1
-    --         @count += 1
-    --         return SERVER_ID, (StockpileRequest idemp_tok), StockpileRequest\protocol!
-    --       nil, nil, nil
-    --     send: (recipient, message, protocol) =>
-    --       sent[] = :recipient, :message, :protocol
-    --       true
-    --   factory = Factory config, pc, stations, stockpile, uplink
-    --
-    --   for _ = 1, 10
-    --     factory\do_network_step!
-    --
-    --   $expect_that sent, len eq 1
-    --   $expect_that sent[1], has_fields
-    --     recipient: eq SERVER_ID
-    --     message: has_fields
-    --       idemp_tok: eq idemp_tok
-    --       content: has_fields
-    --         stored_items: has_fields
-    --           * has_fields
-    --               name: eq 'Stone Bricks'
-    --               stored: eq 32
-    --     protocol: eq StockpileResponse\protocol!
 
     it 'responds to valid schedule requests', ->
       sent = {}
@@ -539,85 +451,6 @@ spec ->
           protocol: ScheduleResponse\protocol!
           message: ScheduleResponse idemp_tok, "no such station: #{STATION_NAME} at #{FACTORY_NAME}"
       $expect_that applied_schedules, deep_eq {}
-
-    -- it 'responds to info requests', ->
-    --   sent = {}
-    --   SERVER_ID = 12345
-    --   idemp_tok = IdempotenceToken!
-    --
-    --   PC_NAME = 'test-factory-name'
-    --   config =
-    --     factory:
-    --       name: PC_NAME
-    --       network: 'mainline'
-    --     stations: {}
-    --   pc = Pc TestPcBackend
-    --     id: => PC_ID
-    --     name: => PC_NAME
-    --   stations =
-    --     * Station TestStationBackend
-    --         name: => 'test-station-name'
-    --         train_name: =>
-    --           @count ??= 1
-    --           if @count == 1
-    --             @count += 1
-    --             'test-train-name'
-    --           else
-    --             nil
-    --   stockpile = Stockpile
-    --     * Inventory TestInventoryBackend
-    --       size: => 1
-    --       slot_content: (i) =>
-    --         $assert_that i, eq 1
-    --         count: 32, displayName: 'Stone Bricks'
-    --       slot_capacity: (i) =>
-    --         $assert_that i, eq 1
-    --         64
-    --   uplink = Uplink TestUplinkBackend
-    --     receive: (_, _) =>
-    --       @count ??= 1
-    --       if @count <= 2
-    --         @count += 1
-    --         SERVER_ID, (InfoRequest idemp_tok), InfoRequest\protocol!
-    --       else
-    --         nil, nil, nil
-    --     send: (recipient, message, protocol) =>
-    --       sent[] = :recipient, :message, :protocol
-    --       true
-    --   factory = Factory config, pc, stations, stockpile, uplink
-    --
-    --   for _ = 1, 10
-    --     factory\do_network_step!
-    --
-    --   $expect_that sent, len eq 2
-    --   $expect_that sent[1], has_fields
-    --     recipient: eq SERVER_ID
-    --     message: has_fields
-    --       idemp_tok: eq idemp_tok
-    --       name: eq 'test-factory-name'
-    --       station_infos: deep_eq
-    --         * name: 'test-station-name'
-    --           train_name: 'test-train-name'
-    --       stockpile_info: has_fields
-    --         stored_items: has_fields
-    --           * has_fields
-    --               name: eq 'Stone Bricks'
-    --               stored: eq 32
-    --     protocol: eq InfoResponse\protocol!
-    --   $expect_that sent[2], has_fields
-    --     recipient: eq SERVER_ID
-    --     message: has_fields
-    --       idemp_tok: eq idemp_tok
-    --       name: eq 'test-factory-name'
-    --       station_infos: deep_eq
-    --         * name: 'test-station-name'
-    --           train_name: nil
-    --       stockpile_info: has_fields
-    --         stored_items: has_fields
-    --           * has_fields
-    --               name: eq 'Stone Bricks'
-    --               stored: eq 32
-    --     protocol: eq InfoResponse\protocol!
 
     describe '\\send_heartbeat', ->
       it 'sends a heartbeat', ->
