@@ -188,6 +188,16 @@ class Anything
   describe: (is_match=true) =>
     "is anything"
 
+class Some
+  matches: (actual) =>
+    actual?
+
+  explain_match: (actual) =>
+    "which #{@describe!}"
+
+  describe: (is_match=true) =>
+    "is non-nil"
+
 class Not
   new: (@inner) =>
 
@@ -632,6 +642,7 @@ can_sort = (list) ->
 
 export matchers =
   anything: -> Anything!
+  some: -> Some!
   not_: (matcher) -> Not matcher
   eq: (value) -> Compare '==', value
   deep_eq: (value) -> DeepEq value
