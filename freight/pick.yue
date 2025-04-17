@@ -3,7 +3,9 @@ local *
 import 'quicktype' as :F
 import 'spec' as :spec
 
-export pick = F '([any]) -> any', (options) ->
+export pick = F '([some]) -> any', (options) ->
+  if #options == 0
+    return nil
   options[math.random #options]
 
 spec ->
@@ -14,6 +16,9 @@ spec ->
   import eq, gt from matchers
 
   describe 'pick', ->
+    it 'returns nil on empty input', ->
+      $expect_that (pick {}), eq nil
+
     it 'selects a present element', ->
       $expect_that (pick {'a'}), eq 'a'
 
