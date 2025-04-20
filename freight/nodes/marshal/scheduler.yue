@@ -562,10 +562,7 @@ spec ->
       all_candidate_reprs = [ candidate_repr candidate for candidate in *all_candidates ]
       $expect_that all_candidate_reprs, deep_eq reconstructed_all_candidate_reprs
 
-    it 'respects train promises', ->
-      -- TODO(kcza): complete me!
-
-    it 'respects station promises', ->
+    it 'respects promises', ->
       -- TODO(kcza): complete me!
 
     it 'defines sound waiting conditions', ->
