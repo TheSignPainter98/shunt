@@ -79,7 +79,7 @@ class Test
 
   @num_run: 0
   @num_failures: 0
-  @current_run_failures: {}
+  @current_run_failures: nil
 
   test: (filter=nil) =>
     if filter?
@@ -103,7 +103,10 @@ class Test
         Test::fail "caught error: #{debug.traceback err, 2}"
     print = old_print
 
-    if #@@current_run_failures == 0
+    failures = @@current_run_failures
+    @@current_run_failures = nil
+
+    if #failures == 0
       return
 
     if #print_calls > 0
@@ -112,7 +115,7 @@ class Test
       print '--- END of print output ---'
 
     print "* #{@desc!}:"
-    for failure in *@@current_run_failures
+    for failure in *failures
       print "  * #{reflow '    ', failure}"
 
   desc: =>
@@ -145,6 +148,9 @@ export expect_that = (actual, matcher) ->
   _expect_that nil, actual, matcher
 
 export _expect_that = (value_label, actual, matcher) ->
+  if not Test.current_run_failures?
+    error 'internal error: expect_that call must be within an `it` call'
+
   if matcher\matches actual
     return
 
@@ -159,6 +165,9 @@ export assert_that = (actual, matcher) ->
   _assert_that nil, actual, matcher
 
 export _assert_that = (value_label, actual, matcher) ->
+  if not Test.current_run_failures?
+    error 'internal error: assert_that call must be within an `it` call'
+
   if matcher\matches actual
     return
 
