@@ -137,8 +137,8 @@ class Test
     else
       @@current_run_failures[] = cause_string
 
-  @fatal: (value_name, cause, message) =>
-    @@fail value_name, cause, message
+  @fatal: (cause, message) =>
+    @@fail cause, message
     error FATAL_TEST_ERROR_MARKER
 
 export expect_that = (actual, matcher) ->
