@@ -69,12 +69,13 @@ spec ->
         $expect_that \dequeue!, eq 'five'
 
     describe '\\iter', ->
-      with Queue!
-        \enqueue 'one'
-        \enqueue 'two'
-        \enqueue 'three'
+      it 'yields in the correct order', ->
+        with Queue!
+          \enqueue 'one'
+          \enqueue 'two'
+          \enqueue 'three'
 
-        $expect_that [ entry for entry in \iter! ], deep_eq
-          * 'one'
-          * 'two'
-          * 'three'
+          $expect_that [ entry for entry in \iter! ], deep_eq
+            * 'one'
+            * 'two'
+            * 'three'
