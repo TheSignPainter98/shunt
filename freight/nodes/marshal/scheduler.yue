@@ -1,0 +1,447 @@
+local *
+
+import 'freight.nodes.marshal.rng' as :pick, :shuffle
+import 'freight.peripheral.station' as :time_units
+import 'quicktype' as :declare_type, :F, :T
+import 'spec' as :spec
+
+declare_type 'CandidateSchedule', [[{
+  train_addr: TrainAddress,
+  schedule: Schedule,
+}]]
+declare_type 'TrainAddress', [[
+  { name: string }
+  + StationAddress
+]]
+
+export class Scheduler
+  new: F '(?number) => <>', (@_candidate_limit=10) =>
+
+  schedule_candidates: F '(string, Factory, [Factory]) => [CandidateSchedule]', (resource, factory, factories) =>
+    inbound_station_addrs = @_inbound_station_addrs resource, factory
+    if #inbound_station_addrs == 0
+      log -> "no station at #{factory.name} accepts inbound #{resource}"
+      return {}
+
+    outbound_station_addrs = do
+      networks = with {}
+        seen_networks = {}
+        for inbound_station_addr in *inbound_station_addrs
+          network = inbound_station_addr.station.network
+          if seen_networks[network]
+            continue
+          seen_networks[network] = true
+          [] = network
+      with {}
+        for network in *networks
+          [network] = @_outbound_station_addrs resource, network, factories
+
+    -- Generate inbound-local candidates
+
+    ret = {}
+    already_present = F '(CandidateSchedule) -> boolean', (candidate) ->
+      { :inbound_station_addr, :outbound_station_addr, :train_addr } = candidate
+      for r in *ret
+        if r.inbound_station_addr.station.name != inbound_station_addr.station.name
+          continue
+        if r.outbound_station_addr.station.name != outbound_station_addr.station.name
+          continue
+        if r.train_addr.name != train_addr.name
+          continue
+        return true
+      false
+
+    add_candidate_set = F '([CandidateSchedule]) -> <>', (candidates) ->
+      shuffle candidates
+
+      to_add = #candidates
+      if #ret + to_add > @_candidate_limit
+        to_add = @_candidate_limit - #ret
+      for candidate in *candidates[,to_add]
+        if #ret >= @_candidate_limit
+          break
+
+        if already_present candidate
+          continue
+
+        ret[] = candidate
+    do
+      add_candidate_set @_inbound_local_schedule_candidates resource,
+        factory,
+        inbound_station_addrs,
+        outbound_station_addrs
+    if #ret < @_candidate_limit
+      add_candidate_set @_outbound_local_schedule_candidates resource,
+        inbound_station_addrs,
+        outbound_station_addrs
+    if #ret < @_candidate_limit
+      train_addrs = @_train_addrs factories
+      add_candidate_set @_global_schedule_candidates resource,
+        inbound_station_addrs,
+        outbound_station_addrs,
+        train_addrs
+
+    ret
+
+  _inbound_station_addrs: F '(string, Factory) => [StationAddress]', (resource, factory) =>
+    -- TODO(kcza): do not select station with promised train
+    with {}
+      for station in *factory.stations.known
+        if station.type != 'inbound'
+          continue
+        if station.handles != resource
+          continue
+        [] = :factory, :station
+
+  _outbound_station_addrs: F '(string, string, [Factory]) => [StationAddress]', (resource, network, factories) =>
+    -- TODO(kcza): do not select station with promised train
+    with {}
+      for factory in *factories
+        if not @_factory_has_surplus_resource resource, factory
+          continue
+
+        for station in *factory.stations.known
+          if station.handles != resource
+            continue
+          if station.type != 'outbound'
+            continue
+          if station.network != network
+            continue
+          [] = :factory, :station
+
+  _factory_has_surplus_resource: F '(string, Factory) => boolean', (resource, factory) =>
+    for detected_resource in *factory.stockpile.known
+      if detected_resource.name != resource
+        continue
+      if not detected_resource.surplus_amount?
+        continue
+      if detected_resource.stored < detected_resource.surplus_amount
+        continue
+      return true
+    false
+
+  _inbound_local_schedule_candidates: F '(string, Factory, [StationAddress], {string->[StationAddress]}) => [CandidateSchedule]', (resource, factory, inbound_station_addrs, outbound_station_addrs) =>
+    with {}
+      for inbound_station_addr in *inbound_station_addrs
+        for train_name in *inbound_station_addr.station.present_trains
+          outbound_station_addr = pick outbound_station_addrs[inbound_station_addr.station.network]
+          if not outbound_station_addr?
+            continue
+
+          [] =
+            train_addr:
+              name: train_name
+              station: inbound_station_addr.station
+              :factory
+            :inbound_station_addr
+            :outbound_station_addr
+            schedule: @_train_schedule
+              from_addr: inbound_station_addr
+              to_addr: outbound_station_addr
+
+  _outbound_local_schedule_candidates: F '(string, [StationAddress], {string->[StationAddress]}) => [CandidateSchedule]', (resource, inbound_station_addrs, outbound_station_addrs) =>
+    inbound_station_addrs_by_network = @_station_addrs_by_network inbound_station_addrs
+
+    with {}
+      for outbound_station_addr in *outbound_station_addrs
+        for train_name in *outbound_station_addr.station.present_trains
+          inbound_station_addrs = inbound_station_addrs_by_network[outbound_station_addr.station.network]
+          if not inbound_station_addrs? or #inbound_station_addrs == 0
+            continue
+          inbound_station_addr = pick inbound_station_addrs
+
+          [] =
+            train_addr:
+              name: train_name
+              station: outbound_station_addr.station
+              factory: outbound_station_addr.factory
+            :inbound_station_addr
+            :outbound_station_addr
+            schedule: @_train_schedule
+              from_addr: inbound_station_addr
+              to_addr: outbound_station_addr
+
+  _global_schedule_candidates: F '(string, [StationAddress], {string->[StationAddress]}, [TrainAddress]) => [CandidateSchedule]', (resource, inbound_station_addrs, outbound_station_addrs, train_addrs) =>
+    inbound_station_addrs_by_network = @_station_addrs_by_network inbound_station_addrs
+    outbound_station_addrs_by_network = @_station_addrs_by_network outbound_station_addrs
+
+    with {}
+      for train_addr in *train_addrs
+        network = train_addr.station.network
+
+        inbound_station_addrs = inbound_station_addrs_by_network[network]
+        if not inbound_station_addrs? or #inbound_station_addrs == 0
+          continue
+        inbound_station_addr = pick inbound_station_addrs
+
+        outbound_station_addrs = outbound_station_addrs_by_network[network]
+        if not outbound_station_addrs? or #outbound_station_addrs == 0
+          continue
+        outbound_station_addr = pick outbound_station_addrs
+
+        [] =
+          :train_addr
+          :inbound_station_addr
+          :outbound_station_addr
+          schedule: @_train_schedule
+            from_addr: inbound_station_addr
+            to_addr: outbound_station_addr
+
+  _station_addrs_by_network: F '([StationAddress]) => {string->[StationAddress]}', (addrs) =>
+    with {}
+      for addr in *addrs
+        network = addr.station.network
+        if not [network]?
+          [network] = {addr}
+        else
+          [network][] = addr
+
+  _train_schedule: F '({from_addr: StationAddress, to_addr: StationAddress}) => Schedule', (conf) =>
+    { :from_addr, :to_addr } = conf
+    ret =
+      cyclic: false
+      entries:
+        -- TODO(kcza): rename the schedule (instruction), change type to make conditions specifically be `nil`
+        * instruction:
+            id: 'create:destination'
+            data:
+              text: from_addr.station.name
+          conditions:
+            * { @@MIN_WAIT_REACHED, @@CARGO_INACTIVE }
+            * { @@MAX_WAIT_REACHED }
+        * instruction:
+            id: 'create:destination'
+            data:
+              text: to_addr.station.name
+          conditions:
+            * { @@MAX_WAIT_REACHED }
+    ret
+
+  @CARGO_INACTIVE:
+    id: "create:idle"
+    data:
+      value: 5
+      time_unit: time_units.SECONDS
+  @MIN_WAIT_REACHED:
+    id: "create:delay"
+    data:
+      value: 15
+      time_unit: time_units.SECONDS
+  @MAX_WAIT_REACHED:
+    id: "create:delay"
+    data:
+      value: 30
+      time_unit: time_units.SECONDS
+
+  _train_addrs: F '([Factory]) => [TrainAddress]', (factories) =>
+    with {}
+      for factory in *factories
+        for station in *factory.stations.known
+          for name in *station.present_trains
+            -- TODO(kcza): avoid promised trains!
+            [] =
+              :factory
+              :station
+              :name
+
+  applying_schedule: F '(CandidateSchedule) => <>', =>
+    -- TODO(kcza): set promises
+
+  applied: F '(CandidateSchedule) => <>', =>
+    -- Do nothing, promises are already made
+
+  not_applied: F '(CandidateSchedule) => <>', =>
+    -- TODO(kcza): break promises
+
+  ut_inbound_local_schedule_candidates: (...) =>
+    @_inbound_local_schedule_candidates ...
+
+  ut_outbound_local_schedule_candidates: (...) =>
+    @_outbound_local_schedule_candidates ...
+
+  ut_global_schedule_candidates: (...) =>
+    @_global_schedule_candidates ...
+
+spec ->
+  import 'spec_macros' as $
+
+  import 'spec' as :describe, :it, :matchers
+
+  import deep_eq, eq, has_fields, len, lt from matchers
+
+  describe 'Scheduler', ->
+    it 'emits valid schedules', ->
+      with Scheduler!
+        resource = 'minecraft:stone_bricks'
+        network = 'mainline'
+        wrong_network = 'wrong_network'
+
+        inbound_station_name = 'inbound_station'
+        factory_with_shortage_of_resource =
+          name: 'factory_with_shortage'
+          pc_id: 1
+          operational: true
+          last_seen_epoch: 1
+          stations:
+            known:
+              * name: inbound_station_name
+                type: 'inbound'
+                handles: resource
+                network: network
+                present_trains:
+                  * 'valid_train_1'
+                  * 'valid_train_2'
+              * name: 'wrong_type_station'
+                type: 'outbound'
+                handles: resource
+                network: network
+                present_trains:
+                  * 'wrong_type_train'
+              * name: 'wrong_resource_station'
+                type: 'inbound'
+                handles: 'minecraft:diamond_axe'
+                network: network
+                present_trains:
+                  * 'wrong_resource_train'
+              * name: 'wrong_network_station'
+                type: 'inbound'
+                handles: resource
+                network: 'wrong_network'
+                present_trains:
+                  * 'wrong_network_train'
+              * name: 'no_trains_station'
+                type: 'inbound'
+                handles: resource
+                network: network
+                present_trains: {}
+            unknown:
+              * name: 'unknown_station'
+                present_trains:
+                  * 'unknown_station_train'
+          stockpile:
+            known:
+              * name: resource
+                stored: 64
+                shortage_amount: 128
+              * name: 'minecraft:iron_ingot'
+                stored: 256
+                shortage_amount: 128
+              * name: 'minecraft:gold_ingot'
+                stored: 64
+                surplus_amount: 128
+              * name: 'minecraft:diamond'
+                stored: 256
+                surplus_amount: 128
+            unknown:
+              * name: 'minecraft:dirt'
+                stored: 64
+            estimated_capacity: 64 * 9 * 3
+
+        outbound_station_name = 'outbound_station'
+        factory_with_surplus_of_resource =
+          name: 'factory_with_surplus'
+          pc_id: 1
+          operational: true
+          last_seen_epoch: 1
+          stations:
+            known:
+              * name: outbound_station_name
+                type: 'outbound'
+                handles: resource
+                network: network
+                present_trains:
+                  * 'valid_train_1'
+                  * 'valid_train_2'
+              * name: 'wrong_type_surplus_station'
+                type: 'inbound'
+                handles: resource
+                network: network
+                present_trains:
+                  * 'wrong_type_surplus_train'
+              * name: 'wrong_resource_surplus_station'
+                type: 'outbound'
+                handles: 'minecraft:diamond_axe'
+                network: network
+                present_trains:
+                  * 'wrong_resource_surplus_train'
+              * name: 'wrong_network_surplus_station'
+                type: 'outbound'
+                handles: resource
+                network: 'wrong_surplus_network'
+                present_trains:
+                  * 'wrong_network_surplus_train'
+              * name: 'no_trains_surplus_station'
+                type: 'inbound'
+                handles: resource
+                network: network
+                present_trains: {}
+            unknown:
+              * name: 'unknown_surplus_station'
+                present_trains:
+                  * 'unknown_station_surplus_train'
+          stockpile:
+            known:
+              * name: resource
+                stored: 2048
+                surplus_amount: 128
+              * name: 'minecraft:iron_ingot'
+                stored: 256
+                shortage_amount: 128
+              * name: 'minecraft:gold_ingot'
+                stored: 64
+                surplus_amount: 128
+              * name: 'minecraft:diamond'
+                stored: 256
+                surplus_amount: 128
+            unknown:
+              * name: 'minecraft:dirt'
+                stored: 64
+            estimated_capacity: 64 * 9 * 3
+
+        factories =
+          * factory_with_shortage_of_resource
+          * factory_with_surplus_of_resource
+        candidates = \schedule_candidates resource, factory_with_shortage_of_resource, factories
+
+        candidate_repr = F '(CandidateSchedule) -> string', (candidate) ->
+          "#{candidate.train_addr.name}:#{candidate.outbound_station_addr.station.name}->#{candidate.inbound_station_addr.station.name}"
+        import 'spec' as :repr
+        print '-----------------------------------------'
+        print '----- Generated candidate schedules -----'
+        print '-----------------------------------------'
+        for candidate in *candidates
+          print candidate_repr candidate
+        print '--- end of candidates ---'
+
+        $expect_that #candidates, eq 2
+        -- table.sort candidates, (c1, c2) ->
+        --   c1.train_addr.name < c2.train_addr.name
+        -- $expect_that candidates[1], has_fields
+        --   train_addr: has_fields
+        --     name: eq 'fdsa'
+
+    it 'respects train promises', ->
+      -- TODO(kcza): complete me!
+
+    it 'respects station promises', ->
+      -- TODO(kcza): complete me!
+
+    it 'defines sound waiting conditions', ->
+      $expect_that Scheduler.CARGO_INACTIVE.id, eq 'create:idle'
+      $expect_that Scheduler.MIN_WAIT_REACHED.id, eq 'create:delay'
+      $expect_that Scheduler.MAX_WAIT_REACHED.id, eq 'create:delay'
+
+      implied_time = (condition) ->
+        scale = switch condition.data.time_unit
+          when time_units.TICKS
+            0.05
+          when time_units.SECONDS
+            1
+          when time_units.MINUTES
+            60
+        scale * condition.data.value
+      cargo_inactive_time = implied_time Scheduler.CARGO_INACTIVE
+      min_wait_reached_time = implied_time Scheduler.MIN_WAIT_REACHED
+      max_wait_reached_time = implied_time Scheduler.MAX_WAIT_REACHED
+      $assert_that cargo_inactive_time, lt min_wait_reached_time
+      $assert_that min_wait_reached_time, lt max_wait_reached_time
