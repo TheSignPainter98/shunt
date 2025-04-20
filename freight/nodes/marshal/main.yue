@@ -260,18 +260,44 @@ class Marshal
     low_resources
 
   manage_low_resource: F '(string, Factory) => <>', (resource, factory) =>
-    schedule_candidates = @scheduler\schedule_candidates resource, factory, @factories
-    for candidate in *schedule_candidates
-      @scheduler\applying candidate
+    MAX_ATTEMPTS = 25
 
-      applied = false
-      error 'TODO'
+    candidates_co = @scheduler\schedule_candidates resource, factory, @factories
+    for _ = 1, MAX_ATTEMPTS
+      candidate = do
+        ok, yielded = coroutine.resume candidates_co
+        if not ok
+          error yielded
+        if not yielded?
+          os.sleep 0.01 -- Throttle
+        yielded
 
-      if applied
-        @scheduler\applied candidate
-        return
-      @scheduler\not_applied candidate
-    log -> "no trains available to take #{resource} to #{factory.name}, will re-attempt next heartbeat"
+      {
+        train_addr: {
+          factory: {
+            name: factory_name,
+            pc_id: factory_pc_id,
+          },
+          station: {
+            name: station_name,
+          },
+          name: train_name,
+        },
+        :schedule,
+      } = candidate
+
+      idemp_tok = IdempotenceToken!
+      @uplink\send_to factory_pc_id, ScheduleRequest idemp_tok, station_name, train_name, schedule
+
+      _, response = @uplink\receive_from factory_pc_id, ScheduleResponse, timeout: 1
+      if response == TIMEOUT
+        continue
+      if response.idemp_tok != idemp_tok
+        continue
+      if error_reason = response.error_reason
+        log -> "cannot schedule train at #{factory_name}:#{station_name}: #{error_reason}"
+
+    print "no trains available to take #{resource} to #{factory.name}, will re-attempt next heartbeat"
 
   ut_stop_counting_epochs: F '() => <>', =>
     @do_count_epochs = false
