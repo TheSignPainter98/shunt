@@ -1,8 +1,13 @@
 local *
 
-import 'quicktype' as :F
+import 'quicktype' as :declare_type, :F
 import 'spec' as :spec
 
+declare_type 'Random', [[{
+  random: (number) => number,
+  pick: ([some]) => ?some,
+  shuffle: ([some]) => <>,
+}]]
 export class PseudoRandom
   new: F '(?number) => <>', (@state=math.random 2147483647) =>
 
@@ -10,7 +15,7 @@ export class PseudoRandom
     @state = (47328190 * @state + 1000003) % 2147483647
     1 + @state % max -- Return value is in the range [1, max]
 
-  pick: F '([some]) => any', (options) =>
+  pick: F '([some]) => ?some', (options) =>
     if #options == 0
       return nil
     options[@random #options]
@@ -26,33 +31,55 @@ spec ->
 
   import 'spec' as :describe, :it, :matchers
 
-  import contains_value, eq, ge, gt, le from matchers
+  import contains_value, deep_eq, eq, ge, gt, le from matchers
 
   describe 'PseudoRandom', ->
     describe '\\random', ->
-      with PseudoRandom!
-        ATTEMPTS = 100
-        MAX = 5
-        seen = {}
-        values = {}
-        for _ = 1, ATTEMPTS
-          value = \random MAX
-          if seen[value]
-            continue
-          seen[value] = true
-          values[] = value
+      it 'returns expected values', ->
+        with PseudoRandom!
+          ATTEMPTS = 100
+          MAX = 5
+          values = {}
+          for _ = 1, ATTEMPTS
+            values[] = \random MAX
 
-        $expect_that #seen, gt 1
+          max = -1
+          min = 100 * MAX
+          for value in *values
+            if max < value
+              max = value
+            if min > value
+              min = value
+          $expect_that min, ge 1
+          $expect_that max, le MAX
 
-        max = -1
-        min = -1
-        for value in *values
-          if max < value
-            max = value
-          if min > value
-            min = value
-        $expect_that min, ge 1
-        $expect_that max, le MAX
+      it 'returns different values', ->
+        with PseudoRandom!
+          ATTEMPTS = 100
+          MAX = 5
+          seen = {}
+          num_unique = 0
+          for _ = 1, ATTEMPTS
+            value = \random MAX
+            if seen[value]
+              continue
+            num_unique += 1
+
+          $expect_that num_unique, gt 1
+
+      it 'is reentrant', ->
+        SEED = 12345
+        MAX = 1000000
+        rand1 = PseudoRandom SEED
+        rand2 = PseudoRandom SEED
+
+        values1 = {}
+        values2 = {}
+        for _ = 1, 100
+          values1[] = rand1\random MAX
+          values2[] = rand2\random MAX
+
+        $expect_that values1, deep_eq values2
 
     describe '\\pick', ->
       it 'returns nil on empty input', ->
