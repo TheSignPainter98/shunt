@@ -68,7 +68,7 @@ export class Station
   apply_schedule: F '(Schedule) => boolean', (schedule) =>
     @backend\train_set_schedule schedule
 
-time_units =
+export time_units =
   TICKS: 0
   SECONDS: 1
   MINUTES: 2

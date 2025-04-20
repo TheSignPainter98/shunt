@@ -3,9 +3,11 @@ local *
 import 'compat' as :HOST
 import 'freight.data.multiplexer' as :Multiplexer
 import 'freight.logger' as :log
-import 'freight.nodes.factory.main' as :FactoryHeartbeat
+import 'freight.nodes.factory.main' as :FactoryHeartbeat, :ScheduleRequest, :ScheduleResponse
+import 'freight.nodes.marshal.pseudo_random' as :PseudoRandom
+import 'freight.nodes.marshal.scheduler' as :Scheduler
 import 'freight.nodes.marshal.symmetric_difference' as :symmetric_difference
-import 'freight.peripheral.uplink' as :TestUplinkBackend, :Uplink
+import 'freight.peripheral.uplink' as :IdempotenceToken, :TestUplinkBackend, :TIMEOUT, :Uplink
 import 'freight.state' as :StateMachineBuilder, :StateSpec
 import 'freight.toml' as :toml_parse
 import 'freight.upgrade.listener' as :UpgradeListener
@@ -66,12 +68,38 @@ declare_type 'MarshalEventType', [[
   "new-epoch"
   |"network-message"
 ]]
+declare_type 'StationAddress', [[{
+  factory: Factory,
+  station: StationConfig,
+}]]
+declare_type 'DeliveryOptionSet', [[{
+  inbound_station: StationAddress,
+  outbound_stations: [StationAddress],
+  trains: [AvailableTrain],
+}]]
+declare_type 'DeliveryOption', [[{
+  inbound_station: string,
+  outbound_station: string,
+  train: AvailableTrain,
+}]]
+declare_type 'AvailableTrain', [[{
+  at_factory: {
+    name: string,
+    pc_id: number,
+  },
+  at_station: {
+    name: string,
+  },
+  name: string,
+}]]
 class Marshal
   new: F '(MarshalConfig, Uplink, UpgradeListener) => <>', (@config, @uplink, @upgrade_listener) =>
     @epoch = T 'number', 0
     -- TODO(kcza): load from stored initial state
     @factories = T '{string->Factory}', {}
     @trains = T '{string->TrainStatus}', {}
+    @rand = PseudoRandom!
+    @scheduler = Scheduler @rand
 
     @do_count_epochs = T 'boolean', true
     @throttle = T 'boolean', HOST == 'minecraft'
@@ -175,8 +203,12 @@ class Marshal
       else
         error "internal error: unexpected network message protocol reached marshal core '#{message\protocol!}'"
 
-  on_factory_heartbeat: F '(FactoryHeartbeat) => <>', (message) =>
-    { :pc_id, :name, :stations, :stockpile } = message
+  on_factory_heartbeat: F '(FactoryHeartbeat) => <>', (heartbeat) =>
+    factory = @update_system_state heartbeat
+    @manage_resources factory
+
+  update_system_state: F '(FactoryHeartbeat) => Factory', (heartbeat) =>
+    { :pc_id, :name, :stations, :stockpile } = heartbeat
 
     factory_status = @factories[name]
     seen_before = factory_status?
@@ -197,11 +229,49 @@ class Marshal
       for present_train in *station.present_trains
         @declare_train_seen present_train, name, station.name
 
+    @factories[name]
+
   declare_train_seen: F '(string, string, string) => <>', (train_name, factory_name, station_name) =>
     @trains[train_name] = T 'TrainStatus', with @trains[train_name] ?? name: train_name
       .last_seen_epoch = @epoch
       .last_seen_at_factory = factory_name
       .last_seen_at_station = station_name
+
+  manage_resources: F '(Factory) => <>', (factory) =>
+    low_resources = @get_low_resources factory.stockpile
+    if not low_resources?
+      return
+
+    for resource in *low_resources
+      @manage_low_resource resource, factory
+
+  get_low_resources: F '(DetectedStockpile) => ?[string]', (stockpile) =>
+    low_resources = nil
+    for resource in *stockpile.known
+      with resource
+        if not .shortage_amount?
+          continue
+        if .stored >= .shortage_amount
+          continue
+
+        if not low_resources?
+          low_resources = {}
+        low_resources[] = .name
+    low_resources
+
+  manage_low_resource: F '(string, Factory) => <>', (resource, factory) =>
+    schedule_candidates = @scheduler\schedule_candidates resource, factory, @factories
+    for candidate in *schedule_candidates
+      @scheduler\applying candidate
+
+      applied = false
+      error 'TODO'
+
+      if applied
+        @scheduler\applied candidate
+        return
+      @scheduler\not_applied candidate
+    log -> "no trains available to take #{resource} to #{factory.name}, will re-attempt next heartbeat"
 
   ut_stop_counting_epochs: F '() => <>', =>
     @do_count_epochs = false
@@ -224,7 +294,7 @@ spec ->
 
   import 'spec' as :describe, :it, :matchers
 
-  import deep_eq, eq, has_fields, len from matchers
+  import deep_eq, eq, has_fields, len, lt from matchers
 
   describe 'Marshal', ->
     describe '\\on_new_epoch', ->
@@ -436,3 +506,10 @@ spec ->
       --     \ut_step!
       --
       --     $expect_that \ut_trains!, deep_eq {}
+
+    it 'respects the scheduler', ->
+      -- TODO(kcza): test valid schedules are made
+      --  - Ensure correct network
+      --  - Ensure correct resource handling
+      --  - Ensure correct in/outbound handling
+      --  - MAYBE Run many times, shim `pick` to ensure progression
