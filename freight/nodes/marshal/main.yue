@@ -42,7 +42,6 @@ declare_type 'Factory', [[{
   name: string,
   pc_id: number,
   -- Variable
-  operational: boolean,
   last_seen_epoch: number,
   stations: DetectedStations,
   stockpile: DetectedStockpile,
@@ -212,10 +211,10 @@ class Marshal
 
     factory_status = @factories[name]
     seen_before = factory_status?
-    @factories[name] = T 'Factory', with factory_status ?? :name, :pc_id, operational: true
+    @factories[name] = T 'Factory', with factory_status ?? :name, :pc_id
       if seen_before and pc_id != .pc_id
         log -> "temporarily ignoring possible imposter for factory #{name}: last known PC was ##{.pc_id}, got #{pc_id}"
-        return -- Ignore for this epoch.
+        return
 
       .last_seen_epoch = @epoch
       .stations = stations
