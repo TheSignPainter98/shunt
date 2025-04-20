@@ -1,0 +1,83 @@
+local *
+
+import 'quicktype' as :F
+import 'spec' as :spec
+
+export class PseudoRandom
+  new: F '(?number) => <>', (@state=math.random 2147483647) =>
+
+  random: F '(number) => number', (max) =>
+    @state = (47328190 * @state + 1000003) % 2147483647
+    1 + @state % max -- Return value is in the range [1, max]
+
+  pick: F '([some]) => any', (options) =>
+    if #options == 0
+      return nil
+    options[@random #options]
+
+  shuffle: F '([some]) => <>', (list) =>
+    n = #list
+    for i = 1, n
+      new_index = @random n
+      list[i], list[new_index] = list[new_index], list[i]
+
+spec ->
+  import 'spec_macros' as $
+
+  import 'spec' as :describe, :it, :matchers
+
+  import contains_value, eq, ge, gt, le from matchers
+
+  describe 'PseudoRandom', ->
+    describe '\\random', ->
+      with PseudoRandom!
+        ATTEMPTS = 100
+        MAX = 5
+        seen = {}
+        values = {}
+        for _ = 1, ATTEMPTS
+          value = \random MAX
+          if seen[value]
+            continue
+          seen[value] = true
+          values[] = value
+
+        $expect_that #seen, gt 1
+
+        max = -1
+        min = -1
+        for value in *values
+          if max < value
+            max = value
+          if min > value
+            min = value
+        $expect_that min, ge 1
+        $expect_that max, le MAX
+
+    describe '\\pick', ->
+      it 'returns nil on empty input', ->
+        $expect_that (PseudoRandom!\pick {}), eq nil
+
+      it 'selects a present element', ->
+        $expect_that (PseudoRandom!\pick {'a'}), eq 'a'
+
+      it 'selects different elements', ->
+        elems = [ tostring i for i = 1, 100 ]
+        seen = {}
+        unique_elems = {}
+        rand = PseudoRandom!
+        for i = 1, #elems
+          elem = rand\pick elems
+          if not seen[elem]
+            unique_elems[] = elem
+          seen[elem] = true
+
+        $expect_that #unique_elems, gt 1
+
+    describe '\\shuffle', ->
+      it 'retains all elements', ->
+        elems = {'a', 'b', 'c', 'd'}
+        elems2 = { ...elems }
+        PseudoRandom!\shuffle elems2
+        for elem in *elems
+          $expect_that elems2, contains_value eq elem
