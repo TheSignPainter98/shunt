@@ -124,15 +124,20 @@ export class Scheduler
   _inbound_local_schedule_candidates: F '(string, Factory, [StationAddress], {string->[StationAddress]}) => [ScheduleCandidate]', (resource, factory, inbound_station_addrs, outbound_station_addrs_by_network) =>
     ret = with {}
       for inbound_station_addr in *inbound_station_addrs
-        for train_name in *inbound_station_addr.station.present_trains
-          outbound_station_addr = @rand\pick outbound_station_addrs_by_network[inbound_station_addr.station.network]
+        station = inbound_station_addr.station
+        for train_name in *station.present_trains
+          outbound_station_addr = @rand\pick outbound_station_addrs_by_network[station.network]
           if not outbound_station_addr?
             continue
+
+          outbound_station = outbound_station_addr.station
+          if #outbound_station.present_trains >= outbound_station.capacity
+            continue -- Avoid sending train to full station.
 
           [] =
             train_addr:
               name: train_name
-              station: inbound_station_addr.station
+              :station
               :factory
             :inbound_station_addr
             :outbound_station_addr
@@ -145,17 +150,23 @@ export class Scheduler
   _outbound_local_schedule_candidates: F '(string, {string->[StationAddress]}, [StationAddress]) => [ScheduleCandidate]', (resource, inbound_station_addrs_by_network, outbound_station_addrs) =>
     ret = with {}
       for outbound_station_addr in *outbound_station_addrs
+        { :factory, :station } = outbound_station_addr
+
         for train_name in *outbound_station_addr.station.present_trains
           inbound_station_addrs = inbound_station_addrs_by_network[outbound_station_addr.station.network]
           if not inbound_station_addrs? or #inbound_station_addrs == 0
             continue
           inbound_station_addr = @rand\pick inbound_station_addrs
 
+          inbound_station = inbound_station_addr.station
+          if #inbound_station.present_trains >= inbound_station.capacity
+            continue -- Avoid routing train to full station.
+
           [] =
             train_addr:
               name: train_name
-              station: outbound_station_addr.station
-              factory: outbound_station_addr.factory
+              :station
+              :factory
             :inbound_station_addr
             :outbound_station_addr
             schedule: @_train_schedule
@@ -182,10 +193,18 @@ export class Scheduler
         continue
       inbound_station_addr = @rand\pick inbound_station_addrs
 
+      inbound_station = inbound_station_addr.station
+      if #inbound_station.present_trains >= inbound_station.capacity
+        continue -- Avoid sending train to full station.
+
       outbound_station_addrs = outbound_station_addrs_by_network[network]
       if not outbound_station_addrs? or #outbound_station_addrs == 0
         continue
       outbound_station_addr = @rand\pick outbound_station_addrs
+
+      outbound_station = outbound_station_addr.station
+      if #outbound_station.present_trains >= outbound_station.capacity
+        continue -- Avoid sending train to full station.
 
       @_yield_candidate
         :train_addr
@@ -540,23 +559,32 @@ spec ->
 
       rand = make_pseudo_random!
 
+      spare_capacity = (station_addr) ->
+        station = station_addr.station
+        station.capacity - #station.present_trains
+
       inbound_local_candidates = do
         scheduler = Scheduler rand
         scheduler\ut_inbound_local_schedule_candidates resource, factory_with_shortage_of_resource, factories
       for inbound_local_candidate in *inbound_local_candidates
         $expect_that inbound_local_candidate.train_addr.name, matches '^valid_inbound_local_train_%d+$'
+        $expect_that (spare_capacity inbound_local_candidate.outbound_station_addr), gt 0
 
       outbound_local_candidates = do
         scheduler = Scheduler rand
         scheduler\ut_outbound_local_schedule_candidates resource, factory_with_shortage_of_resource, factories
       for outbound_local_candidate in *outbound_local_candidates
         $expect_that outbound_local_candidate.train_addr.name, matches '^valid_outbound_local_train_%d+$'
+        $expect_that (spare_capacity outbound_local_candidate.inbound_station_addr), gt 0
 
       global_candidates = do
         limit = SCHEDULE_LIMIT - #inbound_local_candidates - #outbound_local_candidates
         gather_candidates limit, coroutine.create ->
           scheduler = Scheduler rand
           scheduler\ut_yield_global_schedule_candidates resource, factory_with_shortage_of_resource, factories
+      for global_candidate in *global_candidates
+        $expect_that (spare_capacity global_candidate.outbound_station_addr), gt 0
+        $expect_that (spare_capacity global_candidate.inbound_station_addr), gt 0
 
       all_candidates = do
         gather_candidates SCHEDULE_LIMIT, do
