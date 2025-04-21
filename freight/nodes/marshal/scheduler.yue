@@ -348,6 +348,7 @@ spec ->
             type: 'inbound'
             handles: resource
             network: network
+            capacity: 3
             present_trains:
               * 'valid_inbound_local_train_1'
               * 'valid_inbound_local_train_2'
@@ -355,6 +356,7 @@ spec ->
             type: 'inbound'
             handles: resource
             network: network
+            capacity: 2
             present_trains:
               * 'valid_inbound_local_train_3'
               * 'valid_inbound_local_train_4'
@@ -362,27 +364,32 @@ spec ->
             type: 'outbound'
             handles: resource
             network: network
+            capacity: 2
             present_trains:
               * 'wrong_type_train'
           * name: 'wrong_resource_station'
             type: 'inbound'
             handles: 'minecraft:diamond_axe'
             network: network
+            capacity: 2
             present_trains:
               * 'wrong_resource_train'
           * name: 'wrong_network_station'
             type: 'inbound'
             handles: resource
             network: 'wrong_shortage_network'
+            capacity: 2
             present_trains:
               * 'wrong_network_train'
           * name: 'no_trains_inbound_station'
             type: 'inbound'
             handles: resource
             network: network
+            capacity: 1
             present_trains: {}
         unknown:
           * name: 'unknown_station'
+            capacity: 2
             present_trains:
               * 'unknown_station_train'
       stockpile:
@@ -416,6 +423,7 @@ spec ->
             type: 'outbound'
             handles: resource
             network: network
+            capacity: 3
             present_trains:
               * 'valid_outbound_local_train_1'
               * 'valid_outbound_local_train_2'
@@ -423,27 +431,39 @@ spec ->
             type: 'inbound'
             handles: resource
             network: network
+            capacity: 2
             present_trains:
               * 'wrong_type_surplus_train'
           * name: 'wrong_resource_surplus_station'
             type: 'outbound'
             handles: 'minecraft:diamond_axe'
             network: network
+            capacity: 2
             present_trains:
               * 'wrong_resource_surplus_train'
           * name: 'wrong_network_surplus_station'
             type: 'outbound'
             handles: resource
             network: 'wrong_surplus_network'
+            capacity: 2
             present_trains:
               * 'wrong_network_surplus_train'
           * name: 'no_trains_surplus_station'
             type: 'inbound'
             handles: resource
             network: network
+            capacity: 1
             present_trains: {}
+          * name: 'full_surplus_station'
+            type: 'inbound'
+            handles: resource
+            network: network
+            capacity: 1
+            present_trains:
+              * 'full_surplus_train'
         unknown:
           * name: 'unknown_surplus_station'
+            capacity: 2
             present_trains:
               * 'unknown_station_surplus_train'
       stockpile:

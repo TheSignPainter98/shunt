@@ -227,7 +227,7 @@ class Factory
           [name] = do
             config = @get_station_config name
             known = config?
-            info = :name, :known, present_trains: {}
+            info = :name, :known, capacity: 0, present_trains: {}
             if known
               info = { ...config, ...info }
             info
@@ -235,6 +235,7 @@ class Factory
         present_train = station\train_name!
         if present_train?
           info.present_trains[] = present_train
+        info.capacity += 1
 
     with known: {}, unknown: {}
       for _, station_info in pairs detected_station_info
@@ -294,7 +295,7 @@ declare_type 'UnknownDetectedStation', [[
   + DetectedTrains
 ]]
 declare_type 'DetectedTrains', [[{
-  -- TODO(kcza): add max_trains: number,
+  capacity: number,
   present_trains: [string],
 }]]
 declare_type 'DetectedStockpile', [[{
@@ -524,10 +525,12 @@ spec ->
                   network: 'some-network'
                   type: 'inbound'
                   handles: 'minecraft:stone_bricks'
+                  capacity: 1
                   present_trains:
                     * 'train_1'
               unknown:
                 * name: 'unknown_station'
+                  capacity: 1
                   present_trains:
                     * 'train_2'
 

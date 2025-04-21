@@ -354,11 +354,13 @@ spec ->
                       network: 'network_1'
                       type: 'outbound'
                       handles: 'dirt'
+                      capacity: 1
                       present_trains: {}
                     * name: "station_#{3*@count+1}"
                       network: 'network_2'
                       type: 'inbound'
                       handles: 'dirt'
+                      capacity: 1
                       present_trains: {}
                   :known, unknown: {}
                 when 'change-factory-stations'
@@ -367,11 +369,13 @@ spec ->
                       network: 'network_1'
                       type: 'outbound'
                       handles: 'dirt'
+                      capacity: 1
                       present_trains: {}
                     * name: "station_#{3*@count+2}"
                       network: 'network_3'
                       type: 'inbound'
                       handles: 'dirt'
+                      capacity: 1
                       present_trains: {}
                   :known, unknown: {}
                 else
