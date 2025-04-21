@@ -25,7 +25,7 @@ export class Scheduler
       if #inbound_station_addrs == 0
         log -> "no station at #{factory.name} accepts inbound #{resource}"
         return {}
-      inbound_station_addrs_by_network = @_station_addrs_by_network inbound_station_addrs
+      free_inbound_station_addrs_by_network = @_free_station_addrs_by_network inbound_station_addrs
 
       outbound_station_addrs = {}
       outbound_station_addrs_by_network = {}
@@ -52,13 +52,13 @@ export class Scheduler
         inbound_station_addrs,
         outbound_station_addrs_by_network
       @_yield_candidate_set yielded_local_candiates, @_outbound_local_schedule_candidates resource,
-          inbound_station_addrs_by_network,
+          free_inbound_station_addrs_by_network,
           outbound_station_addrs
 
       -- Yield candidates from anywhere in any network
       train_addrs = @_train_addrs factories
       @_yield_global_schedule_candidates resource,
-        inbound_station_addrs_by_network,
+        free_inbound_station_addrs_by_network,
         outbound_station_addrs_by_network,
         train_addrs
 
@@ -130,10 +130,6 @@ export class Scheduler
           if not outbound_station_addr?
             continue
 
-          outbound_station = outbound_station_addr.station
-          if #outbound_station.present_trains >= outbound_station.capacity
-            continue -- Avoid sending train to full station.
-
           [] =
             train_addr:
               name: train_name
@@ -147,20 +143,16 @@ export class Scheduler
     @rand\shuffle ret
     ret
 
-  _outbound_local_schedule_candidates: F '(string, {string->[StationAddress]}, [StationAddress]) => [ScheduleCandidate]', (resource, inbound_station_addrs_by_network, outbound_station_addrs) =>
+  _outbound_local_schedule_candidates: F '(string, {string->[StationAddress]}, [StationAddress]) => [ScheduleCandidate]', (resource, free_inbound_station_addrs_by_network, outbound_station_addrs) =>
     ret = with {}
       for outbound_station_addr in *outbound_station_addrs
         { :factory, :station } = outbound_station_addr
 
         for train_name in *outbound_station_addr.station.present_trains
-          inbound_station_addrs = inbound_station_addrs_by_network[outbound_station_addr.station.network]
+          inbound_station_addrs = free_inbound_station_addrs_by_network[outbound_station_addr.station.network]
           if not inbound_station_addrs? or #inbound_station_addrs == 0
             continue
           inbound_station_addr = @rand\pick inbound_station_addrs
-
-          inbound_station = inbound_station_addr.station
-          if #inbound_station.present_trains >= inbound_station.capacity
-            continue -- Avoid routing train to full station.
 
           [] =
             train_addr:
@@ -175,7 +167,7 @@ export class Scheduler
     @rand\shuffle ret
     ret
 
-  _yield_global_schedule_candidates: F '(string, {string->[StationAddress]}, {string->[StationAddress]}, [TrainAddress]) => <>', (resource, inbound_station_addrs_by_network, outbound_station_addrs_by_network, train_addrs) =>
+  _yield_global_schedule_candidates: F '(string, {string->[StationAddress]}, {string->[StationAddress]}, [TrainAddress]) => <>', (resource, free_inbound_station_addrs_by_network, outbound_station_addrs_by_network, train_addrs) =>
     attempts = 0
     while true
       attempts += 1
@@ -188,23 +180,15 @@ export class Scheduler
 
       network = train_addr.station.network
 
-      inbound_station_addrs = inbound_station_addrs_by_network[network]
+      inbound_station_addrs = free_inbound_station_addrs_by_network[network]
       if not inbound_station_addrs? or #inbound_station_addrs == 0
         continue
       inbound_station_addr = @rand\pick inbound_station_addrs
-
-      inbound_station = inbound_station_addr.station
-      if #inbound_station.present_trains >= inbound_station.capacity
-        continue -- Avoid sending train to full station.
 
       outbound_station_addrs = outbound_station_addrs_by_network[network]
       if not outbound_station_addrs? or #outbound_station_addrs == 0
         continue
       outbound_station_addr = @rand\pick outbound_station_addrs
-
-      outbound_station = outbound_station_addr.station
-      if #outbound_station.present_trains >= outbound_station.capacity
-        continue -- Avoid sending train to full station.
 
       @_yield_candidate
         :train_addr
@@ -214,10 +198,14 @@ export class Scheduler
           inbound_addr: inbound_station_addr
           outbound_addr: outbound_station_addr
 
-  _station_addrs_by_network: F '([StationAddress]) => {string->[StationAddress]}', (addrs) =>
+  _free_station_addrs_by_network: F '([StationAddress]) => {string->[StationAddress]}', (addrs) =>
     with {}
       for addr in *addrs
-        network = addr.station.network
+        station = addr.station
+        if #station.present_trains >= station.capacity
+          continue
+
+        network = station.network
         if not [network]?
           [network] = {addr}
         else
@@ -299,7 +287,7 @@ export class Scheduler
 
   ut_outbound_local_schedule_candidates: F '(string, Factory, [Factory]) => [ScheduleCandidate]', (resource, factory, factories) =>
     inbound_station_addrs = @_inbound_station_addrs resource, factory
-    inbound_station_addrs_by_network = @_station_addrs_by_network inbound_station_addrs
+    free_inbound_station_addrs_by_network = @_free_station_addrs_by_network inbound_station_addrs
 
     outbound_station_addrs = {}
     do
@@ -317,12 +305,12 @@ export class Scheduler
           outbound_station_addrs[] = addr
 
     @_outbound_local_schedule_candidates resource,
-      inbound_station_addrs_by_network,
+      free_inbound_station_addrs_by_network,
       outbound_station_addrs
 
   ut_yield_global_schedule_candidates: F '(string, Factory, [Factory]) => [ScheduleCandidate]', (resource, factory, factories) =>
     inbound_station_addrs = @_inbound_station_addrs resource, factory
-    inbound_station_addrs_by_network = @_station_addrs_by_network inbound_station_addrs
+    free_inbound_station_addrs_by_network = @_free_station_addrs_by_network inbound_station_addrs
 
     outbound_station_addrs_by_network = {}
     do
@@ -340,7 +328,7 @@ export class Scheduler
 
     train_addrs = @_train_addrs factories
     @_yield_global_schedule_candidates resource,
-      inbound_station_addrs_by_network,
+      free_inbound_station_addrs_by_network,
       outbound_station_addrs_by_network,
       train_addrs
 
