@@ -145,35 +145,37 @@ class Test
     error FATAL_TEST_ERROR_MARKER
 
 export expect_that = (actual, matcher) ->
-  _expect_that nil, actual, matcher
+  _expect_that nil, actual, matcher, nil
 
-export _expect_that = (value_label, actual, matcher) ->
+export _expect_that = (value_label, actual, matcher, location) ->
   if not Test.current_run_failures?
     error 'internal error: expect_that call must be within an `it` call'
 
   if matcher\matches actual
     return
 
+  location ??= get_caller_location 'expect_that'
   Test::fail
     :value_label
-    location: get_caller_location 'expect_that'
+    :location
     expected: matcher\describe!
     actual_repr: matcher\actual_repr?! ?? repr actual
     explanation: matcher\explain_match actual
 
 export assert_that = (actual, matcher) ->
-  _assert_that nil, actual, matcher
+  _assert_that nil, actual, matcher, nil
 
-export _assert_that = (value_label, actual, matcher) ->
+export _assert_that = (value_label, actual, matcher, location) ->
   if not Test.current_run_failures?
     error 'internal error: assert_that call must be within an `it` call'
 
   if matcher\matches actual
     return
 
+  location ??= get_caller_location 'assert_that'
   Test::fatal
     :value_label
-    location: get_caller_location 'assert_that'
+    :location
     expected: matcher\describe!
     actual_repr: matcher.actual_repr?! ?? repr actual
     explanation: matcher\explain_match actual

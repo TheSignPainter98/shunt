@@ -5,13 +5,13 @@ export macro expect_that = (expr, matcher) ->
   while expr\match eqs
     eqs ..= '='
   label = "[#{eqs}[#{expr}]#{eqs}]"
-
-  "require('spec')._expect_that #{label}, #{expr}, #{matcher}"
+  location = '"#{$FILE}:#{$LINE}"'
+  "require('spec')._expect_that #{label}, #{expr}, (#{matcher}), #{location}"
 
 export macro assert_that = (expr, matcher) ->
   eqs = '='
   while expr\match eqs
     eqs ..= '='
   label = "[#{eqs}[#{expr}]#{eqs}]"
-
-  "require('spec')._assert_that #{label}, #{expr}, #{matcher}"
+  location = '"#{$FILE}:#{$LINE}"'
+  "require('spec')._assert_that #{label}, #{expr}, (#{matcher}), #{location}"
