@@ -200,6 +200,13 @@ class Marshal
         error "internal error: unexpected network message protocol reached marshal core '#{message\protocol!}'"
 
   on_factory_heartbeat: F '(FactoryHeartbeat) => <>', (heartbeat) =>
+    lost_trains = with {}
+      for station in *heartbeat.stations.known
+        for train in *station.present_trains
+          if @promise_tracker\train_is_lost train
+            [] = train
+    for lost_train in *lost_trains
+      log -> "train '#{lost_train}' was lost. It will be ignored until manually cleared for use"
     factory = @update_system_state heartbeat
     @manage_resources factory
 
