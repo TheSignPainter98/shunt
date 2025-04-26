@@ -1,7 +1,6 @@
 local *
 
 -- TODO(kcza): Check station-name uniqueness
--- TODO(kcza): Track known train names
 
 import 'compat' as :HOST
 import 'freight.data.multiplexer' as :Multiplexer
