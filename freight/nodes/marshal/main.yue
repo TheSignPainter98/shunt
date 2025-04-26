@@ -58,11 +58,6 @@ declare_type 'TrainStatus', [[{
   last_seen_at_station: string,
 }]]
 
-declare_type 'Train', [[{
-  name: string,
-  state: StateMachine,
-}]]
-
 declare_type 'MarshalConfig', [[{
   marshal: {},
 }]]

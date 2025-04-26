@@ -22,8 +22,6 @@ import 'freight.cmd.upgrade'
 import 'freight.logger'
 import 'spec'
 
-require 'freight.nodes.marshal.promises' -- TODO(kcza): for testing, remove once included
-
 global skip_minecraft_tests = false
 -- Some tests have unsuppressible error output in valid cases. This is a hack
 -- to avoid mental false-positives by users.

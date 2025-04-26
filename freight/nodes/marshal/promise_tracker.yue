@@ -2,11 +2,12 @@ local *
 
 -- TODO(kcza): if train is lost, cancel its schedule (assuming it has the expected schedule!)
 
+import 'freight.nodes.marshal.clock' as :MinecraftClock
 import 'quicktype' as :declare_type, :F, :T
 import 'spec' as :spec
 
 declare_type 'PromiseTracker', [[{
-  promise: (string, [string], number) => Promise,
+  promise: (string, [PromiseStation], ?number, ?number) => Promise,
   break_promise: (Promise) => <>,
   train_is_promised: (string) => boolean,
   station_is_fully_promised: (string) => boolean,
@@ -23,9 +24,6 @@ declare_type 'Promise', [[{
 declare_type 'PromiseStation', [[{
   name: string,
   capacity: number,
-}]]
-declare_type 'Clock', [[{
-  now: () => number,
 }]]
 declare_type 'PromiseSet', [[{
   count: number,
@@ -168,20 +166,16 @@ export class PromiseTracker
           promise_set.count -= 1
         promise_set.promises[id] = nil
 
-class MinecraftClock
-  now: F '() -> Date', =>
-    os.epoch! / 1000
-
-export class TestClock
-  new: F '() => <>', =>
-    @time = 0
-
-  now: F '() => number', =>
-    @time
+  ut_break_all_promises: F '() => <>', =>
+    print 'BREAKING ALL'
+    promises = [ promise for _, promise in pairs @promises ]
+    for promise in *promises
+      @break_promise promise
 
 spec ->
   import 'spec_macros' as $
 
+  import 'freight.nodes.marshal.clock' as :TestClock
   import 'freight.nodes.marshal.pseudo_random' as :PseudoRandom
   import 'spec' as :describe, :it, :matchers
 

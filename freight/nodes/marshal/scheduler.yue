@@ -1,5 +1,7 @@
 local *
 
+import 'freight.logger' as :log
+import 'freight.nodes.marshal.promise_tracker' as :PromiseTracker
 import 'freight.nodes.marshal.pseudo_random' as :PseudoRandom
 import 'freight.peripheral.station' as :time_units
 import 'quicktype' as :declare_type, :F, :T
@@ -17,14 +19,15 @@ declare_type 'TrainAddress', [[
 ]]
 
 export class Scheduler
-  new: F '(?Random) => <>', (@rand=PseudoRandom!) =>
+  new: F '(?Random, ?PromiseTracker) => <>', (@rand=PseudoRandom!, @promise_tracker) =>
+    @promise_tracker ??= PromiseTracker @rand
 
   schedule_candidates: F '(string, Factory, [Factory]) => thread', (resource, factory, factories) =>
     coroutine.create ->
       inbound_station_addrs = @_inbound_station_addrs resource, factory
       if #inbound_station_addrs == 0
-        log -> "no station at #{factory.name} accepts inbound #{resource}"
-        return {}
+        log -> "no available station at #{factory.name} accepts inbound #{resource}"
+        return
       free_inbound_station_addrs_by_network = @_free_station_addrs_by_network inbound_station_addrs
 
       outbound_station_addrs = {}
@@ -44,6 +47,8 @@ export class Scheduler
           outbound_station_addrs_by_network[network] = addrs
           for addr in *addrs
             outbound_station_addrs[] = addr
+        if #outbound_station_addrs == 0
+          return
 
       -- Yield unique local candidates
       yielded_local_candiates = {}
@@ -57,6 +62,8 @@ export class Scheduler
 
       -- Yield candidates from anywhere in any network
       train_addrs = @_train_addrs factories
+      if #train_addrs == 0
+        return
       @_yield_global_schedule_candidates resource,
         free_inbound_station_addrs_by_network,
         outbound_station_addrs_by_network,
@@ -85,17 +92,17 @@ export class Scheduler
     false
 
   _inbound_station_addrs: F '(string, Factory) => [StationAddress]', (resource, factory) =>
-    -- TODO(kcza): do not select station with promised train
     with {}
       for station in *factory.stations.known
         if station.type != 'inbound'
           continue
         if station.handles != resource
           continue
+        if @promise_tracker\station_is_fully_promised station
+          continue
         [] = :factory, :station
 
   _outbound_station_addrs: F '(string, string, [Factory]) => [StationAddress]', (resource, network, factories) =>
-    -- TODO(kcza): do not select station with promised train
     with {}
       for factory in *factories
         if not @_factory_has_surplus_resource resource, factory
@@ -107,6 +114,8 @@ export class Scheduler
           if station.type != 'outbound'
             continue
           if station.network != network
+            continue
+          if @promise_tracker\station_is_fully_promised station
             continue
           [] = :factory, :station
 
@@ -126,6 +135,9 @@ export class Scheduler
       for inbound_station_addr in *inbound_station_addrs
         station = inbound_station_addr.station
         for train_name in *station.present_trains
+          if @promise_tracker\train_is_promised train_name
+            continue
+
           outbound_station_addr = @rand\pick outbound_station_addrs_by_network[station.network]
           if not outbound_station_addr?
             continue
@@ -149,6 +161,9 @@ export class Scheduler
         { :factory, :station } = outbound_station_addr
 
         for train_name in *outbound_station_addr.station.present_trains
+          if @promise_tracker\train_is_promised train_name
+            continue
+
           inbound_station_addrs = free_inbound_station_addrs_by_network[outbound_station_addr.station.network]
           if not inbound_station_addrs? or #inbound_station_addrs == 0
             continue
@@ -253,16 +268,21 @@ export class Scheduler
       for factory in *factories
         for station in *factory.stations.known
           for name in *station.present_trains
-            -- TODO(kcza): avoid promised trains!
+            if @promise_tracker\train_is_promised name
+              continue
             [] =
               :factory
               :station
               :name
 
   _yield_candidate: F '(ScheduleCandidate) => <>', (candidate) =>
-    -- TODO(kcza): reserve
+    promise = @promise_tracker\promise candidate.train_addr.name,
+      * candidate.outbound_station_addr.station
+      * candidate.inbound_station_addr.station
+
     coroutine.yield candidate
-    -- TODO(kcza): release reservation
+
+    @promise_tracker\break_promise promise
 
   ut_inbound_local_schedule_candidates: F '(string, Factory, [Factory]) => [ScheduleCandidate]', (resource, factory, factories) =>
     inbound_station_addrs = @_inbound_station_addrs resource, factory
@@ -280,10 +300,17 @@ export class Scheduler
 
       for network in *networks
         outbound_station_addrs_by_network[network] = @_outbound_station_addrs resource, network, factories
-    @_inbound_local_schedule_candidates resource,
+    candidates = @_inbound_local_schedule_candidates resource,
       factory,
       inbound_station_addrs,
       outbound_station_addrs_by_network
+    for candidate in *candidates
+      -- Simulate pre+post-yield promises
+      promise = @promise_tracker\promise candidate.train_addr.name,
+        * candidate.outbound_station_addr.station
+        * candidate.inbound_station_addr.station
+      @promise_tracker\break_promise promise
+    candidates
 
   ut_outbound_local_schedule_candidates: F '(string, Factory, [Factory]) => [ScheduleCandidate]', (resource, factory, factories) =>
     inbound_station_addrs = @_inbound_station_addrs resource, factory
@@ -304,11 +331,18 @@ export class Scheduler
         for addr in *@_outbound_station_addrs resource, network, factories
           outbound_station_addrs[] = addr
 
-    @_outbound_local_schedule_candidates resource,
+    candidates = @_outbound_local_schedule_candidates resource,
       free_inbound_station_addrs_by_network,
       outbound_station_addrs
+    for candidate in *candidates
+      -- Simulate pre+post-yield promises
+      promise = @promise_tracker\promise candidate.train_addr.name,
+        * candidate.outbound_station_addr.station
+        * candidate.inbound_station_addr.station
+      @promise_tracker\break_promise promise
+    candidates
 
-  ut_yield_global_schedule_candidates: F '(string, Factory, [Factory]) => [ScheduleCandidate]', (resource, factory, factories) =>
+  ut_yield_global_schedule_candidates: F '(string, Factory, [Factory]) => <>', (resource, factory, factories) =>
     inbound_station_addrs = @_inbound_station_addrs resource, factory
     free_inbound_station_addrs_by_network = @_free_station_addrs_by_network inbound_station_addrs
 
@@ -335,6 +369,7 @@ export class Scheduler
 spec ->
   import 'spec_macros' as $
 
+  import 'freight.nodes.marshal.clock' as :TestClock
   import 'spec' as :describe, :it, :matchers
 
   import deep_eq, eq, ge, gt, has_fields, le, len, lt, matches, not_ from matchers
@@ -504,6 +539,8 @@ spec ->
       ret = {}
       attempt = 1
       while attempt < MAX_ATTEMPTS and #ret < limit
+        if 'dead' == coroutine.status candidates_co
+          break
         ok, yielded = coroutine.resume candidates_co
         if not ok
           error yielded
@@ -511,7 +548,11 @@ spec ->
       ret
 
     it 'emits valid schedules', ->
-      candidates_co = Scheduler!\schedule_candidates resource, factory_with_shortage_of_resource, factories
+      rand = PseudoRandom 12345
+      promise_tracker = PromiseTracker rand, TestClock!
+      scheduler = Scheduler rand, promise_tracker
+
+      candidates_co = scheduler\schedule_candidates resource, factory_with_shortage_of_resource, factories
       for candidate in *gather_candidates 25, candidates_co
         local goto_inbound_instruction_index
         local goto_outbound_instruction_index
@@ -546,22 +587,28 @@ spec ->
       make_pseudo_random = -> PseudoRandom 12345
 
       rand = make_pseudo_random!
+      promise_tracker = PromiseTracker rand, TestClock!
 
       spare_capacity = (station_addr) ->
         station = station_addr.station
         station.capacity - #station.present_trains
 
       inbound_local_candidates = do
-        scheduler = Scheduler rand
+        scheduler = Scheduler rand, promise_tracker
+
         scheduler\ut_inbound_local_schedule_candidates resource, factory_with_shortage_of_resource, factories
       for inbound_local_candidate in *inbound_local_candidates
         $expect_that inbound_local_candidate.train_addr.name, matches '^valid_inbound_local_train_%d+$'
         $expect_that (spare_capacity inbound_local_candidate.outbound_station_addr), gt 0
       $expect_that #inbound_local_candidates, gt 0
+      promise_tracker\ut_break_all_promises!
 
       outbound_local_candidates = do
-        scheduler = Scheduler rand
-        scheduler\ut_outbound_local_schedule_candidates resource, factory_with_shortage_of_resource, factories
+        scheduler = Scheduler rand, promise_tracker
+
+        candidates = scheduler\ut_outbound_local_schedule_candidates resource, factory_with_shortage_of_resource, factories
+        promise_tracker\ut_break_all_promises!
+        candidates
       for outbound_local_candidate in *outbound_local_candidates
         $expect_that outbound_local_candidate.train_addr.name, matches '^valid_outbound_local_train_%d+$'
         $expect_that (spare_capacity outbound_local_candidate.inbound_station_addr), gt 0
@@ -569,18 +616,24 @@ spec ->
 
       global_candidates = do
         limit = SCHEDULE_LIMIT - #inbound_local_candidates - #outbound_local_candidates
-        gather_candidates limit, coroutine.create ->
-          scheduler = Scheduler rand
+        candidates = gather_candidates limit, coroutine.create ->
+          scheduler = Scheduler rand, promise_tracker
+
           scheduler\ut_yield_global_schedule_candidates resource, factory_with_shortage_of_resource, factories
+        promise_tracker\ut_break_all_promises!
+        candidates
       for global_candidate in *global_candidates
         $expect_that (spare_capacity global_candidate.outbound_station_addr), gt 0
         $expect_that (spare_capacity global_candidate.inbound_station_addr), gt 0
       $expect_that #global_candidates, gt 0
 
       all_candidates = do
-        gather_candidates SCHEDULE_LIMIT, do
-          scheduler = Scheduler make_pseudo_random!
+        rand = make_pseudo_random!
+        promise_tracker = PromiseTracker rand, TestClock!
+        candidates_co = do
+          scheduler = Scheduler rand, promise_tracker
           scheduler\schedule_candidates resource, factory_with_shortage_of_resource, factories
+        gather_candidates SCHEDULE_LIMIT, candidates_co
 
       expected_prefix_reprs = with {}
         for candidate in *inbound_local_candidates
@@ -601,8 +654,114 @@ spec ->
       all_candidate_reprs = [ candidate_repr candidate for candidate in *all_candidates ]
       $expect_that all_candidate_reprs, deep_eq reconstructed_all_candidate_reprs
 
-    it 'respects promises', ->
-      -- TODO(kcza): complete me!
+    it 'respects promised trains', ->
+      rand = PseudoRandom 12345
+      clock = TestClock!
+      promise_tracker = PromiseTracker rand, clock
+
+      RESOURCE = 'minecraft:stone_pickaxe'
+      NETWORK = 'mainline'
+      inbound_station =
+        name: 'inbound-station'
+        type: 'inbound'
+        handles: RESOURCE
+        network: NETWORK
+        capacity: 1
+        present_trains: {}
+      outbound_station =
+        name: 'outbound-station'
+        type: 'outbound'
+        handles: RESOURCE
+        network: NETWORK
+        capacity: 1
+        present_trains: {}
+      unrelated_station =
+        name: 'unrelated-station'
+        type: 'inbound'
+        handles: RESOURCE
+        network: NETWORK
+        capacity: 1
+        present_trains: {}
+      factories =
+        * name: 'factory-with-shortage'
+          pc_id: 1
+          operational: true
+          last_seen_epoch: 1
+          stations:
+            known:
+              * inbound_station
+            unknown: {}
+          stockpile:
+            known:
+              * name: RESOURCE
+                stored: 0
+                shortage_amount: 10
+            unknown: {}
+            estimated_capacity: 12345
+        * name: 'factory-with-surplus'
+          pc_id: 2
+          operational: true
+          last_seen_epoch: 1
+          stations:
+            known:
+              * outbound_station
+            unknown: {}
+          stockpile:
+            known:
+              * name: RESOURCE
+                stored: 100
+                surplus_amount: 10
+            unknown: {}
+            estimated_capacity: 12345
+        * name: 'siding'
+          pc_id: 3
+          operational: true
+          last_seen_epoch: 1
+          stations:
+            known:
+              * unrelated_station
+            unknown: {}
+          stockpile:
+            known: {}
+            unknown: {}
+            estimated_capacity: 0
+
+      scheduler = Scheduler rand, promise_tracker
+      with promise_tracker
+        get_candidates = ->
+          ret = gather_candidates 1, scheduler\schedule_candidates RESOURCE, factories[1], factories
+          promise_tracker\ut_break_all_promises!
+          ret
+
+        $assert_that #get_candidates!, eq 0
+
+        factories[1].stations.known[1].present_trains = {'free-train'}
+        $assert_that #get_candidates!, eq 1
+
+        promise = \promise 'unrelated-train', {inbound_station}
+        $assert_that #(get_candidates promise), eq 0
+
+        $assert_that #get_candidates!, eq 1
+
+        factories[1].stations.known[1].present_trains = {}
+        $assert_that #get_candidates!, eq 0
+
+        factories[2].stations.known[1].present_trains = {'free-train'}
+        $assert_that #get_candidates!, eq 1
+
+        promise = \promise 'unrelated-train', {outbound_station}
+        $assert_that #(get_candidates promise), eq 0
+        $assert_that #get_candidates!, eq 1
+
+        PROMISED_TRAIN = 'promised-train'
+        factories[2].stations.known[1].present_trains = {PROMISED_TRAIN}
+
+        promise = \promise PROMISED_TRAIN,
+          * name: 'other-station'
+            capacity: 1
+        $assert_that #get_candidates!, eq 0
+        \break_promise promise
+        $assert_that #get_candidates!, eq 1
 
     it 'defines sound waiting conditions', ->
       $expect_that Scheduler.CARGO_INACTIVE.id, eq 'create:idle'

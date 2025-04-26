@@ -1,0 +1,18 @@
+local *
+
+import 'quicktype' as :declare_type, :F
+
+declare_type 'Clock', [[{
+  now: () => number,
+}]]
+
+export class MinecraftClock
+  now: F '() => Date', =>
+    os.epoch! / 1000
+
+export class TestClock
+  new: F '() => <>', =>
+    @time = 0
+
+  now: F '() => number', =>
+    @time
