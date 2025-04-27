@@ -90,6 +90,12 @@ export class PromiseTracker
     @_prune!
     @train_lost_promises[train_name]?
 
+  declare_train_found: F '(string) => ?string', (train_name) =>
+    promise = @train_lost_promises[train_name]
+    if not promise?
+      return "train '#{train_name}' was not lost"
+    @break_promise promise
+
   station_is_fully_promised: F '(PromiseStation) => boolean', (station) =>
     @_prune!
 
@@ -151,14 +157,19 @@ export class PromiseTracker
         if not @promise_valid promise
           [] = id
 
+    now = @clock\now!
     for id in *ids_to_prune
       promise = @promises[id]
 
-      if promise.should_approach_index > #promise.stations
+      schedule_complete = promise.should_approach_index > #promise.stations
+      deadline_expired = promise.deadline? and now >= promise.deadline
+      if schedule_complete and deadline_expired
         @promises[id] = nil
         @train_promises[promise.train] = nil
-      else
+      else if deadline_expired
         @train_lost_promises[promise.train] = promise
+      else
+        error 'unreachable'
 
       for station in *promise.stations
         promise_set = @station_promise_sets[station.name]
@@ -326,3 +337,24 @@ spec ->
       clock = TestClock!
       with PromiseTracker rand, clock
         $expect_that (\train_is_promised 'spurious-train'), eq false
+
+    it 'handles finding lost trains', ->
+      rand = PseudoRandom 12345
+      clock = TestClock!
+      with PromiseTracker rand, clock
+        TRAIN_NAME = 'test-train-name'
+
+        $expect_that (\declare_train_found TRAIN_NAME), eq "train '#{TRAIN_NAME}' was not lost"
+
+        STATIONS =
+          * name: 'station-1'
+            capacity: 1
+        MAX_STEP_DURATION = 100
+        MAX_UNLOAD_DURATION = 10
+        \promise TRAIN_NAME, STATIONS, MAX_STEP_DURATION, MAX_UNLOAD_DURATION
+
+        clock.time += 2 * MAX_STEP_DURATION
+
+        $assert_that (\train_is_lost TRAIN_NAME), eq true
+        $expect_that (\declare_train_found TRAIN_NAME), eq nil
+        $expect_that (\train_is_lost TRAIN_NAME), eq false
