@@ -251,3 +251,8 @@ spec ->
       incorrect_decode, ok = TestPacket2::from {protocol: ->}, TestPacket\protocol!
       $expect_that incorrect_decode, eq nil
       $expect_that ok, eq false
+
+  describe 'IdempotenceToken', ->
+    it 'is safe to cross lua machine boundaries', ->
+      idemp_tok = IdempotenceToken!
+      $expect_that idemp_tok.<>, eq nil
