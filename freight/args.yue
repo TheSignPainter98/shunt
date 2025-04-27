@@ -15,10 +15,11 @@ export class Args
       \add with Flag 'verbose'
         \description 'log verbosely'
         \global!
-      \add with Flag 'ignore-monitor'
-        \description 'log output on this computer'
-        \short nil
-        \global!
+      if not pocket?
+        \add with Flag 'ignore-monitor'
+          \description 'log output on this computer'
+          \short nil
+          \global!
       \add with Flag 'instrument'
         \description 'gather performance data when executing'
         \short nil
@@ -40,6 +41,7 @@ export class Args
           \description 'run only tests matching this pattern'
           \default nil
       \add (require 'freight.cmd.clean').subcommand
+      \add (require 'freight.cmd.declare').subcommand
       \add (require 'freight.cmd.disable').subcommand
       \add (require 'freight.cmd.enable').subcommand
       \add (require 'freight.cmd.init').subcommand
