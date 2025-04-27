@@ -169,7 +169,7 @@ export class PromiseTracker
       else if deadline_expired
         @train_lost_promises[promise.train] = promise
       else
-        error 'unreachable'
+        continue -- Already pruned
 
       for station in *promise.stations
         promise_set = @station_promise_sets[station.name]
@@ -182,6 +182,17 @@ export class PromiseTracker
     promises = [ promise for _, promise in pairs @promises ]
     for promise in *promises
       @break_promise promise
+
+  ut_declare_train_lost: F '(string) => <>', (train_name) =>
+    DUMMY_STATIONS =
+      * name: 'dummy-station-1'
+        capacity: 1
+      * name: 'dummy-station-2'
+        capacity: 1
+    promise = @promise train_name, DUMMY_STATIONS
+    @train_lost_promises[train_name] = promise
+    assert @train_is_lost train_name
+    return
 
 spec ->
   import 'spec_macros' as $

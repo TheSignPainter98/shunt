@@ -1,4 +1,5 @@
 local *
+local TrainResetResponse
 
 -- TODO(kcza): Check station-name uniqueness
 
@@ -6,10 +7,12 @@ import 'compat' as :HOST
 import 'freight.data.multiplexer' as :Multiplexer
 import 'freight.logger' as :log
 import 'freight.nodes.factory.main' as :FactoryHeartbeat, :ScheduleRequest, :ScheduleResponse
+import 'freight.nodes.marshal.clock' as :MinecraftClock
+import 'freight.nodes.marshal.promise_tracker' as :PromiseTracker
 import 'freight.nodes.marshal.pseudo_random' as :PseudoRandom
 import 'freight.nodes.marshal.scheduler' as :Scheduler
 import 'freight.nodes.marshal.symmetric_difference' as :symmetric_difference
-import 'freight.peripheral.uplink' as :IdempotenceToken, :TestUplinkBackend, :TIMEOUT, :Uplink
+import 'freight.peripheral.uplink' as :IdempotenceToken, :Packet, :TestUplinkBackend, :TIMEOUT, :Uplink
 import 'freight.state' as :StateMachineBuilder, :StateSpec
 import 'freight.toml' as :toml_parse
 import 'freight.upgrade.listener' as :UpgradeListener
@@ -89,13 +92,14 @@ declare_type 'AvailableTrain', [[{
   name: string,
 }]]
 class Marshal
-  new: F '(MarshalConfig, Uplink, UpgradeListener) => <>', (@config, @uplink, @upgrade_listener) =>
+  new: F '(MarshalConfig, Uplink, UpgradeListener, ?Clock) => <>', (@config, @uplink, @upgrade_listener, @clock=MinecraftClock!) =>
     @epoch = T 'number', 0
     -- TODO(kcza): load from stored initial state
     @factories = T '{string->Factory}', {}
     @trains = T '{string->TrainStatus}', {}
     @rand = PseudoRandom!
-    @scheduler = Scheduler @rand
+    @promise_tracker = PromiseTracker @rand, @clock
+    @scheduler = Scheduler @rand, @promise_tracker
 
     @do_count_epochs = T 'boolean', true
     @throttle = T 'boolean', HOST == 'minecraft'
@@ -142,7 +146,7 @@ class Marshal
   read_network: F '() => <>', =>
     _, message = @uplink\receive_from_any!
     switch message\protocol!
-      when 'FactoryHeartbeat'
+      when 'FactoryHeartbeat', 'TrainReset'
         @events\send type: 'network-message', :message
       else
         log -> "ignoring #{message\protocol!} message"
@@ -196,6 +200,8 @@ class Marshal
     switch message\protocol!
       when 'FactoryHeartbeat'
         @on_factory_heartbeat message
+      when 'TrainReset'
+        @on_train_reset message
       else
         error "internal error: unexpected network message protocol reached marshal core '#{message\protocol!}'"
 
@@ -302,6 +308,11 @@ class Marshal
 
     print "no trains available to take #{resource} to #{factory.name}, will re-attempt next heartbeat"
 
+  on_train_reset: F '(TrainReset) => <>', (message) =>
+    { :idemp_tok, :train_name, :pc_id } = message
+    err = @promise_tracker\declare_train_found train_name
+    @uplink\send_to pc_id, TrainResetResponse idemp_tok, err
+
   ut_stop_counting_epochs: F '() => <>', =>
     @do_count_epochs = false
 
@@ -318,12 +329,30 @@ class Marshal
 
   ut_trains: F '() => {string->TrainStatus}', => @trains
 
+  ut_declare_train_lost: F '(string) => <>', (train_name) =>
+    @promise_tracker\ut_declare_train_lost train_name
+
+  ut_train_is_lost: F '(string) => boolean', (train_name) =>
+    @promise_tracker\train_is_lost train_name
+
+declare_type 'TrainReset', [[{
+  idemp_tok: IdempotenceToken,
+  pc_id: number,
+  train_name: string,
+}]]
+export class TrainReset extends Packet
+  new: F '(IdempotenceToken, number, string) => <>', (@idemp_tok, @pc_id, @train_name) =>
+
+export class TrainResetResponse extends Packet
+  new: F '(IdempotenceToken, ?string) => <>', (@idemp_tok, @error_reason) =>
+
 spec ->
   import 'spec_macros' as $
 
+  import 'freight.nodes.marshal.clock' as :TestClock
   import 'spec' as :describe, :it, :matchers
 
-  import deep_eq, eq, has_fields, len, lt from matchers
+  import deep_eq, eq, has_fields, len, lt, matches from matchers
 
   describe 'Marshal', ->
     describe '\\on_new_epoch', ->
@@ -390,7 +419,7 @@ spec ->
               return nil, nil, nil
         upgrade_listener = UpgradeListener config, uplink
 
-        with Marshal config, uplink, upgrade_listener
+        with Marshal config, uplink, upgrade_listener, TestClock!
           \ut_stop_counting_epochs!
           EXPECTED_FACTORIES = 4
           for i = 1, EXPECTED_FACTORIES
@@ -546,3 +575,58 @@ spec ->
       --  - Ensure correct resource handling
       --  - Ensure correct in/outbound handling
       --  - MAYBE Run many times, shim `pick` to ensure progression
+
+    describe '\\on_train_reset', ->
+      it 'handles lost and not lost trains', ->
+        idemp_tok = IdempotenceToken!
+
+        sent = {}
+        PC_ID = 1
+        TRAIN_NAME = 'some-train-name'
+
+        config =
+          marshal:
+            network: 'mainline'
+        uplink = Uplink TestUplinkBackend
+          receive: (_, _) =>
+            @count ??= 0
+            @count += 1
+            message = switch @count
+              when 1, 2
+                TrainReset idemp_tok, PC_ID, TRAIN_NAME
+              else
+                nil
+            if message?
+              PC_ID, message, message\protocol!
+            else
+              nil, nil, nil
+          send: (pc_id, message, protocol) =>
+            sent[] = :pc_id, :message, :protocol
+            true
+
+        upgrade_listener = UpgradeListener config, uplink
+
+        with Marshal config, uplink, upgrade_listener, TestClock!
+          \ut_stop_counting_epochs!
+          \ut_declare_train_lost TRAIN_NAME
+          $assert_that (\ut_train_is_lost TRAIN_NAME), eq true
+
+          \ut_step!
+          $assert_that (\ut_train_is_lost TRAIN_NAME), eq false
+          $assert_that sent, len eq 1
+          $expect_that sent[1], has_fields
+            pc_id: eq PC_ID
+            message: has_fields
+              idemp_tok: eq idemp_tok
+              error_reason: eq nil
+            protocol: eq TrainResetResponse\protocol!
+
+          \ut_step!
+          $assert_that (\ut_train_is_lost TRAIN_NAME), eq false
+          $assert_that sent, len eq 2
+          $expect_that sent[2], has_fields
+            pc_id: eq PC_ID
+            message: has_fields
+              idemp_tok: eq idemp_tok
+              error_reason: matches 'was not lost'
+            protocol: eq TrainResetResponse\protocol!
