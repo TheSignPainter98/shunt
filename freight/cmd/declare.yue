@@ -9,7 +9,7 @@ import 'quicktype' as :declare_type, :F
 import 'spec' as :spec
 
 declare_type 'DeclareArgs', [[{
-  train: {
+  train: ?{
     name: string,
     state: TrainState,
   },
