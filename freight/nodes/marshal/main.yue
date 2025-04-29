@@ -1,9 +1,9 @@
 local *
-local TrainResetResponse
 
 -- TODO(kcza): Check station-name uniqueness
 
 import 'compat' as :HOST
+import 'freight.cmd.declare' as :DeclareTrainStateResponse
 import 'freight.data.multiplexer' as :Multiplexer
 import 'freight.logger' as :log
 import 'freight.nodes.factory.main' as :FactoryHeartbeat, :ScheduleRequest, :ScheduleResponse
@@ -146,7 +146,7 @@ class Marshal
   read_network: F '() => <>', =>
     _, message = @uplink\receive_from_any!
     switch message\protocol!
-      when 'FactoryHeartbeat', 'TrainReset'
+      when 'FactoryHeartbeat', 'DeclareTrainState'
         @events\send type: 'network-message', :message
       else
         log -> "ignoring #{message\protocol!} message"
@@ -200,8 +200,8 @@ class Marshal
     switch message\protocol!
       when 'FactoryHeartbeat'
         @on_factory_heartbeat message
-      when 'TrainReset'
-        @on_train_reset message
+      when 'DeclareTrainState'
+        @on_declare_train_state message
       else
         error "internal error: unexpected network message protocol reached marshal core '#{message\protocol!}'"
 
@@ -308,10 +308,17 @@ class Marshal
 
     print "no trains available to take #{resource} to #{factory.name}, will re-attempt next heartbeat"
 
-  on_train_reset: F '(TrainReset) => <>', (message) =>
-    { :idemp_tok, :train_name, :pc_id } = message
-    err = @promise_tracker\declare_train_found train_name
-    @uplink\send_to pc_id, TrainResetResponse idemp_tok, err
+  on_declare_train_state: F '(DeclareTrainState) => <>', (message) =>
+    { :idemp_tok, :pc_id, :name, :state } = message
+    err = switch state
+      when 'cleared' -- TODO(kcza): this name is a leak from the CLI
+        @promise_tracker\declare_train_found name
+      when 'reserved'
+        @promise_tracker\reserve name
+        nil
+      else
+        "internal error: unknown train state '#{state}'"
+    @uplink\send_to pc_id, DeclareTrainStateResponse idemp_tok, err
 
   ut_stop_counting_epochs: F '() => <>', =>
     @do_count_epochs = false
@@ -335,20 +342,13 @@ class Marshal
   ut_train_is_lost: F '(string) => boolean', (train_name) =>
     @promise_tracker\train_is_lost train_name
 
-declare_type 'TrainReset', [[{
-  idemp_tok: IdempotenceToken,
-  pc_id: number,
-  train_name: string,
-}]]
-export class TrainReset extends Packet
-  new: F '(IdempotenceToken, number, string) => <>', (@idemp_tok, @pc_id, @train_name) =>
-
-export class TrainResetResponse extends Packet
-  new: F '(IdempotenceToken, ?string) => <>', (@idemp_tok, @error_reason) =>
+  ut_train_is_reserved: F '(string) => boolean', (train_name) =>
+    @promise_tracker\train_is_promised train_name
 
 spec ->
   import 'spec_macros' as $
 
+  import 'freight.cmd.declare' as :DeclareTrainState
   import 'freight.nodes.marshal.clock' as :TestClock
   import 'spec' as :describe, :it, :matchers
 
@@ -527,7 +527,7 @@ spec ->
       --  - Ensure correct in/outbound handling
       --  - MAYBE Run many times, shim `pick` to ensure progression
 
-    describe '\\on_train_reset', ->
+    describe '\\on_declare_train_state', ->
       it 'handles lost and not lost trains', ->
         idemp_tok = IdempotenceToken!
 
@@ -544,7 +544,7 @@ spec ->
             @count += 1
             message = switch @count
               when 1, 2
-                TrainReset idemp_tok, PC_ID, TRAIN_NAME
+                DeclareTrainState idemp_tok, PC_ID, TRAIN_NAME, 'cleared'
               else
                 nil
             if message?
@@ -570,7 +570,7 @@ spec ->
             message: has_fields
               idemp_tok: eq idemp_tok
               error_reason: eq nil
-            protocol: eq TrainResetResponse\protocol!
+            protocol: eq DeclareTrainStateResponse\protocol!
 
           \ut_step!
           $assert_that (\ut_train_is_lost TRAIN_NAME), eq false
@@ -580,4 +580,57 @@ spec ->
             message: has_fields
               idemp_tok: eq idemp_tok
               error_reason: matches 'was not lost'
-            protocol: eq TrainResetResponse\protocol!
+            protocol: eq DeclareTrainStateResponse\protocol!
+
+      it 'handles train reservations', ->
+        idemp_tok = IdempotenceToken!
+
+        sent = {}
+        PC_ID = 1
+        TRAIN_NAME = 'some-train-name'
+
+        config =
+          marshal:
+            network: 'mainline'
+        uplink = Uplink TestUplinkBackend
+          receive: (_, _) =>
+            @count ??= 0
+            @count += 1
+            message = switch @count
+              when 1, 2
+                DeclareTrainState idemp_tok, PC_ID, TRAIN_NAME, 'reserved'
+              else
+                nil
+            if message?
+              PC_ID, message, message\protocol!
+            else
+              nil, nil, nil
+          send: (pc_id, message, protocol) =>
+            sent[] = :pc_id, :message, :protocol
+            true
+
+        upgrade_listener = UpgradeListener config, uplink
+
+        with Marshal config, uplink, upgrade_listener, TestClock!
+          \ut_stop_counting_epochs!
+          $assert_that (\ut_train_is_reserved TRAIN_NAME), eq false
+
+          \ut_step!
+          $assert_that (\ut_train_is_reserved TRAIN_NAME), eq true
+          $assert_that sent, len eq 1
+          $expect_that sent[1], has_fields
+            pc_id: eq PC_ID
+            message: has_fields
+              idemp_tok: eq idemp_tok
+              error_reason: eq nil
+            protocol: eq DeclareTrainStateResponse\protocol!
+
+          \ut_step!
+          -- Check re-declarations are ignored
+          $assert_that sent, len eq 2
+          $expect_that sent[2], has_fields
+            pc_id: eq PC_ID
+            message: has_fields
+              idemp_tok: eq idemp_tok
+              error_reason: eq nil
+            protocol: eq DeclareTrainStateResponse\protocol!

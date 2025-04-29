@@ -3,6 +3,7 @@ local DeclareTrainState
 local DeclareTrainStateResponse
 
 import 'clap' as :Flag, :Param, :Subcommand
+import 'freight.pc' as :Pc
 import 'freight.peripheral.uplink' as :IdempotenceToken, :Packet, :TIMEOUT, :Uplink
 import 'quicktype' as :declare_type, :F
 import 'spec' as :spec
@@ -27,10 +28,7 @@ export subcommand = with Subcommand 'declare'
         * 'reserved'
 
 export main = F '({}) -> <>', (args) ->
-  import 'spec' as :repr
-  print repr args
-
-  with Declarer Uplink!
+  with Declarer Uplink!, Pc!
     err = if args.train?
       { :name, :state } = args.train
       \declare_train_state name, state
@@ -40,18 +38,12 @@ export main = F '({}) -> <>', (args) ->
     if err?
       print "cannot make declaration: #{err}"
 
-  -- TODO(kcza): complete me!
-  -- * broadcast a train-reset message
-  -- * await response
-  -- * print response if okay
-  error 'TODO'
-
 class Declarer
-  new: F '(Uplink) => <>', (@uplink) =>
+  new: F '(Uplink, Pc) => <>', (@uplink, @pc) =>
 
   declare_train_state: F '(string, TrainState) => ?string', (train_name, state) =>
     idemp_tok = IdempotenceToken!
-    @uplink\broadcast DeclareTrainState idemp_tok, train_name, state
+    @uplink\broadcast DeclareTrainState idemp_tok, @pc\id!, train_name, state
 
     MAX_ATTEMPTS = 3
     for i = 1, MAX_ATTEMPTS
@@ -66,8 +58,14 @@ class Declarer
       return resp.error_reason
     return "no response from marshal after #{MAX_ATTEMPTS} attempts"
 
+declare_type 'DeclareTrainState', [[{
+  idemp_tok: IdempotenceToken,
+  pc_id: number,
+  name: string,
+  state: TrainState,
+}]]
 export class DeclareTrainState extends Packet
-  new: F '(IdempotenceToken, string, TrainState) => <>', (@idemp_tok, @name, @state) =>
+  new: F '(IdempotenceToken, number, string, TrainState) => <>', (@idemp_tok, @pc_id, @name, @state) =>
 
 export class DeclareTrainStateResponse extends Packet
   new: F '(IdempotenceToken, ?string) => <>', (@idemp_tok, @error_reason) =>
@@ -75,13 +73,14 @@ export class DeclareTrainStateResponse extends Packet
 spec ->
   import 'spec_macros' as $
 
+  import 'freight.pc' as :TestPcBackend
   import 'freight.peripheral.uplink' as :TestUplinkBackend
   import 'spec' as :describe, :it, :matchers
 
   import deep_eq, eq, has_fields, len, lt, matches from matchers
 
   describe 'Declarer', ->
-    it 'sends declarations', ->
+    it 'declares train states', ->
       err = nil
 
       PC_ID = 12345
@@ -98,8 +97,9 @@ spec ->
         receive: (_, _) =>
           message = DeclareTrainStateResponse idemp_tok, err
           PC_ID, message, message\protocol!
-
-      with Declarer uplink
+      pc = Pc TestPcBackend
+        id: => 1
+      with Declarer uplink, pc
         TRAIN_NAME = 'test-train'
         TRAIN_STATE = 'cleared'
 

@@ -38,7 +38,7 @@ export class PromiseTracker
     @_promise train, stations, max_step_duration, max_unload_duration
 
   reserve: F '(string) => <>', (train) =>
-    if promise = @promises[train] ?? @train_lost_promises[train]
+    if promise = @train_promises[train] ?? @train_lost_promises[train]
       @break_promise promise
     @_promise train
     return
