@@ -404,5 +404,5 @@ spec ->
         $expect_that (\train_is_promised 'test-train-name'), eq true
         $assert_that (\train_is_lost TRAIN_NAME), eq false
 
-        clock.time += 2000000 -- No expiry
+        clock.time += 2000000 -- Test no expiry
         $expect_that (\train_is_promised 'test-train-name'), eq true
