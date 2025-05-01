@@ -1,7 +1,5 @@
 local *
 
--- TODO(kcza): if train is lost, cancel its schedule (assuming it has the expected schedule!)
-
 import 'freight.nodes.marshal.clock' as :MinecraftClock
 import 'quicktype' as :declare_type, :F, :T
 import 'spec' as :spec
@@ -16,7 +14,7 @@ declare_type 'PromiseTracker', [[{
 declare_type 'Promise', [[{
   id: number,
   train: string,
-  stations: [PromiseStation],
+  stations: ?[PromiseStation],
   should_approach_index: number,
   deadline: ?number,
   max_step_duration: number
@@ -37,6 +35,15 @@ export class PromiseTracker
     @train_lost_promises = T '{string->Promise}', {}
 
   promise: F '(string, [PromiseStation], ?number, ?number) => Promise', (train, stations, max_step_duration=30*60, max_unload_duration=60) =>
+    @_promise train, stations, max_step_duration, max_unload_duration
+
+  reserve: F '(string) => <>', (train) =>
+    if promise = @train_promises[train] ?? @train_lost_promises[train]
+      @break_promise promise
+    @_promise train
+    return
+
+  _promise: F '(string, ?[PromiseStation], ?number, ?number) => Promise', (train, stations, max_step_duration=30*60, max_unload_duration=60) =>
     if @train_promises[train]?
       error "internal error: cannot promise already-promised train '#{train}'"
 
@@ -52,16 +59,17 @@ export class PromiseTracker
       :max_unload_duration
     @promises[id] = promise
     @train_promises[promise.train] = promise
-    for station in *stations
-      promise_set = @station_promise_sets[station.name] ?? do
-        promise_set =
-          count: 0
-          promises: {}
-        @station_promise_sets[station.name] = promise_set
-        promise_set
-      with promise_set
-        .count += 1
-        .promises[id] = promise
+    if stations?
+      for station in *stations
+        promise_set = @station_promise_sets[station.name] ?? do
+          promise_set =
+            count: 0
+            promises: {}
+          @station_promise_sets[station.name] = promise_set
+          promise_set
+        with promise_set
+          .count += 1
+          .promises[id] = promise
     promise
 
   _generate_id: F '() => number', =>
@@ -76,6 +84,8 @@ export class PromiseTracker
     @promises[id] = nil
     @train_lost_promises[promise.train] = nil
     @train_promises[promise.train] = nil
+    if not promise.stations?
+      return
     for station in *promise.stations
       with? @station_promise_sets[station.name]
         if .promises[id]?
@@ -118,6 +128,8 @@ export class PromiseTracker
     if @train_lost_promises[train_name]?
       return
 
+    if not promise.stations?
+      return
     with promise
       switch station_name
         when .stations[.should_approach_index].name
@@ -161,7 +173,7 @@ export class PromiseTracker
     for id in *ids_to_prune
       promise = @promises[id]
 
-      schedule_complete = promise.should_approach_index > #promise.stations
+      schedule_complete = promise.stations? and promise.should_approach_index > #promise.stations
       deadline_expired = promise.deadline? and now >= promise.deadline
       if schedule_complete and deadline_expired
         @promises[id] = nil
@@ -171,6 +183,8 @@ export class PromiseTracker
       else
         continue -- Already pruned
 
+      if not promise.stations?
+        continue
       for station in *promise.stations
         promise_set = @station_promise_sets[station.name]
         if promise_set.promises[id]?
@@ -369,3 +383,26 @@ spec ->
         $assert_that (\train_is_lost TRAIN_NAME), eq true
         $expect_that (\declare_train_found TRAIN_NAME), eq nil
         $expect_that (\train_is_lost TRAIN_NAME), eq false
+
+    it 'handles train reservation requests', ->
+      rand = PseudoRandom 12345
+      clock = TestClock!
+      with PromiseTracker rand, clock
+        TRAIN_NAME = 'test-train-name'
+
+        STATIONS =
+          * name: 'station-1'
+            capacity: 1
+        MAX_STEP_DURATION = 100
+        MAX_UNLOAD_DURATION = 10
+        \promise TRAIN_NAME, STATIONS, MAX_STEP_DURATION, MAX_UNLOAD_DURATION
+
+        clock.time += 2 * MAX_STEP_DURATION
+        $assert_that (\train_is_lost TRAIN_NAME), eq true
+
+        \reserve TRAIN_NAME
+        $expect_that (\train_is_promised 'test-train-name'), eq true
+        $assert_that (\train_is_lost TRAIN_NAME), eq false
+
+        clock.time += 2000000 -- Test no expiry
+        $expect_that (\train_is_promised 'test-train-name'), eq true
