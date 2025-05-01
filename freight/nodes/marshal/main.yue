@@ -3,6 +3,7 @@ local *
 -- TODO(kcza): Check station-name uniqueness
 
 import 'compat' as :HOST
+import 'freight.cmd.configure' as :MarshalIdentityRequest, :MarshalIdentityResponse
 import 'freight.cmd.declare' as :DeclareTrainStateResponse
 import 'freight.data.multiplexer' as :Multiplexer
 import 'freight.logger' as :log
@@ -12,6 +13,7 @@ import 'freight.nodes.marshal.promise_tracker' as :PromiseTracker
 import 'freight.nodes.marshal.pseudo_random' as :PseudoRandom
 import 'freight.nodes.marshal.scheduler' as :Scheduler
 import 'freight.nodes.marshal.symmetric_difference' as :symmetric_difference
+import 'freight.pc' as :Pc
 import 'freight.peripheral.uplink' as :IdempotenceToken, :Packet, :TestUplinkBackend, :TIMEOUT, :Uplink
 import 'freight.state' as :StateMachineBuilder, :StateSpec
 import 'freight.toml' as :toml_parse
@@ -31,9 +33,10 @@ export main = F '(MarshalConfig) -> <>', (config) ->
     state = toml_parse assert \read '*a'
     assert \close!
 
+  pc = Pc!
   uplink = Uplink!
   upgrade_listener = UpgradeListener config, uplink
-  with Marshal config, uplink, upgrade_listener
+  with Marshal config, pc, uplink, upgrade_listener
     \run!
 
 STEP_INTERVAL = 60
@@ -92,7 +95,7 @@ declare_type 'AvailableTrain', [[{
   name: string,
 }]]
 class Marshal
-  new: F '(MarshalConfig, Uplink, UpgradeListener, ?Clock) => <>', (@config, @uplink, @upgrade_listener, @clock=MinecraftClock!) =>
+  new: F '(MarshalConfig, Pc, Uplink, UpgradeListener, ?Clock) => <>', (@config, @pc, @uplink, @upgrade_listener, @clock=MinecraftClock!) =>
     @epoch = T 'number', 0
     -- TODO(kcza): load from stored initial state
     @factories = T '{string->Factory}', {}
@@ -146,7 +149,7 @@ class Marshal
   read_network: F '() => <>', =>
     _, message = @uplink\receive_from_any!
     switch message\protocol!
-      when 'FactoryHeartbeat', 'DeclareTrainState'
+      when 'FactoryHeartbeat', 'DeclareTrainState', 'MarshalIdentityRequest'
         @events\send type: 'network-message', :message
       else
         log -> "ignoring #{message\protocol!} message"
@@ -202,6 +205,8 @@ class Marshal
         @on_factory_heartbeat message
       when 'DeclareTrainState'
         @on_declare_train_state message
+      when 'MarshalIdentityRequest'
+        @on_marshal_identity_request message
       else
         error "internal error: unexpected network message protocol reached marshal core '#{message\protocol!}'"
 
@@ -320,6 +325,10 @@ class Marshal
         "internal error: unknown train state '#{state}'"
     @uplink\send_to pc_id, DeclareTrainStateResponse idemp_tok, err
 
+  on_marshal_identity_request: F '(MarshalIdentityRequest) => <>', (message) =>
+    { :idemp_tok, :pc_id } = message
+    @uplink\send_to pc_id, MarshalIdentityResponse idemp_tok, @pc\id!
+
   ut_stop_counting_epochs: F '() => <>', =>
     @do_count_epochs = false
 
@@ -350,6 +359,7 @@ spec ->
 
   import 'freight.cmd.declare' as :DeclareTrainState
   import 'freight.nodes.marshal.clock' as :TestClock
+  import 'freight.pc' as :TestPcBackend
   import 'spec' as :describe, :it, :matchers
 
   import deep_eq, eq, has_fields, len, lt, matches from matchers
@@ -419,7 +429,8 @@ spec ->
               return nil, nil, nil
         upgrade_listener = UpgradeListener config, uplink
 
-        with Marshal config, uplink, upgrade_listener, TestClock!
+        pc = Pc!
+        with Marshal config, pc, uplink, upgrade_listener, TestClock!
           \ut_stop_counting_epochs!
           EXPECTED_FACTORIES = 4
           for i = 1, EXPECTED_FACTORIES
@@ -557,7 +568,8 @@ spec ->
 
         upgrade_listener = UpgradeListener config, uplink
 
-        with Marshal config, uplink, upgrade_listener, TestClock!
+        pc = Pc!
+        with Marshal config, pc, uplink, upgrade_listener, TestClock!
           \ut_stop_counting_epochs!
           \ut_declare_train_lost TRAIN_NAME
           $assert_that (\ut_train_is_lost TRAIN_NAME), eq true
@@ -611,7 +623,8 @@ spec ->
 
         upgrade_listener = UpgradeListener config, uplink
 
-        with Marshal config, uplink, upgrade_listener, TestClock!
+        pc = Pc!
+        with Marshal config, pc, uplink, upgrade_listener, TestClock!
           \ut_stop_counting_epochs!
           $assert_that (\ut_train_is_reserved TRAIN_NAME), eq false
 
@@ -634,3 +647,39 @@ spec ->
               idemp_tok: eq idemp_tok
               error_reason: eq nil
             protocol: eq DeclareTrainStateResponse\protocol!
+
+    describe '\\on_marshal_identity_request', ->
+      it 'responds correctly', ->
+        idemp_tok = IdempotenceToken!
+
+        sent = {}
+        REQUESTER_PC_ID = 1
+        MARSHAL_PC_ID = 1
+        TRAIN_NAME = 'some-train-name'
+
+        config =
+          marshal:
+            network: 'mainline'
+        uplink = Uplink TestUplinkBackend
+          receive: (_, _) =>
+            message = MarshalIdentityRequest idemp_tok, REQUESTER_PC_ID
+            REQUESTER_PC_ID, message, message\protocol!
+          send: (pc_id, message, protocol) =>
+            sent[] = :pc_id, :message, :protocol
+            true
+
+        upgrade_listener = UpgradeListener config, uplink
+
+        pc = Pc TestPcBackend
+          id: -> MARSHAL_PC_ID
+        with Marshal config, pc, uplink, upgrade_listener, TestClock!
+          \ut_stop_counting_epochs!
+          \ut_step!
+
+        $expect_that sent, len eq 1
+        $expect_that sent[1], has_fields
+          pc_id: eq REQUESTER_PC_ID
+          message: has_fields
+            idemp_tok: eq idemp_tok
+            pc_id: eq REQUESTER_PC_ID
+          protocol: eq MarshalIdentityResponse\protocol!
