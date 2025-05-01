@@ -3,7 +3,7 @@ local *
 -- TODO(kcza): Check station-name uniqueness
 
 import 'compat' as :HOST
-import 'freight.cmd.configure' as :FactoryPcRequest, :FactoryPcResponse, :MarshalIdentityRequest, :MarshalIdentityResponse
+import 'freight.cmd.configure' as :FactoryPcRequest, :FactoryPcResponse, :GetConfigRequest, :GetConfigResponse, :MarshalIdentityRequest, :MarshalIdentityResponse
 import 'freight.cmd.declare' as :DeclareTrainStateResponse
 import 'freight.data.multiplexer' as :Multiplexer
 import 'freight.logger' as :log
@@ -95,7 +95,7 @@ declare_type 'AvailableTrain', [[{
   name: string,
 }]]
 class Marshal
-  new: F '(MarshalConfig, Pc, Uplink, UpgradeListener, ?Clock) => <>', (@config, @pc, @uplink, @upgrade_listener, @clock=MinecraftClock!) =>
+  new: F '(MarshalConfig, Pc, Uplink, UpgradeListener, ?Clock) => <>', (config, @pc, @uplink, @upgrade_listener, @clock=MinecraftClock!) =>
     @epoch = T 'number', 0
     -- TODO(kcza): load from stored initial state
     @factories = T '{string->Factory}', {}
@@ -110,6 +110,9 @@ class Marshal
     @events = T 'Multiplexer', with Multiplexer '{type: MarshalEventType}'
       \add @\count_epochs
       \add @\listen_to_network
+    @set_config config
+
+  set_config: F '(MarshalConfig) => <>', (@config) =>
 
   @state_machine: F '() => StateMachine', =>
     StateMachineBuilder!
@@ -149,7 +152,7 @@ class Marshal
   read_network: F '() => <>', =>
     _, message = @uplink\receive_from_any!
     switch message\protocol!
-      when 'FactoryHeartbeat', 'DeclareTrainState', 'MarshalIdentityRequest', 'FactoryPcRequest'
+      when 'FactoryHeartbeat', 'DeclareTrainState', 'MarshalIdentityRequest', 'FactoryPcRequest', 'GetConfigRequest'
         @events\send type: 'network-message', :message
       else
         log -> "ignoring #{message\protocol!} message"
@@ -209,6 +212,8 @@ class Marshal
         @on_marshal_identity_request message
       when 'FactoryPcRequest'
         @on_factory_pc_request message
+      when 'GetConfigRequest'
+        @on_get_config_request message
       else
         error "internal error: unexpected network message protocol reached marshal core '#{message\protocol!}'"
 
@@ -339,6 +344,10 @@ class Marshal
       return
 
     @uplink\send_to pc_id, FactoryPcResponse idemp_tok, factory.pc_id
+
+  on_get_config_request: F '(GetConfigRequest) => <>', (message) =>
+    { :idemp_tok, :pc_id } = message
+    @uplink\send_to pc_id, GetConfigResponse idemp_tok, @config.<raw>
 
   ut_stop_counting_epochs: F '() => <>', =>
     @do_count_epochs = false
@@ -578,7 +587,6 @@ spec ->
             true
 
         upgrade_listener = UpgradeListener config, uplink
-
         pc = Pc!
         with Marshal config, pc, uplink, upgrade_listener, TestClock!
           \ut_stop_counting_epochs!
@@ -633,7 +641,6 @@ spec ->
             true
 
         upgrade_listener = UpgradeListener config, uplink
-
         pc = Pc!
         with Marshal config, pc, uplink, upgrade_listener, TestClock!
           \ut_stop_counting_epochs!
@@ -680,7 +687,6 @@ spec ->
             true
 
         upgrade_listener = UpgradeListener config, uplink
-
         pc = Pc TestPcBackend
           id: -> MARSHAL_PC_ID
         with Marshal config, pc, uplink, upgrade_listener, TestClock!
@@ -731,7 +737,6 @@ spec ->
             true
 
         upgrade_listener = UpgradeListener config, uplink
-
         pc = Pc TestPcBackend
           id: -> MARSHAL_PC_ID
         with Marshal config, pc, uplink, upgrade_listener, TestClock!
@@ -754,3 +759,39 @@ spec ->
             idemp_tok: eq idemp_tok
             resp: eq 3
           protocol: eq FactoryPcResponse\protocol!
+
+    describe '\\on_get_config_request', ->
+      it 'responds correctly', ->
+        idemp_tok = IdempotenceToken!
+
+        sent = {}
+        REQUESTER_PC_ID = 1
+        MARSHAL_PC_ID = 1
+        RAW = '[config]'
+
+        config =
+          <raw>: RAW
+          marshal:
+            network: 'mainline'
+        uplink = Uplink TestUplinkBackend
+          receive: (_, _) =>
+            message = GetConfigRequest idemp_tok, REQUESTER_PC_ID
+            REQUESTER_PC_ID, message, message\protocol!
+          send: (pc_id, message, protocol) =>
+            sent[] = :pc_id, :message, :protocol
+            true
+
+        upgrade_listener = UpgradeListener config, uplink
+        pc = Pc TestPcBackend
+          id: -> MARSHAL_PC_ID
+        with Marshal config, pc, uplink, upgrade_listener, TestClock!
+          \ut_stop_counting_epochs!
+          \ut_step!
+
+        $expect_that sent, len eq 1
+        $expect_that sent[1], has_fields
+          pc_id: eq REQUESTER_PC_ID
+          message: has_fields
+            idemp_tok: eq idemp_tok
+            raw: eq RAW
+          protocol: eq GetConfigResponse\protocol!

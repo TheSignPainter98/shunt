@@ -11,13 +11,15 @@ export config = F '() -> ?{}', ->
   if not tried_to_get_config
     tried_to_get_config = true
 
-    raw_content = nil
+    raw = nil
     with? io.open CONFIG_FILE, 'r'
       config_absent = true
-      raw_content = assert \read '*a'
+      raw = assert \read '*a'
       assert \close!
-    if raw_content?
+    if raw?
       cached_config = parse_toml raw_content
+      cached_config.<> = {}
+      cached_config.<raw> = raw
 
   cached_config
 
