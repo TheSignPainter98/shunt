@@ -3,7 +3,7 @@ local *
 -- TODO(kcza): Check station-name uniqueness
 
 import 'compat' as :HOST
-import 'freight.cmd.configure' as :MarshalIdentityRequest, :MarshalIdentityResponse
+import 'freight.cmd.configure' as :FactoryPcRequest, :FactoryPcResponse, :MarshalIdentityRequest, :MarshalIdentityResponse
 import 'freight.cmd.declare' as :DeclareTrainStateResponse
 import 'freight.data.multiplexer' as :Multiplexer
 import 'freight.logger' as :log
@@ -149,7 +149,7 @@ class Marshal
   read_network: F '() => <>', =>
     _, message = @uplink\receive_from_any!
     switch message\protocol!
-      when 'FactoryHeartbeat', 'DeclareTrainState', 'MarshalIdentityRequest'
+      when 'FactoryHeartbeat', 'DeclareTrainState', 'MarshalIdentityRequest', 'FactoryPcRequest'
         @events\send type: 'network-message', :message
       else
         log -> "ignoring #{message\protocol!} message"
@@ -207,6 +207,8 @@ class Marshal
         @on_declare_train_state message
       when 'MarshalIdentityRequest'
         @on_marshal_identity_request message
+      when 'FactoryPcRequest'
+        @on_factory_pc_request message
       else
         error "internal error: unexpected network message protocol reached marshal core '#{message\protocol!}'"
 
@@ -328,6 +330,15 @@ class Marshal
   on_marshal_identity_request: F '(MarshalIdentityRequest) => <>', (message) =>
     { :idemp_tok, :pc_id } = message
     @uplink\send_to pc_id, MarshalIdentityResponse idemp_tok, @pc\id!
+
+  on_factory_pc_request: F '(FactoryPcRequest) => <>', (message) =>
+    { :idemp_tok, :pc_id, :name } = message
+    factory = @factories[name]
+    if not factory?
+      @uplink\send_to pc_id, FactoryPcResponse idemp_tok, "no known factory '#{name}'"
+      return
+
+    @uplink\send_to pc_id, FactoryPcResponse idemp_tok, factory.pc_id
 
   ut_stop_counting_epochs: F '() => <>', =>
     @do_count_epochs = false
@@ -654,7 +665,7 @@ spec ->
 
         sent = {}
         REQUESTER_PC_ID = 1
-        MARSHAL_PC_ID = 1
+        MARSHAL_PC_ID = 2
         TRAIN_NAME = 'some-train-name'
 
         config =
@@ -681,5 +692,65 @@ spec ->
           pc_id: eq REQUESTER_PC_ID
           message: has_fields
             idemp_tok: eq idemp_tok
-            pc_id: eq REQUESTER_PC_ID
+            pc_id: eq MARSHAL_PC_ID
           protocol: eq MarshalIdentityResponse\protocol!
+
+    describe '\\on_factory_pc_request', ->
+      it 'responds correctly', ->
+        idemp_tok = IdempotenceToken!
+
+        sent = {}
+        REQUESTER_PC_ID = 1
+        MARSHAL_PC_ID = 1
+        TRAIN_NAME = 'some-train-name'
+
+        config =
+          marshal:
+            network: 'mainline'
+        uplink = Uplink TestUplinkBackend
+          receive: (_, _) =>
+            @count ??= 0
+            @count += 1
+            message = switch @count
+              when 1, 4
+                FactoryPcRequest idemp_tok, REQUESTER_PC_ID, 'factory_3'
+              when 2, 3
+                stations =
+                  known: {}
+                  unknown: {}
+                stockpile =
+                  known: {}
+                  unknown: {}
+                  estimated_capacity: 0
+                FactoryHeartbeat @count, "factory_#{@count}", stations, stockpile
+              else
+                error 'too many messages requested'
+            REQUESTER_PC_ID, message, message\protocol!
+          send: (pc_id, message, protocol) =>
+            sent[] = :pc_id, :message, :protocol
+            true
+
+        upgrade_listener = UpgradeListener config, uplink
+
+        pc = Pc TestPcBackend
+          id: -> MARSHAL_PC_ID
+        with Marshal config, pc, uplink, upgrade_listener, TestClock!
+          \ut_stop_counting_epochs!
+          \ut_step!
+          \ut_step!
+          \ut_step!
+          \ut_step!
+
+        $expect_that sent, len eq 2
+        $expect_that sent[1], has_fields
+          pc_id: eq REQUESTER_PC_ID
+          message: has_fields
+            idemp_tok: eq idemp_tok
+            resp: matches 'no known factory'
+          protocol: eq FactoryPcResponse\protocol!
+        $expect_that sent[2], has_fields
+          pc_id: eq REQUESTER_PC_ID
+          message: has_fields
+            idemp_tok: eq idemp_tok
+            resp: eq 3
+          protocol: eq FactoryPcResponse\protocol!
