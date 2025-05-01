@@ -13,6 +13,17 @@ export T = (type_spec, value) ->
     error err, 2
   value
 
+export implements = (type_spec, value) ->
+  if not type_spec?
+    error 'cannot typecheck: no type spec provided'
+
+  local err
+  try
+    T type_spec, value
+  catch err2
+    err = err2
+  not err?, err
+
 macro debug = (block) ->
   if false
     return block
@@ -1559,6 +1570,20 @@ spec ->
       $expect_that (-> T 'boolean|InnerDisjunction|function', ->), no_errors!
 
       $expect_that (-> T 'boolean|InnerDisjunction|function', {}), errors matches 'incorrect type: expected boolean|InnerDisjunction|function but got table'
+
+  describe 'implements', ->
+    it 'requires two arguments', ->
+      $expect_that (-> implements!), errors matches 'cannot typecheck: no type spec provided'
+
+    it 'returns correctly in matching case', ->
+      ok, err = implements 'string', 'asdf'
+      $expect_that ok, eq true
+      $expect_that err, eq nil
+
+    it 'returns correctly in non-matching case', ->
+      ok, err = implements 'nil', 'asdf'
+      $expect_that ok, eq false
+      $expect_that err, matches 'incorrect type'
 
   describe 'declare_type', ->
     it 'requires two arguments', ->
