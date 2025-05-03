@@ -337,14 +337,26 @@ class TypeSpecParser extends Parser
 
   parse_table_content: =>
     if (@lexer\peek! ?? {}).type == T_BRACE_CLOSE
-      return Struct {}
+      return Struct nil, {}
+
+    local metatable_type
+    if (@maybe T_ANGLE_OPEN)?
+      @expect T_ANGLE_CLOSE
+      @expect T_COLON
+      metatable_type = @parse_type!
+      checkpoint = @lexer\checkpoint!
+      @maybe T_COMMA
+      if (@lexer\peek! ?? {}).type == T_BRACE_CLOSE
+        return Struct metatable_type, {}
+      @lexer\restore checkpoint
+      @expect T_COMMA
 
     checkpoint = @lexer\checkpoint!
-    first_elem_is_field_name = (@maybe T_NAME)? and (@maybe T_COLON)?
+    is_struct = (@maybe T_NAME)? and (@maybe T_COLON)?
     @lexer\restore checkpoint
 
-    if first_elem_is_field_name
-      return Struct @parse_repeat_separated @\parse_field, T_COMMA, separator_trails_before: T_BRACE_CLOSE
+    if is_struct
+      return Struct metatable_type, @parse_repeat_separated @\parse_field, T_COMMA, separator_trails_before: T_BRACE_CLOSE
 
     first_type = @parse_type!
     table_content_type = @select
@@ -355,12 +367,12 @@ class TypeSpecParser extends Parser
 
     switch table_content_type
       when 'set'
-        Set first_type
+        Set metatable_type, first_type
       when 'mapping'
         { _, maps_to } = @sequence
           * token: T_THIN_ARROW
           * action: @\parse_type
-        Mapping first_type, maps_to
+        Mapping metatable_type, first_type, maps_to
       else
         error "internal error: illegal table contents type: #{repr table_content_type}"
 
@@ -654,7 +666,7 @@ class Tuple using Is
         \add C_POP
 
 class Struct using Is
-  new: (@fields) =>
+  new: (@metatable_type, @fields) =>
 
   __tostring: =>
     field_reprs = [ tostring field for field in *@fields ]
@@ -663,6 +675,10 @@ class Struct using Is
   checker: (checker_builder=CheckerBuilder!) =>
     with checker_builder
       \add C_ASSERT_PRIMITIVE, 'table'
+      if @metatable_type?
+        \add C_PUSH_METATABLE
+        @metatable_type\checker checker_builder
+        \add C_POP
       for field in *@fields
         \add C_PUSH, field.name
         \add C_GET_FIELD
@@ -680,7 +696,7 @@ class Field using Is
     @type\checker checker_builder
 
 class Set using Is
-  new: (@elem_type) =>
+  new: (@metatable_type, @elem_type) =>
 
   __tostring: =>
     "{#{@elem_type}}"
@@ -688,6 +704,12 @@ class Set using Is
   checker: (checker_builder=CheckerBuilder!) =>
     with checker_builder
       \add C_ASSERT_PRIMITIVE, 'table'
+
+      if @metatable_type?
+        \add C_PUSH_METATABLE
+        @metatable_type\checker checker_builder
+        \add C_POP
+
       \add C_PUSH, V_NIL
       \add C_NEXT
 
@@ -704,7 +726,7 @@ class Set using Is
       \add C_POP
 
 class Mapping using Is
-  new: (@in_type, @out_type) =>
+  new: (@metatable_type, @in_type, @out_type) =>
 
   __tostring: =>
     "{#{@in_type} -> #{@out_type}}"
@@ -712,6 +734,12 @@ class Mapping using Is
   checker: (checker_builder=CheckerBuilder!) =>
     with checker_builder
       \add C_ASSERT_PRIMITIVE, 'table'
+
+      if @metatable_type?
+        \add C_PUSH_METATABLE
+        @metatable_type\checker checker_builder
+        \add C_POP
+
       \add C_PUSH, V_NIL
       \add C_NEXT
 
@@ -909,6 +937,7 @@ class Label
     @instructions[@index + 1] = #@instructions + 1
 
 C_PUSH = <tostring>: => '<push>'
+C_PUSH_METATABLE = <tostring>: => '<push-metatable>'
 C_POP = <tostring>: => '<pop>'
 C_ASSERT_NON_NIL = <tostring>: => '<assert-non-nil>'
 C_ASSERT_PRIMITIVE = <tostring>: => '<assert-primitive>'
@@ -1019,6 +1048,11 @@ check = (check_prog, value, root=true) ->
             arg = nil
           stack_size += 1
           stack[stack_size] = arg
+        when C_PUSH_METATABLE
+          mt = stack[stack_size].<>
+          stack_size += 1
+          stack[stack_size] = mt
+          keys_used[stack_size] = '<>'
         when C_POP
           stack[stack_size] = nil
           keys_used[stack_size] = nil
@@ -1326,27 +1360,33 @@ spec ->
         }
 
       it 'accepts sets', ->
-        $expect_that (parse '{string}'), deep_eq Set Primitive 'string'
-        $expect_that (parse '{{string}}'), deep_eq Set Set Primitive 'string'
+        $expect_that (parse '{string}'), deep_eq Set nil, Primitive 'string'
+        $expect_that (parse '{{string}}'), deep_eq Set nil, Set nil, Primitive 'string'
+        $expect_that (parse '{<>: {}, string}'), deep_eq Set (Struct nil, {}), Primitive 'string'
 
       it 'accepts mappings', ->
-        $expect_that (parse '{boolean -> number}'), deep_eq Mapping (Primitive 'boolean'), Primitive 'number'
-        $expect_that (parse '{{boolean -> number} -> {string -> thread}}'), deep_eq Mapping (Mapping (Primitive 'boolean'), Primitive 'number'), Mapping (Primitive 'string'), Primitive 'thread'
+        $expect_that (parse '{boolean -> number}'), deep_eq Mapping nil, (Primitive 'boolean'), Primitive 'number'
+        $expect_that (parse '{{boolean -> number} -> {string -> thread}}'), deep_eq Mapping nil, (Mapping nil, (Primitive 'boolean'), Primitive 'number'), Mapping nil, (Primitive 'string'), Primitive 'thread'
+        $expect_that (parse '{<>: {}, boolean -> number}'), deep_eq Mapping (Struct nil, {}), (Primitive 'boolean'), Primitive 'number'
 
       it 'accepts structs', ->
-        $expect_that (parse '{}'), deep_eq Struct {}
-        $expect_that (parse '{field: boolean}'), deep_eq Struct
+        $expect_that (parse '{}'), deep_eq Struct nil, {}
+        $expect_that (parse '{field: boolean}'), deep_eq Struct nil,
           * Field 'field', Primitive 'boolean'
-        $expect_that (parse '{field: boolean,}'), deep_eq Struct
+        $expect_that (parse '{field: boolean,}'), deep_eq Struct nil,
           * Field 'field', Primitive 'boolean'
-        $expect_that (parse '{field1: number, field2: string}'), deep_eq Struct
+        $expect_that (parse '{field1: number, field2: string}'), deep_eq Struct nil,
           * Field 'field1', Primitive 'number'
           * Field 'field2', Primitive 'string'
-        $expect_that (parse '{outer1: {inner1: boolean}, outer2: {inner2: boolean}}'), deep_eq Struct
-          * Field 'outer1', Struct
+        $expect_that (parse '{outer1: {inner1: boolean}, outer2: {inner2: boolean}}'), deep_eq Struct nil,
+          * Field 'outer1', Struct nil,
             * Field 'inner1', Primitive 'boolean'
-          * Field 'outer2', Struct
+          * Field 'outer2', Struct nil,
             * Field 'inner2', Primitive 'boolean'
+        $expect_that (parse '{<>: {}}'), deep_eq Struct (Struct nil, {}), {}
+        $expect_that (parse '{<>: {},}'), deep_eq Struct (Struct nil, {}), {}
+        $expect_that (parse '{<>: {<>: {__tostring: function}}}'), deep_eq do
+          Struct (Struct (Struct nil, { Field '__tostring', Primitive 'function' }), {}), {}
 
       it 'accepts functions', ->
         $expect_that (parse '() -> <>'), deep_eq Function {}, {}
@@ -1381,17 +1421,17 @@ spec ->
       it 'accepts conjunctions', ->
         $expect_that (parse '[string]+{number->string}+table+function'), deep_eq Conjunction
           * Array Primitive 'string'
-          * Mapping (Primitive 'number'), Primitive 'string'
+          * Mapping nil, (Primitive 'number'), Primitive 'string'
           * Primitive 'table'
           * Primitive 'function'
 
       it 'accepts disjunctions', ->
         $expect_that (parse '[string]|{number->string}|table|function'), deep_eq Disjunction
           * Array Primitive 'string'
-          * Mapping (Primitive 'number'), Primitive 'string'
+          * Mapping nil, (Primitive 'number'), Primitive 'string'
           * Primitive 'table'
           * Primitive 'function'
-        $expect_that (parse '{string|number}'), deep_eq Set Disjunction
+        $expect_that (parse '{string|number}'), deep_eq Set nil, Disjunction
           * Primitive 'string'
           * Primitive 'number'
 
@@ -1510,19 +1550,23 @@ spec ->
       $expect_that (-> T '{number}', {}), no_errors!
       $expect_that (-> T '{number}', {[123]: true, [321]: {}}), no_errors!
       $expect_that (-> T '{{number}}', {[{123}]: true}), no_errors!
+      $expect_that (-> T '{<>: {}, number}', <>: {}), no_errors!
 
       $expect_that (-> T '{number}', nil), errors matches 'incorrect type: expected table but got nil'
       $expect_that (-> T '{number}', {[123]: false}), errors matches 'incorrect type: expected a truthy value but got false'
       $expect_that (-> T '{{number}}', {[{['asdf']: true}]: true}), errors matches 'incorrect type: expected number but got string'
+      $expect_that (-> T '{<>: {}, number}', {}), errors matches 'incorrect type: expected table but got nil'
 
     it 'checks mappings', ->
       $expect_that (-> T '{string -> number}', {}), no_errors!
       $expect_that (-> T '{number -> string}', {'hello', [10]: 'world'}), no_errors!
       $expect_that (-> T '{{boolean -> number} -> {string -> thread}}', {[{[true]: 123}]: {asdf: coroutine.create ->}}), no_errors!
+      $expect_that (-> T '{<>: {}, string -> number}', <>: {}), no_errors!
 
       $expect_that (-> T '{number -> string}', nil), errors matches 'incorrect type: expected table but got nil'
       $expect_that (-> T '{number -> string}', {123}), errors matches 'incorrect type: expected string but got number'
       $expect_that (-> T '{number -> string}', {'hello', 'world', 'foo', 'bar', 'baz', 123}), errors matches 'incorrect type: expected string but got number'
+      $expect_that (-> T '{<>: {}, string -> number}', {}), errors matches 'incorrect type: expected table but got nil'
 
     it 'checks structs', ->
       $expect_that (-> T '{}', {}), no_errors!
@@ -1531,6 +1575,7 @@ spec ->
       $expect_that (-> T '{hello: string}', {hello: 'hello'}), no_errors!
       $expect_that (-> T '{hello: {world: string}}', {hello: world: 'world'}), no_errors!
       $expect_that (-> T '{hello: {world: string}, foo: boolean}', hello: {world:'asdf'}, foo: true), no_errors!
+      $expect_that (-> T '{<>: {}}', <>: {}), no_errors!
 
       $expect_that (-> T '{}', 132), errors matches 'incorrect type: expected table but got number'
       $expect_that (-> T '{hello: string}', {}), errors matches 'incorrect type: expected string but got nil'
@@ -1539,6 +1584,7 @@ spec ->
       $expect_that (-> T '{hello: {world: string}}', hello: {}), errors matches 'incorrect type: expected string but got nil'
       $expect_that (-> T '{hello: {world: string}}', hello: world: 123), errors matches 'incorrect type: expected string but got number'
       $expect_that (-> T '{hello: {world: string}, foo: boolean}', hello: {world:'asdf'}, foo: 123), errors matches 'incorrect type: expected boolean but got number'
+      $expect_that (-> T '{<>: {}}', {}), errors matches 'incorrect type: expected table but got nil'
 
     it 'checks functions', ->
       $expect_that (-> T '() -> nil', ->), no_errors!
