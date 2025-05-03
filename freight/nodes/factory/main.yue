@@ -4,7 +4,7 @@ local ScheduleRequest
 local ScheduleResponse
 
 import 'compat' as :HOST
-import 'freight.cmd.configure' as :GetConfigRequest, :GetConfigResponse, :SetConfigRequest, :SetConfigResponse
+import 'freight.configurator.main' as :GetConfigRequest, :GetConfigResponse, :SetConfigRequest, :SetConfigResponse
 import 'freight.logger' as :fatal, :log
 import 'freight.pc' as :Pc
 import 'freight.peripheral.station' as MinecraftBackend: MinecraftStationBackend, :Station

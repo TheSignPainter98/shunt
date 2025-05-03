@@ -3,8 +3,8 @@ local *
 -- TODO(kcza): Check station-name uniqueness
 
 import 'compat' as :HOST
-import 'freight.cmd.configure' as :FactoryPcRequest, :FactoryPcResponse, :GetConfigRequest, :GetConfigResponse, :MarshalIdentityRequest, :MarshalIdentityResponse, :SetConfigRequest, :SetConfigResponse
 import 'freight.cmd.declare' as :DeclareTrainStateResponse
+import 'freight.configurator.main' as :FactoryPcRequest, :FactoryPcResponse, :GetConfigRequest, :GetConfigResponse, :MarshalIdentityRequest, :MarshalIdentityResponse, :SetConfigRequest, :SetConfigResponse
 import 'freight.data.multiplexer' as :Multiplexer
 import 'freight.logger' as :log
 import 'freight.nodes.factory.main' as :FactoryHeartbeat, :ScheduleRequest, :ScheduleResponse
