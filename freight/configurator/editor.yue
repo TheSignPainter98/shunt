@@ -1,0 +1,75 @@
+local *
+
+import 'quicktype' as :declare_type, :F
+import 'spec' as :spec
+
+declare_type 'EditorBackend', [[{
+  edit_file: (string) => ?string,
+}]]
+export class Editor
+  new: F '(?EditorBackend) => <>', (@backend=MinecraftBackend!) =>
+
+  edit_file: F '(string) => ?string', (path) =>
+    @backend\edit_file path
+
+  edit_text: F '(string) => <?string, ?string>', (text) =>
+    -- TODO(kcza): write file to temp file
+    -- TODO(kcza): edit temp file
+    -- TODO(kcza): read temp file to memory
+    -- TODO(kcza): ALWAYS delete temp file
+    -- @backend\edit_file
+
+class MinecraftBackend
+  new: =>
+    @editor = 'edit'
+
+  edit_file: F '(string) => ?string', (path) =>
+    ok = shell.execute @editor, path
+    if not ok
+      return "#{@editor} exited unsuccessfully"
+    nil
+
+declare_type 'TestEditorBackendOpts', [[{
+  edit_file: ?(string) => ?string,
+}]]
+class TestEditorBackend
+  new: F '(?TestEditorBackendOpts) => <>', (opts={}) =>
+    {
+      :edit_file=-> error 'edit_file unimplemented'
+    } = opts
+    @edit_file = F '(string) => ?string', edit_file
+
+class LinuxBackend
+  new: =>
+    @editor = do
+      editor = os.getenv 'EDITOR'
+      if not editor
+        error 'cannot create LinuxEditor: $EDITOR not set'
+      editor
+
+  edit_file: F '(string) => ?string', (path) =>
+    if path\match "'"
+      error 'internal error: LinuxEditor quotes'
+    rc = os.execute "nvim '#{path}'" -- SeCuRiTy
+    if rc != 0
+      return "#{@editor} exited with code #{rc}"
+    nil
+
+spec ->
+  import 'spec_macros' as $
+
+  import 'spec' as :describe, :it, :matchers
+
+  import eq from matchers
+
+  describe 'Editor', ->
+    it 'edits text', ->
+      FILE_PATH = 'file.txt'
+      file_content = 'ab'\rep 10
+      editor = Editor TestEditorBackend
+        edit_file: (path) =>
+          $expect_that path, eq FILE_PATH
+
+          file_content = file_content\gsub 'b', 'c'
+      editor\edit_file FILE_PATH
+      $expect_that file_content, eq 'ac'\rep 10
