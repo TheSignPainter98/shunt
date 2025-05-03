@@ -95,7 +95,8 @@ declare_type 'AvailableTrain', [[{
   name: string,
 }]]
 class Marshal
-  new: F '(MarshalConfig, Pc, Uplink, UpgradeListener, ?Clock) => <>', (config, @pc, @uplink, @upgrade_listener, @clock=MinecraftClock!) =>
+  new: F '(MarshalConfig+StoredConfig, Pc, Uplink, UpgradeListener, ?Clock) => <>', (config, @pc, @uplink, @upgrade_listener, @clock=MinecraftClock!) =>
+    @set_config config
     @epoch = T 'number', 0
     -- TODO(kcza): load from stored initial state
     @factories = T '{string->Factory}', {}
@@ -110,7 +111,6 @@ class Marshal
     @events = T 'Multiplexer', with Multiplexer '{type: MarshalEventType}'
       \add @\count_epochs
       \add @\listen_to_network
-    @set_config config
 
   @state_machine: F '() => StateMachine', =>
     StateMachineBuilder!
@@ -357,10 +357,12 @@ class Marshal
       @uplink\send_to pc_id, SetConfigResponse idemp_tok, err
       return
 
+    config.<> = {}
+    config.<raw> = raw
     @set_config config
     @uplink\send_to pc_id, SetConfigResponse idemp_tok, nil
 
-  set_config: F '(MarshalConfig) => <>', (@config) =>
+  set_config: F '(MarshalConfig+StoredConfig) => <>', (@config) =>
 
   ut_stop_counting_epochs: F '() => <>', =>
     @do_count_epochs = false
@@ -817,16 +819,17 @@ spec ->
 
         sent = {}
         REQUESTER_PC_ID = 1
-        RAW = [[
+        NEW_RAW = [[
           [marshal]
           key = 'value'
         ]]
 
         config =
+          <raw>: ''
           marshal: {}
         uplink = Uplink TestUplinkBackend
           receive: (_, _) =>
-            message = SetConfigRequest idemp_tok, REQUESTER_PC_ID, RAW
+            message = SetConfigRequest idemp_tok, REQUESTER_PC_ID, NEW_RAW
             REQUESTER_PC_ID, message, message\protocol!
           send: (pc_id, message, protocol) =>
             sent[] = :pc_id, :message, :protocol
@@ -849,19 +852,24 @@ spec ->
           $expect_that \ut_config!, deep_eq
             marshal:
               key: 'value'
+          $expect_that \ut_config!.<raw>, eq NEW_RAW
 
       it 'rejects invalid config', ->
         idemp_tok = IdempotenceToken!
 
         sent = {}
         REQUESTER_PC_ID = 1
-        RAW = '[invalid-config]\n'
+        NEW_RAW = '[invalid-config]\n'
+        ORIGINAL_RAW = [[
+          [marshal]
+        ]]
 
         config =
+          <raw>: ORIGINAL_RAW
           marshal: {}
         uplink = Uplink TestUplinkBackend
           receive: (_, _) =>
-            message = SetConfigRequest idemp_tok, REQUESTER_PC_ID, RAW
+            message = SetConfigRequest idemp_tok, REQUESTER_PC_ID, NEW_RAW
             REQUESTER_PC_ID, message, message\protocol!
           send: (pc_id, message, protocol) =>
             sent[] = :pc_id, :message, :protocol
@@ -882,3 +890,4 @@ spec ->
               error_reason: matches 'at field %.marshal'
             protocol: eq SetConfigResponse\protocol!
           $expect_that \ut_config!, deep_eq config -- Unchanged
+          $expect_that \ut_config!.<raw>, eq ORIGINAL_RAW

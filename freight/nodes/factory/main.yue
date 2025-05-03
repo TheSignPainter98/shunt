@@ -4,12 +4,14 @@ local ScheduleRequest
 local ScheduleResponse
 
 import 'compat' as :HOST
+import 'freight.cmd.configure' as :GetConfigRequest, :GetConfigResponse, :SetConfigRequest, :SetConfigResponse
 import 'freight.logger' as :fatal, :log
 import 'freight.pc' as :Pc
 import 'freight.peripheral.station' as MinecraftBackend: MinecraftStationBackend, :Station
 import 'freight.peripheral.stockpile' as :Inventory, MinecraftBackend: MinecraftInventoryBackend, :Stockpile
 import 'freight.peripheral.uplink' as :IdempotenceToken, :Packet, :Uplink
-import 'quicktype' as :declare_type, :F, :T
+import 'freight.toml' as :parse_toml
+import 'quicktype' as :declare_type, :F, :is, :T
 import 'spec' as :repr, :spec
 
 export default_config = ->
@@ -140,10 +142,8 @@ declare_type 'StationConfig', [[{
   network: string,
 }]]
 class Factory
-  new: F '(FactoryConfig, Pc, [Station], Stockpile, Uplink) => <>', (@config, @pc, @stations, @stockpile, @uplink) =>
-    name = @name!
-    if @pc\name! != name
-      @pc\set_name name
+  new: F '(FactoryConfig+StoredConfig, Pc, [Station], Stockpile, Uplink) => <>', (config, @pc, @stations, @stockpile, @uplink) =>
+    @set_config config
     @heartbeat_num = T 'number', 0
 
   name: F '() => string', =>
@@ -169,6 +169,10 @@ class Factory
     switch message\protocol!
       when 'ScheduleRequest'
         @on_schedule_request from_id, message
+      when 'GetConfigRequest'
+        @on_get_config_request message
+      when 'SetConfigRequest'
+        @on_set_config_request message
       else
         log -> "ignoring #{message\protocol!} message"
 
@@ -189,6 +193,28 @@ class Factory
       if station\name! == station_name and station\train_name! == train_name
         return station
     nil
+
+  on_get_config_request: F '(GetConfigRequest) => <>', (message) =>
+    { :idemp_tok, :pc_id } = message
+    @uplink\send_to pc_id, GetConfigResponse idemp_tok, @config.<raw>
+
+  on_set_config_request: F '(SetConfigRequest) => <>', (message) =>
+    { :idemp_tok, :pc_id, :raw } = message
+    config = parse_toml raw
+    ok, err = is 'FactoryConfig', config
+    if not ok
+      @uplink\send_to pc_id, SetConfigResponse idemp_tok, err
+      return
+
+    config.<> = {}
+    config.<raw> = raw
+    @set_config config
+    @uplink\send_to pc_id, SetConfigResponse idemp_tok, nil
+
+  set_config: F '(FactoryConfig+StoredConfig) => <>', (@config) =>
+    name = @name!
+    if @pc\name! != name
+      @pc\set_name name
 
   run_heartbeats: F '() => !', =>
     HEARTBEAT_PERIOD = 10
@@ -316,7 +342,7 @@ spec ->
   import 'freight.peripheral.uplink' as :TestUplinkBackend
   import 'spec' as :describe, :it, :matchers
 
-  import deep_eq, eq, has_fields, len, some from matchers
+  import deep_eq, eq, has_fields, len, matches, some from matchers
 
   describe 'Factory', ->
     it 'resolves label and name mismatches', ->
@@ -544,3 +570,142 @@ spec ->
                   stored: 16
               estimated_capacity: 128
             deep_eq FactoryHeartbeat PC_ID, PC_NAME, stations, stockpile_info
+
+    describe '\\on_get_config_request', ->
+      it 'responds correctly', ->
+        idemp_tok = IdempotenceToken!
+
+        sent = {}
+        REQUESTER_PC_ID = 1
+        FACTORY_PC_ID = 1
+        FACTORY_NAME = 'factory-name'
+        RAW = '[config]\n'
+
+        config =
+          <raw>: RAW
+          factory:
+            name: FACTORY_NAME
+          stockpile: {}
+          stations: {}
+        pc = Pc TestPcBackend
+          id: => FACTORY_PC_ID
+          name: => FACTORY_NAME
+        stockpile = Stockpile {}
+        uplink = Uplink TestUplinkBackend
+          send: (recipient, message, protocol) =>
+            sent[] = :recipient, :message, :protocol
+            true
+          receive: (_, _) =>
+            message = GetConfigRequest idemp_tok, REQUESTER_PC_ID
+            REQUESTER_PC_ID, message, message\protocol!
+        with Factory config, pc, {}, stockpile, uplink
+          \do_network_step!
+
+          $assert_that #sent, eq 1
+          $expect_that sent[1], has_fields
+            recipient: eq REQUESTER_PC_ID
+            message: has_fields
+              idemp_tok: eq idemp_tok
+              raw: eq RAW
+            protocol: eq GetConfigResponse\protocol!
+
+    describe '\\on_set_config_request', ->
+      it 'applies valid config', ->
+        idemp_tok = IdempotenceToken!
+
+        sent = {}
+        REQUESTER_PC_ID = 1
+        FACTORY_PC_ID = 1
+        FACTORY_NAME = 'factory-name'
+
+        NEW_FACTORY_NAME = 'new-factory-name'
+        NEW_RAW = "
+          [factory]
+          name = '#{NEW_FACTORY_NAME}'
+
+          # NB: these are usually arrays of tables, but for ease of testing,
+          # they are left empty
+          [stockpile]
+          [stations]
+        "
+
+        config =
+          <raw>: ''
+          factory:
+            name: FACTORY_NAME
+          stockpile: {}
+          stations: {}
+        pc = Pc TestPcBackend with {}
+            name = FACTORY_NAME
+            .id = => FACTORY_PC_ID
+            .name = => name
+            .set_name = (new_name) =>
+              name = new_name
+        stockpile = Stockpile {}
+        uplink = Uplink TestUplinkBackend
+          send: (recipient, message, protocol) =>
+            sent[] = :recipient, :message, :protocol
+            true
+          receive: (_, _) =>
+            message = SetConfigRequest idemp_tok, REQUESTER_PC_ID, NEW_RAW
+            REQUESTER_PC_ID, message, message\protocol!
+        with Factory config, pc, {}, stockpile, uplink
+          \do_network_step!
+
+          $assert_that #sent, eq 1
+          $expect_that sent[1], has_fields
+            recipient: eq REQUESTER_PC_ID
+            message: has_fields
+              idemp_tok: eq idemp_tok
+              error_reason: eq nil
+            protocol: eq SetConfigResponse\protocol!
+          $expect_that .config, deep_eq
+            factory:
+              name: NEW_FACTORY_NAME
+            stations: {}
+            stockpile: {}
+          $expect_that .config.<raw>, eq NEW_RAW
+          $expect_that \name!, eq NEW_FACTORY_NAME
+          $expect_that pc\name!, eq NEW_FACTORY_NAME
+
+      it 'rejects invalid config', ->
+        idemp_tok = IdempotenceToken!
+
+        sent = {}
+        REQUESTER_PC_ID = 1
+        FACTORY_PC_ID = 1
+        FACTORY_NAME = 'factory-name'
+
+        NEW_FACTORY_NAME = 'factory-name'
+        NEW_RAW = ''
+
+        ORIGINAL_RAW = 'original raw config'
+        config =
+          <raw>: ORIGINAL_RAW
+          factory:
+            name: FACTORY_NAME
+          stockpile: {}
+          stations: {}
+        pc = Pc TestPcBackend
+          id: => FACTORY_PC_ID
+          name: => FACTORY_NAME
+        stockpile = Stockpile {}
+        uplink = Uplink TestUplinkBackend
+          send: (recipient, message, protocol) =>
+            sent[] = :recipient, :message, :protocol
+            true
+          receive: (_, _) =>
+            message = SetConfigRequest idemp_tok, REQUESTER_PC_ID, NEW_RAW
+            REQUESTER_PC_ID, message, message\protocol!
+        with Factory config, pc, {}, stockpile, uplink
+          \do_network_step!
+
+          $assert_that #sent, eq 1
+          $expect_that sent[1], has_fields
+            recipient: eq REQUESTER_PC_ID
+            message: has_fields
+              idemp_tok: eq idemp_tok
+              error_reason: matches 'expected table but got nil'
+            protocol: eq SetConfigResponse\protocol!
+          $expect_that .config, deep_eq config
+          $expect_that .config.<raw>, eq ORIGINAL_RAW

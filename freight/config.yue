@@ -1,13 +1,20 @@
 local *
 
 import 'freight.toml' as :parse_toml
-import 'quicktype' as :F
+import 'quicktype' as :declare_type, :F
 
 export CONFIG_FILE = 'freight.toml'
 
+declare_type 'StoredConfig', [[{
+  -- TODO(kcza): implement me!
+  -- <>: {
+  --   __raw: string,
+  -- },
+}]]
+
 cached_config = nil
 tried_to_get_config = false
-export config = F '() -> ?{}', ->
+export config = F '() -> ?StoredConfig', ->
   if not tried_to_get_config
     tried_to_get_config = true
 
