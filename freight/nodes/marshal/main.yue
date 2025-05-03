@@ -3,7 +3,7 @@ local *
 -- TODO(kcza): Check station-name uniqueness
 
 import 'compat' as :HOST
-import 'freight.cmd.configure' as :FactoryPcRequest, :FactoryPcResponse, :GetConfigRequest, :GetConfigResponse, :MarshalIdentityRequest, :MarshalIdentityResponse
+import 'freight.cmd.configure' as :FactoryPcRequest, :FactoryPcResponse, :GetConfigRequest, :GetConfigResponse, :MarshalIdentityRequest, :MarshalIdentityResponse, :SetConfigRequest, :SetConfigResponse
 import 'freight.cmd.declare' as :DeclareTrainStateResponse
 import 'freight.data.multiplexer' as :Multiplexer
 import 'freight.logger' as :log
@@ -16,9 +16,9 @@ import 'freight.nodes.marshal.symmetric_difference' as :symmetric_difference
 import 'freight.pc' as :Pc
 import 'freight.peripheral.uplink' as :IdempotenceToken, :Packet, :TestUplinkBackend, :TIMEOUT, :Uplink
 import 'freight.state' as :StateMachineBuilder, :StateSpec
-import 'freight.toml' as :toml_parse
+import 'freight.toml' as :parse_toml
 import 'freight.upgrade.listener' as :UpgradeListener
-import 'quicktype' as :declare_type, :F, :T
+import 'quicktype' as :declare_type, :F, :is, :T
 import 'spec' as :spec
 
 export default_config = -> [=[
@@ -30,7 +30,7 @@ export main = F '(MarshalConfig) -> <>', (config) ->
 
   state = nil
   with? io.open '.freight-state.toml'
-    state = toml_parse assert \read '*a'
+    state = parse_toml assert \read '*a'
     assert \close!
 
   pc = Pc!
@@ -112,8 +112,6 @@ class Marshal
       \add @\listen_to_network
     @set_config config
 
-  set_config: F '(MarshalConfig) => <>', (@config) =>
-
   @state_machine: F '() => StateMachine', =>
     StateMachineBuilder!
       \set_initial_state 'initing'
@@ -152,7 +150,7 @@ class Marshal
   read_network: F '() => <>', =>
     _, message = @uplink\receive_from_any!
     switch message\protocol!
-      when 'FactoryHeartbeat', 'DeclareTrainState', 'MarshalIdentityRequest', 'FactoryPcRequest', 'GetConfigRequest'
+      when 'FactoryHeartbeat', 'DeclareTrainState', 'MarshalIdentityRequest', 'FactoryPcRequest', 'GetConfigRequest', 'SetConfigRequest'
         @events\send type: 'network-message', :message
       else
         log -> "ignoring #{message\protocol!} message"
@@ -214,6 +212,8 @@ class Marshal
         @on_factory_pc_request message
       when 'GetConfigRequest'
         @on_get_config_request message
+      when 'SetConfigRequest'
+        @on_set_config_request message
       else
         error "internal error: unexpected network message protocol reached marshal core '#{message\protocol!}'"
 
@@ -349,6 +349,19 @@ class Marshal
     { :idemp_tok, :pc_id } = message
     @uplink\send_to pc_id, GetConfigResponse idemp_tok, @config.<raw>
 
+  on_set_config_request: F '(SetConfigRequest) => <>', (message) =>
+    { :idemp_tok, :pc_id, :raw } = message
+    config = parse_toml raw
+    ok, err = is 'MarshalConfig', config
+    if not ok
+      @uplink\send_to pc_id, SetConfigResponse idemp_tok, err
+      return
+
+    @set_config config
+    @uplink\send_to pc_id, SetConfigResponse idemp_tok, nil
+
+  set_config: F '(MarshalConfig) => <>', (@config) =>
+
   ut_stop_counting_epochs: F '() => <>', =>
     @do_count_epochs = false
 
@@ -373,6 +386,8 @@ class Marshal
 
   ut_train_is_reserved: F '(string) => boolean', (train_name) =>
     @promise_tracker\train_is_promised train_name
+
+  ut_config: F '() => MarshalConfig', => @config
 
 spec ->
   import 'spec_macros' as $
@@ -767,7 +782,7 @@ spec ->
         sent = {}
         REQUESTER_PC_ID = 1
         MARSHAL_PC_ID = 1
-        RAW = '[config]'
+        RAW = '[config]\n'
 
         config =
           <raw>: RAW
@@ -795,3 +810,75 @@ spec ->
             idemp_tok: eq idemp_tok
             raw: eq RAW
           protocol: eq GetConfigResponse\protocol!
+
+    describe '\\on_set_config_request', ->
+      it 'applies valid config', ->
+        idemp_tok = IdempotenceToken!
+
+        sent = {}
+        REQUESTER_PC_ID = 1
+        RAW = [[
+          [marshal]
+          key = 'value'
+        ]]
+
+        config =
+          marshal: {}
+        uplink = Uplink TestUplinkBackend
+          receive: (_, _) =>
+            message = SetConfigRequest idemp_tok, REQUESTER_PC_ID, RAW
+            REQUESTER_PC_ID, message, message\protocol!
+          send: (pc_id, message, protocol) =>
+            sent[] = :pc_id, :message, :protocol
+            true
+
+        upgrade_listener = UpgradeListener config, uplink
+        pc = Pc TestPcBackend
+          id: -> MARSHAL_PC_ID
+        with Marshal config, pc, uplink, upgrade_listener, TestClock!
+          \ut_stop_counting_epochs!
+          \ut_step!
+
+          $expect_that sent, len eq 1
+          $expect_that sent[1], has_fields
+            pc_id: eq REQUESTER_PC_ID
+            message: has_fields
+              idemp_tok: eq idemp_tok
+              error_reason: eq nil
+            protocol: eq SetConfigResponse\protocol!
+          $expect_that \ut_config!, deep_eq
+            marshal:
+              key: 'value'
+
+      it 'rejects invalid config', ->
+        idemp_tok = IdempotenceToken!
+
+        sent = {}
+        REQUESTER_PC_ID = 1
+        RAW = '[invalid-config]\n'
+
+        config =
+          marshal: {}
+        uplink = Uplink TestUplinkBackend
+          receive: (_, _) =>
+            message = SetConfigRequest idemp_tok, REQUESTER_PC_ID, RAW
+            REQUESTER_PC_ID, message, message\protocol!
+          send: (pc_id, message, protocol) =>
+            sent[] = :pc_id, :message, :protocol
+            true
+
+        upgrade_listener = UpgradeListener config, uplink
+        pc = Pc TestPcBackend
+          id: -> MARSHAL_PC_ID
+        with Marshal config, pc, uplink, upgrade_listener, TestClock!
+          \ut_stop_counting_epochs!
+          \ut_step!
+
+          $expect_that sent, len eq 1
+          $expect_that sent[1], has_fields
+            pc_id: eq REQUESTER_PC_ID
+            message: has_fields
+              idemp_tok: eq idemp_tok
+              error_reason: matches 'at field %.marshal'
+            protocol: eq SetConfigResponse\protocol!
+          $expect_that \ut_config!, deep_eq config -- Unchanged

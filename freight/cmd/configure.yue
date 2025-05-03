@@ -1,0 +1,108 @@
+local *
+
+import 'clap' as :Flag, :Param, :Subcommand
+import 'freight.cmd.enable' as :_startup_script
+import 'freight.pc' as :Pc
+import 'freight.peripheral.uplink' as :Packet, :Uplink
+import 'quicktype' as :declare_type, :F, :is
+import 'spec' as :spec
+
+export subcommand = with Subcommand 'configure'
+  \description 'remotely configure a freight instance'
+  \add with Subcommand 'marshal'
+    \description 'configure the marshal'
+  \add with Subcommand 'factory'
+    \description 'configure a factory'
+    \add with Param 'which'
+      \description 'the name of the factory to configure'
+
+declare_type 'ConfigureArgs', [[{
+  marshal: ?ConfigureMarshalArgs,
+  factory: ?ConfigureFactoryArgs,
+}]]
+declare_type 'ConfigureMarshalArgs', '{}'
+declare_type 'ConfigureFactoryArgs', [[{
+  which: string,
+}]]
+export main = F '(ConfigureArgs) -> <>', (args) ->
+  configurer = Configurer!
+  import 'spec' as :repr
+  print repr args
+  if args.marshal?
+    configurer\configure_marshal!
+  else if args.factory?
+    configurer\configure_factory args.factory.which
+  else
+    error 'internal error: no command recognised'
+
+class Configurer
+  new: F '(?Pc, ?Uplink) => <>', (@pc=Pc!, @uplink=Uplink!) =>
+
+  configure_marshal: F '() => <>', =>
+    marshal_config = @get_marshal_config!
+    ok, new_config = @try_edit marshal_config
+    if not ok?
+      return
+
+    ok, err = is 'MarshalConfig', new_config
+    error 'todo' .. tostring err
+
+  get_marshal_config: F '() => <?string, ?string>', =>
+    MAX_ATTEMPTS = 3
+    for i = 1, MAX_ATTEMPTS
+      if i > 1
+        print "getting config (attempt #{i}/#{MAX_ATTEMPTS})"
+
+      idemp_tok = IdempotenceToken!
+      @uplink\broadcast MarshalIdentityRequest idemp_tok, @pc\id!
+      _, resp = @uplink\receive_from_any MarshalIdentityResponse
+
+    nil, "cannot find marshal after #{MAX_ATTEMPTS} attempts"
+
+  configure_factory: F '(string) -> <>', (factory_name) =>
+    error 'todo'
+
+  try_edit: F '(string) => <boolean, ?string>', (current_config) =>
+    error 'todo'
+
+declare_type 'MarshalIdentityRequest', [[{
+  idemp_tok: IdempotenceToken,
+  pc_id: number,
+}]]
+export class MarshalIdentityRequest extends Packet
+  new: F '(IdempotenceToken, number) => <>', (@idemp_tok, @pc_id) =>
+
+export class MarshalIdentityResponse extends Packet
+  new: F '(IdempotenceToken, number) => <>', (@idemp_tok, @pc_id) =>
+
+declare_type 'FactoryPcRequest', [[{
+  idemp_tok: IdempotenceToken,
+  pc_id: number,
+  name: string,
+}]]
+export class FactoryPcRequest extends Packet
+  new: F '(IdempotenceToken, number, string) => <>', (@idemp_tok, @pc_id, @name) =>
+
+export class FactoryPcResponse extends Packet
+  new: F '(IdempotenceToken, number|string) => <>', (@idemp_tok, @resp) =>
+
+declare_type 'GetConfigRequest', [[{
+  idemp_tok: IdempotenceToken,
+  pc_id: number,
+}]]
+export class GetConfigRequest extends Packet
+  new: F '(IdempotenceToken, number) => <>', (@idemp_tok, @pc_id) =>
+
+export class GetConfigResponse extends Packet
+  new: F '(IdempotenceToken, ?string) => <>', (@idemp_tok, @raw) =>
+
+declare_type 'SetConfigRequest', [[{
+  idemp_tok: IdempotenceToken,
+  pc_id: number,
+  raw: string,
+}]]
+export class SetConfigRequest extends Packet
+  new: F '(IdempotenceToken, number, string) => <>', (@idemp_tok, @pc_id, @raw) =>
+
+export class SetConfigResponse extends Packet
+  new: F '(IdempotenceToken, ?string) => <>', (@idemp_tok, @error_reason) =>
