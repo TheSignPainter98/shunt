@@ -416,6 +416,7 @@ spec ->
           estimated_capacity: 64
 
         config =
+          <raw>: ''
           marshal:
             network: 'mainline'
         uplink = Uplink TestUplinkBackend
@@ -584,6 +585,7 @@ spec ->
         TRAIN_NAME = 'some-train-name'
 
         config =
+          <raw>: ''
           marshal:
             network: 'mainline'
         uplink = Uplink TestUplinkBackend
@@ -638,6 +640,7 @@ spec ->
         TRAIN_NAME = 'some-train-name'
 
         config =
+          <raw>: ''
           marshal:
             network: 'mainline'
         uplink = Uplink TestUplinkBackend
@@ -693,6 +696,7 @@ spec ->
         TRAIN_NAME = 'some-train-name'
 
         config =
+          <raw>: ''
           marshal:
             network: 'mainline'
         uplink = Uplink TestUplinkBackend
@@ -728,6 +732,7 @@ spec ->
         TRAIN_NAME = 'some-train-name'
 
         config =
+          <raw>: ''
           marshal:
             network: 'mainline'
         uplink = Uplink TestUplinkBackend

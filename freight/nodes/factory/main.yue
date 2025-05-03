@@ -351,6 +351,7 @@ spec ->
       new_name = nil
 
       config =
+        <raw>: ''
         factory:
           name: CONFIG_NAME
           network: 'mainline'
@@ -386,6 +387,7 @@ spec ->
 
       PC_NAME = 'test-factory-name'
       config =
+        <raw>: ''
         factory:
           name: PC_NAME
           network: 'mainline'
@@ -445,6 +447,7 @@ spec ->
       FACTORY_NAME = 'test-factory-name'
       present_train_name = TRAIN_NAME
       config =
+        <raw>: ''
         factory:
           name: FACTORY_NAME
           network: 'mainline'
@@ -501,6 +504,7 @@ spec ->
         PC_NAME = 'test-factory-name'
 
         config =
+          <raw>: ''
           factory:
             name: PC_NAME
             network: 'mainline'

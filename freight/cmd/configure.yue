@@ -35,6 +35,7 @@ export main = F '(ConfigureArgs) -> <>', (args) ->
   else
     error 'internal error: no command recognised'
 
+-- TODO(kcza): move to separate module due to fallibility and testability
 class Configurer
   new: F '(?Pc, ?Uplink) => <>', (@pc=Pc!, @uplink=Uplink!) =>
 
