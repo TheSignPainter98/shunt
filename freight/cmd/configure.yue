@@ -23,9 +23,11 @@ declare_type 'ConfiguratorFactoryArgs', [[{
 }]]
 export main = F '(ConfiguratorArgs) -> <>', (args) ->
   configurator = Configurator!
-  if args.marshal?
+  err = if args.marshal?
     configurator\configure_marshal!
   else if args.factory?
     configurator\configure_factory args.factory.which
   else
     error 'internal error: no command recognised'
+  if err?
+    print err
