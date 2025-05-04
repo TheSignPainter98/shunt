@@ -14,9 +14,9 @@ import 'quicktype' as :F
 import 'spec' as :run_tests
 
 import 'freight.cmd.clean'
-import 'freight.cmd.configure'
 import 'freight.cmd.declare'
 import 'freight.cmd.disable'
+import 'freight.cmd.edit'
 import 'freight.cmd.enable'
 import 'freight.cmd.init'
 import 'freight.cmd.start'
@@ -65,8 +65,8 @@ run = (args) ->
     enable.main args.enable
   else if args.disable?
     disable.main args.disable
-  else if args.configure?
-    configure.main args.configure
+  else if args.edit?
+    edit.main args.edit
   else if args.declare?
     declare.main args.declare
   else if args.upgrade?

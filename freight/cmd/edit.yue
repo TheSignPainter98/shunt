@@ -4,24 +4,24 @@ import 'clap' as :Flag, :Param, :Subcommand
 import 'freight.configurator.main' as :Configurator
 import 'quicktype' as :declare_type, :F
 
-export subcommand = with Subcommand 'configure'
+export subcommand = with Subcommand 'edit'
   \description 'remotely configure a freight instance'
   \add with Subcommand 'marshal'
-    \description 'configure the marshal'
+    \description 'edit the marshal'
   \add with Subcommand 'factory'
-    \description 'configure a factory'
+    \description 'edit a factory'
     \add with Param 'which'
-      \description 'the name of the factory to configure'
+      \description 'the name of the factory to edit'
 
-declare_type 'ConfiguratorArgs', [[{
-  marshal: ?ConfiguratorMarshalArgs,
-  factory: ?ConfiguratorFactoryArgs,
+declare_type 'EditArgs', [[{
+  marshal: ?EditMarshalArgs,
+  factory: ?EditFactoryArgs,
 }]]
-declare_type 'ConfiguratorMarshalArgs', '{}'
-declare_type 'ConfiguratorFactoryArgs', [[{
+declare_type 'EditMarshalArgs', '{}'
+declare_type 'EditFactoryArgs', [[{
   which: string,
 }]]
-export main = F '(ConfiguratorArgs) -> <>', (args) ->
+export main = F '(EditArgs) -> <>', (args) ->
   configurator = Configurator!
   err = if args.marshal?
     configurator\configure_marshal!
