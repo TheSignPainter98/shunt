@@ -1,12 +1,13 @@
 local *
 
+import 'freight.configurator.editor' as :Editor, :TestEditorBackend
 import 'freight.pc' as :Pc
 import 'freight.peripheral.uplink' as :Packet, :Uplink
 import 'quicktype' as :declare_type, :F, :is
 import 'spec' as :spec
 
 class Configurator
-  new: F '(?Pc, ?Uplink) => <>', (@pc=Pc!, @uplink=Uplink!) =>
+  new: F '(?Pc, ?Uplink, ?Editor) => <>', (@pc=Pc!, @uplink=Uplink!, @editor=Editor!) =>
 
   configure_marshal: F '() => <>', =>
     marshal_config = @get_marshal_config!

@@ -2,6 +2,7 @@ local *
 
 import 'clap' as :Flag, :Param, :Subcommand
 import 'freight.config' as :CONFIG_FILE
+import 'freight.configurator.editor' as :ABORT, :Editor
 import 'freight.toml' as :parse_toml
 import 'quicktype' as :F, :T
 import 'spec' as :spec
@@ -40,50 +41,32 @@ export main = F '({}) -> <>', (args) ->
       print "#{CONFIG_FILE} already exists"
       return
 
-  temp_config_path = os.tmpname!
-  default_config = default_config_fn!
-  with assert io.open temp_config_path, 'w+'
-    assert \write default_config
+  editor = Editor!
+  validator = (text) -> validate_config text, args.instance_type
+  config, err = editor\edit_text default_config_fn!, CONFIG_FILE, validator, (_) ->
+    print "press [ENTER] edit #{CONFIG_FILE}, [q] to abort"
+    resp = io.read '*l'
+    switch resp
+      when 'q'
+        ABORT
+      when ''
+        nil
+
+  if err != nil
+    print "cannot init: #{err}"
+    return
+
+  with assert io.open CONFIG_FILE, 'w+'
+    assert \write config
     assert \close!
-
-  config_is_valid = false
-  while not config_is_valid
-    while true
-      print 'press [ENTER] edit freight.toml, [q] to abort'
-      resp = io.read '*l'
-      switch resp
-        when 'q'
-          assert os.remove temp_config_path
-          print 'aborted'
-          return
-        when ''
-          break
-
-    if shell?
-      shell.execute 'edit', temp_config_path
-    else
-      os.execute "nvim '#{temp_config_path}'"
-
-    config_is_valid = validate_config temp_config_path, args.instance_type
-
-  os_rename_assert = (...) ->
-    if 0 == select '#', ...
-      return
-    assert ...
-  os_rename_assert os.rename temp_config_path, CONFIG_FILE
 
   print "#{args.instance_type} configured"
   return
 
-validate_config = F '(string, string) -> boolean', (file, instance_type) ->
-  local raw_config
-  with assert io.open file, 'r'
-    raw_config = assert \read '*a'
-    assert \close!
-
+validate_config = F '(string, string) -> boolean', (raw, instance_type) ->
   local config, err
   try
-    config = parse_toml raw_config
+    config = parse_toml raw
   catch err2
     err = err2
   if err?

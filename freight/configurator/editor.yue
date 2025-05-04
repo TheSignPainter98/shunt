@@ -1,18 +1,20 @@
 local *
 
-import 'quicktype' as :declare_type, :F
+import 'quicktype' as :declare_singleton_type, :declare_type, :F
 import 'spec' as :spec
 
 declare_type 'EditorBackend', [[{
   edit_file: (string) => ?string,
 }]]
+export ABORT = <tostring>: => 'ABORT'
+declare_singleton_type ABORT
 export class Editor
   new: F '(?EditorBackend) => <>', (@backend=MinecraftBackend!) =>
 
   edit_file: F '(string) => ?string', (path) =>
     @backend\edit_file path
 
-  edit_text: F '(string, ?(string) -> boolean) => <?string, ?string>', (text, check) =>
+  edit_text: F '(string, string, ?(string) -> boolean, ?(number) -> ?ABORT) => <?string, ?string>', (text, value_name, check, on_attempt) =>
     tmp_path = os.tmpname!
 
     with assert io.open tmp_path, 'w+'
@@ -20,7 +22,14 @@ export class Editor
       assert \close!
 
     local err
+    attempt_num = 0
     repeat
+      attempt_num += 1
+      if on_attempt?
+        err = on_attempt attempt_num
+        if err?
+          break
+
       err = @backend\edit_file tmp_path
       if err?
         break
@@ -32,6 +41,8 @@ export class Editor
 
     os.remove tmp_path
 
+    if err == ABORT
+      err = 'aborted'
     if err?
       nil, err
     else
@@ -78,7 +89,7 @@ spec ->
 
   import 'spec' as :describe, :it, :matchers
 
-  import eq from matchers
+  import deep_eq, eq from matchers
 
   describe 'Editor', ->
     it 'edits text', ->
@@ -103,10 +114,15 @@ spec ->
 
       num_edits = 0
       text = 'a'\rep 7
-      result, err = editor\edit_text text, F '(string) -> boolean', (text) ->
+      checker = F '(string) -> boolean', (text) ->
         num_edits += 1
         #text >= 10
+      attempts = {}
+      on_attempt = (i) ->
+        attempts[] = i
+      result, err = editor\edit_text text, 'value-name', checker, on_attempt
 
       $expect_that result, eq 'a'\rep 10
       $expect_that err, eq nil
       $expect_that num_edits, eq 3
+      $expect_that attempts, deep_eq {1, 2, 3}
