@@ -40,6 +40,7 @@ export class Args
         \add with Param 'filter'
           \description 'run only tests matching this pattern'
           \default nil
+      \add (require 'freight.cmd.configure').subcommand
       \add (require 'freight.cmd.clean').subcommand
       \add (require 'freight.cmd.declare').subcommand
       \add (require 'freight.cmd.disable').subcommand
