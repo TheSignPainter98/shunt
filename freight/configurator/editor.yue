@@ -12,12 +12,30 @@ export class Editor
   edit_file: F '(string) => ?string', (path) =>
     @backend\edit_file path
 
-  edit_text: F '(string) => <?string, ?string>', (text) =>
-    -- TODO(kcza): write file to temp file
-    -- TODO(kcza): edit temp file
-    -- TODO(kcza): read temp file to memory
-    -- TODO(kcza): ALWAYS delete temp file
-    -- @backend\edit_file
+  edit_text: F '(string, ?(string) -> boolean) => <?string, ?string>', (text, check) =>
+    tmp_path = os.tmpname!
+
+    with assert io.open tmp_path, 'w+'
+      assert \write text
+      assert \close!
+
+    local err
+    repeat
+      err = @backend\edit_file tmp_path
+      if err?
+        break
+
+      with assert io.open tmp_path, 'r'
+        text = \read '*a'
+        \close!
+    until not check? or check text
+
+    os.remove tmp_path
+
+    if err?
+      nil, err
+    else
+      text, nil
 
 class MinecraftBackend
   new: =>
@@ -73,3 +91,22 @@ spec ->
           file_content = file_content\gsub 'b', 'c'
       editor\edit_file FILE_PATH
       $expect_that file_content, eq 'ac'\rep 10
+
+    it 'edits text with a checker', ->
+      FILE_PATH = 'file.txt'
+      editor = Editor TestEditorBackend
+        edit_file: (path) =>
+          with assert io.open path, 'a'
+            assert \write 'a'
+            assert \close!
+          file_content = "a#{file_content}"
+
+      num_edits = 0
+      text = 'a'\rep 7
+      result, err = editor\edit_text text, F '(string) -> boolean', (text) ->
+        num_edits += 1
+        #text >= 10
+
+      $expect_that result, eq 'a'\rep 10
+      $expect_that err, eq nil
+      $expect_that num_edits, eq 3
