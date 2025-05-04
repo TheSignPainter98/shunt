@@ -3,6 +3,7 @@ local *
 import 'clap' as :Flag, :Param, :Subcommand
 import 'freight.config' as :CONFIG_FILE
 import 'freight.configurator.editor' as :ABORT, :Editor
+import 'freight.configurator.main' as :Configurator
 import 'freight.toml' as :parse_toml
 import 'quicktype' as :F, :T
 import 'spec' as :spec
@@ -42,8 +43,8 @@ export main = F '({}) -> <>', (args) ->
       return
 
   editor = Editor!
-  validator = F '(string, string) -> boolean', (text) -> validate_config text, args.instance_type
-  config, err = editor\edit_text default_config_fn!, CONFIG_FILE, validator, (_) ->
+  checker = Configurator::config_checker args.instance_type
+  config, err = editor\edit_text default_config_fn!, CONFIG_FILE, checker, (_) ->
     print "press [ENTER] edit #{CONFIG_FILE}, [q] to abort"
     resp = io.read '*l'
     switch resp
@@ -62,22 +63,6 @@ export main = F '({}) -> <>', (args) ->
 
   print "#{args.instance_type} configured"
   return
-
-validate_config = F '(string, string) -> boolean', (raw, instance_type) ->
-  local config, err
-  try
-    config = parse_toml raw
-  catch err2
-    err = err2
-  if err?
-    print err
-    return false
-
-  if not config[instance_type]?
-    print "config does not contain #{instance_type} section"
-    return false
-
-  true
 
 spec ->
   import 'spec_macros' as $

@@ -1,40 +1,80 @@
 local *
 
+local MarshalIdentityRequest
+local MarshalIdentityResponse
+local FactoryPcRequest
+local FactoryPcResponse
+local GetConfigRequest
+local GetConfigResponse
+local SetConfigRequest
+local SetConfigResponse
+
 import 'freight.configurator.editor' as :Editor, :TestEditorBackend
 import 'freight.pc' as :Pc
-import 'freight.peripheral.uplink' as :Packet, :Uplink
-import 'quicktype' as :declare_type, :F, :is
+import 'freight.peripheral.uplink' as :IdempotenceToken, :Packet, :TIMEOUT, :Uplink
+import 'quicktype' as :declare_type, :F, :is, :T
 import 'spec' as :spec
 
-class Configurator
+export class Configurator
   new: F '(?Pc, ?Uplink, ?Editor) => <>', (@pc=Pc!, @uplink=Uplink!, @editor=Editor!) =>
 
-  configure_marshal: F '() => <>', =>
-    marshal_config = @get_marshal_config!
-    ok, new_config = @try_edit marshal_config
-    if not ok?
-      return
+  configure_marshal: F '() => ?string', =>
+    marshal_config, err = @get_marshal_config!
+    if err != nil
+      return err
+    validator = (raw) ->
+      local config, err
+      try
+        config = parse_toml raw
+      catch err2
+        err = err2
+      if err?
+        print err
+        return false
 
-    ok, err = is 'MarshalConfig', new_config
+      ok, err = is 'MarshalConfig', new_config
+      if err?
+        print err
+      ok
+    marshal_config, err = @editor\edit_text marshal_config, "marshal's freight.toml", validator, (_) ->
     error 'todo' .. tostring err
+    nil
 
   get_marshal_config: F '() => <?string, ?string>', =>
     MAX_ATTEMPTS = 3
     for i = 1, MAX_ATTEMPTS
       if i > 1
-        print "getting config (attempt #{i}/#{MAX_ATTEMPTS})"
+        print "getting config... (attempt #{i}/#{MAX_ATTEMPTS})"
 
       idemp_tok = IdempotenceToken!
       @uplink\broadcast MarshalIdentityRequest idemp_tok, @pc\id!
-      _, resp = @uplink\receive_from_any MarshalIdentityResponse
+      _, resp = @uplink\receive_from_any MarshalIdentityResponse, timeout: 5
+      if resp != TIMEOUT
+        return resp, nil
 
     nil, "cannot find marshal after #{MAX_ATTEMPTS} attempts"
 
   configure_factory: F '(string) -> <>', (factory_name) =>
     error 'todo'
 
-  try_edit: F '(string) => <boolean, ?string>', (current_config) =>
-    error 'todo'
+  @expected_instance_types: T '{string->string}',
+    marshal: 'MarshalConfig'
+    factory: 'FactoryConfig'
+  @config_checker: F '(string) => (string) -> boolean', (instance_type) =>
+    expected_type = @expected_instance_types[instance_type]
+    if not expected_type?
+      error "internal error: unknown instance type #{instance_type}"
+
+    F '(string) -> boolean', (text) ->
+      local config, err
+      try
+        config = parse_toml raw
+      catch err2
+        err = err2
+      if err?
+        print err
+        return false
+      true
 
 declare_type 'MarshalIdentityRequest', [[{
   idemp_tok: IdempotenceToken,
