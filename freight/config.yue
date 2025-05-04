@@ -23,7 +23,7 @@ export config = F '() -> ?StoredConfig', ->
       raw = assert \read '*a'
       assert \close!
     if raw?
-      cached_config = parse_toml raw_content
+      cached_config = parse_toml raw
       cached_config.<> = {}
       cached_config.<raw> = raw
 
