@@ -42,7 +42,7 @@ export main = F '({}) -> <>', (args) ->
       return
 
   editor = Editor!
-  validator = (text) -> validate_config text, args.instance_type
+  validator = F '(string, string) -> boolean', (text) -> validate_config text, args.instance_type
   config, err = editor\edit_text default_config_fn!, CONFIG_FILE, validator, (_) ->
     print "press [ENTER] edit #{CONFIG_FILE}, [q] to abort"
     resp = io.read '*l'
