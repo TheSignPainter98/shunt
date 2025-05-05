@@ -36,7 +36,11 @@ export class Configurator
       if err?
         print err
       ok
-    marshal_config, err = @editor\edit_text marshal_config, "marshal's freight.toml", validator, (_) ->
+    checker = @@config_checker 'marshal'
+    marshal_config, err = @editor\edit_text marshal_config, "marshal's freight.toml", checker, @@ask_permission_on_attempt
+    if err?
+      print err
+      return
     error 'todo' .. tostring err
     nil
 
@@ -75,6 +79,15 @@ export class Configurator
         print err
         return false
       true
+
+  @ask_permission_on_attempt: F '(string, number) => <>', (file_name, attempt) =>
+    print "press [ENTER] edit #{file_name}, [q] to abort"
+    resp = io.read '*l'
+    switch resp
+      when 'q'
+        ABORT
+      when ''
+        nil
 
 declare_type 'MarshalIdentityRequest', [[{
   idemp_tok: IdempotenceToken,

@@ -14,7 +14,7 @@ export class Editor
   edit_file: F '(string) => ?string', (path) =>
     @backend\edit_file path
 
-  edit_text: F '(string, string, ?(string) -> boolean, ?(number) -> ?ABORT) => <?string, ?string>', (text, value_name, check, on_attempt) =>
+  edit_text: F '(string, string, ?(string) -> boolean, ?(string, number) -> ?ABORT) => <?string, ?string>', (text, value_name, check, on_attempt) =>
     tmp_path = os.tmpname!
 
     with assert io.open tmp_path, 'w+'
@@ -26,7 +26,7 @@ export class Editor
     repeat
       attempt_num += 1
       if on_attempt?
-        err = on_attempt attempt_num
+        err = on_attempt value_name, attempt_num
         if err?
           break
 
@@ -113,16 +113,23 @@ spec ->
           file_content = "a#{file_content}"
 
       num_edits = 0
+      file = 'value-name'
       text = 'a'\rep 7
       checker = F '(string) -> boolean', (text) ->
         num_edits += 1
         #text >= 10
       attempts = {}
-      on_attempt = (i) ->
-        attempts[] = i
-      result, err = editor\edit_text text, 'value-name', checker, on_attempt
+      on_attempt = (file, attempt) ->
+        attempts[] = :file, :attempt
+      result, err = editor\edit_text text, file, checker, on_attempt
 
       $expect_that result, eq 'a'\rep 10
       $expect_that err, eq nil
       $expect_that num_edits, eq 3
-      $expect_that attempts, deep_eq {1, 2, 3}
+      $expect_that attempts, deep_eq
+        * :file,
+          attempt: 1
+        * :file,
+          attempt: 2
+        * :file,
+          attempt: 3

@@ -44,14 +44,8 @@ export main = F '({}) -> <>', (args) ->
 
   editor = Editor!
   checker = Configurator::config_checker args.instance_type
-  config, err = editor\edit_text default_config_fn!, CONFIG_FILE, checker, (_) ->
-    print "press [ENTER] edit #{CONFIG_FILE}, [q] to abort"
-    resp = io.read '*l'
-    switch resp
-      when 'q'
-        ABORT
-      when ''
-        nil
+  on_attempt = Configurator::ask_permission_on_attempt
+  config, err = editor\edit_text default_config_fn!, CONFIG_FILE, checker, on_attempt
 
   if err != nil
     print "cannot init: #{err}"
