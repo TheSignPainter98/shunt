@@ -331,7 +331,8 @@ class Matches
   new: (@pat) =>
 
   matches: (actual) =>
-    actual? and (actual\match @pat)?
+    ('string' == type actual) and
+      (actual\match @pat)?
 
   explain_match: (actual) =>
     if 'string' != type actual
