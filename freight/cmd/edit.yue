@@ -23,11 +23,17 @@ declare_type 'EditFactoryArgs', [[{
 }]]
 export main = F '(EditArgs) -> <>', (args) ->
   configurator = Configurator!
-  err = if args.marshal?
-    configurator\configure_marshal!
-  else if args.factory?
-    configurator\configure_factory args.factory.which
+
+  what = if args.marshal?
+    'marshal'
   else
-    error 'internal error: no command recognised'
+    args.factory.which
+  id, err = configurator\get_id what
   if err?
     print err
+    return
+
+  err = configurator\configure id
+  if err?
+    print err
+    return

@@ -4,7 +4,7 @@ local *
 
 import 'compat' as :HOST
 import 'freight.cmd.declare' as :DeclareTrainStateResponse
-import 'freight.configurator.main' as :FactoryPcRequest, :FactoryPcResponse, :GetConfigRequest, :GetConfigResponse, :MarshalIdentityRequest, :MarshalIdentityResponse, :SetConfigRequest, :SetConfigResponse
+import 'freight.configurator.main' as :GetConfigRequest, :GetConfigResponse, :MarshalIdentityRequest, :MarshalIdentityResponse, :SetConfigRequest, :SetConfigResponse
 import 'freight.data.multiplexer' as :Multiplexer
 import 'freight.logger' as :log
 import 'freight.nodes.factory.main' as :FactoryHeartbeat, :ScheduleRequest, :ScheduleResponse
@@ -333,8 +333,14 @@ class Marshal
     @uplink\send_to pc_id, DeclareTrainStateResponse idemp_tok, err
 
   on_marshal_identity_request: F '(MarshalIdentityRequest) => <>', (message) =>
-    { :idemp_tok, :pc_id } = message
-    @uplink\send_to pc_id, MarshalIdentityResponse idemp_tok, @pc\id!
+    { :idemp_tok, :pc_id, :name } = message
+    if not name?
+      @uplink\send_to pc_id, MarshalIdentityResponse idemp_tok, @pc\id!
+      return
+
+    @uplink\send_to pc_id,
+      MarshalIdentityResponse idemp_tok,
+        @factories[name]?.pc_id or "no known factory '#{name}'"
 
   on_factory_pc_request: F '(FactoryPcRequest) => <>', (message) =>
     { :idemp_tok, :pc_id, :name } = message
@@ -687,13 +693,12 @@ spec ->
             protocol: eq DeclareTrainStateResponse\protocol!
 
     describe '\\on_marshal_identity_request', ->
-      it 'responds correctly', ->
+      it 'responds to marshal requests', ->
         idemp_tok = IdempotenceToken!
 
         sent = {}
         REQUESTER_PC_ID = 1
         MARSHAL_PC_ID = 2
-        TRAIN_NAME = 'some-train-name'
 
         config =
           <raw>: ''
@@ -709,7 +714,7 @@ spec ->
 
         upgrade_listener = UpgradeListener config, uplink
         pc = Pc TestPcBackend
-          id: -> MARSHAL_PC_ID
+          id: => MARSHAL_PC_ID
         with Marshal config, pc, uplink, upgrade_listener, TestClock!
           \ut_stop_counting_epochs!
           \ut_step!
@@ -719,17 +724,17 @@ spec ->
           pc_id: eq REQUESTER_PC_ID
           message: has_fields
             idemp_tok: eq idemp_tok
-            pc_id: eq MARSHAL_PC_ID
+            resp: eq MARSHAL_PC_ID
           protocol: eq MarshalIdentityResponse\protocol!
 
-    describe '\\on_factory_pc_request', ->
-      it 'responds correctly', ->
+      it 'responds to factory requests', ->
         idemp_tok = IdempotenceToken!
 
         sent = {}
         REQUESTER_PC_ID = 1
-        MARSHAL_PC_ID = 1
-        TRAIN_NAME = 'some-train-name'
+        MARSHAL_PC_ID = 2
+        FACTORY_NAME = 'factory'
+        FACTORY_PC_ID = 12345
 
         config =
           <raw>: ''
@@ -739,10 +744,10 @@ spec ->
           receive: (_, _) =>
             @count ??= 0
             @count += 1
-            message = switch @count
-              when 1, 4
-                FactoryPcRequest idemp_tok, REQUESTER_PC_ID, 'factory_3'
-              when 2, 3
+            pc_id, message = switch @count
+              when 1, 3
+                REQUESTER_PC_ID, MarshalIdentityRequest idemp_tok, REQUESTER_PC_ID, FACTORY_NAME
+              when 2
                 stations =
                   known: {}
                   unknown: {}
@@ -750,10 +755,10 @@ spec ->
                   known: {}
                   unknown: {}
                   estimated_capacity: 0
-                FactoryHeartbeat @count, "factory_#{@count}", stations, stockpile
+                FACTORY_PC_ID, FactoryHeartbeat @count, FACTORY_NAME, stations, stockpile
               else
                 error 'too many messages requested'
-            REQUESTER_PC_ID, message, message\protocol!
+            pc_id, message, message\protocol!
           send: (pc_id, message, protocol) =>
             sent[] = :pc_id, :message, :protocol
             true
@@ -766,7 +771,6 @@ spec ->
           \ut_step!
           \ut_step!
           \ut_step!
-          \ut_step!
 
         $expect_that sent, len eq 2
         $expect_that sent[1], has_fields
@@ -774,13 +778,13 @@ spec ->
           message: has_fields
             idemp_tok: eq idemp_tok
             resp: matches 'no known factory'
-          protocol: eq FactoryPcResponse\protocol!
+          protocol: eq MarshalIdentityResponse\protocol!
         $expect_that sent[2], has_fields
           pc_id: eq REQUESTER_PC_ID
           message: has_fields
             idemp_tok: eq idemp_tok
-            resp: eq 3
-          protocol: eq FactoryPcResponse\protocol!
+            resp: eq 2
+          protocol: eq MarshalIdentityResponse\protocol!
 
     describe '\\on_get_config_request', ->
       it 'responds correctly', ->
@@ -852,7 +856,7 @@ spec ->
             pc_id: eq REQUESTER_PC_ID
             message: has_fields
               idemp_tok: eq idemp_tok
-              error_reason: eq nil
+              resp: eq nil
             protocol: eq SetConfigResponse\protocol!
           $expect_that \ut_config!, deep_eq
             marshal:

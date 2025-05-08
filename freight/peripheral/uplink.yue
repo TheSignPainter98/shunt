@@ -60,7 +60,8 @@ export class Uplink
 
     data, ok = message_type::from message, protocol
     if not ok
-      error "unexpected message #{message}, expected #{message_type::protocol!}"
+      import 'spec' as :repr
+      error "unexpected message #{repr message}, expected #{message_type::protocol!} but got #{message\protocol!}"
     id, data
 declare_type 'UplinkReceiveOpts', [[{
   timeout: ?number,

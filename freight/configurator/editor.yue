@@ -1,8 +1,17 @@
 local *
 
-import 'quicktype' as :declare_singleton_type, :declare_type, :F
+import 'quicktype' as :declare_singleton_type, :declare_type, :F, :T
 import 'spec' as :spec
 
+declare_type 'Editor', [[{
+  edit_file: (string) => ?string,
+  edit_text: (
+      string,
+      string,
+      ?(string) -> boolean,
+      ?(string, number) -> ?ABORT
+    ) => <?string, ?string>,
+}]]
 declare_type 'EditorBackend', [[{
   edit_file: (string) => ?string,
 }]]
@@ -10,6 +19,7 @@ export ABORT = <tostring>: => 'ABORT'
 declare_singleton_type ABORT
 export class Editor
   new: F '(?EditorBackend) => <>', (@backend=MinecraftBackend!) =>
+    @max_retries = T '?number', nil
 
   edit_file: F '(string) => ?string', (path) =>
     @backend\edit_file path
@@ -37,7 +47,10 @@ export class Editor
       with assert io.open tmp_path, 'r'
         text = \read '*a'
         \close!
-    until not check? or check text
+      if @max_retries? and attempt_num > @max_retries
+        err = 'max edit retries reached'
+        break
+    until not check? or (check text)
 
     os.remove tmp_path
 
@@ -61,7 +74,7 @@ class MinecraftBackend
 declare_type 'TestEditorBackendOpts', [[{
   edit_file: ?(string) => ?string,
 }]]
-class TestEditorBackend
+export class TestEditorBackend
   new: F '(?TestEditorBackendOpts) => <>', (opts={}) =>
     {
       :edit_file=-> error 'edit_file unimplemented'
@@ -119,8 +132,9 @@ spec ->
         num_edits += 1
         #text >= 10
       attempts = {}
-      on_attempt = (file, attempt) ->
+      on_attempt = F '(string, number) -> ?ABORT', (file, attempt) ->
         attempts[] = :file, :attempt
+        nil
       result, err = editor\edit_text text, file, checker, on_attempt
 
       $expect_that result, eq 'a'\rep 10
