@@ -12,8 +12,9 @@ export class Args
     with ArgParser 'freight'
       \version VERSION
       \description 'an automatic cargo router'
-      \add with Flag 'verbose'
-        \description 'log verbosely'
+      \add with Flag 'terse'
+        \short nil
+        \description 'log tersely'
         \global!
       if not pocket?
         \add with Flag 'ignore-monitor'

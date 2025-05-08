@@ -36,8 +36,8 @@ main = (raw_args) ->
   if not ok
     return
 
-  logger.set_log_verbosity args.verbose
-  spec.set_log_verbosity args.verbose
+  logger.set_log_verbosity not args.terse
+  spec.set_log_verbosity not args.terse
 
   force_error_on_bad_exit = args.force_error_on_bad_exit
 
