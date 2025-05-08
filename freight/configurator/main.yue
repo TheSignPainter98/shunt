@@ -9,7 +9,7 @@ local GetConfigResponse
 local SetConfigRequest
 local SetConfigResponse
 
-import 'freight.configurator.editor' as :Editor
+import 'freight.configurator.editor' as :ABORT, :Editor
 import 'freight.pc' as :Pc
 import 'freight.peripheral.uplink' as :IdempotenceToken, :Packet, :TIMEOUT, :Uplink
 import 'freight.toml' as :parse_toml
