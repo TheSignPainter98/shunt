@@ -33,9 +33,12 @@ network = 'mainline'
   resource_names, inventories_found = switch HOST
     when 'minecraft'
       inventories = [ Inventory backend for backend in *MinecraftInventoryBackend::find! ]
+      log -> "found #{#inventories} inventories"
       stockpile = Stockpile inventories
 
-      resources = [ stored_item.item for stored_item in *stockpile\content!.stored_items ]
+      log -> 'scanning inventories...'
+      resources = [ stored_item.name for stored_item in *stockpile\content!.stored_items ]
+      log -> "found #{#resources} resource(s)"
       resources, #inventories > 0
     when 'native'
       {'test-resource'}, true
@@ -45,6 +48,7 @@ network = 'mainline'
   station_names = switch HOST
     when 'minecraft'
       stations = [ Station backend for backend in *MinecraftStationBackend::find! ]
+      log -> "found #{#stations} station(s)"
       seen_station_names = {}
       for station in *stations
         err = station\validate!
