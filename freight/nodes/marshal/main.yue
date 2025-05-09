@@ -201,6 +201,7 @@ class Marshal
         [name] = status
 
   on_network_message: F '(Packet) => <>', (message) =>
+    log -> "received a #{message\protocol!}"
     switch message\protocol!
       when 'FactoryHeartbeat'
         @on_factory_heartbeat message

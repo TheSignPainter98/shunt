@@ -179,6 +179,7 @@ class Factory
         @on_set_config_request message
       else
         log -> "ignoring #{message\protocol!} message"
+    return
 
   on_schedule_request: F '(number, Packet) => <>', (requester, request) =>
     log -> 'handling schedule request'
