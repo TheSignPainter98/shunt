@@ -60,6 +60,8 @@ export class Inventory
         with [name]
           .stored += slot.count
 
+    if populated_slots == 0
+      return 64 * num_slots
     total_populated_capacity * num_slots / populated_slots
 
 declare_type 'StockpileContent', [[{
@@ -113,7 +115,7 @@ spec ->
 
   import 'spec' as :describe, :it, :matchers
 
-  import deep_eq, eq, errors, gt, has_fields, lt, matches from matchers
+  import deep_eq, eq, errors, gt, has_fields, le, lt, matches from matchers
 
   describe 'Stockpile', ->
     describe '\\content', ->
@@ -189,3 +191,17 @@ spec ->
           estimated_capacity: gt 64 + 16
         $expect_that content, has_fields
           estimated_capacity: lt 64 * 3
+
+      it 'estimates empty stockpiles', ->
+        SIZE = 10
+        inventory = Inventory TestInventoryBackend
+          size: => SIZE
+          list: => {}
+        stockpile = Stockpile
+          * inventory
+
+        content = stockpile\content!
+        $expect_that content, has_fields
+          estimated_capacity: gt 0
+        $expect_that content, has_fields
+          estimated_capacity: le 64 * SIZE
