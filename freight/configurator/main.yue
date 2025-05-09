@@ -110,8 +110,11 @@ export class Configurator
       if err?
         print err
         return false
-      ok, _ = is expected_type, config
-      ok
+      _, err = is expected_type, config
+      if err?
+        print err
+        return false
+      true
 
   @ask_permission_on_attempt: F '(string, number) => ?ABORT', (file_name, attempt) =>
     print "press [ENTER] edit #{file_name}, [q] to abort"
