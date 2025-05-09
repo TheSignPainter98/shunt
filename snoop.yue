@@ -1,0 +1,7 @@
+import 'spec' as :repr
+
+peripheral.find 'modem', rednet.open
+while true
+  print '---'
+  from_id, msg, protocol = rednet.receive!
+  print "##{from_id}(#{protocol}): #{repr msg}"

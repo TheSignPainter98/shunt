@@ -3,7 +3,7 @@ LUA = luajit
 DIAGRAMS = $(shell ls docs/*.dot | sed 's/\.dot$$/.svg/')
 SOURCES = $(shell find -name '*.yue')
 OBJECTS = $(patsubst %.yue,%.lua,$(SOURCES))
-BINARIES = bin/freight bin/goo
+BINARIES = bin/freight bin/goo bin/snoop
 
 NODE_FONTNAME = C059
 EDGE_FONTNAME = $(NODE_FONTNAME)
@@ -62,6 +62,7 @@ freight/version.lua: .version.txt
 .FORCE:
 .PHONY: .FORCE
 
-release: bin/freight ./scripts/release
-	./scripts/release $<
+release: bin/freight ./scripts/release bin/snoop
+	./scripts/release bin/freight
+	./scripts/release bin/snoop
 .PHONY: release
