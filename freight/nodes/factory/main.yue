@@ -24,10 +24,11 @@ name = '#{resource_name}'
 # surplus_amount = 1152
 # shortage_amount = 576
 "
-  station_config = F '(string) -> string', (station_name) -> "[[stations]]
+  station_config = F '(string, [string]) -> string', (station_name, resource_names) ->
+    "[[stations]]
 name = '#{station_name}'
 type = 'inbound' # or 'outbound'
-handles = '<resource-id>'
+handles = #{table.concat ["'#{name}'" for name in *resource_names], '# or '}
 network = 'mainline'
 "
   resource_names, inventories_found = switch HOST
@@ -96,7 +97,7 @@ network = 'mainline'
     for resource_name in *resource_names
       [] = stockpile_config resource_name
     for station_name in *station_names
-      [] = station_config station_name
+      [] = station_config station_name, resource_names
   table.concat config_fragments, '\n'
 
 export main = F '(FactoryConfig) -> <>', (config) ->
