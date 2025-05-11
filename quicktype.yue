@@ -561,6 +561,9 @@ class Some using Is
       \add C_ASSERT_NON_NIL
 
 class Never using Is
+  __tostring: =>
+    '!'
+
   checker: (checker_builder=CheckerBuilder!) =>
     with checker_builder
       \add C_ASSERT_NEVER
@@ -834,7 +837,42 @@ class Method extends Function
   new: (param_types, return_types) =>
     super { Some!, ...param_types }, return_types
 
-  __tostring: => super!
+  __tostring: =>
+    table.concat with {}
+      [] = '('
+      first_param = true
+      for param_type in *@param_types[2,]
+        if not first_param
+          [] = ", "
+        first_param = false
+
+        [] = tostring param_type
+      if @remainder_param_type?
+        if not first_param
+          [] = ', '
+        [] = tostring @remainder_param_type
+        [] = '...'
+      [] = ') => '
+      if #@return_types == 1
+        if @remainder_return_type?
+          [] = tostring @remainder_return_type
+          [] = '...'
+        else
+          [] = tostring @return_types[1]
+      else
+        [] = '<'
+        first_ret = true
+        for return_type in *@return_types
+          if not first_ret
+            [] = ", "
+          first_ret = false
+          [] = tostring return_type
+        if @remainder_return_type?
+          if not first_ret
+            [] = ', '
+          [] = tostring @remainder_return_type
+          [] = '...'
+        [] = '>'
 
 class Remainder using Is
   new: (@type) =>
