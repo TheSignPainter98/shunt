@@ -28,7 +28,7 @@ export main = F '(EditArgs) -> <>', (args) ->
     'marshal'
   else
     args.factory.which
-  id, err = configurator\get_id what
+  id, err = configurator\get_pc_id what
   if err?
     print err
     return
