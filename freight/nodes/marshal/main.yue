@@ -126,6 +126,7 @@ class Marshal
 
   run: F '(?StateMachine) => !', (state=@@state_machine!) =>
     parallel.waitForAny @upgrade_listener\listen,
+      @\listen_to_network,
       @\handle_events
 
   count_epochs: F '() => !', (initial_epoch=1)=>
@@ -169,6 +170,7 @@ class Marshal
 
   handle_event: F '({type: MarshalEventType}) => <>', (event) =>
     with event
+      log -> "handling #{.type} event"
       switch .type
         when 'new-epoch'
           @on_new_epoch .epoch
