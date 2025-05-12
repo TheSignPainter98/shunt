@@ -38,6 +38,8 @@ export class Args
         \add with Flag 'run-ugly-tests'
           \description 'tests with deliberate unsuppressible errors'
           \short nil
+        \add with Flag 'verbose'
+          \description 'log tersely'
         \add with Param 'filter'
           \description 'run only tests matching this pattern'
           \default nil
