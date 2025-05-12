@@ -4,7 +4,7 @@ export detect_and_use_monitor = ->
   if monitor = peripheral?.find 'monitor'
     monitor.clear!
     monitor.setTextScale 0.6
+    monitor.setCursorPos 1, 1
 
     print 'see monitor'
     term.redirect monitor
-    term.setCursorPos 1, 1
