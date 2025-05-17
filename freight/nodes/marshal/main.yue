@@ -30,8 +30,11 @@ export main = F '(MarshalConfig) -> <>', (config) ->
 
   state = nil
   with? io.open '.freight-state.toml'
-    state = parse_toml assert \read '*a'
+    state, err = parse_toml assert \read '*a'
     assert \close!
+    if err?
+      print err
+      return
 
   pc = Pc!
   uplink = Uplink!
@@ -360,7 +363,11 @@ class Marshal
 
   on_set_config_request: F '(SetConfigRequest) => <>', (message) =>
     { :idemp_tok, :pc_id, :raw } = message
-    config = parse_toml raw
+    config, err = parse_toml raw
+    if err?
+      @uplink\send_to pc_id, SetConfigResponse idemp_tok, err
+      return
+
     ok, err = is 'MarshalConfig', config
     if not ok
       @uplink\send_to pc_id, SetConfigResponse idemp_tok, err

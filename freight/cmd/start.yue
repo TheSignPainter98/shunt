@@ -22,7 +22,10 @@ export subcommand = with Subcommand 'start'
     \short nil
 
 export main = F '({}) -> <>', (args) ->
-  cfg = config!
+  cfg, err = config!
+  if err?
+    print "cannot start freight: cannot load config: #{err}"
+    return
   if not cfg?
     print 'cannot start freight: config missing\ntry running `freight init <instance-type>` first'
     return

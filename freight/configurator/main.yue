@@ -102,11 +102,7 @@ export class Configurator
       error "internal error: unknown instance type #{instance_type}"
 
     F '(string) -> boolean', (raw) ->
-      local config, err
-      try
-        config = parse_toml raw
-      catch err2
-        err = err2
+      config, err = parse_toml raw
       if err?
         print err
         return false

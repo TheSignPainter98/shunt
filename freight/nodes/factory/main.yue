@@ -207,7 +207,11 @@ class Factory
 
   on_set_config_request: F '(SetConfigRequest) => <>', (message) =>
     { :idemp_tok, :pc_id, :raw } = message
-    config = parse_toml raw
+    config, err = parse_toml raw
+    if err?
+      @uplink\send_to pc_id, SetConfigResponse idemp_tok, err
+      return
+
     ok, err = is 'FactoryConfig', config
     if not ok
       @uplink\send_to pc_id, SetConfigResponse idemp_tok, err

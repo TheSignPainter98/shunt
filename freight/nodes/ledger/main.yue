@@ -47,13 +47,15 @@ class Ledger
   iter: F '() => function', =>
     @entries\iter!
 
-  load: F '(?string) => <>', =>
+  load: F '(?string) => ?string', =>
     local content
     with assert io.open @save_path, 'r'
       content = assert \read '*a'
       assert \close!
     print "got content: [#{content}]"
-    data = parse_toml content
+    data, err = parse_toml content
+    if err?
+      return err
 
     @max_len = T 'number', assert data.max_len, 'saved ledger missing max_len field'
     entries = T '[Entry]', data.entries ?? {}
@@ -61,6 +63,8 @@ class Ledger
     for entry in *entries
       @entries\enqueue entry
       @entry_save_fragments\enqueue @fmt_entry_as_toml entry
+
+    nil
 
   save: F '(?string) => <>', =>
     lines = with {}
@@ -202,11 +206,12 @@ spec ->
         * when: 'hello', what: 'world', how: '1'
         * when: 'hello', what: 'world', how: '2'
 
-      ledger2\load path
+      err = ledger2\load path
       entries2 = [ entry for entry in ledger2\iter! ]
       $assert_that entries2, deep_eq
         * when: 'hello', what: 'world', how: '1'
         * when: 'hello', what: 'world', how: '2'
+      $expect_that err, eq nil
 
       assert os.remove save_path
 

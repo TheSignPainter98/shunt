@@ -26,6 +26,11 @@ export main = F '({}) -> <>', (args) ->
     print 'already up to date'
     return
 
+  cfg, err = config!
+  if err?
+    print "cannot load config: #{err}"
+    return
+
   with Instigator config!, release
     \upgrade not args.yes
   return

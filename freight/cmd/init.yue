@@ -63,7 +63,7 @@ spec ->
 
   import 'spec' as :describe, :it, :matchers
 
-  import has_fields, has_type, no_errors from matchers
+  import eq, has_fields, has_type, no_errors from matchers
 
   configs = [:name, :raw_fn for name, raw_fn in pairs default_config_by_type]
   table.sort configs, (a, b) -> a.name < b.name
@@ -71,8 +71,9 @@ spec ->
   for config in *configs
     describe "default #{config.name} config", ->
       it 'is valid toml', ->
-        parsed_default_config = parse_toml config.raw_fn!
+        parsed_default_config, err = parse_toml config.raw_fn!
 
+        $expect_that err, eq nil
         $expect_that parsed_default_config, has_type 'table'
         $expect_that parsed_default_config, has_fields
           [config.name]: has_type 'table'

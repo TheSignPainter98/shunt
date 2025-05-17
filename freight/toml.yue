@@ -5,8 +5,10 @@ import 'spec' as :spec
 
 export parse_toml = (raw) ->
   parser = TomlParser Lexer raw
-  ast = parser\parse!
-  ast\construct_value!
+  ast, err = parser\parse!
+  if err?
+    return nil, err
+  ast\construct_value!, nil
 
 -- Minimal TOML parser. NB, this does NOT currently support:
 -- - Quotes in strings
@@ -17,9 +19,15 @@ class TomlParser extends Parser
   new: (@lexer) =>
 
   parse: =>
-    ret = @parse_file!
-    @expect T_EOF
-    ret
+    local ret, err
+    try
+      ret = @parse_file!
+      @expect T_EOF
+    catch err2
+      err = err2
+    if err?
+      return nil, err
+    ret, nil
 
   parse_file: =>
     @ignore_any T_NEWLINE
@@ -431,8 +439,17 @@ spec ->
 
   describe 'parse_toml', ->
     it 'returns an empty table on empty input', ->
-      $expect_that (parse_toml ''), deep_eq {}
+      v, err = parse_toml ''
+      $expect_that v, deep_eq {}
+      $expect_that err, eq nil
 
     it 'parses toml and returns its value', ->
-      $expect_that (parse_toml "hello = 'world'"), deep_eq
+      v, err = parse_toml "hello = 'world'"
+      $expect_that v, deep_eq
         hello: 'world'
+      $expect_that err, eq nil
+
+    it 'reports errors', ->
+      v, err = parse_toml '['
+      $expect_that v, eq nil
+      $expect_that err, matches 'expected'
