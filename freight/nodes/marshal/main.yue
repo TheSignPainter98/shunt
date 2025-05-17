@@ -181,6 +181,7 @@ class Marshal
           @on_network_message .message
         else
           error "internal error: unrecognised multiplexer event type '#{.type}'"
+      log -> "done handling #{.type} event"
     return
 
   on_new_epoch: F '(number) => <>', (epoch) =>

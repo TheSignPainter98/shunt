@@ -55,7 +55,16 @@ export main = F '({}) -> <>', (args) ->
     assert \write config
     assert \close!
 
-  print "#{args.instance_type} configured"
+  message_lines =
+    * "#{args.instance_type} configured. To enable, run:"
+    * ''
+    * '> freight enable'
+    * ''
+    * 'then, to start, run:'
+    * ''
+    * '> freight start'
+    * ''
+  print table.concat message_lines, '\n'
   return
 
 spec ->

@@ -2,6 +2,8 @@ local *
 
 import 'clap' as :Flag, :Subcommand
 import 'freight.config' as :config
+import 'freight.logger' as :log
+import 'freight.pc' as :Pc
 import 'freight.peripheral.uplink' as :Uplink
 import 'freight.upgrade.monitor' as :UpgradeMonitor
 import 'quicktype' as :F
@@ -22,6 +24,8 @@ export subcommand = with Subcommand 'start'
     \short nil
 
 export main = F '({}) -> <>', (args) ->
+  log -> "starting freight on pc ##{Pc!\id!}"
+
   cfg, err = config!
   if err?
     print "cannot start freight: cannot load config: #{err}"
