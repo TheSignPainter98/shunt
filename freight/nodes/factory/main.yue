@@ -33,6 +33,7 @@ network = 'mainline'
 "
   resource_names, inventories_found = switch HOST
     when 'minecraft'
+      log -> 'scanning inventories...'
       inventories = [ Inventory backend for backend in *MinecraftInventoryBackend::find! ]
       log -> "found #{#inventories} inventories"
       stockpile = Stockpile inventories
