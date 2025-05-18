@@ -47,8 +47,12 @@ export class UpgradeMonitor
       if not marshal_id?
         if pkt_or_err != TIMEOUT
           print "ignoring error whilst getting update: #{pkt_or_err}"
-      else if pkt_or_err.idemp_tok == idemp_tok
+        else
+          print 'TIMEOUT'
+        continue
+      if pkt_or_err.idemp_tok == idemp_tok
         return pkt_or_err.release
+      print idemp_tok, pkt_or_err.idemp_tok, pkt_or_err.idemp_tok == idemp_tok
 
 export class CurrentReleaseRequest extends Packet
   new: F '(IdempotenceToken) => <>', (@idemp_tok) =>

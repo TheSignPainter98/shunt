@@ -64,7 +64,7 @@ export class UpgradeListener using Tester
   listen_for_release_requests: F '() => !', =>
     while true
       requester_id, { :idemp_tok } = @uplink\receive_from_any CurrentReleaseRequest
-      print "sending current release info to ##{requester_id}"
+      print "sending current release info to ##{requester_id} (idemp_tok:#{idemp_tok})"
       @uplink\send_to requester_id, CurrentReleaseResponse idemp_tok, @current_release!
 
   current_release: F '() => Release', =>
