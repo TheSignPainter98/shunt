@@ -12,6 +12,8 @@ compat_applied = false
 export apply_compat = ->
   compat_applied = true
 
+  table.unpack ??= assert unpack, 'internal error: cannot find unpack function'
+
   os.sleep ??= (n_secs) ->
     os.execute "sleep #{n_secs}s"
 
