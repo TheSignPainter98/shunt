@@ -839,6 +839,7 @@ spec ->
 
         sent = {}
         REQUESTER_PC_ID = 1
+        MARSHAL_PC_ID = 2
         NEW_RAW = [[
           [marshal]
           key = 'value'
@@ -879,6 +880,7 @@ spec ->
 
         sent = {}
         REQUESTER_PC_ID = 1
+        MARSHAL_PC_ID = 2
         NEW_RAW = '[invalid-config]\n'
         ORIGINAL_RAW = [[
           [marshal]
