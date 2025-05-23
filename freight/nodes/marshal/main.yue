@@ -39,7 +39,7 @@ export main = F '(MarshalConfig) -> <>', (config) ->
   pc = Pc!
   uplink = Uplink!
   upgrade_listener = UpgradeListener config, uplink
-  with Marshal config, pc, uplink, upgrade_listener
+  with Marshal :config, :pc, :uplink, :upgrade_listener
     \run!
 
 STEP_INTERVAL = 60
@@ -97,8 +97,27 @@ declare_type 'AvailableTrain', [[{
   },
   name: string,
 }]]
+declare_type 'MarshalOpts', [[{
+  config: MarshalConfig+StoredConfig,
+  pc: Pc,
+  uplink: Uplink,
+  upgrade_listener: UpgradeListener,
+  clock: ?Clock
+}]]
 class Marshal
-  new: F '(MarshalConfig+StoredConfig, Pc, Uplink, UpgradeListener, ?Clock) => <>', (config, @pc, @uplink, @upgrade_listener, @clock=MinecraftClock!) =>
+  new: F '(MarshalOpts) => <>', (opts) =>
+    {
+      :config,
+      :pc,
+      :uplink,
+      :upgrade_listener,
+      :clock=MinecraftClock!
+    } = opts
+    @pc = pc
+    @uplink = uplink
+    @upgrade_listener = upgrade_listener
+    @clock = clock
+
     @set_config config
     @epoch = T 'number', 0
     -- TODO(kcza): load from stored initial state
@@ -128,9 +147,26 @@ class Marshal
       \build!
 
   run: F '(?StateMachine) => !', (state=@@state_machine!) =>
-    parallel.waitForAny @upgrade_listener\listen,
-      @\listen_to_network,
-      @\handle_events
+    print table.unpack with {}
+      [] = @\handle_events
+      for task in *@upgrade_listener\tasks!
+        [] = task
+      [] = ->
+        print 'snooping!'
+      while true
+        print '---'
+        from_id, msg, protocol = rednet.receive!
+        print "##{from_id}(#{protocol}): #{repr msg}"
+    parallel.waitForAny table.unpack with {}
+      [] = @\handle_events
+      for task in *@upgrade_listener\tasks!
+        [] = task
+      [] = ->
+        print 'snooping!'
+      while true
+        print '---'
+        from_id, msg, protocol = rednet.receive!
+        print "##{from_id}(#{protocol}): #{repr msg}"
 
   count_epochs: F '() => !', (initial_epoch=1)=>
     EPOCH_PERIOD = 10
@@ -485,7 +521,7 @@ spec ->
         upgrade_listener = UpgradeListener config, uplink
 
         pc = Pc!
-        with Marshal config, pc, uplink, upgrade_listener, TestClock!
+        with Marshal :config, :pc, :uplink, :upgrade_listener, clock: TestClock!
           \ut_stop_counting_epochs!
           EXPECTED_FACTORIES = 4
           for i = 1, EXPECTED_FACTORIES
@@ -624,7 +660,7 @@ spec ->
 
         upgrade_listener = UpgradeListener config, uplink
         pc = Pc!
-        with Marshal config, pc, uplink, upgrade_listener, TestClock!
+        with Marshal :config, :pc, :uplink, :upgrade_listener, clock: TestClock!
           \ut_stop_counting_epochs!
           \ut_declare_train_lost TRAIN_NAME
           $assert_that (\ut_train_is_lost TRAIN_NAME), eq true
@@ -679,7 +715,7 @@ spec ->
 
         upgrade_listener = UpgradeListener config, uplink
         pc = Pc!
-        with Marshal config, pc, uplink, upgrade_listener, TestClock!
+        with Marshal :config, :pc, :uplink, :upgrade_listener, clock: TestClock!
           \ut_stop_counting_epochs!
           $assert_that (\ut_train_is_reserved TRAIN_NAME), eq false
 
@@ -726,7 +762,7 @@ spec ->
         upgrade_listener = UpgradeListener config, uplink
         pc = Pc TestPcBackend
           id: => MARSHAL_PC_ID
-        with Marshal config, pc, uplink, upgrade_listener, TestClock!
+        with Marshal :config, :pc, :uplink, :upgrade_listener, clock: TestClock!
           \ut_stop_counting_epochs!
           \ut_step!
 
@@ -777,7 +813,7 @@ spec ->
         upgrade_listener = UpgradeListener config, uplink
         pc = Pc TestPcBackend
           id: -> MARSHAL_PC_ID
-        with Marshal config, pc, uplink, upgrade_listener, TestClock!
+        with Marshal :config, :pc, :uplink, :upgrade_listener, clock: TestClock!
           \ut_stop_counting_epochs!
           \ut_step!
           \ut_step!
@@ -821,7 +857,7 @@ spec ->
         upgrade_listener = UpgradeListener config, uplink
         pc = Pc TestPcBackend
           id: -> MARSHAL_PC_ID
-        with Marshal config, pc, uplink, upgrade_listener, TestClock!
+        with Marshal :config, :pc, :uplink, :upgrade_listener, clock: TestClock!
           \ut_stop_counting_epochs!
           \ut_step!
 
@@ -859,7 +895,7 @@ spec ->
         upgrade_listener = UpgradeListener config, uplink
         pc = Pc TestPcBackend
           id: -> MARSHAL_PC_ID
-        with Marshal config, pc, uplink, upgrade_listener, TestClock!
+        with Marshal :config, :pc, :uplink, :upgrade_listener, clock: TestClock!
           \ut_stop_counting_epochs!
           \ut_step!
 
@@ -900,7 +936,7 @@ spec ->
         upgrade_listener = UpgradeListener config, uplink
         pc = Pc TestPcBackend
           id: -> MARSHAL_PC_ID
-        with Marshal config, pc, uplink, upgrade_listener, TestClock!
+        with Marshal :config, :pc, :uplink, :upgrade_listener, clock: TestClock!
           \ut_stop_counting_epochs!
           \ut_step!
 

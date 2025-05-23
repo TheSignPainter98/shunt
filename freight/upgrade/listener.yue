@@ -9,7 +9,7 @@ import 'freight.version' as :VERSION
 import 'quicktype' as :declare_type, :F, :T
 
 declare_type 'UpgradeListener', [[{
-  listen: () => !,
+  listeners: () => [() -> !],
 }]]
 declare_type 'UpgradeListenerKind', '"leader"|"follower"'
 declare_type 'UpgradeListenerConfig', [[{
@@ -24,19 +24,17 @@ export class UpgradeListener using Tester
 
     @_current_release = nil
 
-  listen: F '() => !', =>
+  listeners: F '() => [() -> !]', =>
     switch @kind
       when 'leader'
-        @listen_as_leader!
+        @leader_listeners!
       when 'follower'
-        @listen_as_follower!
+        @follower_listeners!
       else
         error "internal error: unknown listener kind '#{@kind}'"
 
-  listen_as_leader: F '() => !', =>
-    log -> "listening for upgrades as leader"
-    parallel.waitForAny @\listen_for_release_bumps,
-      @\listen_for_release_requests
+  leader_listeners: F '() => !', =>
+    { @\listen_for_release_bumps, @\listen_for_release_requests }
 
   listen_for_release_bumps: F '() => !', =>
     local release
@@ -81,7 +79,10 @@ export class UpgradeListener using Tester
     @_current_release = T 'Release', file: 'freight', version: VERSION, :content
     @_current_release
 
-  listen_as_follower: F '() => !', =>
+  follower_listeners: F '() => [() -> !]', =>
     log -> "listening for upgrades as follower"
+    { @\listen_for_reboot_requests }
+
+  listen_for_reboot_requests: F '() => !', =>
     @uplink\receive_from_any RebootRequest!
     @rebooter\reboot!
