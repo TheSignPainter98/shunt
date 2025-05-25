@@ -9,7 +9,7 @@ import 'freight.version' as :VERSION
 import 'quicktype' as :declare_type, :F, :T
 
 declare_type 'UpgradeListener', [[{
-  listeners: () => [() -> !],
+  tasks: () => [() -> !],
 }]]
 declare_type 'UpgradeListenerKind', '"leader"|"follower"'
 declare_type 'UpgradeListenerConfig', [[{
@@ -24,7 +24,7 @@ export class UpgradeListener using Tester
 
     @_current_release = nil
 
-  listeners: F '() => [() -> !]', =>
+  tasks: F '() => [() -> !]', =>
     switch @kind
       when 'leader'
         @leader_listeners!
@@ -33,10 +33,11 @@ export class UpgradeListener using Tester
       else
         error "internal error: unknown listener kind '#{@kind}'"
 
-  leader_listeners: F '() => !', =>
+  leader_listeners: F '() => [() -> !]', =>
     { @\listen_for_release_bumps, @\listen_for_release_requests }
 
   listen_for_release_bumps: F '() => !', =>
+    log -> "listening for release bumps"
     local release
     while true
       _, { :release } = @uplink\receive_from_any MarshalBumpRelease
@@ -60,6 +61,7 @@ export class UpgradeListener using Tester
     @rebooter\reboot!
 
   listen_for_release_requests: F '() => !', =>
+    log -> "listening for release requests"
     while true
       requester_id, { :idemp_tok } = @uplink\receive_from_any CurrentReleaseRequest
       print "sending current release info to ##{requester_id} (idemp_tok:#{idemp_tok})"

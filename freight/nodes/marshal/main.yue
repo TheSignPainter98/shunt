@@ -6,6 +6,7 @@ import 'compat' as :HOST
 import 'freight.cmd.declare' as :DeclareTrainStateResponse
 import 'freight.configurator.main' as :GetConfigRequest, :GetConfigResponse, :MarshalIdentityRequest, :MarshalIdentityResponse, :SetConfigRequest, :SetConfigResponse
 import 'freight.data.multiplexer' as :Multiplexer
+import 'freight.data.queue' as :Queue
 import 'freight.logger' as :log
 import 'freight.nodes.factory.main' as :FactoryHeartbeat, :ScheduleRequest, :ScheduleResponse
 import 'freight.nodes.marshal.clock' as :MinecraftClock
@@ -130,43 +131,27 @@ class Marshal
     @do_count_epochs = T 'boolean', true
     @throttle = T 'boolean', HOST == 'minecraft'
 
-    @events = T 'Multiplexer', with Multiplexer '{type: MarshalEventType}'
-      \add @\count_epochs
-      \add @\listen_to_network
+    @events = T 'Queue', Queue!
 
-  @state_machine: F '() => StateMachine', =>
-    StateMachineBuilder!
-      \set_initial_state 'initing'
-      \add_state with StateSpec 'initing'
-        \add_transition_to 'waiting'
-      \add_state with StateSpec 'waiting'
-        \add_field 'networks', '{string->Network}'
-        \add_field 'trains', '{string->Train}'
-        \add_field 'station_networks', '{string->string}'
-        \add_field 'factory_names', '{string}'
-      \build!
+  run: F '() => !', =>
+    parallel.waitForAny table.unpack @tasks!
 
-  run: F '(?StateMachine) => !', (state=@@state_machine!) =>
-    print table.unpack with {}
+  tasks: F '() => [() -> !]', =>
+    with {}
       [] = @\handle_events
+      [] = @\count_epochs
+      [] = @\listen_to_network
       for task in *@upgrade_listener\tasks!
         [] = task
       [] = ->
         print 'snooping!'
-      while true
-        print '---'
-        from_id, msg, protocol = rednet.receive!
-        print "##{from_id}(#{protocol}): #{repr msg}"
-    parallel.waitForAny table.unpack with {}
-      [] = @\handle_events
-      for task in *@upgrade_listener\tasks!
-        [] = task
-      [] = ->
-        print 'snooping!'
-      while true
-        print '---'
-        from_id, msg, protocol = rednet.receive!
-        print "##{from_id}(#{protocol}): #{repr msg}"
+        import 'spec' as :repr
+        if not rednet?
+          return
+        while true
+          print '---'
+          from_id, msg, protocol = rednet.receive!
+          print "##{from_id}(#{protocol}): #{repr msg}"
 
   count_epochs: F '() => !', (initial_epoch=1)=>
     EPOCH_PERIOD = 10
@@ -180,7 +165,8 @@ class Marshal
         coroutine.yield!
 
   send_new_epoch_event: F '(number) => <>', (epoch) =>
-    @events\send type: 'new-epoch', :epoch
+    @events\enqueue type: 'new-epoch', :epoch
+    coroutine.yield!
     return
 
   listen_to_network: F '() => !', =>
@@ -188,24 +174,31 @@ class Marshal
       @read_network!
 
   read_network: F '() => <>', =>
+    log -> "reading network..."
     _, message = @uplink\receive_from_any!
+    import 'spec' as :repr
+    log -> "read #{repr message}"
     switch message\protocol!
       when 'FactoryHeartbeat', 'DeclareTrainState', 'MarshalIdentityRequest', 'FactoryPcRequest', 'GetConfigRequest', 'SetConfigRequest'
-        @events\send type: 'network-message', :message
+        @events\enqueue type: 'network-message', :message
+        coroutine.yield!
       else
         log -> "ignoring #{message\protocol!} message"
     return
 
   handle_events: F '() => !', =>
-    yield_misc_events = coroutine.running!?
-    for event in @events\stream!
-      if yield_misc_events and 'table' != type event
-        coroutine.yield event
-        continue
+    local events = Queue!
+    while true
+      @events, events = events, @events
 
-      @handle_event event
+      print "there are now #{events\len!} events to handle"
+
+      for event in events\iter!
+        @handle_event event
       if @throttle
         os.sleep 0.001 -- Avoid CPU-hogging.
+      else
+        coroutine.yield!
 
   handle_event: F '({type: MarshalEventType}) => <>', (event) =>
     with event
@@ -216,7 +209,7 @@ class Marshal
         when 'network-message'
           @on_network_message .message
         else
-          error "internal error: unrecognised multiplexer event type '#{.type}'"
+          error "internal error: unrecognised event type '#{.type}'"
       log -> "done handling #{.type} event"
     return
 
@@ -421,7 +414,10 @@ class Marshal
     @do_count_epochs = false
 
   ut_step: F '() => <>', =>
-    @handle_event @events\next!
+    @ut_task_multiplexer ??= with Multiplexer '{type: MarshalEventType}'
+      for task in *@tasks!
+        \add task
+    @handle_event @ut_task_multiplexer\next!
 
   ut_epoch: F '() => number', => @epoch
 
