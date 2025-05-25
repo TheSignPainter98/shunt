@@ -7,7 +7,7 @@ declare_type 'Clock', [[{
 }]]
 
 export class MinecraftClock
-  now: F '() => Date', =>
+  now: F '() => number', =>
     os.epoch! / 1000
 
 export class TestClock
