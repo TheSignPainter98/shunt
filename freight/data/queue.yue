@@ -34,8 +34,12 @@ export class Queue
   iter: =>
     coroutine.wrap ->
       i = @front
-      while i != @back
-        coroutine.yield @entries[i]
+      back = @back
+      while i != back
+        entry = @entries[i]
+        if not entry?
+          continue
+        coroutine.yield entry
         i += 1
 
 spec ->
