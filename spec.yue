@@ -349,7 +349,8 @@ class Len
   new: (@inner) =>
 
   matches: (actual) =>
-    actual? and @inner\matches #actual
+    ty = type actual
+    (ty == 'string' or ty == 'table') and @inner\matches #actual
 
   explain_match: (actual) =>
     switch type actual
