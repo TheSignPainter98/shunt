@@ -73,27 +73,20 @@ spec ->
         version: '9999999999999999'
         content: ''
 
-      sent = {}
-      broadcasted = {}
       last_idemp_tok = nil
       uplink = Uplink TestUplinkBackend
-        send: (id, packet, protocol) =>
-          send[] = :id, :packet, :protocol
+        to_receive:
+          * from_id: 1
+            message: RebootRequest!
+        on_send: (id, packet, protocol) =>
           last_idemp_tok = packet.idemp_tok
           true
-        receive: do
-          i = 0
-          (protocol, id) =>
-            i += 1
-            1, RebootRequest!, RebootRequest\protocol!
-        broadcast: (packet, protocol) =>
-          broadcasted[] = :packet, :protocol
 
       rebooter = TestRebooter!
       upgrader = with Instigator cfg, release, uplink, rebooter
         $expect_that (-> \upgrade false), errors matches TestRebooter.marker
-      $expect_that sent, deep_eq {}
-      $expect_that broadcasted, deep_eq
+      $expect_that uplink.backend.sent, deep_eq {}
+      $expect_that uplink.backend.broadcasted, deep_eq
         * protocol: 'MarshalBumpRelease'
-          packet:
+          message:
             :release

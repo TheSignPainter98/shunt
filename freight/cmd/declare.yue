@@ -81,22 +81,23 @@ spec ->
 
   describe 'Declarer', ->
     it 'declares train states', ->
-      err = nil
-
       PC_ID = 12345
-      sent = {}
-      broadcasted = {}
+      ERR = 'some error message'
       local idemp_tok
       uplink = Uplink TestUplinkBackend
-        send: (pc_id, message, protocol) =>
+        on_send: (_, message, _) =>
           idemp_tok = message.idemp_tok
-          sent[] = :pc_id, :message, :protocol
-        broadcast: (message, protocol) =>
+          true
+        on_broadcast: (message, _) =>
           idemp_tok = message.idemp_tok
-          broadcasted[] = :message, :protocol
-        receive: (_, _) =>
-          message = DeclareTrainStateResponse idemp_tok, err
-          PC_ID, message, message\protocol!
+          true
+        to_receive:
+          * -> with {}
+            .from_id = PC_ID
+            .message = DeclareTrainStateResponse idemp_tok, nil
+          * -> with {}
+            .from_id = PC_ID
+            .message = DeclareTrainStateResponse idemp_tok, ERR
       pc = Pc TestPcBackend
         id: => 1
       with Declarer uplink, pc
@@ -104,6 +105,4 @@ spec ->
         TRAIN_STATE = 'cleared'
 
         $expect_that (\declare_train_state TRAIN_NAME, TRAIN_STATE), eq nil
-
-        err = 'some error message'
-        $expect_that (\declare_train_state TRAIN_NAME, TRAIN_STATE), eq err
+        $expect_that (\declare_train_state TRAIN_NAME, TRAIN_STATE), eq ERR

@@ -178,36 +178,30 @@ spec ->
       id: => CONFIGURATOR_PC_ID
 
     active_responses = T '{string->boolean}', {}
-    sent = {}
-    broadcasted = {}
     local idemp_tok
     uplink = Uplink TestUplinkBackend
-      send: (pc_id, message, protocol) =>
+      on_send: (_, message, _) =>
         if message.idemp_tok?
           idemp_tok = message.idemp_tok
-        sent[] = :pc_id, :message, :protocol
         true
-      broadcast: (message, protocol) =>
+      on_broadcast: (message, _) =>
         if message.idemp_tok?
           idemp_tok = message.idemp_tok
-        broadcasted[] = :message, :protocol
-      receive: (protocol, _) =>
+        true
+      on_receive: (protocol, _) =>
         $assert_that idemp_tok, not_ eq nil
         $assert_that protocol, not_ eq nil
-
-        if not active_responses[protocol]
-          return nil, nil, nil
-
-        pc_id, message = switch protocol
-          when 'MarshalIdentityResponse'
-            MARSHAL_PC_ID, MarshalIdentityResponse idemp_tok, MARSHAL_PC_ID
-          when 'GetConfigResponse'
-            MARSHAL_PC_ID, GetConfigResponse idemp_tok, ORIGINAL_CONFIG
-          when 'SetConfigResponse'
-            MARSHAL_PC_ID, SetConfigResponse idemp_tok, nil
-          else
-            error "internal error: unrecognised protocol: #{protocol}"
-        pc_id, message, message\protocol!
+        active_responses[protocol] or false
+      to_receive:
+        * -> with {}
+          .from_id = MARSHAL_PC_ID
+          .message = MarshalIdentityResponse idemp_tok, MARSHAL_PC_ID
+        * -> with {}
+          .from_id = MARSHAL_PC_ID
+          .message = GetConfigResponse idemp_tok, ORIGINAL_CONFIG
+        * -> with {}
+          .from_id = MARSHAL_PC_ID
+          .message = SetConfigResponse idemp_tok, nil
 
     editor = Editor TestEditorBackend
       edit_file: (path) =>
@@ -218,8 +212,8 @@ spec ->
     editor.max_retries = 1
 
     reset = ->
-      sent = {}
-      broadcasted = {}
+      uplink.backend\reset!
+      idemp_tok = nil
       active_responses =
         MarshalIdentityResponse: true
         GetConfigResponse: true
@@ -235,21 +229,21 @@ spec ->
         err = \configure pc_id, 'marshal', false
         $expect_that err, eq nil
 
-      $expect_that #broadcasted, eq 1
-      $expect_that broadcasted[1], has_fields
+      $expect_that #uplink.backend.broadcasted, eq 1
+      $expect_that uplink.backend.broadcasted[1], has_fields
         message: has_fields
           idemp_tok: not_ eq nil
           pc_id: eq CONFIGURATOR_PC_ID
         protocol: eq MarshalIdentityRequest\protocol!
-      $expect_that #sent, eq 2
-      $expect_that sent[1], has_fields
-        pc_id: eq MARSHAL_PC_ID
+      $expect_that #uplink.backend.sent, eq 2
+      $expect_that uplink.backend.sent[1], has_fields
+        id: eq MARSHAL_PC_ID
         message: has_fields
           idemp_tok: not_ eq nil
           pc_id: eq CONFIGURATOR_PC_ID
         protocol: eq GetConfigRequest\protocol!
-      $expect_that sent[2], has_fields
-        pc_id: eq MARSHAL_PC_ID
+      $expect_that uplink.backend.sent[2], has_fields
+        id: eq MARSHAL_PC_ID
         message: has_fields
           idemp_tok: not_ eq nil
           pc_id: eq CONFIGURATOR_PC_ID
@@ -265,13 +259,13 @@ spec ->
         $assert_that pc_id, eq nil
         $assert_that err, matches "cannot find marshal"
 
-      $expect_that #broadcasted, gt 1
-      $expect_that broadcasted, each_value has_fields
+      $expect_that #uplink.backend.broadcasted, gt 1
+      $expect_that uplink.backend.broadcasted, each_value has_fields
         message: has_fields
           idemp_tok: not_ eq nil
           pc_id: eq CONFIGURATOR_PC_ID
         protocol: eq MarshalIdentityRequest\protocol!
-      $expect_that #sent, eq 0
+      $expect_that #uplink.backend.sent, eq 0
 
     it 'handles connection loss when getting config', ->
       reset!
@@ -285,15 +279,15 @@ spec ->
         err = \configure pc_id, 'marshal', false
         $expect_that err, matches 'cannot find marshal'
 
-      $expect_that #broadcasted, eq 1
-      $expect_that broadcasted[1], has_fields
+      $expect_that #uplink.backend.broadcasted, eq 1
+      $expect_that uplink.backend.broadcasted[1], has_fields
         message: has_fields
           idemp_tok: not_ eq nil
           pc_id: eq CONFIGURATOR_PC_ID
         protocol: eq MarshalIdentityRequest\protocol!
-      $expect_that #sent, gt 1
-      $expect_that sent, each_value has_fields
-        pc_id: eq MARSHAL_PC_ID
+      $expect_that #uplink.backend.sent, gt 1
+      $expect_that uplink.backend.sent, each_value has_fields
+        id: eq MARSHAL_PC_ID
         message: has_fields
           idemp_tok: not_ eq nil
           pc_id: eq CONFIGURATOR_PC_ID
@@ -311,22 +305,22 @@ spec ->
         err = \configure pc_id, 'marshal', false
         $expect_that err, matches 'cannot find pc #'
 
-      $expect_that #broadcasted, eq 1
-      $expect_that broadcasted[1], has_fields
+      $expect_that #uplink.backend.broadcasted, eq 1
+      $expect_that uplink.backend.broadcasted[1], has_fields
         message: has_fields
           idemp_tok: not_ eq nil
           pc_id: eq CONFIGURATOR_PC_ID
         protocol: eq MarshalIdentityRequest\protocol!
-      $expect_that #sent, gt 2
-      $expect_that sent[1], has_fields
-        pc_id: eq MARSHAL_PC_ID
+      $expect_that #uplink.backend.sent, gt 2
+      $expect_that uplink.backend.sent[1], has_fields
+        id: eq MARSHAL_PC_ID
         message: has_fields
           idemp_tok: not_ eq nil
           pc_id: eq CONFIGURATOR_PC_ID
         protocol: eq GetConfigRequest\protocol!
-      sent_tail = [ msg for msg in *sent[2,] ]
+      sent_tail = [ msg for msg in *uplink.backend.sent[2,] ]
       $expect_that sent_tail, each_value has_fields
-        pc_id: eq MARSHAL_PC_ID
+        id: eq MARSHAL_PC_ID
         message: has_fields
           idemp_tok: not_ eq nil
           pc_id: eq CONFIGURATOR_PC_ID

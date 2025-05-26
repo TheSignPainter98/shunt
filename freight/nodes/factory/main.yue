@@ -382,7 +382,6 @@ spec ->
       $expect_that new_name, eq CONFIG_NAME
 
     it 'responds to valid schedule requests', ->
-      sent = {}
       SERVER_ID = 12345
       TRAIN_NAME = 'test-train-name'
       idemp_tok = IdempotenceToken!
@@ -417,32 +416,25 @@ spec ->
           train_name: => TRAIN_NAME
       stockpile = Stockpile {}
       uplink = Uplink TestUplinkBackend
-        send: (recipient, message, protocol) =>
-          sent[] = :recipient, :message, :protocol
-          true
-        receive: (_, _) =>
-          @count ??= 1
-          if @count <= 1
-            @count += 1
-            SERVER_ID, (ScheduleRequest idemp_tok, STATION_NAME, TRAIN_NAME, schedule), ScheduleRequest\protocol!
-          else
-            nil, nil, nil
+        to_receive:
+          * from_id: SERVER_ID
+            message: ScheduleRequest idemp_tok, STATION_NAME, TRAIN_NAME, schedule
       factory = Factory config, pc, stations, stockpile, uplink
 
-      for _ = 1, 10
-        factory\do_network_step!
+      factory\do_network_step!
 
-      $expect_that applied_schedules, len eq 1
-      $expect_that sent[1], has_fields
-        recipient: eq SERVER_ID
+      $expect_that uplink.backend.sent, len eq 1
+      $expect_that uplink.backend.sent[1], has_fields
+        id: eq SERVER_ID
         protocol: eq ScheduleResponse\protocol!
         message: has_fields
           idemp_tok: eq idemp_tok
           error_reason: eq nil
+
+      $expect_that applied_schedules, len eq 1
       $expect_that applied_schedules, deep_eq {schedule}
 
     it 'responds to invalid schedule requests', ->
-      sent = {}
       SERVER_ID = 12345
       TRAIN_NAME = 'test-train-name'
       idemp_tok = IdempotenceToken!
@@ -484,24 +476,16 @@ spec ->
             $assert_that i, eq 1
             64
       uplink = Uplink TestUplinkBackend
-        send: (recipient, message, protocol) =>
-          sent[] = :recipient, :message, :protocol
-          true
-        receive: (_, _) =>
-          @count ??= 1
-          if @count <= 1
-            @count += 1
-            SERVER_ID, (ScheduleRequest idemp_tok, STATION_NAME, TRAIN_NAME, schedule), ScheduleRequest\protocol!
-          else
-            nil, nil, nil
+        to_receive:
+          * from_id: SERVER_ID
+            message: ScheduleRequest idemp_tok, STATION_NAME, TRAIN_NAME, schedule
       factory = Factory config, pc, stations, stockpile, uplink
 
-      for _ = 1, 10
-        factory\do_network_step!
+      factory\do_network_step!
 
-      $expect_that sent, len eq 1
-      $expect_that sent[1], has_fields
-        recipient: eq SERVER_ID
+      $expect_that uplink.backend.sent, len eq 1
+      $expect_that uplink.backend.sent[1], has_fields
+        id: eq SERVER_ID
         protocol: eq ScheduleResponse\protocol!
         message: has_fields
           idemp_tok: eq idemp_tok
@@ -509,8 +493,6 @@ spec ->
 
     describe '\\send_heartbeat', ->
       it 'sends a heartbeat', ->
-        sent = {}
-        broadcasted = {}
         SERVER_ID = 12345
         PC_ID = 54321
         PC_NAME = 'test-factory-name'
@@ -546,19 +528,14 @@ spec ->
                 [] = name: 'minecraft:stone_bricks', count: 32
                 [] = name: 'minecraft:dirt', count: 16
             slot_capacity: (i) => 64
-        uplink = Uplink TestUplinkBackend
-          send: (recipient, message, protocol) =>
-            sent[] = :recipient, :message, :protocol
-            true
-          broadcast: (message, protocol) =>
-            broadcasted[] = :message, :protocol
+        uplink = Uplink TestUplinkBackend!
         with Factory config, pc, stations, stockpile, uplink
           \send_heartbeat!
 
-        $expect_that sent, deep_eq {}
+        $expect_that uplink.backend.sent, deep_eq {}
 
-        $expect_that broadcasted, len eq 1
-        $expect_that broadcasted[1], has_fields
+        $expect_that uplink.backend.broadcasted, len eq 1
+        $expect_that uplink.backend.broadcasted[1], has_fields
           protocol: eq FactoryHeartbeat\protocol!
           message: do
             stations =
@@ -591,7 +568,6 @@ spec ->
       it 'responds correctly', ->
         idemp_tok = IdempotenceToken!
 
-        sent = {}
         REQUESTER_PC_ID = 1
         FACTORY_PC_ID = 1
         FACTORY_NAME = 'factory-name'
@@ -608,18 +584,15 @@ spec ->
           name: => FACTORY_NAME
         stockpile = Stockpile {}
         uplink = Uplink TestUplinkBackend
-          send: (recipient, message, protocol) =>
-            sent[] = :recipient, :message, :protocol
-            true
-          receive: (_, _) =>
-            message = GetConfigRequest idemp_tok, REQUESTER_PC_ID
-            REQUESTER_PC_ID, message, message\protocol!
+          to_receive:
+            * from_id: REQUESTER_PC_ID
+              message: GetConfigRequest idemp_tok, REQUESTER_PC_ID
         with Factory config, pc, {}, stockpile, uplink
           \do_network_step!
 
-          $assert_that #sent, eq 1
-          $expect_that sent[1], has_fields
-            recipient: eq REQUESTER_PC_ID
+          $assert_that #uplink.backend.sent, eq 1
+          $expect_that uplink.backend.sent[1], has_fields
+            id: eq REQUESTER_PC_ID
             message: has_fields
               idemp_tok: eq idemp_tok
               raw: eq RAW
@@ -629,7 +602,6 @@ spec ->
       it 'applies valid config', ->
         idemp_tok = IdempotenceToken!
 
-        sent = {}
         REQUESTER_PC_ID = 1
         FACTORY_PC_ID = 1
         FACTORY_NAME = 'factory-name'
@@ -659,18 +631,15 @@ spec ->
               name = new_name
         stockpile = Stockpile {}
         uplink = Uplink TestUplinkBackend
-          send: (recipient, message, protocol) =>
-            sent[] = :recipient, :message, :protocol
-            true
-          receive: (_, _) =>
-            message = SetConfigRequest idemp_tok, REQUESTER_PC_ID, NEW_RAW
-            REQUESTER_PC_ID, message, message\protocol!
+          to_receive:
+            * from_id: REQUESTER_PC_ID
+              message: SetConfigRequest idemp_tok, REQUESTER_PC_ID, NEW_RAW
         with Factory config, pc, {}, stockpile, uplink
           \do_network_step!
 
-          $assert_that #sent, eq 1
-          $expect_that sent[1], has_fields
-            recipient: eq REQUESTER_PC_ID
+          $assert_that #uplink.backend.sent, eq 1
+          $expect_that uplink.backend.sent[1], has_fields
+            id: eq REQUESTER_PC_ID
             message: has_fields
               idemp_tok: eq idemp_tok
               error_reason: eq nil
@@ -687,7 +656,6 @@ spec ->
       it 'rejects invalid config', ->
         idemp_tok = IdempotenceToken!
 
-        sent = {}
         REQUESTER_PC_ID = 1
         FACTORY_PC_ID = 1
         FACTORY_NAME = 'factory-name'
@@ -707,18 +675,15 @@ spec ->
           name: => FACTORY_NAME
         stockpile = Stockpile {}
         uplink = Uplink TestUplinkBackend
-          send: (recipient, message, protocol) =>
-            sent[] = :recipient, :message, :protocol
-            true
-          receive: (_, _) =>
-            message = SetConfigRequest idemp_tok, REQUESTER_PC_ID, NEW_RAW
-            REQUESTER_PC_ID, message, message\protocol!
+          to_receive:
+            * from_id: REQUESTER_PC_ID
+              message: SetConfigRequest idemp_tok, REQUESTER_PC_ID, NEW_RAW
         with Factory config, pc, {}, stockpile, uplink
           \do_network_step!
 
-          $assert_that #sent, eq 1
-          $expect_that sent[1], has_fields
-            recipient: eq REQUESTER_PC_ID
+          $assert_that #uplink.backend.sent, eq 1
+          $expect_that uplink.backend.sent[1], has_fields
+            id: eq REQUESTER_PC_ID
             message: has_fields
               idemp_tok: eq idemp_tok
               error_reason: matches 'expected table but got nil'
