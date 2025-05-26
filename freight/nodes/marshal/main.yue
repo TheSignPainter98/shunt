@@ -23,6 +23,7 @@ import 'spec' as :spec
 
 export default_config = -> [=[
 [marshal]
+resend_cooldown_seconds = 60
 ]=]
 
 export main = F '(MarshalConfig) -> <>', (config) ->
@@ -67,7 +68,9 @@ declare_type 'TrainStatus', [[{
 }]]
 
 declare_type 'MarshalConfig', [[{
-  marshal: {},
+  marshal: {
+    resend_cooldown_seconds: ?number,
+  },
 }]]
 declare_type 'MarshalEventType', [[
   "new-epoch"
@@ -125,7 +128,11 @@ class Marshal
     @trains = T '{string->TrainStatus}', {}
     @rand = PseudoRandom!
     @promise_tracker = PromiseTracker @rand, @clock
-    @scheduler = Scheduler @rand, @promise_tracker
+    @scheduler = Scheduler
+      clock: @clock
+      resend_cooldown_seconds: @config.resend_cooldown_seconds
+      rand: @rand
+      promise_tracker: @promise_tracker
 
     @do_count_epochs = T 'boolean', true
     @throttle = T 'boolean', HOST == 'minecraft'

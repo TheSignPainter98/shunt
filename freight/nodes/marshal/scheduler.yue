@@ -12,18 +12,44 @@ declare_type 'ScheduleCandidate', [[{
   inbound_station_addr: StationAddress,
   outbound_station_addr: StationAddress,
   schedule: Schedule,
+  info: {
+    inbound_factory_name: string,
+    resource: string,
+  },
 }]]
 declare_type 'TrainAddress', [[
   { name: string }
   + StationAddress
 ]]
-
+declare_type 'SchedulerOpts', [[{
+  resend_cooldown_seconds: ?number,
+  clock: Clock,
+  rand: Random,
+  promise_tracker: PromiseTracker,
+}]]
 export class Scheduler
-  new: F '(?Random, ?PromiseTracker) => <>', (@rand=PseudoRandom!, @promise_tracker) =>
-    @promise_tracker ??= PromiseTracker @rand
+  new: F '(SchedulerOpts) => <>', (opts) =>
+    {
+      :resend_cooldown_seconds=@@DEFAULT_RESEND_COOLDOWN_SECONDS
+      :clock,
+      :rand
+      :promise_tracker
+    } = opts
+    @resend_cooldown_seconds = resend_cooldown_seconds
+    @clock = clock
+    @rand = rand
+    @promise_tracker = promise_tracker
+
+    @resend_cooldowns = T '{string->{string->number}}', {}
+
+  @DEFAULT_RESEND_COOLDOWN_SECONDS: 90
 
   schedule_candidates: F '(string, Factory, [Factory]) => thread', (resource, factory, factories) =>
     coroutine.create ->
+      if @is_on_cooldown factory.name, resource
+        log -> "factory #{factory.name} has an active cooldown for #{resource}"
+        return
+
       inbound_station_addrs = @_inbound_station_addrs resource, factory
       if #inbound_station_addrs == 0
         log -> "no available station at #{factory.name} accepts inbound #{resource}"
@@ -152,6 +178,9 @@ export class Scheduler
             schedule: @_train_schedule
               inbound_addr: inbound_station_addr
               outbound_addr: outbound_station_addr
+            info:
+              inbound_factory_name: inbound_station_addr.factory.name
+              :resource
     @rand\shuffle ret
     ret
 
@@ -179,6 +208,9 @@ export class Scheduler
             schedule: @_train_schedule
               inbound_addr: inbound_station_addr
               outbound_addr: outbound_station_addr
+            info:
+              inbound_factory_name: inbound_station_addr.factory.name
+              :resource
     @rand\shuffle ret
     ret
 
@@ -212,6 +244,9 @@ export class Scheduler
         schedule: @_train_schedule
           inbound_addr: inbound_station_addr
           outbound_addr: outbound_station_addr
+        info:
+          inbound_factory_name: inbound_station_addr.factory.name
+          :resource
 
   _free_station_addrs_by_network: F '([StationAddress]) => {string->[StationAddress]}', (addrs) =>
     with {}
@@ -279,10 +314,40 @@ export class Scheduler
     promise = @promise_tracker\promise candidate.train_addr.name,
       * candidate.outbound_station_addr.station
       * candidate.inbound_station_addr.station
+    with candidate.info
+      @apply_cooldown .inbound_factory_name, .resource
 
     coroutine.yield candidate
 
+    with candidate.info
+      @clear_cooldown .inbound_factory_name, .resource
     @promise_tracker\break_promise promise
+
+  apply_cooldown: F '(string, string) => <>', (factory_name, resource) =>
+    @resend_cooldowns[factory_name] ??= {}
+    @resend_cooldowns[factory_name][resource] ??= do
+      @clock\now! + @resend_cooldown_seconds
+
+  is_on_cooldown: F '(string, string) => boolean', (factory_name, resource) =>
+    factory_cooldowns = @resend_cooldowns[factory_name]
+    if not factory_cooldowns?
+      return false
+
+    deadline = factory_cooldowns[resource]
+    if not deadline?
+      return false
+    on_cooldown = @clock\now! < deadline
+    if not on_cooldown
+      factory_cooldowns[resource] = nil
+    on_cooldown
+
+  clear_cooldown: F '(string, string) => <>', (factory_name, resource) =>
+    with? @resend_cooldowns[factory_name]
+      [resource] = nil
+    return
+
+  ut_release_all_cooldowns: F '() => <>', =>
+    @resend_cooldowns = {}
 
   ut_inbound_local_schedule_candidates: F '(string, Factory, [Factory]) => [ScheduleCandidate]', (resource, factory, factories) =>
     inbound_station_addrs = @_inbound_station_addrs resource, factory
@@ -548,9 +613,10 @@ spec ->
       ret
 
     it 'emits valid schedules', ->
+      clock = TestClock!
       rand = PseudoRandom 12345
-      promise_tracker = PromiseTracker rand, TestClock!
-      scheduler = Scheduler rand, promise_tracker
+      promise_tracker = PromiseTracker rand, clock
+      scheduler = Scheduler :clock, :rand, :promise_tracker
 
       candidates_co = scheduler\schedule_candidates resource, factory_with_shortage_of_resource, factories
       for candidate in *gather_candidates 25, candidates_co
@@ -586,15 +652,16 @@ spec ->
       SCHEDULE_LIMIT = 100
       make_pseudo_random = -> PseudoRandom 12345
 
+      clock = TestClock!
       rand = make_pseudo_random!
-      promise_tracker = PromiseTracker rand, TestClock!
+      promise_tracker = PromiseTracker rand, clock
 
       spare_capacity = (station_addr) ->
         station = station_addr.station
         station.capacity - #station.present_trains
 
       inbound_local_candidates = do
-        scheduler = Scheduler rand, promise_tracker
+        scheduler = Scheduler :clock, :rand, :promise_tracker
 
         scheduler\ut_inbound_local_schedule_candidates resource, factory_with_shortage_of_resource, factories
       for inbound_local_candidate in *inbound_local_candidates
@@ -604,7 +671,7 @@ spec ->
       promise_tracker\ut_break_all_promises!
 
       outbound_local_candidates = do
-        scheduler = Scheduler rand, promise_tracker
+        scheduler = Scheduler :clock, :rand, :promise_tracker
 
         candidates = scheduler\ut_outbound_local_schedule_candidates resource, factory_with_shortage_of_resource, factories
         promise_tracker\ut_break_all_promises!
@@ -617,7 +684,7 @@ spec ->
       global_candidates = do
         limit = SCHEDULE_LIMIT - #inbound_local_candidates - #outbound_local_candidates
         candidates = gather_candidates limit, coroutine.create ->
-          scheduler = Scheduler rand, promise_tracker
+          scheduler = Scheduler :clock, :rand, :promise_tracker
 
           scheduler\ut_yield_global_schedule_candidates resource, factory_with_shortage_of_resource, factories
         promise_tracker\ut_break_all_promises!
@@ -631,7 +698,7 @@ spec ->
         rand = make_pseudo_random!
         promise_tracker = PromiseTracker rand, TestClock!
         candidates_co = do
-          scheduler = Scheduler rand, promise_tracker
+          scheduler = Scheduler :clock, :rand, :promise_tracker
           scheduler\schedule_candidates resource, factory_with_shortage_of_resource, factories
         gather_candidates SCHEDULE_LIMIT, candidates_co
 
@@ -726,11 +793,12 @@ spec ->
             unknown: {}
             estimated_capacity: 0
 
-      scheduler = Scheduler rand, promise_tracker
+      scheduler = Scheduler :clock, :rand, :promise_tracker
       with promise_tracker
         get_candidates = ->
           ret = gather_candidates 1, scheduler\schedule_candidates RESOURCE, factories[1], factories
           promise_tracker\ut_break_all_promises!
+          scheduler\ut_release_all_cooldowns!
           ret
 
         $assert_that #get_candidates!, eq 0
@@ -782,3 +850,53 @@ spec ->
       max_wait_reached_time = implied_time Scheduler.MAX_WAIT_REACHED
       $assert_that cargo_inactive_time, lt min_wait_reached_time
       $assert_that min_wait_reached_time, lt max_wait_reached_time
+
+      $assert_that Scheduler.DEFAULT_RESEND_COOLDOWN_SECONDS, gt 2 * max_wait_reached_time
+
+    it 'avoids spam', ->
+      clock = TestClock!
+
+      rand = PseudoRandom 12345
+      promise_tracker = PromiseTracker rand, clock
+
+      RESOURCE = 'minecraft:stone_pickaxe'
+      NETWORK = 'mainline'
+      inbound_station =
+        name: 'inbound-station'
+        type: 'inbound'
+        handles: RESOURCE
+        network: NETWORK
+        capacity: 1
+        present_trains: {}
+      outbound_station =
+        name: 'outbound-station'
+        type: 'outbound'
+        handles: RESOURCE
+        network: NETWORK
+        capacity: 1
+        present_trains: {}
+
+      resend_cooldown_seconds = 255
+      with Scheduler :resend_cooldown_seconds,
+          :clock
+          :rand
+          :promise_tracker
+        candidates = ->
+          gather_candidates 1,
+            \schedule_candidates RESOURCE,
+              factories[1],
+              factories
+
+        $assert_that candidates!, len eq 1
+        $expect_that candidates!, len eq 0
+        assert \is_on_cooldown factories[1].name, RESOURCE
+
+        \ut_release_all_cooldowns!
+        promise_tracker\ut_break_all_promises!
+        $assert_that candidates!, len eq 1
+        $expect_that candidates!, len eq 0
+
+        promise_tracker\ut_break_all_promises!
+        $assert_that #candidates!, eq 0
+        clock.time += resend_cooldown_seconds
+        $expect_that #candidates!, eq 1

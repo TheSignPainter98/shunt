@@ -192,7 +192,6 @@ export class PromiseTracker
         promise_set.promises[id] = nil
 
   ut_break_all_promises: F '() => <>', =>
-    print 'BREAKING ALL'
     promises = [ promise for _, promise in pairs @promises ]
     for promise in *promises
       @break_promise promise
