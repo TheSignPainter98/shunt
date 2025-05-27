@@ -149,15 +149,6 @@ class Marshal
       [] = @\listen_to_network
       for task in *@upgrade_listener\tasks!
         [] = task
-      [] = ->
-        print 'snooping!'
-        import 'spec' as :repr
-        if not rednet?
-          return
-        while true
-          print '---'
-          from_id, msg, protocol = rednet.receive!
-          print "##{from_id}(#{protocol}): #{repr msg}"
 
   count_epochs: F '() => !', (initial_epoch=1)=>
     EPOCH_PERIOD = 10
