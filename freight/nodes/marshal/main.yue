@@ -151,7 +151,7 @@ class Marshal
         [] = task
 
   count_epochs: F '() => !', (initial_epoch=1)=>
-    EPOCH_PERIOD = 10
+    EPOCH_PERIOD = 20
     epoch = initial_epoch
     while true
       if @do_count_epochs
