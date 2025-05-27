@@ -297,19 +297,21 @@ class Factory
   detect_stockpile: F '() => DetectedStockpile', =>
     { :stored_items, :estimated_capacity } = @stockpile\content!
 
+    seen_resources = T '{string}', {}
+    expected_resource_configs = T '{string->StockpileConfig}', { cfg.name, cfg for cfg in *@config.stockpile }
     with known: {}, unknown: {}, :estimated_capacity
       for stored_item in *stored_items
-        stockpile_config = @get_stockpile_config_for stored_item.name
-        if stockpile_config?
-          .known[] = { ...stockpile_config, ...stored_item }
+        seen_resources[stored_item.name] = true
+        config = expected_resource_configs[stored_item.name]
+        if config?
+          .known[] = { ...config, ...stored_item }
         else
           .unknown[] = stored_item
 
-  get_stockpile_config_for: F '(string) => ?StockpileConfig', (name) =>
-    for stockpile_config in *@config.stockpile
-      if stockpile_config.name == name
-        return stockpile_config
-    nil
+      for config in *@config.stockpile
+        if seen_resources[config.name]
+          continue
+        .known[] = { ...config, stored: 0 }
 
 export class ScheduleRequest extends Packet
   new: F '(IdempotenceToken, string, string, Schedule) => <>', (@idemp_tok, @station_name, @train_name, @schedule) =>
@@ -505,6 +507,8 @@ spec ->
           stockpile:
             * name: 'minecraft:stone_bricks'
               surplus_amount: 128
+            * name: 'unseen_resource'
+              surplus_amount: 256
           stations:
             * name: 'known_station'
               network: 'some-network'
@@ -558,6 +562,9 @@ spec ->
                 * name: 'minecraft:stone_bricks'
                   stored: 32
                   surplus_amount: 128
+                * name: 'unseen_resource'
+                  stored: 0
+                  surplus_amount: 256
               unknown:
                 * name: 'minecraft:dirt'
                   stored: 16
