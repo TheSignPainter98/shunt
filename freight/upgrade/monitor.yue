@@ -36,17 +36,19 @@ export class UpgradeMonitor
 
   get_latest_release: F '() => Release', =>
     attempt = 0
+    idemp_tok = IdempotenceToken!
     while true
       attempt += 1
       if attempt > 1
         print "getting release from marshal, attempt #{attempt}"
 
-      idemp_tok = IdempotenceToken!
       @uplink\broadcast CurrentReleaseRequest idemp_tok
       marshal_id, pkt_or_err = @uplink\receive_from_any CurrentReleaseResponse, timeout: 10
       if not marshal_id?
         if pkt_or_err != TIMEOUT
           print "ignoring error whilst getting update: #{pkt_or_err}"
+          -- Random backoff
+          os.sleep (math.random 1000) / 100
         else
           print 'TIMEOUT'
         continue

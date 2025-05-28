@@ -319,14 +319,16 @@ class Marshal
   manage_low_resource: F '(string, Factory) => <>', (resource, factory) =>
     MAX_ATTEMPTS = 25
 
-    candidates_co = @scheduler\schedule_candidates resource, factory, @factories
+    factory_list = [ factory for _, factory in pairs @factories ]
+    table.sort factory_list, (a, b) -> a.name < b.name
+    candidates_co = @scheduler\schedule_candidates resource, factory, factory_list
     for _ = 1, MAX_ATTEMPTS
       candidate = do
         ok, yielded = coroutine.resume candidates_co
         if not ok
           error yielded
         if not yielded?
-          os.sleep 0.01 -- Throttle
+          break
         yielded
 
       {
@@ -355,6 +357,7 @@ class Marshal
         log -> "cannot schedule train at #{factory_name}:#{station_name}: #{error_reason}"
 
     print "no trains available to take #{resource} to #{factory.name}, will re-attempt next heartbeat"
+    return
 
   on_declare_train_state: F '(DeclareTrainState) => <>', (message) =>
     { :idemp_tok, :pc_id, :name, :state } = message
