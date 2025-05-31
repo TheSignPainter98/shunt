@@ -8,7 +8,7 @@ declare_type 'Self', 'some'
 
 import 'freight.args' as :Args
 import 'freight.instrument' as :instrument
-import 'freight.logger' as :log
+import 'freight.logger' as :log, :stop_recording_logs
 import 'freight.monitor' as :detect_and_use_monitor
 import 'quicktype' as :F
 import 'spec' as :run_tests
@@ -49,6 +49,7 @@ main = (raw_args) ->
 
 run = (args) ->
   if args.test?
+    stop_recording_logs!
     run_ugly_tests = args.test.run_ugly_tests
     skip_minecraft_tests = args.test.no_minecraft
     ok = run_tests args.test.filter

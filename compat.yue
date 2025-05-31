@@ -50,6 +50,16 @@ export apply_compat = ->
   fs.getCapacity ??= (path) ->
     1000000
 
+  fs.list ??= (dir) ->
+    assert (not dir\match "'"), "cannot list directory containing quote mark '#{dir}'"
+    with {}
+      p = assert io.popen "ls -1 '#{dir}'"
+      line = p\read '*l'
+      while line?
+        [] = line
+        line = p\read '*l'
+      p\close!
+
   if not shell?
     global shell = {}
 

@@ -6,6 +6,7 @@ test.yue
 *.toml
 .version.txt
 *.csv
+*.log
 
 # Binaries
 bin/*
