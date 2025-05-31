@@ -8,7 +8,6 @@ LOG_FILE = "#{LOG_DIR}/run-#{os.date '%Y-%m-%d@%H:%M:%S'}.log"
 export set_log_verbosity = (v) ->
   verbose = v
 
-print = _G.print
 export log = (fn) ->
   msg = fn!
   if verbose
@@ -53,9 +52,9 @@ setup_logs = ->
     print "DELETING #{LOG_DIR}/#{log_to_delete}"
     os.remove "#{LOG_DIR}/#{log_to_delete}"
 
-  old_print = _G.print
+  print = _G.print
   _G.print = (...) ->
-    ret = old_print ...
+    ret = print ...
     msg = table.concat {...}, ' '
     log -> msg
     return ret
