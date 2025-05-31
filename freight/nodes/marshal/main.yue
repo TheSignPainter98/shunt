@@ -6,7 +6,7 @@ import 'compat' as :HOST
 import 'freight.cmd.declare' as :DeclareTrainStateResponse
 import 'freight.configurator.main' as :GetConfigRequest, :GetConfigResponse, :MarshalIdentityRequest, :MarshalIdentityResponse, :SetConfigRequest, :SetConfigResponse
 import 'freight.data.queue' as :Queue
-import 'freight.logger' as :log
+import 'freight.logger' as :log, :trace
 import 'freight.nodes.factory.main' as :FactoryHeartbeat, :ScheduleRequest, :ScheduleResponse
 import 'freight.nodes.marshal.clock' as :MinecraftClock
 import 'freight.nodes.marshal.promise_tracker' as :PromiseTracker
@@ -174,7 +174,8 @@ class Marshal
     log -> "reading network..."
     _, message = @uplink\receive_from_any!
     import 'spec' as :repr
-    log -> "read #{repr message}"
+    log -> "read a #{message\protocol!}"
+    trace "read #{repr message}"
     switch message\protocol!
       when 'FactoryHeartbeat', 'DeclareTrainState', 'MarshalIdentityRequest', 'FactoryPcRequest', 'GetConfigRequest', 'SetConfigRequest'
         @events\enqueue type: 'network-message', :message
@@ -363,7 +364,7 @@ class Marshal
       log -> "schedule applied"
       return
 
-    print "no trains available to take #{resource} to #{factory.name}, will re-attempt next heartbeat"
+    trace "no trains available to take #{resource} to #{factory.name}, will re-attempt next heartbeat"
     return
 
   on_declare_train_state: F '(DeclareTrainState) => <>', (message) =>

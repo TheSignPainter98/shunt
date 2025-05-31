@@ -12,7 +12,7 @@ export log = (fn) ->
   msg = fn!
   if verbose
     print msg
-  record msg
+  trace msg
 
 export fatal = (...) ->
   fragments = with {}
@@ -20,22 +20,23 @@ export fatal = (...) ->
       [] = tostring select i, ...
   msg = table.concat fragments, ' '
   print msg
-  record msg
+  trace msg
 
   os.exit 1
 
-record_logs = true
-export stop_recording_logs = ->
-  record_logs = false
+test_mode = false
+export activate_test_mode = ->
+  test_mode = true
 
 setup_done = false
-record = (msg) ->
-  if not record_logs
-    return
-
+export trace = (msg) ->
   if not setup_done
     setup_done = true
     setup_logs!
+
+  if test_mode
+    print msg
+    return
 
   timestamp = os.date '%Y-%m-%d@%H:%M:%S'
   with? io.open LOG_FILE, 'a'
@@ -49,13 +50,4 @@ setup_logs = ->
   existing_logs = fs.list LOG_DIR
   table.sort existing_logs, (a, b) -> a > b
   for log_to_delete in *existing_logs[MAX_LOGS-1,]
-    print "DELETING #{LOG_DIR}/#{log_to_delete}"
     os.remove "#{LOG_DIR}/#{log_to_delete}"
-
-  print = _G.print
-  _G.print = (...) ->
-    ret = print ...
-    msg = table.concat {...}, ' '
-    log -> msg
-    return ret
-    -- TODO(kcza): remove this hack!

@@ -1,6 +1,6 @@
 local *
 
-import 'freight.logger' as :log
+import 'freight.logger' as :log, :trace
 import 'freight.upgrade.instigator' as :MarshalBumpRelease
 import 'freight.upgrade.monitor' as :CurrentReleaseRequest, :CurrentReleaseResponse
 import 'freight.upgrade.rebooter' as :MinecraftRebooter, :RebootRequest
@@ -47,15 +47,15 @@ export class UpgradeListener using Tester
       ok, err = @test release
       if ok
         break
-      print "cannot apply update: #{err}"
+      trace "cannot apply update: #{err}"
 
-    print "bumping release to version #{release.version}"
+    trace "bumping release to version #{release.version}"
     @_current_release = release
     with assert io.open release.file, 'w+'
       \write release.content
       assert \close!
 
-    print "issuing reboot broadcast"
+    trace "issuing reboot broadcast"
     @uplink\deafen!
     @uplink\broadcast RebootRequest!
     @rebooter\reboot!
@@ -64,7 +64,7 @@ export class UpgradeListener using Tester
     log -> "listening for release requests"
     while true
       requester_id, { :idemp_tok } = @uplink\receive_from_any CurrentReleaseRequest
-      print "sending current release info to ##{requester_id} (idemp_tok:#{idemp_tok})"
+      trace "sending current release info to ##{requester_id} (idemp_tok:#{idemp_tok})"
       @uplink\send_to requester_id, CurrentReleaseResponse idemp_tok, @current_release!
 
   current_release: F '() => Release', =>

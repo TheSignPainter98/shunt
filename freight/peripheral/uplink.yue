@@ -1,5 +1,6 @@
 local *
 
+import 'freight.logger' as :trace
 import 'quicktype' as :declare_singleton_type, :declare_type, :F, :T
 import 'spec' as :spec
 
@@ -164,7 +165,7 @@ export class TestUplinkBackend
 
   receive: F '(?string, ?number) => <?number, any|TIMEOUT, ?string>', (protocol_filter, timeout) =>
     if @on_receive? and not @on_receive protocol_filter, timeout
-      print "! receipt of #{protocol_filter} aborted"
+      trace "! receipt of #{protocol_filter} aborted"
       return @on_absent_frame protocol_filter, timeout
 
     for i = 1, @num_to_receive
@@ -182,7 +183,7 @@ export class TestUplinkBackend
         @num_receives += 1
         return from_id, message, protocol
 
-    print "! no more #{protocol_filter? and protocol_filter .. ' ' or ''}packets to receive"
+    trace "! no more #{protocol_filter? and protocol_filter .. ' ' or ''}packets to receive"
     @on_absent_frame protocol_filter, timeout
 
   on_absent_frame: F '(?string, ?number) => <nil, TIMEOUT, nil>', (protocol_filter, timeout) =>

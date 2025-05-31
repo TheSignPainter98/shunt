@@ -2,7 +2,7 @@ local *
 local CurrentReleaseRequest
 local CurrentReleaseResponse
 
-import 'freight.logger' as :log
+import 'freight.logger' as :log, :trace
 import 'freight.peripheral.uplink' as :IdempotenceToken, :Packet, :TIMEOUT
 import 'freight.version' as :VERSION
 import 'quicktype' as :declare_type, :F
@@ -40,22 +40,22 @@ export class UpgradeMonitor
     while true
       attempt += 1
       if attempt > 1
-        print "getting release from marshal, attempt #{attempt}"
+        trace "getting release from marshal, attempt #{attempt}"
 
       @uplink\broadcast CurrentReleaseRequest idemp_tok
       marshal_id, pkt_or_err = @uplink\receive_from_any CurrentReleaseResponse, timeout: 10
       if not marshal_id?
         if pkt_or_err != TIMEOUT
-          print "ignoring error whilst getting update: #{pkt_or_err}"
+          trace "ignoring error whilst getting update: #{pkt_or_err}"
           -- Random backoff
           os.sleep (math.random 1000) / 100
         else
-          print 'TIMEOUT'
+          trace 'TIMEOUT'
         continue
       if pkt_or_err.idemp_tok == idemp_tok
-        print "got release!"
+        trace "got release!"
         return pkt_or_err.release
-      print "expected #{idemp_tok} but got #{pkt_or_err.idemp_tok} (match? #{pkt_or_err.idemp_tok == idemp_tok})"
+      trace "expected #{idemp_tok} but got #{pkt_or_err.idemp_tok} (match? #{pkt_or_err.idemp_tok == idemp_tok})"
 
 export class CurrentReleaseRequest extends Packet
   new: F '(IdempotenceToken) => <>', (@idemp_tok) =>
