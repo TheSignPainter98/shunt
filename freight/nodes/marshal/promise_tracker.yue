@@ -1,5 +1,6 @@
 local *
 
+import 'freight.logger' as :log
 import 'freight.nodes.marshal.clock' as :MinecraftClock
 import 'quicktype' as :declare_type, :F, :T
 import 'spec' as :spec
@@ -98,6 +99,10 @@ export class PromiseTracker
 
   train_is_lost: F '(string) => boolean', (train_name) =>
     @_prune!
+    if @train_lost_promises[train_name]?
+      log -> "====================="
+      log -> "=== TRAIN IS LOST ==="
+      log -> "====================="
     @train_lost_promises[train_name]?
 
   declare_train_found: F '(string) => ?string', (train_name) =>
@@ -122,6 +127,7 @@ export class PromiseTracker
     @clock\now! < promise.deadline
 
   declare_train_seen: F '(string, string) => <>', (train_name, station_name) =>
+    print "??? declaring train #{train_name} seen at #{station_name}"
     promise = @train_promises[train_name]
     if not promise?
       return
@@ -147,7 +153,9 @@ export class PromiseTracker
           .deadline = @clock\now! + max_duration
         when .stations[.should_approach_index-1]?.name
           -- Ignore repeat observations.
+          print "[[[ repeat observation of #{.train} at #{.stations[.should_approach_index-1].name} (this is index #{.should_approach_index} of #{#.stations}) ]]]"
         else
+          print "train reached unexpected station: #{station_name} (expected #{.stations[.should_approach_index]}, but would accept #{.stations[.should_approach_index-1]})"
           @train_lost_promises[train_name] = promise
 
           -- Release remaining stops
@@ -179,6 +187,7 @@ export class PromiseTracker
         @promises[id] = nil
         @train_promises[promise.train] = nil
       else if deadline_expired
+        print "train #{promise.train} lost due to deadline expiry"
         @train_lost_promises[promise.train] = promise
       else
         continue -- Already pruned

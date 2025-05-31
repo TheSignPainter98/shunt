@@ -67,13 +67,17 @@ export class Scheduler
               continue
             seen_networks[network] = true
             [] = network
+        import 'spec' as :repr
+        print "> networks: #{repr networks}"
 
         for network in *networks
           addrs = @_outbound_station_addrs resource, network, factories
+          print "< network #{network} provides #{repr [ addr.name for addr in *addrs ]}"
           outbound_station_addrs_by_network[network] = addrs
           for addr in *addrs
             outbound_station_addrs[] = addr
         if #outbound_station_addrs == 0
+          log -> "no available outbound stations which provide #{resource} on any network"
           return
 
       -- Yield unique local candidates
@@ -130,19 +134,27 @@ export class Scheduler
 
   _outbound_station_addrs: F '(string, string, [Factory]) => [StationAddress]', (resource, network, factories) =>
     with {}
+      print "checking among #{#factories} factories"
       for factory in *factories
+        print "inspecting #{factory.name} for #{resource}"
         if not @_factory_has_surplus_resource resource, factory
+          print "factory #{factory.name} does NOT have a surplus of #{resource}"
           continue
 
         for station in *factory.stations.known
           if station.handles != resource
+            print "wrong resource (#{station.handles})"
             continue
           if station.type != 'outbound'
+            print "wrong type (#{station.type})"
             continue
           if station.network != network
+            print "wrong network (#{station.network})"
             continue
           if @promise_tracker\station_is_fully_promised station
+            print "fully promised"
             continue
+          print "ok!"
           [] = :factory, :station
 
   _factory_has_surplus_resource: F '(string, Factory) => boolean', (resource, factory) =>

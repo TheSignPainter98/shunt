@@ -1,5 +1,6 @@
 local *
 
+import 'freight.logger' as :log
 import 'quicktype' as :declare_type, :F, :T
 import 'spec' as :spec
 
@@ -19,6 +20,7 @@ export class Stockpile
   new: F '([Inventory]) => <>', (@inventories) =>
 
   content: F '() => StockpileContent', =>
+    log -> "gathering stockpile info from #{#@inventories} inventories"
     estimated_capacity = 0
     stored_items_by_name = {}
     for inventory in *@inventories

@@ -53,8 +53,9 @@ export class UpgradeMonitor
           print 'TIMEOUT'
         continue
       if pkt_or_err.idemp_tok == idemp_tok
+        print "got release!"
         return pkt_or_err.release
-      print idemp_tok, pkt_or_err.idemp_tok, pkt_or_err.idemp_tok == idemp_tok
+      print "expected #{idemp_tok} but got #{pkt_or_err.idemp_tok} (match? #{pkt_or_err.idemp_tok == idemp_tok})"
 
 export class CurrentReleaseRequest extends Packet
   new: F '(IdempotenceToken) => <>', (@idemp_tok) =>

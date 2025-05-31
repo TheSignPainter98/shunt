@@ -202,7 +202,6 @@ class Marshal
 
   handle_event: F '({type: MarshalEventType}) => <>', (event) =>
     with event
-      log -> "handling #{.type} event"
       switch .type
         when 'new-epoch'
           @on_new_epoch .epoch
@@ -210,10 +209,10 @@ class Marshal
           @on_network_message .message
         else
           error "internal error: unrecognised event type '#{.type}'"
-      log -> "done handling #{.type} event"
     return
 
   on_new_epoch: F '(number) => <>', (epoch) =>
+    log -> "starting epoch #{epoch}"
     @epoch = epoch
     @prune_factories!
     @prune_trains!
@@ -236,7 +235,7 @@ class Marshal
         [name] = status
 
   on_network_message: F '(Packet) => <>', (message) =>
-    log -> "received a #{message\protocol!}"
+    log -> "handling a #{message\protocol!}"
     switch message\protocol!
       when 'FactoryHeartbeat'
         @on_factory_heartbeat message
@@ -293,9 +292,12 @@ class Marshal
       .last_seen_epoch = @epoch
       .last_seen_at_factory = factory_name
       .last_seen_at_station = station_name
+    @promise_tracker\declare_train_seen train_name, station_name
 
   manage_resources: F '(Factory) => <>', (factory) =>
     low_resources = @get_low_resources factory.stockpile
+    import 'spec' as :repr
+    log -> "!! low resources: #{repr low_resources}"
     if not low_resources?
       return
 
@@ -344,17 +346,22 @@ class Marshal
         },
         :schedule,
       } = candidate
+      with candidate
+        log -> "got candidate: #{train_name} from #{.outbound_station_addr.factory.name}(#{.outbound_station_addr.station.name}) to #{.inbound_station_addr.factory.name}(#{.inbound_station_addr.station.name})"
 
       idemp_tok = IdempotenceToken!
       @uplink\send_to factory_pc_id, ScheduleRequest idemp_tok, station_name, train_name, schedule
 
       _, response = @uplink\receive_from factory_pc_id, ScheduleResponse, timeout: 1
       if response == TIMEOUT
+        log -> 'discarding candidate due to timeout'
         continue
       if response.idemp_tok != idemp_tok
         continue
       if error_reason = response.error_reason
         log -> "cannot schedule train at #{factory_name}:#{station_name}: #{error_reason}"
+      log -> "schedule applied"
+      return
 
     print "no trains available to take #{resource} to #{factory.name}, will re-attempt next heartbeat"
     return
@@ -821,7 +828,6 @@ spec ->
           \ut_step!
           \ut_step!
           \ut_step!
-        print uplink.backend.num_receives
 
         $expect_that uplink.backend.sent, len eq 2
         $expect_that uplink.backend.sent[1], has_fields
