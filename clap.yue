@@ -182,19 +182,19 @@ export class Subcommand
       if '-' == arg\sub 1, 1
         flag = flag_map[arg]
         if not flag?
-          return nil, "unknown flag #{arg}"
+          return nil, "unknown flag #{arg}\n#{@_usage_message path}"
         flag_value = if not flag._takes_param
           true
         else
           i += 1
           flag_arg = args[i]
           if not flag_arg?
-            return nil, "flag #{arg} expected an argument"
+            return nil, "flag #{arg} expected an argument\n#{@_usage_message path}"
 
           if transform = flag._transform
             transformed, err = transform flag_arg
             if err?
-              return nil, "cannot parse '#{flag_arg}': #{err}"
+              return nil, "cannot parse '#{flag_arg}': #{err}\n#{@_usage_message path}"
             transformed
           else
             flag_arg
@@ -207,7 +207,7 @@ export class Subcommand
         arg_value = if transform = param._transform
           transformed, err = transform arg
           if err?
-            return nil, "failed to parse #{arg}: #{err}"
+            return nil, "failed to parse #{arg}: #{err}\n#{@_usage_message path}"
           transformed
         else
           arg
@@ -224,7 +224,7 @@ export class Subcommand
         ret[command._dest] = subcommand_ret
         break
       else
-        return nil, "unexpected argument '#{arg}'"
+        return nil, "unexpected argument '#{arg}'\n#{@_usage_message path}"
 
     if ret._usage
       print @_usage_message path
@@ -248,7 +248,7 @@ export class Subcommand
       if sc = subcommand_map[help.command]
         print sc\_help_message path
         return nil, EXIT
-      return nil, "no such subcommand '#{help}'"
+      return nil, "no such subcommand '#{help}'\n#{@_usage_message path}"
     if ret._version
       print @_version_message path
       return nil, EXIT
@@ -257,7 +257,7 @@ export class Subcommand
       with flag
         arg = flag[._dest]
         if not arg and ._required
-          return nil, "flag '#{\_repr!}' required"
+          return nil, "flag '#{\_repr!}' required\n#{@_usage_message path}"
         if arg and ._options
           ok = false
           for option in *._options
@@ -265,7 +265,7 @@ export class Subcommand
               ok = true
               break
           if not ok
-            return nil, "flag '#{\_repr!}' has incorrect value, got '#{arg}' but expected one of #{table.concat ._options, ', '}"
+            return nil, "flag '#{\_repr!}' has incorrect value, got '#{arg}' but expected one of #{table.concat ._options, ', '}\n#{@_usage_message path}"
     for param in *@_params
       with param
         arg = ret[._dest]
@@ -274,7 +274,7 @@ export class Subcommand
             " (accepts: #{table.concat ._options, ', '})"
           else
             ""
-          return nil, "argument '#{\_repr!}' required#{options_repr}"
+          return nil, "argument '#{\_repr!}' required#{options_repr}\n#{@_usage_message path}"
         if arg and ._options
           ok = false
           for option in *._options
@@ -282,7 +282,7 @@ export class Subcommand
               ok = true
               break
           if not ok
-            return nil, "argument '#{\_repr!}' has incorrect value, got '#{arg}' but expected one of #{table.concat ._options, ', '}"
+            return nil, "argument '#{\_repr!}' has incorrect value, got '#{arg}' but expected one of #{table.concat ._options, ', '}\n#{@_usage_message path}"
     if #@_subcommands > 0
       command_specified = false
       for command in *@_subcommands
@@ -290,7 +290,7 @@ export class Subcommand
           command_specified = true
           break
       if not command_specified
-        return nil, "command required"
+        return nil, "command required\n#{@_usage_message path}"
 
     ret, nil
 
@@ -541,6 +541,5 @@ export class ArgParser extends Subcommand
       if err == EXIT
         return nil, false
       print err
-      print @_usage_message!
       return nil, false
     ret, true
