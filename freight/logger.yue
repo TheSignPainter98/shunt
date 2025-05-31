@@ -8,7 +8,7 @@ LOG_FILE = "#{LOG_DIR}/run-#{os.date '%Y-%m-%d@%H:%M:%S'}.log"
 export set_log_verbosity = (v) ->
   verbose = v
 
-print = print
+print = _G.print
 export log = (fn) ->
   msg = fn!
   if verbose
