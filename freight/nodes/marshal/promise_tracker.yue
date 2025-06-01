@@ -18,7 +18,8 @@ declare_type 'Promise', [[{
   stations: ?[PromiseStation],
   should_approach_index: number,
   deadline: ?number,
-  max_step_duration: number
+  max_step_duration: number,
+  lost: boolean,
 }]]
 declare_type 'PromiseStation', [[{
   name: string,
@@ -26,7 +27,7 @@ declare_type 'PromiseStation', [[{
 }]]
 declare_type 'PromiseSet', [[{
   count: number,
-  promises: {number->Promise},
+  promises: {number},
 }]]
 export class PromiseTracker
   new: F '(Random, ?Clock) => <>', (@rand, @clock=MinecraftClock!) =>
@@ -34,6 +35,28 @@ export class PromiseTracker
     @train_promises = T '{string->Promise}', {}
     @station_promise_sets = T '{string->PromiseSet}', {}
     @train_lost_promises = T '{string->Promise}', {}
+
+  snapshot: F '() => [Promise]', =>
+    promises = [ promise for _, promise in pairs @promises ]
+    table.sort promises, (a, b) -> a.id < b.id
+    promises
+
+  load_snapshot: F '([Promise]) => <>', (raw_promises) =>
+    @promises = {}
+    @train_promises = {}
+    @station_promise_sets = {}
+    @train_lost_promises = {}
+    for raw_promise in *raw_promises
+      with raw_promise
+        @promises[.id] = raw_promise
+        @train_promises[.train] = raw_promise
+        if .lost
+          @train_lost_promises[.train] = raw_promise
+        else if raw_promise.stations?
+          for station in *.stations
+            @station_promise_sets[station.name] ??= count: 0, promises: {}
+            @station_promise_sets[station.name].count += 1
+            @station_promise_sets[station.name].promises[.id] = true
 
   promise: F '(string, [PromiseStation], ?number, ?number) => Promise', (train, stations, max_step_duration=30*60, max_unload_duration=60) =>
     @_promise train, stations, max_step_duration, max_unload_duration
@@ -58,6 +81,7 @@ export class PromiseTracker
       :deadline
       :max_step_duration
       :max_unload_duration
+      lost: false
     @promises[id] = promise
     @train_promises[promise.train] = promise
     if stations?
@@ -70,7 +94,7 @@ export class PromiseTracker
           promise_set
         with promise_set
           .count += 1
-          .promises[id] = promise
+          .promises[id] = true
     promise
 
   _generate_id: F '() => number', =>
@@ -100,9 +124,7 @@ export class PromiseTracker
   train_is_lost: F '(string) => boolean', (train_name) =>
     @_prune!
     if @train_lost_promises[train_name]?
-      log -> "====================="
-      log -> "=== TRAIN IS LOST ==="
-      log -> "====================="
+      log -> "train #{train_name} was lost!"
     @train_lost_promises[train_name]?
 
   declare_train_found: F '(string) => ?string', (train_name) =>
@@ -131,7 +153,7 @@ export class PromiseTracker
     promise = @train_promises[train_name]
     if not promise?
       return
-    if @train_lost_promises[train_name]?
+    if promise.lost or @train_lost_promises[train_name]?
       return
 
     if not promise.stations?
@@ -156,6 +178,7 @@ export class PromiseTracker
           trace "repeat-observation of #{.train} at #{.stations[.should_approach_index-1].name} (this is index #{.should_approach_index} of #{#.stations})"
         else
           trace "train reached unexpected station: #{station_name} (expected #{.stations[.should_approach_index]}, but would accept #{.stations[.should_approach_index-1]})"
+          promise.lost = true
           @train_lost_promises[train_name] = promise
 
           -- Release remaining stops
@@ -191,6 +214,7 @@ export class PromiseTracker
           @train_promises[promise.train] = nil
         else
           trace "train #{promise.train} was lost (deadline expiry)"
+          promise.lost = true
           @train_lost_promises[promise.train] = promise
       else
         continue -- Already pruned
@@ -215,6 +239,7 @@ export class PromiseTracker
       * name: 'dummy-station-2'
         capacity: 1
     promise = @promise train_name, DUMMY_STATIONS
+    promise.lost = true
     @train_lost_promises[train_name] = promise
     assert @train_is_lost train_name
     return
@@ -222,11 +247,12 @@ export class PromiseTracker
 spec ->
   import 'spec_macros' as $
 
+  import 'compat' as :HOST
   import 'freight.nodes.marshal.clock' as :TestClock
   import 'freight.nodes.marshal.pseudo_random' as :PseudoRandom
   import 'spec' as :describe, :it, :matchers
 
-  import eq from matchers
+  import deep_eq, eq from matchers
 
   describe 'PromiseTracker', ->
     it 'makes and breaks promises', ->
@@ -423,3 +449,31 @@ spec ->
 
         clock.time += 2000000 -- Test no expiry
         $expect_that (\train_is_promised 'test-train-name'), eq true
+
+    it 'survives snapshotting', ->
+      rand = PseudoRandom 12345
+      clock = TestClock!
+      promise_tracker = with PromiseTracker rand, clock
+        TRAIN_NAME = 'test-train-name'
+        TRAIN_NAME_2 = 'test-train-name-2'
+        TRAIN_NAME_3 = 'test-train-name-3'
+
+        STATIONS =
+          * name: 'station-1'
+            capacity: 1
+          * name: 'station-2'
+            capacity: 1
+        MAX_STEP_DURATION = 100
+        MAX_UNLOAD_DURATION = 10
+        \promise TRAIN_NAME, STATIONS, MAX_STEP_DURATION, MAX_UNLOAD_DURATION
+        \reserve TRAIN_NAME_2
+
+        clock.time += 2 * MAX_STEP_DURATION
+        $assert_that (\train_is_lost TRAIN_NAME), eq true
+
+        \promise TRAIN_NAME_3, STATIONS, MAX_STEP_DURATION, MAX_UNLOAD_DURATION
+
+      save_data = promise_tracker\snapshot!
+      loaded_promise_tracker = with PromiseTracker rand, clock
+        \load_snapshot save_data
+      $assert_that loaded_promise_tracker, deep_eq promise_tracker
