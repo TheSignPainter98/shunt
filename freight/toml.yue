@@ -4,7 +4,7 @@ import 'quicktype' as :declare_type, :F, :Parser, :Symbol
 import 'spec' as :spec
 
 export decode = (raw) ->
-  parser = TomlParser Lexer raw
+  parser = Decoder Lexer raw
   ast, err = parser\parse!
   if err?
     return nil, err
@@ -15,7 +15,7 @@ export decode = (raw) ->
 -- - Non-literal strings
 -- - Inline tables
 -- - Inline arrays
-class TomlParser extends Parser
+class Decoder extends Parser
   new: (@lexer) =>
 
   parse: =>
@@ -36,7 +36,7 @@ class TomlParser extends Parser
 
     root_section = nil
     if @lexer\peek!.type != T_BRACKET_OPEN
-      root_section = @parse_section_body!
+      root_section = Section nil, @parse_section_body!
       @ignore_any T_NEWLINE
 
     named_sections = nil
@@ -99,12 +99,18 @@ class TomlParser extends Parser
       * token: T_NUMBER
 
 class Ast
-  new: (@root_section_entries={}, @named_sections={}) =>
+  new: (@root_section=nil, @named_sections={}) =>
+    if @root_section? and @root_section.header?
+      error "internal error: root section has header"
+    for named_section in *@named_sections
+      if not named_section.header?
+        error "internal error: non-root section has no header"
 
   construct_value: =>
     tab = {}
-    for entry in *@root_section_entries
-      entry\construct_value_in tab
+    if @root_section?
+      for entry in *@root_section.entries
+        entry\construct_value_in tab
     for named_section in *@named_sections
       named_section\construct_value_in tab
     tab
@@ -113,7 +119,8 @@ class Section
   new: (@header, @entries={}) =>
 
   construct_value_in: (tab) =>
-    tab = @header\acquire_target tab
+    if @header?
+      tab = @header\acquire_target tab
     for entry in *@entries
       entry\construct_value_in tab
 
@@ -313,34 +320,34 @@ spec ->
         $expect_that lexer\peek!, deep_eq Symbol T_EOF
         $expect_that lexer\peek!, deep_eq Symbol T_EOF
 
-  describe 'TomlParser', ->
+  describe 'Decoder', ->
     parse_ast = (input) ->
       tokens = (raw) ->
         assert raw
         with {}
           for token in (Lexer raw).tokens
             [] = token
-      (TomlParser Lexer input)\parse!
+      (Decoder Lexer input)\parse!
 
     it 'accepts empty', ->
       $expect_that (parse_ast ''), deep_eq Ast!
       $expect_that (parse_ast '\n'), deep_eq Ast!
 
     it 'accepts root table', ->
-      $expect_that (parse_ast '\nkey=true'), deep_eq Ast
+      $expect_that (parse_ast '\nkey=true'), deep_eq Ast Section nil,
         * Entry (Key {'key'}), Value true
-      $expect_that (parse_ast 'key=1234\nkey=-1234.5'), deep_eq Ast
+      $expect_that (parse_ast 'key=1234\nkey=-1234.5'), deep_eq Ast Section nil,
         * Entry (Key {'key'}), Value 1234
         * Entry (Key {'key'}), Value -1234.5
-      $expect_that (parse_ast "key='aa'\n\nkey='aa'"), deep_eq Ast
+      $expect_that (parse_ast "key='aa'\n\nkey='aa'"), deep_eq Ast Section nil,
         * Entry (Key {'key'}), Value 'aa'
         * Entry (Key {'key'}), Value 'aa'
-      $expect_that (parse_ast 'key=true\nkey=false\n'), deep_eq Ast
+      $expect_that (parse_ast 'key=true\nkey=false\n'), deep_eq Ast Section nil,
         * Entry (Key {'key'}), Value true
         * Entry (Key {'key'}), Value false
 
     it 'accepts composite keys', ->
-      $expect_that (parse_ast 'key1.key2=true'), deep_eq Ast
+      $expect_that (parse_ast 'key1.key2=true'), deep_eq Ast Section nil,
         * Entry (Key {'key1', 'key2'}), Value true
 
     it 'accepts named sections', ->
@@ -365,7 +372,7 @@ spec ->
         key = 'value'
         [table]
         key = 'value'
-      "), deep_eq Ast {Entry (Key {'key'}), Value 'value'},
+      "), deep_eq Ast (Section nil, {Entry (Key {'key'}), Value 'value'}),
         * Section (TableHeader Key {'table'}), {Entry (Key {'key'}), Value 'value'}
 
     it 'accepts empty sections', ->
@@ -382,7 +389,7 @@ spec ->
 
   describe 'Ast', ->
     it 'constructs the root section', ->
-      ast = Ast
+      ast = Ast Section nil,
         * Entry (Key {'key1'}), Value true
         * Entry (Key {'key2', 'key3'}), Value 'hello'
       $expect_that ast\construct_value!, deep_eq
