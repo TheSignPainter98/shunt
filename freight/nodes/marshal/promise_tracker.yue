@@ -178,7 +178,7 @@ export class PromiseTracker
           -- Ignore repeat observations.
           trace "repeat-observation of #{.train} at #{.stations[.should_approach_index-1].name} (this is index #{.should_approach_index} of #{#.stations})"
         else
-          trace "train reached unexpected station: #{station_name} (expected #{.stations[.should_approach_index]}, but would accept #{.stations[.should_approach_index-1]})"
+          trace "train reached unexpected station: #{station_name} (expected #{.stations[.should_approach_index]}, but would also have accepted #{.stations[.should_approach_index-1]})"
           promise.lost = true
           @train_lost_promises[train_name] = promise
 
