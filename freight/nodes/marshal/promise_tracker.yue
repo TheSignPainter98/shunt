@@ -29,6 +29,7 @@ declare_type 'PromiseSet', [[{
   count: number,
   promises: {number},
 }]]
+declare_type 'PromiseTrackerSnapshot', '[Promise]'
 export class PromiseTracker
   new: F '(Random, ?Clock) => <>', (@rand, @clock=MinecraftClock!) =>
     @promises = T '{number->Promise}', {}
@@ -36,12 +37,12 @@ export class PromiseTracker
     @station_promise_sets = T '{string->PromiseSet}', {}
     @train_lost_promises = T '{string->Promise}', {}
 
-  snapshot: F '() => [Promise]', =>
+  snapshot: F '() => PromiseTrackerSnapshot', =>
     promises = [ promise for _, promise in pairs @promises ]
     table.sort promises, (a, b) -> a.id < b.id
     promises
 
-  load_snapshot: F '([Promise]) => <>', (raw_promises) =>
+  load_snapshot: F '(PromiseTrackerSnapshot) => <>', (raw_promises) =>
     @promises = {}
     @train_promises = {}
     @station_promise_sets = {}

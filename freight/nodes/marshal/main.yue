@@ -42,6 +42,7 @@ export main = F '(MarshalConfig) -> <>', (config) ->
   uplink = Uplink!
   upgrade_listener = UpgradeListener config, uplink
   with Marshal :config, :pc, :uplink, :upgrade_listener
+    \load!
     \run!
 
 STEP_INTERVAL = 60
@@ -101,20 +102,29 @@ declare_type 'AvailableTrain', [[{
   },
   name: string,
 }]]
+declare_type 'MarshalSnapshot', [[{
+  version: number,
+  epoch: number,
+  promise_tracker_snapshot: PromiseTrackerSnapshot,
+}]]
 declare_type 'MarshalOpts', [[{
   config: MarshalConfig+StoredConfig,
   pc: Pc,
   uplink: Uplink,
   upgrade_listener: UpgradeListener,
-  clock: ?Clock
+  rand: ?Random,
+  clock: ?Clock,
 }]]
 class Marshal
+  @SAVE_FILE: '.marshal-state.json'
+
   new: F '(MarshalOpts) => <>', (opts) =>
     {
       :config,
       :pc,
       :uplink,
       :upgrade_listener,
+      :rand=PseudoRandom!,
       :clock=MinecraftClock!
     } = opts
     @pc = pc
@@ -127,7 +137,7 @@ class Marshal
     -- TODO(kcza): load from stored initial state
     @factories = T '{string->Factory}', {}
     @trains = T '{string->TrainStatus}', {}
-    @rand = PseudoRandom!
+    @rand = rand
     @promise_tracker = PromiseTracker @rand, @clock
     @scheduler = Scheduler
       clock: @clock
@@ -139,6 +149,95 @@ class Marshal
     @throttle = T 'boolean', HOST == 'minecraft'
 
     @events = T 'Queue', Queue!
+
+  save: F '() => <>', =>
+    encoded = @encode_snapshot @snapshot!
+    with assert io.open @@SAVE_FILE, 'w+'
+      assert \write encoded
+      assert \close!
+    return
+
+  snapshot: F '() => MarshalSnapshot', =>
+    ret =
+      version: 1
+      epoch: @epoch
+      promise_tracker_snapshot: @promise_tracker\snapshot!
+    ret
+
+  encode_snapshot: F '(MarshalSnapshot) => string', (snapshot) =>
+    is_list = F '(table) -> boolean', (tab) ->
+      num_kv_pairs = 0
+      max_key = 0
+      min_key = 0
+      for key, _ in pairs tab
+        if 'number' != type key
+          return false
+        num_kv_pairs += 1
+        if key < min_key
+          min_key = key
+        else if max_key < key
+          max_key = key
+      min_key == 1 and num_kv_pairs == max_key
+    local encode
+    encode = F '(table, some) -> <>', (fragments, value) ->
+      with fragments
+        switch type value
+          when 'function', 'thread'
+            error "internal error: cannot encode a #{type value} value"
+          when 'table'
+            if is_list value
+              [] = '['
+              first = true
+              for elem in *value
+                if not first
+                  [] = ','
+                first = false
+
+                encode fragments, elem
+              [] = ']'
+            else
+              [] = '{'
+              first = true
+              for k, v in pairs value
+                if not first
+                  [] = ','
+                first = false
+
+                encode fragments, k
+                [] = ':'
+                encode fragments, v
+              [] = '}'
+          when 'string'
+            [] = "\"#{value\gsub '"', '\\"'}\""
+          when 'number', 'boolean'
+            [] = tostring value
+          else
+            error "internal error: unexpected type: #{type value}"
+      return
+
+    fragments = {}
+    encode fragments, snapshot
+    table.concat fragments
+
+  load: F '() => <>', =>
+    local raw_snapshot
+    with? io.open @@SAVE_FILE, 'r'
+      raw_snapshot = assert \read '*a'
+      assert \close!
+    if not save_data?
+      return
+
+    @load_snapshot @decode_snapshot raw_snapshot
+
+  load_snapshot: F '(MarshalSnapshot) => <>', (snapshot) =>
+    with snapshot
+      assert .version == 1
+      @epoch = .epoch
+      @promise_tracker\load_snapshot .promise_tracker_snapshot
+    return
+
+  decode_snapshot: F '(string) => MarshalSnapshot', (raw) =>
+    textutils.unserialiseJSON raw
 
   run: F '() => !', =>
     parallel.waitForAny table.unpack @tasks!
@@ -334,6 +433,7 @@ class Marshal
         if not yielded?
           break
         yielded
+      @save!
 
       {
         train_addr: {
@@ -947,3 +1047,36 @@ spec ->
             protocol: eq SetConfigResponse\protocol!
           $expect_that \ut_config!, deep_eq config -- Unchanged
           $expect_that \ut_config!.<raw>, eq ORIGINAL_RAW
+
+    it 'survives snapshotting', ->
+      if HOST != 'minecraft'
+        return -- Skip test due to missing JSON decoder (currently textutils is hard-coded).
+
+      MARSHAL_PC_ID = 2
+      RAW_CONFIG = '[marshal]\n'
+
+      config =
+        <raw>: RAW_CONFIG
+        marshal: {}
+      uplink = Uplink TestUplinkBackend!
+      upgrade_listener = UpgradeListener config, uplink
+      pc = Pc TestPcBackend
+        id: -> MARSHAL_PC_ID
+      rand = PseudoRandom!
+      clock = TestClock!
+      opts =
+        :config
+        :pc
+        :uplink
+        :upgrade_listener
+        :rand
+        :clock
+
+      local snapshot
+      marshal = with Marshal opts
+        snapshot = \encode_snapshot \snapshot!
+
+      loaded_marshal = with Marshal opts
+        \load_snapshot \decode_snapshot snapshot
+
+      $expect_that loaded_marshal, deep_eq marshal
