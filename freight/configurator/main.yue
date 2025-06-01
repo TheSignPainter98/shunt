@@ -12,9 +12,10 @@ local SetConfigResponse
 import 'freight.configurator.editor' as :ABORT, :Editor
 import 'freight.pc' as :Pc
 import 'freight.peripheral.uplink' as :IdempotenceToken, :Packet, :TIMEOUT, :Uplink
-import 'freight.toml' as :parse_toml
 import 'quicktype' as :declare_type, :F, :is, :T
 import 'spec' as :spec
+
+import 'freight.toml'
 
 export class Configurator
   new: F '(?Pc, ?Uplink, ?Editor) => <>', (@pc=Pc!, @uplink=Uplink!, @editor=Editor!) =>
@@ -102,7 +103,7 @@ export class Configurator
       error "internal error: unknown instance type #{instance_type}"
 
     F '(string) -> boolean', (raw) ->
-      config, err = parse_toml raw
+      config, err = toml.decode raw
       if err?
         print err
         return false

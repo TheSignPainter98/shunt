@@ -16,10 +16,11 @@ import 'freight.nodes.marshal.symmetric_difference' as :symmetric_difference
 import 'freight.pc' as :Pc
 import 'freight.peripheral.uplink' as :IdempotenceToken, :Packet, :TestUplinkBackend, :TIMEOUT, :Uplink
 import 'freight.state' as :StateMachineBuilder, :StateSpec
-import 'freight.toml' as :parse_toml
 import 'freight.upgrade.listener' as :UpgradeListener
 import 'quicktype' as :declare_type, :F, :is, :T
 import 'spec' as :spec
+
+import 'freight.toml'
 
 export default_config = -> [=[
 [marshal]
@@ -31,7 +32,7 @@ export main = F '(MarshalConfig) -> <>', (config) ->
 
   state = nil
   with? io.open '.freight-state.toml'
-    state, err = parse_toml assert \read '*a'
+    state, err = toml.decode assert \read '*a'
     assert \close!
     if err?
       print err
@@ -404,7 +405,7 @@ class Marshal
 
   on_set_config_request: F '(SetConfigRequest) => <>', (message) =>
     { :idemp_tok, :pc_id, :raw } = message
-    config, err = parse_toml raw
+    config, err = toml.decode raw
     if err?
       @uplink\send_to pc_id, SetConfigResponse idemp_tok, err
       return

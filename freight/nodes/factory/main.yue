@@ -10,9 +10,10 @@ import 'freight.pc' as :Pc
 import 'freight.peripheral.station' as MinecraftBackend: MinecraftStationBackend, :Station
 import 'freight.peripheral.stockpile' as :Inventory, MinecraftBackend: MinecraftInventoryBackend, :Stockpile
 import 'freight.peripheral.uplink' as :IdempotenceToken, :Packet, :Uplink
-import 'freight.toml' as :parse_toml
 import 'quicktype' as :declare_type, :F, :is, :T
 import 'spec' as :repr, :spec
+
+import 'freight.toml'
 
 export default_config = ->
   root_config = [=[
@@ -208,7 +209,7 @@ class Factory
 
   on_set_config_request: F '(SetConfigRequest) => <>', (message) =>
     { :idemp_tok, :pc_id, :raw } = message
-    config, err = parse_toml raw
+    config, err = toml.decode raw
     if err?
       @uplink\send_to pc_id, SetConfigResponse idemp_tok, err
       return

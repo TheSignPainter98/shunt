@@ -4,9 +4,10 @@ import 'clap' as :Flag, :Param, :Subcommand
 import 'freight.config' as :CONFIG_FILE
 import 'freight.configurator.editor' as :ABORT, :Editor
 import 'freight.configurator.main' as :Configurator
-import 'freight.toml' as :parse_toml
 import 'quicktype' as :F, :T
 import 'spec' as :spec
+
+import 'freight.toml'
 
 display = require 'freight.nodes.display.main'
 factory = require 'freight.nodes.factory.main'
@@ -80,7 +81,7 @@ spec ->
   for config in *configs
     describe "default #{config.name} config", ->
       it 'is valid toml', ->
-        parsed_default_config, err = parse_toml config.raw_fn!
+        parsed_default_config, err = toml.decode config.raw_fn!
 
         $expect_that err, eq nil
         $expect_that parsed_default_config, has_type 'table'

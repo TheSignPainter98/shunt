@@ -2,9 +2,10 @@ local *
 
 import 'clap' as :Flag, :Subcommand
 import 'freight.data.queue' as :Queue
-import 'freight.toml' as :parse_toml
 import 'quicktype' as :declare_type, :F, :T
 import 'spec' as :spec
+
+import 'freight.toml'
 
 export default_config = -> [=[
 [ledger]
@@ -53,7 +54,7 @@ class Ledger
       content = assert \read '*a'
       assert \close!
     print "got content: [#{content}]"
-    data, err = parse_toml content
+    data, err = toml.decode content
     if err?
       return err
 

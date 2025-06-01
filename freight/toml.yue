@@ -3,7 +3,7 @@ local *
 import 'quicktype' as :declare_type, :F, :Parser, :Symbol
 import 'spec' as :spec
 
-export parse_toml = (raw) ->
+export decode = (raw) ->
   parser = TomlParser Lexer raw
   ast, err = parser\parse!
   if err?
@@ -437,19 +437,19 @@ spec ->
                 key3: 'hello'
             * key4: 'hello'
 
-  describe 'parse_toml', ->
+  describe 'decode', ->
     it 'returns an empty table on empty input', ->
-      v, err = parse_toml ''
+      v, err = decode ''
       $expect_that v, deep_eq {}
       $expect_that err, eq nil
 
     it 'parses toml and returns its value', ->
-      v, err = parse_toml "hello = 'world'"
+      v, err = decode "hello = 'world'"
       $expect_that v, deep_eq
         hello: 'world'
       $expect_that err, eq nil
 
     it 'reports errors', ->
-      v, err = parse_toml '['
+      v, err = decode '['
       $expect_that v, eq nil
       $expect_that err, matches 'expected'
