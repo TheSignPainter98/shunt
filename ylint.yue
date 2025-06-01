@@ -37,6 +37,7 @@ check = F '({}) -> boolean', (args) ->
   errs = run_checks file, lines,
     * ImportBlockKind!
     * ImportBlockSorted!
+    * ImportBlockKindsSorted!
     * ImportForm!
     * ImportItemsSorted!
   for err in *errs
@@ -153,6 +154,88 @@ class ImportBlockSorted extends ImportBlockCheck
 
     Declare::error with Error 'import block not sorted'
       \at block[1]
+
+declare_type 'ImportBlockKindsSortedBlock', [[{
+  kind: string,
+  first_line: Line,
+  last_line: Line,
+}]]
+class ImportBlockKindsSorted extends ImportBlockCheck
+  new: F '() => <>', =>
+    @prev_block = T '?ImportBlockKindsSortedBlock', nil
+    super!
+
+  @block_kind_priority: T '{string->number}',
+    ['import-macros']: 1
+    ['import-as']: 2
+    ['import-from-require']: 3
+    ['import']: 4
+    ['import-from-value']: 5
+
+  on_block_end: F '([Line]) => <>', (block) =>
+    if #block < 1
+      return
+
+    if @prev_block? and @prev_block.first_line.location.row + 2 < block[1].location.row
+      @prev_block = nil
+      return
+
+    local kind
+    for line in *block
+      if not line.content\match '^%s*import'
+        kind = nil
+        break
+
+      line_kind = @import_line_kind line
+      if not line_kind?
+        kind = nil
+        break
+      if kind? and kind != line_kind
+        kind = nil
+        break
+      kind = line_kind
+
+    local curr_block
+    if kind?
+      curr_block =
+        :kind
+        first_line: block[1]
+        last_line: block[#block]
+    T '?ImportBlockKindsSortedBlock', curr_block
+
+    if @prev_block? and curr_block?
+      @check_transition @prev_block, curr_block
+    @prev_block = curr_block
+
+  import_line_kind: F '([Line]) => ?string', (line) =>
+    content = line.content
+    if content\match 'import .* from require'
+      return 'import-from-require'
+    else if content\match 'import .* from %w+'
+      return 'import-from-value'
+    else if content\match 'import .* as %$'
+      return 'import-macros'
+    else if content\match 'import .* as '
+      return 'import-as'
+    else if content\match 'import'
+      return 'import'
+    else
+      Declare::error with Error 'non-standard import statement'
+        \at line
+        \help "use form `import 'foo' as :bar` or `import bar from foo"
+      return nil
+
+  check_transition: F '(ImportBlockKindsSortedBlock, ImportBlockKindsSortedBlock) => <>', (prev_block, curr_block) =>
+    curr_priority = assert @@block_kind_priority[curr_block.kind], "no such block kind: #{curr_block.kind}"
+    prev_priority = assert @@block_kind_priority[prev_block.kind], "no such block kind: #{prev_block.kind}"
+    if curr_priority < prev_priority
+      Declare::error with Error 'incorrect import block order'
+        \at curr_block.first_line
+        \help 'this block should appear above the one which precedes it'
+    else if curr_priority == prev_priority
+      Declare::error with Error 'split same-form import block'
+        \at curr_block.first_line
+        \help 'merge this import block with the one above'
 
 class ImportForm
   on_line: F '(Line) => <>', (line) =>
@@ -351,6 +434,71 @@ spec ->
         message: eq 'import block not sorted'
       $expect_that errs[2], has_fields
         message: eq 'import block not sorted'
+
+  describe 'ImportBlockKindsSorted', ->
+    it 'accepts sorted blocks', ->
+      errs = run_check ImportBlockKindsSorted!, 'test.yue', [[
+        import 'spec_macros' as $
+        import 'spec_macros' as $
+
+        import 'spec' as :repr
+        import 'spec' as :repr
+
+        import spec from require 'spec'
+        import 'spec' as :repr
+
+        import 'freight.toml'
+        import 'spec' as :repr
+
+        import concat from table
+        import 'spec' as :repr
+      ]]
+      $expect_that errs, len eq 0
+
+    it 'accepts unsorted other-purpose blocks', ->
+      errs = run_check ImportBlockKindsSorted!, 'test.yue', [[
+        import 'compat'
+        compat.apply_compat!
+
+        import 'spec' as :repr
+      ]]
+      $expect_that errs, len eq 0
+
+    it 'accepts blocks with intermediate lines', ->
+      errs = run_check ImportBlockKindsSorted!, 'test.yue', [[
+        import 'compat'
+
+        -- do things
+
+        import 'spec' as :spec
+      ]]
+      $expect_that errs, len eq 0
+
+    it 'rejects unsorted blocks', ->
+      errs = run_check ImportBlockKindsSorted!, 'test.yue', [[
+        import concat from table
+
+        import 'freight.toml'
+
+        import spec from require 'spec'
+
+        import 'spec' as :repr
+
+        import 'spec' as $
+      ]]
+      $expect_that errs, len eq 4
+      $expect_that errs, each_value has_fields
+        message: eq 'incorrect import block order'
+
+    it 'rejects split blocks', ->
+      errs = run_check ImportBlockKindsSorted!, 'test.yue', [[
+        import concat from table
+
+        import concat from table
+      ]]
+      $expect_that errs, len eq 1
+      $expect_that errs, each_value has_fields
+        message: eq 'split same-form import block'
 
   describe 'ImportItemsSorted', ->
     it 'accepts sorted import items', ->
