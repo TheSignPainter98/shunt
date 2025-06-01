@@ -193,9 +193,12 @@ class Factory
     if not station?
       @uplink\send_to requester, ScheduleResponse idemp_tok, "no train #{train_name} at #{station_name} of #{@name!}"
       return
+    -- NOTE: this successful response is sent before applying the schedule to
+    -- avoid creating a rogue train: one which has a schedule and cargo, but
+    -- which the system knows nothing about
+    @uplink\send_to requester, ScheduleResponse idemp_tok, nil
 
     station\apply_schedule schedule
-    @uplink\send_to requester, ScheduleResponse idemp_tok, nil
 
   get_train_station: F '(string, string) => ?Station', (station_name, train_name) =>
     for station in *@stations
