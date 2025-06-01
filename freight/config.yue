@@ -24,7 +24,7 @@ export config = F '() -> <?StoredConfig, ?string>', ->
       raw = assert \read '*a'
       assert \close!
     if raw?
-      cached_config, err = toml.parse raw
+      cached_config, err = toml.decode raw
       if err?
         return nil, err
       cached_config.<> = {}
