@@ -199,6 +199,7 @@ class Factory
     @uplink\send_to requester, ScheduleResponse idemp_tok, nil
 
     station\apply_schedule schedule
+    return
 
   get_train_station: F '(string, string) => ?Station', (station_name, train_name) =>
     for station in *@stations
