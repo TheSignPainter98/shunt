@@ -26,43 +26,24 @@ export class StateMachineBuilder
       error 'cannot build state machine: initial state undefined'
     if not @_states[@_initial_state_name]?
       error "cannot build state machine: initial state '#{@_initial_state_name}' undefined"
-    if not is_empty @_states[@_initial_state_name]._fields
-      error 'cannot build state machine: initial state has parameter fields'
+    if @_states[@_initial_state_name]._data_type != 'nil'
+      error 'cannot build state machine: initial state has data present'
+
+    -- TODO(kcza): validate!
 
     index = with {}
-      make_state = F '(string, {string->string}, {string->any}) -> {}', (name, arg_specs, args) ->
-        args = { ...args } -- Clone for safety
-
-        new_state = with :name, <>: {}
-          for field, spec in pairs arg_specs
-            [field] = T spec, args[field]
-            args[field] = nil
-          if field = next args
-            error "no such field #{name}.#{field}"
-          .<index> = (key) =>
-            if arg_specs[key]?
-              return nil -- Valid nil.
-            error "no such field #{name}.#{key}"
-        {
-          <index>: new_state
-          <newindex>: F '(string, any) => ?any', (key, value) =>
-            arg_spec = arg_specs[key]
-            if not arg_spec?
-              error "no such field #{name}.#{key}"
-            new_state[key] = T arg_spec, value
-        }
-      .state = make_state @_initial_state_name, {}, {}
+      .state = make_state @_initial_state_name, 'nil', nil
 
       states = @_states
 
       reporter = @_reporter
-      .goto = F '(string, ?{string -> any}) => <>', (name, args={}) =>
+      .goto = F '(string, any) => <>', (name, data) =>
         if not states[@state.name]?._transitions[name]
           error "no such transition: #{@state.name} -> #{name}"
         new_state_spec = states[name]
         if not new_state_spec?
           error "internal error: no such state '#{name}'"
-        .state = make_state name, new_state_spec._fields, args
+        .state = make_state name, new_state_spec._data_type, data
         if reporter?
           reporter .state
 
@@ -86,18 +67,18 @@ export class StateMachineBuilder
           [] = "  #{initial_state_name}[shape=point]"
           for state_name, state in pairs states
             [] = ''
-            field_names = [ field_name for field_name in pairs state._fields ]
-            table.sort field_names
-            if #field_names == 0
+
+            if not state._data_type?
               [] = "  #{state_name}"
             else
-              [] = "  #{state_name} [label=\"#{state_name}(#{table.concat field_names, ', '})\"]"
+              data_type_repr = state._data_type\gsub '\n *', ' '
+              [] = "  #{state_name}[label=\"#{state_name}(#{data_type_repr})\"]"
+
             for other_state in pairs state._transitions
               [] = "  #{state_name} -> #{other_state}"
 
           [] = '}'
         table.concat lines, '\n'
-
 
     T 'StateMachine', {
       <index>: index,
@@ -105,12 +86,24 @@ export class StateMachineBuilder
         error "cannot add field '#{key}' to state machine"
     }
 
-is_empty = (table) ->
-  not (next table)?
+make_state = F '(string, string, any) -> {}', (name, data_type, data) ->
+  T data_type, data
+  with :name, <>: {}
+    if 'table' == type data
+      .<index> = data
+    else
+      .<index> = value: data
+    .<newindex> = (key) =>
+      local key_repr
+      if 'string' == type key
+        key_repr = ".#{key}"
+      else
+        key_repr = "[#{key}]"
+      error "cannot directly assign state fields"
 
 declare_type 'StateSpec', [[{
   _transitions: {string},
-  _fields: {string -> string},
+  _data_type: ?string,
 }]]
 export class StateSpec
   new: F '(string) => <>', (@_name) =>
@@ -118,21 +111,21 @@ export class StateSpec
       error "cannot build state machine: state name '#{@_name}' not a valid identifier"
 
     @_transitions = T '{string}', {}
-    @_fields = T '{string -> string}', {}
+    @_data_type = T 'string', 'nil'
+    @_data_type_set = T 'boolean', false
 
   add_transition_to: F '(string) => <>', (name) =>
     if not valid_state_name name
       error "cannot build state machine: state name '#{name}' not a valid identifier"
-    if @_transitions[name]? or @_fields[name]?
+    if @_transitions[name]?
       error "cannot build state machine: transition #{@_name}->#{name} redefined"
     @_transitions[name] = true
 
-  add_field: F '(string, string) => <>', (name, type_spec) =>
-    if not valid_field_name name
-      error "cannot build state machine: field name '#{name}' not a valid identifier"
-    if @_fields[name] or @_transitions[name]?
-      error "cannot build state machine: field #{@_name}.#{name} redefined"
-    @_fields[name] = type_spec
+  set_data_type: F '(string) => <>', (data_type) =>
+    if @_data_type_set
+      error "cannot build state machine: data type for state #{@_name} already set"
+    @_data_type_set = true
+    @_data_type = data_type
 
 declare_type 'StateMachine', [[{
   state: {name: string},
@@ -141,9 +134,6 @@ declare_type 'StateMachine', [[{
 
 valid_state_name = F '(string) -> boolean', (name) ->
   (name\match '^[a-z][a-z0-9-]+[a-z0-9]$')?
-
-valid_field_name = F '(string) -> boolean', (name) ->
-  (name\match '^[a-z_][a-z0-9_]*$')?
 
 spec ->
   import 'spec_macros' as $
@@ -166,19 +156,18 @@ spec ->
         \add_state StateSpec 'waiting'
         \build!), errors matches "cannot build state machine: state 'waiting' redefined"
 
-    it 'rejects duplicate fields', ->
+    it 'rejects repeated \\set_data_type calls', ->
       $expect_that (-> StateMachineBuilder!
         \set_initial_state 'waiting'
         \add_state with StateSpec 'waiting'
-          \add_field 'hello', 'string'
-          \add_field 'hello', 'number'
-        \build!), errors matches "cannot build state machine: field waiting.hello redefined"
+          \set_data_type 'string'
+          \set_data_type 'number'
+        \build!), errors matches "cannot build state machine: data type for state waiting already set"
 
     it 'rejects invalid state names', ->
       $expect_that (-> StateMachineBuilder!
         \set_initial_state '-invalid'
-        \add_state with StateSpec '-invalid'
-          \add_field '-invalid', 'string'
+        \add_state StateSpec '-invalid'
         \build!), errors matches "cannot build state machine: state name '%-invalid' not a valid identifier"
 
     it 'formats itself as graphviz', ->
@@ -188,15 +177,17 @@ spec ->
           \add_transition_to 'state-2'
         \add_state with StateSpec 'state-2'
           \add_transition_to 'state-1'
-          \add_field 'hello', 'string'
-          \add_field 'world', 'number'
+          \set_data_type [[{
+            hello: string,
+            world: number,
+          }]]
         \build!
         \to_graphviz!
       must_contain =
         * 'digraph {'
         * 'state%-1 *%[shape=point%]'
         * 'state%-1 *%-> *state%-2'
-        * 'state%-2 *%[label="state%-2%(hello, world%)"%]'
+        * 'state%-2 *%[label="state%-2%({ hello: string, world: number,? }%)"%]'
         * 'state%-2 *%-> *state%-1'
       for str in *must_contain
         $expect_that graphviz_repr, matches str
@@ -219,28 +210,6 @@ spec ->
       it "rejects '#{invalid_ident}'", ->
         $expect_that (valid_state_name invalid_ident), eq false
 
-  describe 'valid_field_name', ->
-    valid_idents =
-      * 'hello'
-      * '_world123'
-    for valid_ident in *valid_idents
-      it "accepts #{valid_ident}", ->
-        $expect_that (valid_field_name valid_ident), eq true
-
-    invalid_idents =
-      * ''
-      * '1234'
-      * '-qwer'
-      * '.asdf'
-    for invalid_ident in *invalid_idents
-      it 'rejects invalid names', ->
-        $expect_that (valid_field_name invalid_ident), eq false
-
-  describe 'is_empty', ->
-    it 'returns correctly', ->
-      $expect_that (is_empty {}), eq true
-      $expect_that (is_empty {hello: 123}), eq false
-
   describe 'StateMachine', ->
     make_test_sm = ->
       StateMachineBuilder!
@@ -249,11 +218,14 @@ spec ->
           \add_transition_to 'state-2'
           \add_transition_to 'state-3'
         \add_state with StateSpec 'state-2'
+          \set_data_type [[{
+            hello: string,
+            world: number,
+            optional: ?string,
+          }]]
           \add_transition_to 'state-1'
-          \add_field 'hello', 'string'
-          \add_field 'world', 'number'
-          \add_field 'optional', '?string'
-        \add_state StateSpec 'state-3'
+        \add_state with StateSpec 'state-3'
+          \set_data_type 'number'
         \build!
 
     it 'rejects new fields', ->
@@ -261,17 +233,27 @@ spec ->
       $expect_that (-> test_sm.foo = 'bar'), errors matches [[cannot add field 'foo' to state machine]]
 
     describe '.state', ->
-      it 'validates changes', ->
+      it 'exposes table data at its toplevel', ->
         test_sm = make_test_sm!
         test_sm\goto 'state-2',
           hello: 'asdf'
-          world: 321
-        $expect_that (-> test_sm.state.hello = 'hello'), no_errors!
-        $expect_that (-> test_sm.state.hello = 123), errors matches 'incorrect type: expected string but got number'
+          world: 4321
+        $expect_that test_sm.state.hello, eq 'asdf'
+        $expect_that test_sm.state.world, eq 4321
 
-      it 'rejects new fields', ->
+      it 'exposes non-table data in the .data field', ->
         test_sm = make_test_sm!
-        $expect_that (-> test_sm.state.foo = 'bar'), errors matches 'no such field state%-1.foo'
+        test_sm\goto 'state-3', 123
+        $expect_that test_sm.state.value, eq 123
+
+      it 'rejects assignment', ->
+        test_sm = make_test_sm!
+        test_sm\goto 'state-2',
+          hello: 'asdf'
+          world: 4321
+        $expect_that (-> test_sm.state.absent = 'foo'), errors matches 'cannot directly assign state fields'
+        $expect_that (-> test_sm.state.hello = nil), errors matches 'cannot directly assign state fields'
+        $expect_that (-> test_sm.state.hello = 'bar'), errors matches 'cannot directly assign state fields'
 
     describe '\\goto', ->
       it 'requires at least one argument', ->
@@ -292,20 +274,20 @@ spec ->
 
         test_sm\goto 'state-1'
         $expect_that test_sm.state.name, eq 'state-1'
-        $expect_that (-> test_sm.state.hello), errors matches 'no such field state%-1.hello'
-        $expect_that (-> test_sm.state.world), errors matches 'no such field state%-1.world'
-        $expect_that (-> test_sm.state.optional), errors matches 'no such field state%-1.optional'
+        $expect_that test_sm.state.hello, eq nil
+        $expect_that test_sm.state.world, eq nil
+        $expect_that test_sm.state.optional, eq nil
 
       it 'rejects invalid transitions', ->
         test_sm = make_test_sm!
         $expect_that (-> test_sm\goto 'invalid'), errors matches 'no such transition: state%-1 %-> invalid'
 
-        test_sm\goto 'state-3'
+        test_sm\goto 'state-3', 123
         $expect_that (-> test_sm\goto 'state-1'), errors matches 'no such transition: state%-3 %-> state%-1'
 
       it 'rejects transitions with missing data', ->
         test_sm = make_test_sm!
-        $expect_that (-> test_sm\goto 'state-2'), errors matches 'incorrect type: expected [sn][tu][rm][ib][ne][gr] but got nil'
+        $expect_that (-> test_sm\goto 'state-2'), errors matches 'incorrect type: expected table but got nil'
         $expect_that (-> test_sm\goto 'state-2', hello: 'asdf'), errors matches 'incorrect type: expected number but got nil'
         $expect_that (-> test_sm\goto 'state-2', world: 123), errors matches 'incorrect type: expected string but got nil'
 
@@ -315,7 +297,7 @@ spec ->
 
       it 'rejects extra state fields', ->
         test_sm = make_test_sm!
-        $expect_that (-> test_sm\goto 'state-3', spare: 'spare'), errors matches 'no such field state%-3.spare'
+        $expect_that (-> test_sm\goto 'state-3', spare: 'spare'), errors matches 'incorrect type'
 
   describe 'set_reporter', ->
     it 'is respected by state machines', ->
@@ -328,8 +310,10 @@ spec ->
           \add_transition_to 'state-2'
         \add_state with StateSpec 'state-2'
           \add_transition_to 'state-1'
-          \add_field 'hello', 'string'
-          \add_field 'world', 'number'
+          \set_data_type [[{
+            hello: string,
+            world: number
+          }]]
         \build!
 
       data =
@@ -346,7 +330,7 @@ spec ->
       test_sm\goto 'state-1'
       test_sm\goto 'state-2', data
 
-      $expect_that [ state.<index> for state in *states ], deep_eq
+      $expect_that [ state for state in *states ], deep_eq
         * { name: 'state-2', ...data }
         * { name: 'state-1' }
         * { name: 'state-2', ...data }

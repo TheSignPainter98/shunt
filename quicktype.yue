@@ -92,6 +92,14 @@ function_type = (type_spec) ->
     function_types[type_spec] = parsed_type
     parsed_type
 
+export is_valid_type_spec = (type_spec) ->
+  ret = true
+  try
+    parse type_spec
+  catch _
+    ret = false
+  ret
+
 parse = (type_spec) ->
   type_spec_parser = TypeSpecParser Lexer type_spec
   type_spec_parser\parse!
@@ -1796,3 +1804,12 @@ spec ->
       $expect_that stats_arr, each_value has_fields count: ge 0
 
       COLLECT_STATS = prev_collect_stats
+
+  describe 'is_valid_type_spec', ->
+    it 'returns true on valid type specs', ->
+      $expect_that (is_valid_type_spec 'number'), eq true
+
+    it 'returns false on invalid type specs', ->
+      $expect_that (is_valid_type_spec 'unknown'), eq false
+      $expect_that (is_valid_type_spec '('), eq false
+      $expect_that (is_valid_type_spec ')'), eq false
