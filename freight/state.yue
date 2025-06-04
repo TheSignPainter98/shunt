@@ -28,6 +28,8 @@ export class StateMachineBuilder
       error "cannot build state machine: initial state '#{@_initial_state_name}' undefined"
     if @_states[@_initial_state_name]._data_type != 'nil'
       error 'cannot build state machine: initial state has data present'
+    if err = @validate_end_states!
+      error "cannot build state machine: #{err}"
     if err = @validate_transitions!
       error "cannot build state machine: #{err}"
 
@@ -46,6 +48,11 @@ export class StateMachineBuilder
         .state = make_state name, new_state_spec._data_type, data
         if reporter?
           reporter .state
+
+      end_states = { state._name, true for _, state in pairs @_states when state._is_end }
+      .end = F '() => <>', =>
+        if not end_states[@state.name]
+          error "internal error: state #{@state.name} is not a valid end state"
 
       initial_state_name = @_initial_state_name
       .to_graphviz = F '() => string', =>
@@ -86,6 +93,12 @@ export class StateMachineBuilder
         error "cannot add field '#{key}' to state machine"
     }
 
+  validate_end_states: F '() => ?string', =>
+    for _, state in pairs @_states
+      if state._is_end
+        return nil
+    return "no end states declared"
+
   validate_transitions: F '() => ?string', =>
     seen = T '{string}', {}
     stack = T '[string]', {}
@@ -114,10 +127,29 @@ export class StateMachineBuilder
       for state_name, _ in pairs @_states
         if not seen[state_name]
           [] = state_name
-    table.sort non_reachable_from_start
-
     if #non_reachable_from_start > 0
+      table.sort non_reachable_from_start
       return "the following states are not reachable from the start state: #{table.concat non_reachable_from_start, ', '}"
+
+    seen = {}
+    stack = {}
+    back_transitions = with {}
+      for _, state in pairs @_states
+        [state._name] = {}
+      for _, state in pairs @_states
+        for neighbour, _ in pairs state._transitions
+          [neighbour][] = state._name
+    end_states = [ state._name for _, state in pairs @_states when state._is_end ]
+    for end_state in *end_states
+      dfs end_state, back_transitions
+
+    non_reachable_from_end = with {}
+      for state_name, _ in pairs @_states
+        if not seen[state_name]
+          [] = state_name
+    if #non_reachable_from_end > 0
+      table.sort non_reachable_from_end
+      return "the following states are not reachable from any end state: #{table.concat non_reachable_from_end, ', '}"
 
     return nil
 
@@ -137,6 +169,7 @@ make_state = F '(string, string, any) -> {}', (name, data_type, data) ->
       error "cannot directly assign state fields"
 
 declare_type 'StateSpec', [[{
+  _is_end: boolean,
   _transitions: {string},
   _data_type: ?string,
 }]]
@@ -148,6 +181,7 @@ export class StateSpec
     @_transitions = T '{string}', {}
     @_data_type = T 'string', 'nil'
     @_data_type_set = T 'boolean', false
+    @_is_end = T 'boolean', false
 
   add_transition_to: F '(string) => <>', (name) =>
     if not valid_state_name name
@@ -155,6 +189,9 @@ export class StateSpec
     if @_transitions[name]?
       error "cannot build state machine: transition #{@_name}->#{name} redefined"
     @_transitions[name] = true
+
+  declare_end_state: F '() => <>', =>
+    @_is_end = true
 
   set_data_type: F '(string) => <>', (data_type) =>
     if @_data_type_set
@@ -209,6 +246,7 @@ spec ->
       graphviz_repr = StateMachineBuilder!
         \set_initial_state 'state-1'
         \add_state with StateSpec 'state-1'
+          \declare_end_state!
           \add_transition_to 'state-2'
         \add_state with StateSpec 'state-2'
           \add_transition_to 'state-1'
@@ -230,7 +268,13 @@ spec ->
     it 'rejects invalid transition graphs', ->
       builder = StateMachineBuilder!
         \set_initial_state 'state-1'
+        \add_state StateSpec 'state-1'
+      $expect_that builder\build, errors matches 'no end states declared'
+
+      builder = StateMachineBuilder!
+        \set_initial_state 'state-1'
         \add_state with StateSpec 'state-1'
+          \declare_end_state!
           \add_transition_to 'state-2'
         \add_state with StateSpec 'state-2'
           \add_transition_to 'state-3'
@@ -240,11 +284,24 @@ spec ->
 
       builder = StateMachineBuilder!
         \set_initial_state 'state-1'
-        \add_state StateSpec 'state-1'
+        \add_state with StateSpec 'state-1'
+          \declare_end_state!
         \add_state with StateSpec 'unreachable-1'
           \add_transition_to 'unreachable-2'
         \add_state StateSpec 'unreachable-2'
       $expect_that builder\build, errors matches 'the following states are not reachable from the start state: unreachable%-1, unreachable%-2'
+
+      builder = StateMachineBuilder!
+        \set_initial_state 'state-1'
+        \add_state with StateSpec 'state-1'
+          \add_transition_to 'state-2'
+        \add_state with StateSpec 'state-2'
+          \declare_end_state!
+          \add_transition_to 'interminable-1'
+        \add_state with StateSpec 'interminable-1'
+          \add_transition_to 'interminable-2'
+        \add_state StateSpec 'interminable-2'
+      $expect_that builder\build, errors matches 'the following states are not reachable from any end state: interminable%-1, interminable%-2'
 
   describe 'valid_state_name', ->
     valid_idents =
@@ -269,9 +326,11 @@ spec ->
       StateMachineBuilder!
         \set_initial_state 'state-1'
         \add_state with StateSpec 'state-1'
+          \declare_end_state!
           \add_transition_to 'state-2'
           \add_transition_to 'state-3'
         \add_state with StateSpec 'state-2'
+          \declare_end_state!
           \set_data_type [[{
             hello: string,
             world: number,
@@ -279,6 +338,7 @@ spec ->
           }]]
           \add_transition_to 'state-1'
         \add_state with StateSpec 'state-3'
+          \declare_end_state!
           \set_data_type 'number'
         \build!
 
@@ -353,40 +413,58 @@ spec ->
         test_sm = make_test_sm!
         $expect_that (-> test_sm\goto 'state-3', spare: 'spare'), errors matches 'incorrect type'
 
-  describe 'set_reporter', ->
-    it 'is respected by state machines', ->
-      states = {}
-      test_sm = StateMachineBuilder!
-        \set_initial_state 'state-1'
-        \set_reporter (state) ->
-          states[] = state
-        \add_state with StateSpec 'state-1'
-          \add_transition_to 'state-2'
-        \add_state with StateSpec 'state-2'
-          \add_transition_to 'state-1'
-          \set_data_type [[{
-            hello: string,
-            world: number
-          }]]
-        \build!
+    describe '\\end', ->
+      it 'accepts valid end state', ->
+        state_machine = StateMachineBuilder!
+          \set_initial_state 'state-1'
+          \add_state with StateSpec 'state-1'
+            \declare_end_state!
 
-      data =
-        hello: 'asdf'
-        world: 123
+      it 'rejects invalid end state', ->
+        state_machine = StateMachineBuilder!
+          \set_initial_state 'state-1'
+          \add_state with StateSpec 'state-1'
+            \add_transition_to 'state-2'
+          \add_state with StateSpec 'state-2'
+            \declare_end_state!
+          \build!
+        $expect_that state_machine\end, errors matches 'state state%-1 is not a valid end state'
 
-      test_sm\goto 'state-2', data
+    describe 'set_reporter', ->
+      it 'is respected by state machines', ->
+        states = {}
+        test_sm = StateMachineBuilder!
+          \set_initial_state 'state-1'
+          \set_reporter (state) ->
+            states[] = state
+          \add_state with StateSpec 'state-1'
+            \add_transition_to 'state-2'
+          \add_state with StateSpec 'state-2'
+            \declare_end_state!
+            \add_transition_to 'state-1'
+            \set_data_type [[{
+              hello: string,
+              world: number
+            }]]
+          \build!
 
-      $expect_that states, deep_eq
-        * { name: 'state-2', ...data }
+        data =
+          hello: 'asdf'
+          world: 123
 
-      test_sm\goto 'state-1'
-      test_sm\goto 'state-2', data
-      test_sm\goto 'state-1'
-      test_sm\goto 'state-2', data
+        test_sm\goto 'state-2', data
 
-      $expect_that [ state for state in *states ], deep_eq
-        * { name: 'state-2', ...data }
-        * { name: 'state-1' }
-        * { name: 'state-2', ...data }
-        * { name: 'state-1' }
-        * { name: 'state-2', ...data }
+        $expect_that states, deep_eq
+          * { name: 'state-2', ...data }
+
+        test_sm\goto 'state-1'
+        test_sm\goto 'state-2', data
+        test_sm\goto 'state-1'
+        test_sm\goto 'state-2', data
+
+        $expect_that [ state for state in *states ], deep_eq
+          * { name: 'state-2', ...data }
+          * { name: 'state-1' }
+          * { name: 'state-2', ...data }
+          * { name: 'state-1' }
+          * { name: 'state-2', ...data }
