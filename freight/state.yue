@@ -109,7 +109,6 @@ export class StateMachineBuilder
   validate_transitions: F '() => ?string', =>
     seen = T '{string}', {}
     stack = T '[string]', {}
-    print '---'
     local dfs
     dfs = F '(string, {string->[string]}) -> <>', (state_name, transitions) ->
       if seen[state_name]
@@ -123,8 +122,6 @@ export class StateMachineBuilder
       for neighbour in *assert transitions[state_name], "internal error: no transitions for #{state_name}"
         dfs neighbour, transitions
       stack[#stack] = nil
-
-      print "exploring #{state_name}"
 
     dfs @_initial_state_name, with {}
       for name, state in pairs @_states
