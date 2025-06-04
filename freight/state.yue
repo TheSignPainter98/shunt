@@ -34,12 +34,16 @@ export class StateMachineBuilder
       error "cannot build state machine: #{err}"
 
     index = with {}
+      ended = false
+
       .state = make_state @_initial_state_name, 'nil', nil
 
       states = @_states
 
       reporter = @_reporter
       .goto = F '(string, any) => <>', (name, data) =>
+        if ended
+          error "internal error: cannot transition ended state machine"
         if not states[@state.name]?._transitions[name]
           error "no such transition: #{@state.name} -> #{name}"
         new_state_spec = states[name]
@@ -51,8 +55,11 @@ export class StateMachineBuilder
 
       end_states = { state._name, true for _, state in pairs @_states when state._is_end }
       .end = F '() => <>', =>
+        if ended
+          error "internal error: cannot end state machine twice"
         if not end_states[@state.name]
           error "internal error: state #{@state.name} is not a valid end state"
+        ended = true
 
       initial_state_name = @_initial_state_name
       .to_graphviz = F '() => string', =>
@@ -412,6 +419,11 @@ spec ->
       it 'rejects extra state fields', ->
         test_sm = make_test_sm!
         $expect_that (-> test_sm\goto 'state-3', spare: 'spare'), errors matches 'incorrect type'
+
+      it 'rejects transition of ended state machine', ->
+        test_sm = make_test_sm!
+        test_sm\end!
+        $expect_that (-> test_sm\goto 'state-2', hello: 'asdf', world: 123), errors matches 'cannot transition ended state machine'
 
     describe '\\end', ->
       it 'accepts valid end state', ->
