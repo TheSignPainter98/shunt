@@ -28,8 +28,8 @@ export class StateMachineBuilder
       error "cannot build state machine: initial state '#{@_initial_state_name}' undefined"
     if @_states[@_initial_state_name]._data_type != 'nil'
       error 'cannot build state machine: initial state has data present'
-
-    -- TODO(kcza): validate!
+    if err = @validate_transitions!
+      error "cannot build state machine: #{err}"
 
     index = with {}
       .state = make_state @_initial_state_name, 'nil', nil
@@ -85,6 +85,41 @@ export class StateMachineBuilder
       <newindex>: (key, v) =>
         error "cannot add field '#{key}' to state machine"
     }
+
+  validate_transitions: F '() => ?string', =>
+    seen = T '{string}', {}
+    stack = T '[string]', {}
+    print '---'
+    local dfs
+    dfs = F '(string, {string->[string]}) -> <>', (state_name, transitions) ->
+      if seen[state_name]
+        return
+      seen[state_name] = true
+
+      for name in *stack
+        if name == state_name
+          return -- Already explored
+      stack[] = name
+      for neighbour in *assert transitions[state_name], "internal error: no transitions for #{state_name}"
+        dfs neighbour, transitions
+      stack[#stack] = nil
+
+      print "exploring #{state_name}"
+
+    dfs @_initial_state_name, with {}
+      for name, state in pairs @_states
+        [name] = [ state_name for state_name, _ in pairs state._transitions ]
+
+    non_reachable_from_start = with {}
+      for state_name, _ in pairs @_states
+        if not seen[state_name]
+          [] = state_name
+    table.sort non_reachable_from_start
+
+    if #non_reachable_from_start > 0
+      return "the following states are not reachable from the start state: #{table.concat non_reachable_from_start, ', '}"
+
+    return nil
 
 make_state = F '(string, string, any) -> {}', (name, data_type, data) ->
   T data_type, data
@@ -191,6 +226,25 @@ spec ->
         * 'state%-2 *%-> *state%-1'
       for str in *must_contain
         $expect_that graphviz_repr, matches str
+
+    it 'rejects invalid transition graphs', ->
+      builder = StateMachineBuilder!
+        \set_initial_state 'state-1'
+        \add_state with StateSpec 'state-1'
+          \add_transition_to 'state-2'
+        \add_state with StateSpec 'state-2'
+          \add_transition_to 'state-3'
+        \add_state with StateSpec 'state-3'
+          \add_transition_to 'state-1'
+      $expect_that builder\build, no_errors!
+
+      builder = StateMachineBuilder!
+        \set_initial_state 'state-1'
+        \add_state StateSpec 'state-1'
+        \add_state with StateSpec 'unreachable-1'
+          \add_transition_to 'unreachable-2'
+        \add_state StateSpec 'unreachable-2'
+      $expect_that builder\build, errors matches 'the following states are not reachable from the start state: unreachable%-1, unreachable%-2'
 
   describe 'valid_state_name', ->
     valid_idents =
