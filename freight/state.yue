@@ -99,6 +99,15 @@ export class StateMachineBuilder
     index = with {}
       ended = false
 
+      .states =
+        <index>: T '{string->string}', with <>: {}
+          for state_name, _ in pairs @_states
+            [state_name] = state_name
+          .<index> = (key) =>
+            error "cannot get state '#{key}': no such state"
+        <newindex>: (_, _) =>
+          error "cannot set fields in states"
+
       .state = make_state @_initial_state_name, 'nil', nil
 
       states = @_states
@@ -162,11 +171,10 @@ export class StateMachineBuilder
           [] = '}'
         table.concat lines, '\n'
 
-    T 'StateMachine', {
+    T 'StateMachine',
       <index>: index,
       <newindex>: (key, v) =>
         error "cannot add field '#{key}' to state machine"
-    }
 
 make_state = F '(string, string, any) -> {}', (name, data_type, data) ->
   T data_type, data
@@ -488,3 +496,21 @@ spec ->
           * { name: 'state_2', ...data }
           * { name: 'state_1' }
           * { name: 'state_2', ...data }
+
+    describe '.states', ->
+      it 'contains all states', ->
+        test_sm = make_test_sm!
+        expected_states =
+          * 'state_1'
+          * 'state_2'
+          * 'state_3'
+        for expected_state in *expected_states
+          $expect_that test_sm.states[expected_state], eq expected_state
+
+      it 'rejects unknown states', ->
+        test_sm = make_test_sm!
+        $expect_that (-> test_sm.states.unknown), errors matches "cannot get state 'unknown': no such state"
+
+      it 'rejects modifications', ->
+        test_sm = make_test_sm!
+        $expect_that (-> test_sm.states.state_1 = nil), errors matches 'cannot set fields in states'
