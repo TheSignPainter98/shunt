@@ -6,7 +6,9 @@ import 'spec' as :spec
 UNIMPLEMENTED = <call>: (...) ->
 
 export class StateMachineBuilder
-  new: =>
+  new: F '(string) => <>', (@_name) =>
+    if not valid_ident @_name
+      error "cannot build state machine: name '#{@_name}' not a valid identifier"
     @_states = T '{string -> table}', {}
     @_initial_state_name = T '?string', nil
     @_reporter = T '?(State) -> <>', nil
@@ -139,6 +141,7 @@ export class StateMachineBuilder
           [] = 'digraph {'
           [] = '  bgcolor = black'
           [] = '  color = white'
+          [] = "  label = '#{@_name}'"
           [] = '  node ['
           [] = '    color = white'
           [] = '    fontcolor = white'
@@ -198,7 +201,7 @@ declare_type 'StateSpec', [[{
 }]]
 export class StateSpec
   new: F '(string) => <>', (@_name) =>
-    if not valid_state_name @_name
+    if not valid_ident @_name
       error "cannot build state machine: state name '#{@_name}' not a valid identifier"
 
     @_transitions = T '{string}', {}
@@ -207,7 +210,7 @@ export class StateSpec
     @_is_end = T 'boolean', false
 
   add_transition_to: F '(string) => <>', (name) =>
-    if not valid_state_name name
+    if not valid_ident name
       error "cannot build state machine: state name '#{name}' not a valid identifier"
     if @_transitions[name]?
       error "cannot build state machine: transition #{@_name}->#{name} redefined"
@@ -227,7 +230,7 @@ declare_type 'StateMachine', [[{
   goto: (string, ?{string -> any}) => <>,
 }]]
 
-valid_state_name = F '(string) -> boolean', (name) ->
+valid_ident = F '(string) -> boolean', (name) ->
   (name\match '^[a-z][a-z0-9_]+[a-z0-9]$')?
 
 spec ->
@@ -238,21 +241,24 @@ spec ->
   import anything, deep_eq, eq, errors, matches, no_errors from matchers
 
   describe 'StateMachineBuilder', ->
+    it 'rejects invalid state names', ->
+      $expect_that (-> StateMachineBuilder 'invalid-ident'), errors matches "cannot build state machine: name 'invalid%-ident' not a valid identifier"
+
     it 'requires initial state', ->
-      $expect_that (-> StateMachineBuilder!\build!), errors matches "cannot build state machine: initial state undefined"
+      $expect_that (-> (StateMachineBuilder 'test_sm')\build!), errors matches "cannot build state machine: initial state undefined"
 
     it 'rejects invalid initial state', ->
-      $expect_that (-> StateMachineBuilder!\set_initial_state('phantom')\build!), errors matches "cannot build state machine: initial state 'phantom' undefined"
+      $expect_that (-> (StateMachineBuilder 'test_sm')\set_initial_state('phantom')\build!), errors matches "cannot build state machine: initial state 'phantom' undefined"
 
     it 'rejects duplicate state names', ->
-      $expect_that (-> StateMachineBuilder!
+      $expect_that (-> (StateMachineBuilder 'test_sm')
         \set_initial_state 'waiting'
         \add_state StateSpec 'waiting'
         \add_state StateSpec 'waiting'
         \build!), errors matches "cannot build state machine: state 'waiting' redefined"
 
     it 'rejects repeated \\set_data_type calls', ->
-      $expect_that (-> StateMachineBuilder!
+      $expect_that (-> (StateMachineBuilder 'test_sm')
         \set_initial_state 'waiting'
         \add_state with StateSpec 'waiting'
           \set_data_type 'string'
@@ -260,13 +266,13 @@ spec ->
         \build!), errors matches "cannot build state machine: data type for state waiting already set"
 
     it 'rejects invalid state names', ->
-      $expect_that (-> StateMachineBuilder!
+      $expect_that (-> (StateMachineBuilder 'test_sm')
         \set_initial_state '-invalid'
         \add_state StateSpec '-invalid'
         \build!), errors matches "cannot build state machine: state name '%-invalid' not a valid identifier"
 
     it 'formats itself as graphviz', ->
-      graphviz_repr = StateMachineBuilder!
+      graphviz_repr = (StateMachineBuilder 'test_sm')
         \set_initial_state 'state_1'
         \add_state with StateSpec 'state_1'
           \declare_end_state!
@@ -289,12 +295,12 @@ spec ->
         $expect_that graphviz_repr, matches str
 
     it 'rejects invalid transition graphs', ->
-      builder = StateMachineBuilder!
+      builder = (StateMachineBuilder 'test_sm')
         \set_initial_state 'state_1'
         \add_state StateSpec 'state_1'
       $expect_that builder\build, errors matches 'no end states declared'
 
-      builder = StateMachineBuilder!
+      builder = (StateMachineBuilder 'test_sm')
         \set_initial_state 'state_1'
         \add_state with StateSpec 'state_1'
           \declare_end_state!
@@ -305,7 +311,7 @@ spec ->
           \add_transition_to 'state_1'
       $expect_that builder\build, no_errors!
 
-      builder = StateMachineBuilder!
+      builder = (StateMachineBuilder 'test_sm')
         \set_initial_state 'state_1'
         \add_state with StateSpec 'state_1'
           \declare_end_state!
@@ -314,7 +320,7 @@ spec ->
         \add_state StateSpec 'unreachable_2'
       $expect_that builder\build, errors matches 'the following states are not reachable from the start state: unreachable_1, unreachable_2'
 
-      builder = StateMachineBuilder!
+      builder = (StateMachineBuilder 'test_sm')
         \set_initial_state 'state_1'
         \add_state with StateSpec 'state_1'
           \add_transition_to 'state_2'
@@ -326,13 +332,13 @@ spec ->
         \add_state StateSpec 'interminable_2'
       $expect_that builder\build, errors matches 'the following states are not reachable from any end state: interminable_1, interminable_2'
 
-  describe 'valid_state_name', ->
+  describe 'valid_ident', ->
     valid_idents =
       * 'hello'
       * 'world_123'
-    for valid_ident in *valid_idents
-      it "accepts '#{valid_ident}'", ->
-        $expect_that (valid_state_name valid_ident), eq true
+    for ident in *valid_idents
+      it "accepts '#{ident}'", ->
+        $expect_that (valid_ident ident), eq true
 
     invalid_idents =
       * ''
@@ -340,13 +346,13 @@ spec ->
       * '-qwer'
       * '.asdf'
       * 'a-b'
-    for invalid_ident in *invalid_idents
-      it "rejects '#{invalid_ident}'", ->
-        $expect_that (valid_state_name invalid_ident), eq false
+    for ident in *invalid_idents
+      it "rejects '#{ident}'", ->
+        $expect_that (valid_ident ident), eq false
 
   describe 'StateMachine', ->
     make_test_sm = ->
-      StateMachineBuilder!
+      (StateMachineBuilder 'test_sm')
         \set_initial_state 'state_1'
         \add_state with StateSpec 'state_1'
           \declare_end_state!
@@ -443,13 +449,13 @@ spec ->
 
     describe '\\end', ->
       it 'accepts valid end state', ->
-        state_machine = StateMachineBuilder!
+        state_machine = (StateMachineBuilder 'test_sm')
           \set_initial_state 'state_1'
           \add_state with StateSpec 'state_1'
             \declare_end_state!
 
       it 'rejects invalid end state', ->
-        state_machine = StateMachineBuilder!
+        state_machine = (StateMachineBuilder 'test_sm')
           \set_initial_state 'state_1'
           \add_state with StateSpec 'state_1'
             \add_transition_to 'state_2'
@@ -461,7 +467,7 @@ spec ->
     describe 'set_reporter', ->
       it 'is respected by state machines', ->
         states = {}
-        test_sm = StateMachineBuilder!
+        test_sm = (StateMachineBuilder 'test_sm')
           \set_initial_state 'state_1'
           \set_reporter (state) ->
             states[] = state
