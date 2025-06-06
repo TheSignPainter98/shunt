@@ -142,14 +142,19 @@ export class StateMachineBuilder
           [] = '  levels=1'
 
           [] = "  #{initial_state_name}[shape=point]"
+
           for state_name, state in pairs states
             [] = ''
 
             if not state._data_type?
               [] = "  #{state_name}"
             else
-              data_type_repr = state._data_type\gsub '\n *', ' '
-              [] = "  #{state_name}[label=\"#{state_name}(#{data_type_repr})\"]"
+              data_type = state._data_type
+              if data_type == 'nil'
+                [] = "  #{state_name}"
+              else
+                data_type_repr = state._data_type\gsub '\n *', ' '
+                [] = "  #{state_name}[label=\"#{state_name}\\n#{data_type_repr}\"]"
 
             for other_state in pairs state._transitions
               [] = "  #{state_name} -> #{other_state}"
@@ -215,7 +220,7 @@ declare_type 'StateMachine', [[{
 }]]
 
 valid_state_name = F '(string) -> boolean', (name) ->
-  (name\match '^[a-z][a-z0-9-]+[a-z0-9]$')?
+  (name\match '^[a-z][a-z0-9_]+[a-z0-9]$')?
 
 spec ->
   import 'spec_macros' as $
@@ -254,12 +259,12 @@ spec ->
 
     it 'formats itself as graphviz', ->
       graphviz_repr = StateMachineBuilder!
-        \set_initial_state 'state-1'
-        \add_state with StateSpec 'state-1'
+        \set_initial_state 'state_1'
+        \add_state with StateSpec 'state_1'
           \declare_end_state!
-          \add_transition_to 'state-2'
-        \add_state with StateSpec 'state-2'
-          \add_transition_to 'state-1'
+          \add_transition_to 'state_2'
+        \add_state with StateSpec 'state_2'
+          \add_transition_to 'state_1'
           \set_data_type [[{
             hello: string,
             world: number,
@@ -268,55 +273,55 @@ spec ->
         \to_graphviz!
       must_contain =
         * 'digraph {'
-        * 'state%-1 *%[shape=point%]'
-        * 'state%-1 *%-> *state%-2'
-        * 'state%-2 *%[label="state%-2%({ hello: string, world: number,? }%)"%]'
-        * 'state%-2 *%-> *state%-1'
+        * 'state_1 *%[shape=point%]'
+        * 'state_1 *%-> *state_2'
+        * 'state_2 *%[label="state%_2%\\n{ hello: string, world: number,? }%"%]'
+        * 'state_2 *%-> *state_1'
       for str in *must_contain
         $expect_that graphviz_repr, matches str
 
     it 'rejects invalid transition graphs', ->
       builder = StateMachineBuilder!
-        \set_initial_state 'state-1'
-        \add_state StateSpec 'state-1'
+        \set_initial_state 'state_1'
+        \add_state StateSpec 'state_1'
       $expect_that builder\build, errors matches 'no end states declared'
 
       builder = StateMachineBuilder!
-        \set_initial_state 'state-1'
-        \add_state with StateSpec 'state-1'
+        \set_initial_state 'state_1'
+        \add_state with StateSpec 'state_1'
           \declare_end_state!
-          \add_transition_to 'state-2'
-        \add_state with StateSpec 'state-2'
-          \add_transition_to 'state-3'
-        \add_state with StateSpec 'state-3'
-          \add_transition_to 'state-1'
+          \add_transition_to 'state_2'
+        \add_state with StateSpec 'state_2'
+          \add_transition_to 'state_3'
+        \add_state with StateSpec 'state_3'
+          \add_transition_to 'state_1'
       $expect_that builder\build, no_errors!
 
       builder = StateMachineBuilder!
-        \set_initial_state 'state-1'
-        \add_state with StateSpec 'state-1'
+        \set_initial_state 'state_1'
+        \add_state with StateSpec 'state_1'
           \declare_end_state!
-        \add_state with StateSpec 'unreachable-1'
-          \add_transition_to 'unreachable-2'
-        \add_state StateSpec 'unreachable-2'
-      $expect_that builder\build, errors matches 'the following states are not reachable from the start state: unreachable%-1, unreachable%-2'
+        \add_state with StateSpec 'unreachable_1'
+          \add_transition_to 'unreachable_2'
+        \add_state StateSpec 'unreachable_2'
+      $expect_that builder\build, errors matches 'the following states are not reachable from the start state: unreachable_1, unreachable_2'
 
       builder = StateMachineBuilder!
-        \set_initial_state 'state-1'
-        \add_state with StateSpec 'state-1'
-          \add_transition_to 'state-2'
-        \add_state with StateSpec 'state-2'
+        \set_initial_state 'state_1'
+        \add_state with StateSpec 'state_1'
+          \add_transition_to 'state_2'
+        \add_state with StateSpec 'state_2'
           \declare_end_state!
-          \add_transition_to 'interminable-1'
-        \add_state with StateSpec 'interminable-1'
-          \add_transition_to 'interminable-2'
-        \add_state StateSpec 'interminable-2'
-      $expect_that builder\build, errors matches 'the following states are not reachable from any end state: interminable%-1, interminable%-2'
+          \add_transition_to 'interminable_1'
+        \add_state with StateSpec 'interminable_1'
+          \add_transition_to 'interminable_2'
+        \add_state StateSpec 'interminable_2'
+      $expect_that builder\build, errors matches 'the following states are not reachable from any end state: interminable_1, interminable_2'
 
   describe 'valid_state_name', ->
     valid_idents =
       * 'hello'
-      * 'world-123'
+      * 'world_123'
     for valid_ident in *valid_idents
       it "accepts '#{valid_ident}'", ->
         $expect_that (valid_state_name valid_ident), eq true
@@ -326,7 +331,7 @@ spec ->
       * '1234'
       * '-qwer'
       * '.asdf'
-      * 'a_b'
+      * 'a-b'
     for invalid_ident in *invalid_idents
       it "rejects '#{invalid_ident}'", ->
         $expect_that (valid_state_name invalid_ident), eq false
@@ -334,20 +339,20 @@ spec ->
   describe 'StateMachine', ->
     make_test_sm = ->
       StateMachineBuilder!
-        \set_initial_state 'state-1'
-        \add_state with StateSpec 'state-1'
+        \set_initial_state 'state_1'
+        \add_state with StateSpec 'state_1'
           \declare_end_state!
-          \add_transition_to 'state-2'
-          \add_transition_to 'state-3'
-        \add_state with StateSpec 'state-2'
+          \add_transition_to 'state_2'
+          \add_transition_to 'state_3'
+        \add_state with StateSpec 'state_2'
           \declare_end_state!
           \set_data_type [[{
             hello: string,
             world: number,
             optional: ?string,
           }]]
-          \add_transition_to 'state-1'
-        \add_state with StateSpec 'state-3'
+          \add_transition_to 'state_1'
+        \add_state with StateSpec 'state_3'
           \declare_end_state!
           \set_data_type 'number'
         \build!
@@ -359,7 +364,7 @@ spec ->
     describe '.state', ->
       it 'exposes table data at its toplevel', ->
         test_sm = make_test_sm!
-        test_sm\goto 'state-2',
+        test_sm\goto 'state_2',
           hello: 'asdf'
           world: 4321
         $expect_that test_sm.state.hello, eq 'asdf'
@@ -367,12 +372,12 @@ spec ->
 
       it 'exposes non-table data in the .data field', ->
         test_sm = make_test_sm!
-        test_sm\goto 'state-3', 123
+        test_sm\goto 'state_3', 123
         $expect_that test_sm.state.value, eq 123
 
       it 'rejects assignment', ->
         test_sm = make_test_sm!
-        test_sm\goto 'state-2',
+        test_sm\goto 'state_2',
           hello: 'asdf'
           world: 4321
         $expect_that (-> test_sm.state.absent = 'foo'), errors matches 'cannot directly assign state fields'
@@ -386,77 +391,77 @@ spec ->
 
       it 'correctly transitions states', ->
         test_sm = make_test_sm!
-        $expect_that test_sm.state.name, eq 'state-1'
+        $expect_that test_sm.state.name, eq 'state_1'
 
-        test_sm\goto 'state-2',
+        test_sm\goto 'state_2',
           hello: 'asdf'
           world: 4321
-        $expect_that test_sm.state.name, eq 'state-2'
+        $expect_that test_sm.state.name, eq 'state_2'
         $expect_that test_sm.state.hello, eq 'asdf'
         $expect_that test_sm.state.world, eq 4321
         $expect_that test_sm.state.optional, eq nil
 
-        test_sm\goto 'state-1'
-        $expect_that test_sm.state.name, eq 'state-1'
+        test_sm\goto 'state_1'
+        $expect_that test_sm.state.name, eq 'state_1'
         $expect_that test_sm.state.hello, eq nil
         $expect_that test_sm.state.world, eq nil
         $expect_that test_sm.state.optional, eq nil
 
       it 'rejects invalid transitions', ->
         test_sm = make_test_sm!
-        $expect_that (-> test_sm\goto 'invalid'), errors matches 'no such transition: state%-1 %-> invalid'
+        $expect_that (-> test_sm\goto 'invalid'), errors matches 'no such transition: state_1 %-> invalid'
 
-        test_sm\goto 'state-3', 123
-        $expect_that (-> test_sm\goto 'state-1'), errors matches 'no such transition: state%-3 %-> state%-1'
+        test_sm\goto 'state_3', 123
+        $expect_that (-> test_sm\goto 'state_1'), errors matches 'no such transition: state_3 %-> state_1'
 
       it 'rejects transitions with missing data', ->
         test_sm = make_test_sm!
-        $expect_that (-> test_sm\goto 'state-2'), errors matches 'incorrect type: expected table but got nil'
-        $expect_that (-> test_sm\goto 'state-2', hello: 'asdf'), errors matches 'incorrect type: expected number but got nil'
-        $expect_that (-> test_sm\goto 'state-2', world: 123), errors matches 'incorrect type: expected string but got nil'
+        $expect_that (-> test_sm\goto 'state_2'), errors matches 'incorrect type: expected table but got nil'
+        $expect_that (-> test_sm\goto 'state_2', hello: 'asdf'), errors matches 'incorrect type: expected number but got nil'
+        $expect_that (-> test_sm\goto 'state_2', world: 123), errors matches 'incorrect type: expected string but got nil'
 
       it 'validates state fields', ->
         test_sm = make_test_sm!
-        $expect_that (-> test_sm\goto 'state-2', hello: 'asdf', world: 'fdsa'), errors matches 'incorrect type: expected number but got string'
+        $expect_that (-> test_sm\goto 'state_2', hello: 'asdf', world: 'fdsa'), errors matches 'incorrect type: expected number but got string'
 
       it 'rejects extra state fields', ->
         test_sm = make_test_sm!
-        $expect_that (-> test_sm\goto 'state-3', spare: 'spare'), errors matches 'incorrect type'
+        $expect_that (-> test_sm\goto 'state_3', spare: 'spare'), errors matches 'incorrect type'
 
       it 'rejects transition of ended state machine', ->
         test_sm = make_test_sm!
         test_sm\end!
-        $expect_that (-> test_sm\goto 'state-2', hello: 'asdf', world: 123), errors matches 'cannot transition ended state machine'
+        $expect_that (-> test_sm\goto 'state_2', hello: 'asdf', world: 123), errors matches 'cannot transition ended state machine'
 
     describe '\\end', ->
       it 'accepts valid end state', ->
         state_machine = StateMachineBuilder!
-          \set_initial_state 'state-1'
-          \add_state with StateSpec 'state-1'
+          \set_initial_state 'state_1'
+          \add_state with StateSpec 'state_1'
             \declare_end_state!
 
       it 'rejects invalid end state', ->
         state_machine = StateMachineBuilder!
-          \set_initial_state 'state-1'
-          \add_state with StateSpec 'state-1'
-            \add_transition_to 'state-2'
-          \add_state with StateSpec 'state-2'
+          \set_initial_state 'state_1'
+          \add_state with StateSpec 'state_1'
+            \add_transition_to 'state_2'
+          \add_state with StateSpec 'state_2'
             \declare_end_state!
           \build!
-        $expect_that state_machine\end, errors matches 'state state%-1 is not a valid end state'
+        $expect_that state_machine\end, errors matches 'state_1 is not a valid end state'
 
     describe 'set_reporter', ->
       it 'is respected by state machines', ->
         states = {}
         test_sm = StateMachineBuilder!
-          \set_initial_state 'state-1'
+          \set_initial_state 'state_1'
           \set_reporter (state) ->
             states[] = state
-          \add_state with StateSpec 'state-1'
-            \add_transition_to 'state-2'
-          \add_state with StateSpec 'state-2'
+          \add_state with StateSpec 'state_1'
+            \add_transition_to 'state_2'
+          \add_state with StateSpec 'state_2'
             \declare_end_state!
-            \add_transition_to 'state-1'
+            \add_transition_to 'state_1'
             \set_data_type [[{
               hello: string,
               world: number
@@ -467,19 +472,19 @@ spec ->
           hello: 'asdf'
           world: 123
 
-        test_sm\goto 'state-2', data
+        test_sm\goto 'state_2', data
 
         $expect_that states, deep_eq
-          * { name: 'state-2', ...data }
+          * { name: 'state_2', ...data }
 
-        test_sm\goto 'state-1'
-        test_sm\goto 'state-2', data
-        test_sm\goto 'state-1'
-        test_sm\goto 'state-2', data
+        test_sm\goto 'state_1'
+        test_sm\goto 'state_2', data
+        test_sm\goto 'state_1'
+        test_sm\goto 'state_2', data
 
         $expect_that [ state for state in *states ], deep_eq
-          * { name: 'state-2', ...data }
-          * { name: 'state-1' }
-          * { name: 'state-2', ...data }
-          * { name: 'state-1' }
-          * { name: 'state-2', ...data }
+          * { name: 'state_2', ...data }
+          * { name: 'state_1' }
+          * { name: 'state_2', ...data }
+          * { name: 'state_1' }
+          * { name: 'state_2', ...data }
