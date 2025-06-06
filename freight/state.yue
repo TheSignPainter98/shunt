@@ -22,17 +22,80 @@ export class StateMachineBuilder
     @
 
   build: F '() => StateMachine', =>
-    if not @_initial_state_name?
-      error 'cannot build state machine: initial state undefined'
-    if not @_states[@_initial_state_name]?
-      error "cannot build state machine: initial state '#{@_initial_state_name}' undefined"
-    if @_states[@_initial_state_name]._data_type != 'nil'
-      error 'cannot build state machine: initial state has data present'
-    if err = @validate_end_states!
+    if err = @validate!
       error "cannot build state machine: #{err}"
-    if err = @validate_transitions!
-      error "cannot build state machine: #{err}"
+    @build_unchecked!
 
+  validate: F '() => ?string', =>
+    if not @_initial_state_name?
+      return 'initial state undefined'
+    if not @_states[@_initial_state_name]?
+      return "initial state '#{@_initial_state_name}' undefined"
+    if @_states[@_initial_state_name]._data_type != 'nil'
+      return 'initial state has data present'
+    if err = @validate_end_states!
+      return err
+    if err = @validate_transitions!
+      return err
+
+  validate_end_states: F '() => ?string', =>
+    for _, state in pairs @_states
+      if state._is_end
+        return nil
+    return "no end states declared"
+
+  validate_transitions: F '() => ?string', =>
+    seen = T '{string}', {}
+    stack = T '[string]', {}
+    local dfs
+    dfs = F '(string, {string->[string]}) -> <>', (state_name, transitions) ->
+      if seen[state_name]
+        return
+      seen[state_name] = true
+
+      for name in *stack
+        if name == state_name
+          return -- Already explored
+      stack[] = name
+      for neighbour in *assert transitions[state_name], "internal error: no transitions for #{state_name}"
+        dfs neighbour, transitions
+      stack[#stack] = nil
+
+    dfs @_initial_state_name, with {}
+      for name, state in pairs @_states
+        [name] = [ state_name for state_name, _ in pairs state._transitions ]
+
+    non_reachable_from_start = with {}
+      for state_name, _ in pairs @_states
+        if not seen[state_name]
+          [] = state_name
+    if #non_reachable_from_start > 0
+      table.sort non_reachable_from_start
+      return "the following states are not reachable from the start state: #{table.concat non_reachable_from_start, ', '}"
+
+    seen = {}
+    stack = {}
+    back_transitions = with {}
+      for _, state in pairs @_states
+        [state._name] = {}
+      for _, state in pairs @_states
+        for neighbour, _ in pairs state._transitions
+          [neighbour][] = state._name
+    end_states = [ state._name for _, state in pairs @_states when state._is_end ]
+    for end_state in *end_states
+      dfs end_state, back_transitions
+
+    non_reachable_from_end = with {}
+      for state_name, _ in pairs @_states
+        if not seen[state_name]
+          [] = state_name
+    if #non_reachable_from_end > 0
+      table.sort non_reachable_from_end
+      return "the following states are not reachable from any end state: #{table.concat non_reachable_from_end, ', '}"
+
+    return nil
+
+  build_unchecked: F '() => StateMachine', =>
     index = with {}
       ended = false
 
@@ -99,63 +162,6 @@ export class StateMachineBuilder
       <newindex>: (key, v) =>
         error "cannot add field '#{key}' to state machine"
     }
-
-  validate_end_states: F '() => ?string', =>
-    for _, state in pairs @_states
-      if state._is_end
-        return nil
-    return "no end states declared"
-
-  validate_transitions: F '() => ?string', =>
-    seen = T '{string}', {}
-    stack = T '[string]', {}
-    local dfs
-    dfs = F '(string, {string->[string]}) -> <>', (state_name, transitions) ->
-      if seen[state_name]
-        return
-      seen[state_name] = true
-
-      for name in *stack
-        if name == state_name
-          return -- Already explored
-      stack[] = name
-      for neighbour in *assert transitions[state_name], "internal error: no transitions for #{state_name}"
-        dfs neighbour, transitions
-      stack[#stack] = nil
-
-    dfs @_initial_state_name, with {}
-      for name, state in pairs @_states
-        [name] = [ state_name for state_name, _ in pairs state._transitions ]
-
-    non_reachable_from_start = with {}
-      for state_name, _ in pairs @_states
-        if not seen[state_name]
-          [] = state_name
-    if #non_reachable_from_start > 0
-      table.sort non_reachable_from_start
-      return "the following states are not reachable from the start state: #{table.concat non_reachable_from_start, ', '}"
-
-    seen = {}
-    stack = {}
-    back_transitions = with {}
-      for _, state in pairs @_states
-        [state._name] = {}
-      for _, state in pairs @_states
-        for neighbour, _ in pairs state._transitions
-          [neighbour][] = state._name
-    end_states = [ state._name for _, state in pairs @_states when state._is_end ]
-    for end_state in *end_states
-      dfs end_state, back_transitions
-
-    non_reachable_from_end = with {}
-      for state_name, _ in pairs @_states
-        if not seen[state_name]
-          [] = state_name
-    if #non_reachable_from_end > 0
-      table.sort non_reachable_from_end
-      return "the following states are not reachable from any end state: #{table.concat non_reachable_from_end, ', '}"
-
-    return nil
 
 make_state = F '(string, string, any) -> {}', (name, data_type, data) ->
   T data_type, data
