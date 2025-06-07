@@ -11,11 +11,11 @@ export class StateMachineBuilder
       error "cannot build state machine: name '#{@_name}' not a valid identifier"
     @_states = T '{string -> table}', {}
     @_initial_state_name = T '?string', nil
-    @_reporter = T '?(State) -> <>', nil
+    @_reporter = T '?(State, State) => <>', nil
 
   set_initial_state: F '(string) => Self', (@_initial_state_name) => @
 
-  set_reporter: F '((State) -> <>) => Self', (@_reporter) => @
+  set_reporter: F '((State, State) => <>) => Self', (@_reporter) => @
 
   add_state: F '(StateSpec) => Self', (state) =>
     if @_states[state._name]?
@@ -123,9 +123,10 @@ export class StateMachineBuilder
         new_state_spec = states[name]
         if not new_state_spec?
           error "internal error: no such state '#{name}'"
+        prev_state = .state
         .state = make_state name, new_state_spec._data_type, data
         if reporter?
-          reporter .state
+          reporter @, prev_state, .state
 
       end_states = { state._name, true for _, state in pairs @_states when state._is_end }
       .end = F '() => <>', =>
@@ -469,8 +470,8 @@ spec ->
         states = {}
         test_sm = (StateMachineBuilder 'test_sm')
           \set_initial_state 'state_1'
-          \set_reporter (state) ->
-            states[] = state
+          \set_reporter (prev_state, state) =>
+            states[] = :prev_state, :state
           \add_state with StateSpec 'state_1'
             \add_transition_to 'state_2'
           \add_state with StateSpec 'state_2'
@@ -489,7 +490,8 @@ spec ->
         test_sm\goto 'state_2', data
 
         $expect_that states, deep_eq
-          * { name: 'state_2', ...data }
+          * prev_state: name: 'state_1'
+            state: { name: 'state_2', ...data }
 
         test_sm\goto 'state_1'
         test_sm\goto 'state_2', data
@@ -497,11 +499,16 @@ spec ->
         test_sm\goto 'state_2', data
 
         $expect_that [ state for state in *states ], deep_eq
-          * { name: 'state_2', ...data }
-          * { name: 'state_1' }
-          * { name: 'state_2', ...data }
-          * { name: 'state_1' }
-          * { name: 'state_2', ...data }
+          * prev_state: name: 'state_1'
+            state: { name: 'state_2', ...data }
+          * prev_state: { name: 'state_2', ...data }
+            state: { name: 'state_1' }
+          * prev_state: { name: 'state_1' }
+            state: { name: 'state_2', ...data }
+          * prev_state: { name: 'state_2', ...data }
+            state: { name: 'state_1' }
+          * prev_state: { name: 'state_1' }
+            state: { name: 'state_2', ...data }
 
     describe '.states', ->
       it 'contains all states', ->
