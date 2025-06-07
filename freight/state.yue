@@ -154,7 +154,8 @@ export class StateMachineBuilder
           [] = '  ]'
           [] = '  levels=1'
 
-          [] = "  #{initial_state_name}[shape=point]"
+          [] = "  __init[shape=point]"
+          [] = "  __init -> #{initial_state_name}"
 
           for state_name, state in pairs states
             [] = ''
@@ -162,12 +163,18 @@ export class StateMachineBuilder
             if not state._data_type?
               [] = "  #{state_name}"
             else
+              local shape
+              if state._is_end
+                shape = 'shape=doublecircle'
+              else
+                shape = 'shape=circle'
+
               data_type = state._data_type
               if data_type == 'nil'
-                [] = "  #{state_name}"
+                [] = "  #{state_name}[#{shape}]"
               else
                 data_type_repr = state._data_type\gsub '\n *', ' '
-                [] = "  #{state_name}[label=\"#{state_name}\\n#{data_type_repr}\"]"
+                [] = "  #{state_name}[label=\"#{state_name}\\n#{data_type_repr}\",#{shape}]"
 
             for other_state in pairs state._transitions
               [] = "  #{state_name} -> #{other_state}"
@@ -288,9 +295,10 @@ spec ->
         \to_graphviz!
       must_contain =
         * 'digraph {'
-        * 'state_1 *%[shape=point%]'
+        * '[^ ]*init[^ ]* *%-> *state_1'
+        * 'state_1%[shape=doublecircle%]'
         * 'state_1 *%-> *state_2'
-        * 'state_2 *%[label="state%_2%\\n{ hello: string, world: number,? }%"%]'
+        * 'state_2 *%[label="state_2%\\n{ hello: string, world: number,? }%",shape=circle%]'
         * 'state_2 *%-> *state_1'
       for str in *must_contain
         $expect_that graphviz_repr, matches str
