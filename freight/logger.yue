@@ -12,7 +12,7 @@ export log = (fn) ->
   msg = fn!
   if verbose
     print msg
-  trace msg
+  write_to_log msg
 
 export fatal = (...) ->
   fragments = with {}
@@ -20,7 +20,7 @@ export fatal = (...) ->
       [] = tostring select i, ...
   msg = table.concat fragments, ' '
   print msg
-  trace msg
+  write_to_log msg
 
   os.exit 1
 
@@ -28,20 +28,23 @@ test_mode = false
 export activate_test_mode = ->
   test_mode = true
 
-setup_done = false
 export trace = (msg) ->
+  if test_mode
+    print msg
+  write_to_log msg
+
+setup_done = false
+write_to_log = (msg) ->
   if not setup_done
     setup_done = true
     setup_logs!
 
-  if test_mode
-    print msg
-    return
-
   timestamp = os.date '%Y-%m-%d@%H:%M:%S'
+  to_write = "[#{timestamp}]: #{msg}\n"
   with? io.open LOG_FILE, 'a'
-    \write "[#{timestamp}]: #{msg}\n"
+    \write to_write
     \close!
+  return
 
 MAX_LOGS = 10
 setup_logs = ->
