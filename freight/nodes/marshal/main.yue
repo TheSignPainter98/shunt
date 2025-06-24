@@ -115,7 +115,7 @@ declare_type 'MarshalOpts', [[{
   rand: ?Random,
   clock: ?Clock,
 }]]
-class Marshal
+export class Marshal
   @SAVE_FILE: '.marshal-state.json'
 
   new: F '(MarshalOpts) => <>', (opts) =>
@@ -149,6 +149,18 @@ class Marshal
     @throttle = T 'boolean', HOST == 'minecraft'
 
     @events = T 'Queue', Queue!
+
+  make_sm: F '() => StateMachine', =>
+    StateMachineBuilder'marshal'
+      \set_initial_state 'initial'
+      \add_state with StateSpec 'initial'
+        \add_transition_to 'middle'
+      \add_state with StateSpec 'middle'
+        \add_transition_to 'initial'
+        \add_transition_to 'end'
+      \add_state with StateSpec 'end'
+        \declare_end_state!
+      \build!
 
   save: F '() => <>', =>
     encoded = @encode_snapshot @snapshot!

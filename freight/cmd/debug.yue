@@ -1,0 +1,27 @@
+local *
+
+import 'clap' as :Param, :Subcommand
+import 'quicktype' as :F, :T
+
+mermaid_what_responses = T '{string->()->string}'
+  ['marshal/main']: ->
+    import 'freight.nodes.marshal.main' as :Marshal
+    Marshal\make_sm!\to_mermaid!
+  -- TODO(kcza): complete this!
+
+export subcommand = with Subcommand 'debug'
+  \hidden!
+  \description 'helper functions for generating documentation'
+  \add with Subcommand 'mermaid'
+    \description 'generate mermaid diagrams'
+    \add with Param 'what'
+      \description 'the diagram to print'
+      \options do
+        opts = [ response for response in pairs mermaid_what_responses ]
+        table.sort opts
+        opts
+
+export main = F '({}) -> <>', (args) ->
+  if mermaid = args.mermaid
+    print mermaid_what_responses[mermaid.what]!
+  return

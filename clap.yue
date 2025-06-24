@@ -125,6 +125,7 @@ export class Subcommand
     @_flags = {}
     @_params = {}
     @_subcommands = {}
+    @_hidden = false
     @_add_help = true
     @_description = nil
     @_auto_args_added = false
@@ -144,6 +145,11 @@ export class Subcommand
       else
         error "cannot use a #{type arg} as an arg"
     @
+
+  hidden: =>
+    @_hidden = true
+    @
+
   no_help: =>
     @_add_help = false
     @
@@ -248,7 +254,7 @@ export class Subcommand
       if sc = subcommand_map[help.command]
         print sc\_help_message path
         return nil, EXIT
-      return nil, "no such subcommand '#{help}'\n#{@_usage_message path}"
+      return nil, "no such subcommand '#{help.command}'\n#{@_usage_message path}"
     if ret._version
       print @_version_message path
       return nil, EXIT
@@ -418,8 +424,8 @@ export class Subcommand
         [] = ''
         [] = 'Commands:'
 
-        longest_subommand_repr_len = math.max unpack [ #sc\_repr! for sc in *@_subcommands ]
-        sorted_subcommands = [ sc for sc in *@_subcommands ]
+        longest_subommand_repr_len = math.max unpack [ #sc\_repr! for sc in *@_subcommands when not sc._hidden ]
+        sorted_subcommands = [ sc for sc in *@_subcommands when not sc._hidden ]
         table.sort sorted_subcommands, (sc1, sc2) -> sc1._name < sc2._name
         for subcommand in *sorted_subcommands
           repr = subcommand\_repr!
