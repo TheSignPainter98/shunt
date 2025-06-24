@@ -254,7 +254,7 @@ export class Subcommand
       if sc = subcommand_map[help.command]
         print sc\_help_message path
         return nil, EXIT
-      return nil, "no such subcommand '#{help}'\n#{@_usage_message path}"
+      return nil, "no such subcommand '#{help.command}'\n#{@_usage_message path}"
     if ret._version
       print @_version_message path
       return nil, EXIT
