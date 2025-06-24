@@ -20,6 +20,7 @@ git-repository-url = "https://github.com/TheSignPainter98/freight"
 preferred-dark-theme = "ayu"
 site-url = "/freight/"
 smart-punctuation = true
+additional-js = ["theme/js/mermaid.min.js", "theme/js/mermaid-init.js"]
 
 [output.html.font]
 enable = true
@@ -32,3 +33,8 @@ woff = true
 enable = true
 
 [output.linkcheck]
+
+[preprocessor]
+
+[preprocessor.mermaid]
+command = "mdbook-mermaid"
