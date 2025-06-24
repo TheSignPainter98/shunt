@@ -14,38 +14,6 @@ As such, the number of trains required to run a factory network is _significantl
 
 The rest of these docs is organised as follows:
 
-<div class="quote-grid">
-    <blockquote>
-            <p>
-                <div class="diataxis-card-header"><a href="./tutorials/index.html">Tutorials</a></div>
-                Hands-on lessons in operating freight
-            </p>
-        </a>
-    </blockquote>
-    <blockquote>
-        <p>
-            <div class="diataxis-card-header">
-                <a href="./how-to/index.html">How-to guides</a>
-            </div>
-            Step-by-step instructions for common tasks
-        </p>
-    </blockquote>
-    <blockquote>
-        <p>
-            <div class="diataxis-card-header">
-                <a href="./reference-materials/index.html">Reference materials</a>
-            </div>
-            Technical information about freight
-        </p>
-    </blockquote>
-    <blockquote>
-        <p>
-            <div class="diataxis-card-header">
-                <a href="./explanations/index.html">Explanations</a>
-            </div>
-            Long-form discussion of key topics
-        </p>
-    </blockquote>
-</div>
+{{#diataxis compass}}
 
 [create-mod]: https://github.com/Creators-of-Create/Create
