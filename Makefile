@@ -1,5 +1,6 @@
 LUA = luajit
 
+DIAGRAMS = docs/src/reference-materials/marshal.mmd
 SOURCES = $(shell find -name '*.yue')
 OBJECTS = $(patsubst %.yue,%.lua,$(SOURCES))
 BINARIES = bin/freight bin/goo bin/snoop
@@ -14,12 +15,15 @@ all: $(BINARIES)
 # docs/%.svg: docs/%.dot Makefile
 # 	./$< $(GRAPHVIZ_OPTS) -Tsvg >$@
 
-doc:
+doc: $(DIAGRAMS)
 	mdbook build docs/
 .PHONY: doc
 
-serve-docs:
-	mdbook serve docs/
+docs/src/reference-materials/marshal.mmd: freight/nodes/marshal/main.yue freight.lua $(OBJECTS)
+	$(LUA) freight.lua debug mermaid marshal/main > $@
+
+serve-docs: $(DIAGRAMS)
+	mdbook serve docs/ --open
 .PHONY: serve-doc
 
 bin/%: bin/%.lua.packed nitro.lua clap.lua spec.lua

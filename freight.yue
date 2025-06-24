@@ -24,6 +24,8 @@ import 'freight.cmd.upgrade'
 import 'freight.logger'
 import 'spec'
 
+debug_ = require 'freight.cmd.debug'
+
 global skip_minecraft_tests = false
 -- Some tests have unsuppressible error output in valid cases. This is a hack
 -- to avoid mental false-positives by users.
@@ -73,6 +75,8 @@ run = (args) ->
     declare.main args.declare
   else if args.upgrade?
     upgrade.main args.upgrade
+  else if args.debug?
+    debug_.main args.debug
   else
     error 'internal error: no command recognised'
 
