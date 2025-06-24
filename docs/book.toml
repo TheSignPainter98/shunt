@@ -34,7 +34,4 @@ enable = true
 
 [output.linkcheck]
 
-[preprocessor]
-
 [preprocessor.mermaid]
-command = "mdbook-mermaid"
