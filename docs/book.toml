@@ -35,3 +35,10 @@ enable = true
 [output.linkcheck]
 
 [preprocessor.mermaid]
+
+[preprocessor.diataxis.compass.tutorials]
+description = "Hands-on lessons in freighting"
+
+[preprocessor.diataxis.compass.reference]
+title = "Reference materials"
+description = "Technical information about freight"
