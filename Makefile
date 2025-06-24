@@ -1,6 +1,5 @@
 LUA = luajit
 
-DIAGRAMS = $(shell ls docs/*.dot | sed 's/\.dot$$/.svg/')
 SOURCES = $(shell find -name '*.yue')
 OBJECTS = $(patsubst %.yue,%.lua,$(SOURCES))
 BINARIES = bin/freight bin/goo bin/snoop
@@ -9,11 +8,19 @@ NODE_FONTNAME = C059
 EDGE_FONTNAME = $(NODE_FONTNAME)
 GRAPHVIZ_OPTS = -Gfontname="$(NODE_FONTNAME)" -Nfontname="$(NODE_FONTNAME)" -Efontname="$(EDGE_FONTNAME)"
 
-all: $(DIAGRAMS) $(BINARIES)
+all: $(BINARIES)
 .PHONY: all
 
-docs/%.svg: docs/%.dot Makefile
-	./$< $(GRAPHVIZ_OPTS) -Tsvg >$@
+# docs/%.svg: docs/%.dot Makefile
+# 	./$< $(GRAPHVIZ_OPTS) -Tsvg >$@
+
+doc:
+	mdbook build docs/
+.PHONY: doc
+
+serve-docs:
+	mdbook serve docs/
+.PHONY: serve-doc
 
 bin/%: bin/%.lua.packed nitro.lua clap.lua spec.lua
 # $(LUA) ./nitro.lua $< -o $@
@@ -32,7 +39,7 @@ bin/%.lua.packed: %.lua $(OBJECTS) moonpack.lua
 freight.yue: compat.lua
 
 clean:
-	$(RM) $(DIAGRAMS) $(OBJECTS) startup.lua packed/freight freight.goo $(BINARIES) bin/*
+	$(RM) $(OBJECTS) startup.lua packed/freight freight.goo $(BINARIES) bin/*
 .PHONY: clean
 
 install: scripts/install $(BINARIES)
