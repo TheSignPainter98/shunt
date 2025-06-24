@@ -3,7 +3,7 @@
 *.goo
 packed/
 test.yue
-*.toml
+/*.toml
 .version.txt
 *.csv
 *.log
