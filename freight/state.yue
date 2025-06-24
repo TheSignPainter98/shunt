@@ -183,6 +183,24 @@ export class StateMachineBuilder
           [] = '}'
         table.concat lines, '\n'
 
+      .to_mermaid = F '() => string', =>
+        lines = with {}
+          [] = 'stateDiagram'
+          [] = "  [*] --> #{initial_state_name}"
+          state_list = [ :state_name, :state for state_name, state in pairs states ]
+          table.sort state_list, (a, b) -> a.state_name < b.state_name
+          for { :state_name, :state } in *state_list
+            [] = "  #{state_name}"
+            if state._is_end
+              [] = "  #{state_name} --> [*]"
+
+            neighbours = [ other_state for other_state in pairs state._transitions ]
+            table.sort neighbours
+            for neighbour in *neighbours
+              [] = "  #{state_name} --> #{neighbour}"
+
+        table.concat lines, '\n'
+
     T 'StateMachine',
       <index>: index,
       <newindex>: (key, v) =>
@@ -312,6 +330,31 @@ spec ->
         * 'state_2 *%-> *state_1'
       for str in *must_contain
         $expect_that graphviz_repr, matches str
+
+    it 'formats itself as mermaid', ->
+      mermaid_repr = (StateMachineBuilder 'test_sm')
+        \set_initial_state 'state_1'
+        \add_state with StateSpec 'state_1'
+          \declare_end_state!
+          \add_transition_to 'state_2'
+        \add_state with StateSpec 'state_2'
+          \add_transition_to 'state_1'
+          \set_data_type [[{
+            hello: string,
+            world: number,
+          }]]
+        \build!
+        \to_mermaid!
+      expected_lines =
+        * 'stateDiagram'
+        * '  [*] --> state_1'
+        * '  state_1'
+        * '  state_1 --> [*]'
+        * '  state_1 --> state_2'
+        * '  state_2'
+        * '  state_2 --> state_1'
+      expected_repr = table.concat expected_lines, '\n'
+      $expect_that mermaid_repr, eq expected_repr
 
     it 'rejects invalid transition graphs', ->
       builder = (StateMachineBuilder 'test_sm')
