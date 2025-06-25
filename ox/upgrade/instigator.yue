@@ -1,0 +1,92 @@
+local *
+local MarshalBumpRelease
+
+import 'ox.logger' as :fatal, :log
+import 'ox.peripheral.uplink' as :IdempotenceToken, :Packet, :TIMEOUT, :Uplink
+import 'ox.upgrade.rebooter' as :MinecraftRebooter, :RebootRequest
+import 'ox.upgrade.tester' as :Tester
+import 'quicktype' as :F
+import 'spec' as :spec
+
+export class Instigator using Tester
+  new: F '(?{}, Release, ?Uplink, ?Rebooter) => <>', (@config, @release, @uplink=Uplink!, @rebooter=MinecraftRebooter!) =>
+    if config?.marshal?
+      fatal 'cannot instigate upgrade from marshal'
+
+  upgrade: F '(?boolean) => <>', (prompt=true) =>
+    assert @test @release
+
+    if prompt
+      local resp
+      while resp != ''
+        print "ready to upgrade to version #{@release.version}"
+        print 'press [ENTER] to deploy'
+        resp = io.read '*l'
+    @bump_marshal @release
+
+    if @await_reboot_request!
+      @reboot!
+
+  bump_marshal: F '(Release) => <>', (release) =>
+    log -> 'bumping marshal...'
+    @uplink\broadcast MarshalBumpRelease release
+    return
+
+  await_reboot_request: F '() => boolean', =>
+    log -> 'awaiting reboot request...'
+    MAX_ATTEMPTS = 3
+    for i = 1, MAX_ATTEMPTS
+      print "awaiting reboot request (attempt #{i}/#{MAX_ATTEMPTS})"
+      ok, err = @uplink\receive_from_any RebootRequest, timeout: 5
+      if ok
+        return true
+      if err != TIMEOUT
+        fatal err
+    print "marshal did not issue reboot request"
+    false
+
+  reboot: F '() => !', =>
+    @rebooter\reboot!
+
+export class MarshalBumpRelease extends Packet
+  new: F '(Release) => <>', (@release) =>
+
+spec ->
+  import 'spec_macros' as $
+
+  import 'ox.peripheral.uplink' as :TestUplinkBackend
+  import 'spec' as :describe, :it, :matchers
+
+  import deep_eq, errors, matches from matchers
+
+  class TestRebooter
+    @marker: 'REBOOTING'
+
+    reboot: =>
+      error @@marker
+
+  describe 'Instigator', ->
+    it 'instigates valid updates', ->
+      cfg = {}
+      release =
+        file: 'ox'
+        version: '9999999999999999'
+        content: ''
+
+      last_idemp_tok = nil
+      uplink = Uplink TestUplinkBackend
+        to_receive:
+          * from_id: 1
+            message: RebootRequest!
+        on_send: (id, packet, protocol) =>
+          last_idemp_tok = packet.idemp_tok
+          true
+
+      rebooter = TestRebooter!
+      upgrader = with Instigator cfg, release, uplink, rebooter
+        $expect_that (-> \upgrade false), errors matches TestRebooter.marker
+      $expect_that uplink.backend.sent, deep_eq {}
+      $expect_that uplink.backend.broadcasted, deep_eq
+        * protocol: 'MarshalBumpRelease'
+          message:
+            :release

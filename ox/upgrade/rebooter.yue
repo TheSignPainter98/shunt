@@ -1,0 +1,16 @@
+local *
+
+import 'ox.logger' as :log
+import 'ox.peripheral.uplink' as :Packet
+import 'quicktype' as :declare_type, :F
+
+declare_type 'Rebooter', [[{
+  reboot: () => !,
+}]]
+
+export class MinecraftRebooter
+  reboot: F '() => !', =>
+    log -> 'rebooting'
+    os.reboot!
+
+export class RebootRequest extends Packet

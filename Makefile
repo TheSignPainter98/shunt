@@ -3,7 +3,7 @@ LUA = luajit
 DIAGRAMS = docs/src/reference-materials/marshal.mmd
 SOURCES = $(shell find -name '*.yue')
 OBJECTS = $(patsubst %.yue,%.lua,$(SOURCES))
-BINARIES = bin/freight bin/goo bin/snoop
+BINARIES = bin/ox bin/goo bin/snoop
 
 NODE_FONTNAME = C059
 EDGE_FONTNAME = $(NODE_FONTNAME)
@@ -19,8 +19,8 @@ doc: $(DIAGRAMS)
 	mdbook build docs/
 .PHONY: doc
 
-docs/src/reference-materials/marshal.mmd: freight/nodes/marshal/main.yue freight.lua $(OBJECTS)
-	$(LUA) freight.lua debug mermaid marshal/main > $@
+docs/src/reference-materials/marshal.mmd: ox/nodes/marshal/main.yue ox.lua $(OBJECTS)
+	$(LUA) ox.lua debug mermaid marshal/main > $@
 
 serve-docs: $(DIAGRAMS)
 	mdbook serve docs/ --open
@@ -40,10 +40,10 @@ bin/%.lua.packed: %.lua $(OBJECTS) moonpack.lua
 	@touch $@
 .PRECIOUS: %.lua
 
-freight.yue: compat.lua
+ox.yue: compat.lua
 
 clean:
-	$(RM) $(OBJECTS) startup.lua packed/freight freight.goo $(BINARIES) bin/*
+	$(RM) $(OBJECTS) startup.lua packed/ox ox.goo $(BINARIES) bin/*
 .PHONY: clean
 
 install: scripts/install $(BINARIES)
@@ -54,18 +54,18 @@ uninstall: scripts/uninstall
 	./$<
 .PHONY: uninstall
 
-test: test_freight test_ylint
+test: test_ox test_ylint
 .PHONY: test
 
-test_freight: freight.lua $(OBJECTS)
+test_ox: ox.lua $(OBJECTS)
 	@$(LUA) $< test
-.PHONY: test_freight
+.PHONY: test_ox
 
 test_ylint: ylint.lua
 	@$(LUA) ylint.lua test
 .PHONY: test_ylint
 
-freight/version.lua: .version.txt
+ox/version.lua: .version.txt
 
 .version.txt: scripts/version .FORCE
 	./$< > $@
@@ -73,7 +73,7 @@ freight/version.lua: .version.txt
 .FORCE:
 .PHONY: .FORCE
 
-release: bin/freight ./scripts/release bin/snoop
-	./scripts/release bin/freight
+release: bin/ox ./scripts/release bin/snoop
+	./scripts/release bin/ox
 	./scripts/release bin/snoop
 .PHONY: release

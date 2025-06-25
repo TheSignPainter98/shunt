@@ -1,0 +1,90 @@
+local *
+
+import 'ox.logger' as :log, :trace
+import 'ox.upgrade.instigator' as :MarshalBumpRelease
+import 'ox.upgrade.monitor' as :CurrentReleaseRequest, :CurrentReleaseResponse
+import 'ox.upgrade.rebooter' as :MinecraftRebooter, :RebootRequest
+import 'ox.upgrade.tester' as :Tester
+import 'ox.version' as :VERSION
+import 'quicktype' as :declare_type, :F, :T
+
+declare_type 'UpgradeListener', [[{
+  tasks: () => [() -> !],
+}]]
+declare_type 'UpgradeListenerKind', '"leader"|"follower"'
+declare_type 'UpgradeListenerConfig', [[{
+  marshal: ?{},
+}]]
+export class UpgradeListener using Tester
+  new: F '(UpgradeListenerConfig, Uplink, ?Rebooter) => <>', (config, @uplink, @rebooter=MinecraftRebooter!) =>
+    @kind = T 'UpgradeListenerKind', if config.marshal?
+      'leader'
+    else
+      'follower'
+
+    @_current_release = nil
+
+  tasks: F '() => [() -> !]', =>
+    switch @kind
+      when 'leader'
+        @leader_listeners!
+      when 'follower'
+        @follower_listeners!
+      else
+        error "internal error: unknown listener kind '#{@kind}'"
+
+  leader_listeners: F '() => [() -> !]', =>
+    { @\listen_for_release_bumps, @\listen_for_release_requests }
+
+  listen_for_release_bumps: F '() => !', =>
+    log -> "listening for release bumps"
+    local release
+    while true
+      _, { :release } = @uplink\receive_from_any MarshalBumpRelease
+      if #release.content > fs.getFreeSpace '/'
+        error "cannot upgrade: too little space, need #{#release.content}, but only #{fs.getFreeSpace '/'}/#{fs.getCapacity '/'} available"
+
+      ok, err = @test release
+      if ok
+        break
+      trace "cannot apply update: #{err}"
+
+    trace "bumping release to version #{release.version}"
+    @_current_release = release
+    with assert io.open release.file, 'w+'
+      \write release.content
+      assert \close!
+
+    trace "issuing reboot broadcast"
+    @uplink\deafen!
+    @uplink\broadcast RebootRequest!
+    @rebooter\reboot!
+
+  listen_for_release_requests: F '() => !', =>
+    log -> "listening for release requests"
+    while true
+      requester_id, { :idemp_tok } = @uplink\receive_from_any CurrentReleaseRequest
+      trace "sending current release info to ##{requester_id} (idemp_tok:#{idemp_tok})"
+      @uplink\send_to requester_id, CurrentReleaseResponse idemp_tok, @current_release!
+
+  current_release: F '() => Release', =>
+    if @kind != 'leader'
+      error 'internal error: non-leader requested current release'
+    if @_current_release?
+      return @_current_release
+
+    content = do
+      with assert io.open 'ox', 'r'
+        content = assert \read '*a'
+        assert \close!
+      content
+    @_current_release = T 'Release', file: 'ox', version: VERSION, :content
+    @_current_release
+
+  follower_listeners: F '() => [() -> !]', =>
+    log -> "listening for upgrades as follower"
+    { @\listen_for_reboot_requests }
+
+  listen_for_reboot_requests: F '() => !', =>
+    @uplink\receive_from_any RebootRequest!
+    @rebooter\reboot!

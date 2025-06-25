@@ -1,0 +1,234 @@
+local *
+
+import 'clap' as :Flag, :Subcommand
+import 'ox.data.queue' as :Queue
+import 'quicktype' as :declare_type, :F, :T
+import 'spec' as :spec
+
+import 'ox.toml'
+
+export default_config = -> [=[
+[ledger]
+retained-events = 1000
+]=]
+
+declare_type 'LedgerConfig', [[{
+  ledger: {
+    retained-events: number,
+  },
+}]]
+export main = F '(LedgerConfig) -> <>', (config) ->
+  print 'hello, ledger!'
+  return
+  -- term_width, term_height = term?.getSize!
+  -- term_width ??= 80
+  -- term_height ??= 20
+  --
+  -- ledger = Ledger term_height - 1
+  -- ledger\add { 'hello', 'world', 'hfjdkla' }
+  -- ledger\add { 'hello2', 'world', 'hfjdkla' }
+  -- ledger\add { 'hello3', 'world', 'hfjdkla' }
+  -- ledger\emit
+  --   max_rows: term_height - 1
+  --   width: term_width
+
+declare_type 'Ledger', [[{
+  iter: () => thread,
+}]]
+declare_type 'Entry', [[{
+  when: string,
+  what: string,
+  how: string,
+}]]
+class Ledger
+  new: F '(?number, ?string) => <>', (@max_len=100, @save_path=".ledger-state.toml") =>
+    @entries = Queue!
+    @entry_save_fragments = Queue!
+
+  iter: F '() => function', =>
+    @entries\iter!
+
+  load: F '(?string) => ?string', =>
+    local content
+    with assert io.open @save_path, 'r'
+      content = assert \read '*a'
+      assert \close!
+    print "got content: [#{content}]"
+    data, err = toml.decode content
+    if err?
+      return err
+
+    @max_len = T 'number', assert data.max_len, 'saved ledger missing max_len field'
+    entries = T '[Entry]', data.entries ?? {}
+    @entries = Queue!
+    for entry in *entries
+      @entries\enqueue entry
+      @entry_save_fragments\enqueue @fmt_entry_as_toml entry
+
+    nil
+
+  save: F '(?string) => <>', =>
+    lines = with {}
+      [] = "max_len = #{@max_len}"
+      for entry_save_fragment in @entry_save_fragments\iter!
+        [] = entry_save_fragment
+    to_write = table.concat lines, '\n'
+    print "writing content: [#{to_write}]"
+
+    with assert io.open @save_path, 'w+'
+      assert \write to_write
+      assert \close!
+    return
+
+  fmt_entry_as_toml: F '(Entry) => string', (entry) =>
+    table.concat with {}
+      [] = '[[entries]]\n'
+      [] = "what = '#{entry.what}'\n"
+      [] = "when = '#{entry.when}'\n"
+      [] = "how = '#{entry.how}'\n"
+
+  len: F '() => number', =>
+    @entries\len!
+
+  add: F '(Entry) => <>', (entry) =>
+    if @entries\len! == @max_len
+      @entries\dequeue!
+      @entry_save_fragments\dequeue!
+    @entries\enqueue entry
+    @entry_save_fragments\enqueue @fmt_entry_as_toml entry
+    @save!
+
+  emit: F '(?LedgerFmtOpts) => <>', (opts={}) =>
+    to_print = @fmt opts
+
+    term?.clear!
+    print to_print
+    return
+
+  fmt: F '(LedgerFmtOpts) => string', (opts) =>
+    buf = {}
+    @fmt_header buf, opts
+    @fmt_body buf, opts
+    table.concat buf, '\n'
+
+  fmt_header: F '([string], LedgerFmtOpts) => <>', (buf, opts) =>
+    @fmt_entry buf, { 'when', 'what', 'how' }, opts
+
+  fmt_body: F '([string], LedgerFmtOpts) => <>', (buf, opts) =>
+    { :max_rows } = opts
+
+    len = @len!
+    if len == 0
+      buf[] = "--- ledger empty ---"
+      return
+    if max_rows > len
+      max_rows = len
+    entries = [ entry for entry in @entries\iter! ]
+    for entry in *entries[#entries,1,-1]
+      @fmt_entry buf, entry, opts
+
+  fmt_entry: F '([string], Entry, ?LedgerFmtOpts) => <>', (buf, entry, opts={}) =>
+    { :width } = opts
+
+    columns = { entry.when, entry.what, entry.how }
+
+    sep = '  '
+    column_widths =
+      * 15
+      * 10
+    final_column_width = width - (sum column_widths) - #sep * #column_widths
+    if final_column_width < 0
+      error "internal error: cannot display entry in width of #{width} chars, need at least #{sum column_widths + #sep * (#column_widths - 1)}"
+    column_widths[] = final_column_width
+    assert #column_widths == #columns, 'internal error: different number columns and column widths'
+
+    cells = [ fmt_cell columns[i], column_widths[i] for i = 1, #columns ]
+    buf[] = table.concat cells, sep
+
+declare_type 'LedgerFmtOpts', [[{
+  max_rows: number,
+  width: number,
+}]]
+
+sum = F '([number]) -> number', (ns) ->
+  tot = 0
+  for n in *ns
+    tot += n
+  tot
+
+fmt_cell = F '(string, number) -> string', (string, width) ->
+  if #string == width
+    string
+  else if #string < width
+    "%-#{width}s"\format string
+  else
+    "#{string\sub 1, width - 3}..."
+
+spec ->
+  import 'spec_macros' as $
+
+  import 'spec' as :describe, :it, :matchers
+
+  import deep_eq, eq from matchers
+
+  describe 'Ledger', ->
+    it 'rotates its content', ->
+      save_path = os.tmpname!
+
+      LEN = 3
+      ledger = Ledger LEN, save_path
+      for i = 1, LEN
+        ledger\add when: 'hello', what: 'world', how: tostring i
+      $assert_that ledger\len!, eq LEN
+
+      $expect_that [ entry for entry in ledger.entries\iter! ], deep_eq
+        * when: 'hello', what: 'world', how: '1'
+        * when: 'hello', what: 'world', how: '2'
+        * when: 'hello', what: 'world', how: '3'
+
+      ledger\add when: 'hello', what: 'world', how: 'NEW'
+      $expect_that [ entry for entry in ledger.entries\iter! ], deep_eq
+        * when: 'hello', what: 'world', how: '2'
+        * when: 'hello', what: 'world', how: '3'
+        * when: 'hello', what: 'world', how: 'NEW'
+
+      assert os.remove save_path
+
+    it 'is persisted', ->
+      save_path = os.tmpname!
+
+      ledger1 = Ledger 100, save_path
+      ledger2 = Ledger 100, save_path
+
+      ledger1\add when: 'hello', what: 'world', how: '1'
+      ledger1\add when: 'hello', what: 'world', how: '2'
+      entries1 = [ entry for entry in ledger1\iter! ]
+      $assert_that entries1, deep_eq
+        * when: 'hello', what: 'world', how: '1'
+        * when: 'hello', what: 'world', how: '2'
+
+      err = ledger2\load path
+      entries2 = [ entry for entry in ledger2\iter! ]
+      $assert_that entries2, deep_eq
+        * when: 'hello', what: 'world', how: '1'
+        * when: 'hello', what: 'world', how: '2'
+      $expect_that err, eq nil
+
+      assert os.remove save_path
+
+  describe 'fmt_cell', ->
+    it 'preserves right-size input', ->
+      $expect_that (fmt_cell 'xxx', 3), eq "xxx"
+
+    it 'pads too-small input', ->
+      $expect_that (fmt_cell 'xxx', 6), eq "xxx   "
+
+    it 'truncates too-large input', ->
+      $expect_that (fmt_cell 'xxxxxx', 5), eq "xx..."
+
+  describe 'sum', ->
+    it 'adds given values', ->
+      $expect_that (sum {1, 2, 3, 4, 5}), eq 15
+
+    it 'handles no values', ->
+      $expect_that (sum {}), eq 0

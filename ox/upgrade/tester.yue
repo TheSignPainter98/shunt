@@ -1,0 +1,84 @@
+local *
+
+import 'ox.execute' as :execute
+import 'ox.logger' as :log
+import 'quicktype' as :F
+import 'spec' as :spec
+
+export class Tester
+  test: F '(Release) => <boolean, ?string>', (release) =>
+    log -> 'testing...'
+    log -> "writing #{#release.content} bytes into disk with #{fs.getFreeSpace '/'}/#{fs.getCapacity '/'} free space"
+
+    tmp_path = os.tmpname!
+    with assert io.open tmp_path, 'w+'
+      \write release.content
+      assert \close!
+    write_ok = false
+    with? io.open tmp_path, 'r'
+      write_ok = release.content == \read '*a'
+      assert \close!
+    local testing_ok
+    if write_ok
+      testing_ok = execute tmp_path, 'test', '--force-error-on-bad-exit'
+    assert os.remove tmp_path
+
+    if not write_ok
+      return false, "cannot test upgrade: could could not write file to disk"
+    if not testing_ok
+      return false, "testing failed"
+    true, nil
+
+spec ->
+  import 'spec_macros' as $
+
+  import 'spec' as :describe, :it, :matchers
+
+  import eq, has_type from matchers
+
+  describe 'Tester', ->
+    it 'accepts valid releases', ->
+      release =
+        file: 'ox'
+        version: '12345'
+        content: [[]]
+
+      ok, err = Tester!\test release
+      $expect_that ok, eq true
+      $expect_that err, eq nil
+
+    if _G.run_ugly_tests
+      -- NOTE: the following two tests are deactivated by default as it is
+      -- impossible to both suppress the output of a subprocess and capture its
+      -- return value (even just as ok/!ok) in both Cobalt lua (used by
+      -- CC:Tweaked) and luajit (used for external testing). As such, these
+      -- tests emit worrying error output when they pass, which will be very
+      -- disconcerting for the user.
+
+      it 'rejects invalid releases', ->
+        release =
+          file: 'ox'
+          version: '12345'
+          content: [[
+            error('MARKER_ERROR')
+          ]]
+
+        ok, err = Tester!\test release
+        $expect_that ok, eq false
+        $expect_that err, has_type 'string'
+
+      it 'executes the test command', ->
+        release =
+          file: 'frieght'
+          version: '12345'
+          content: [[
+            for i = 1, select('#', ...) do
+              if select(i, ...) == 'test' then
+                return
+              end
+            end
+            error("must pass 'test' to ox")
+          ]]
+        ok, err = Tester!\test release
+        $expect_that ok, eq true
+        $expect_that err, eq nil

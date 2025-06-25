@@ -1,0 +1,64 @@
+local *
+local CurrentReleaseRequest
+local CurrentReleaseResponse
+
+import 'ox.logger' as :log, :trace
+import 'ox.peripheral.uplink' as :IdempotenceToken, :Packet, :TIMEOUT
+import 'ox.version' as :VERSION
+import 'quicktype' as :declare_type, :F
+
+declare_type 'UpgradeMonitorConfig', [[{
+  marshal: ?{},
+}]]
+
+export class UpgradeMonitor
+  new: F '(UpgradeMonitorConfig, Uplink) => <>', (config, @uplink) =>
+    @is_marshal = config.marshal?
+    @new_release = nil
+
+  upgrade_available: F '() => boolean', =>
+    if @is_marshal
+      return false
+
+    release = @get_latest_release!
+    if release.version <= VERSION
+      return false
+    @new_release = release
+    true
+
+  upgrade_now: F '() => !', =>
+    log -> "upgrading to version #{@new_release.version}"
+    @uplink\deafen!
+    with assert io.open @new_release.file, 'w+'
+      \write @new_release.content
+      assert \close!
+    os.reboot!
+
+  get_latest_release: F '() => Release', =>
+    attempt = 0
+    idemp_tok = IdempotenceToken!
+    while true
+      attempt += 1
+      if attempt > 1
+        trace "getting release from marshal, attempt #{attempt}"
+
+      @uplink\broadcast CurrentReleaseRequest idemp_tok
+      marshal_id, pkt_or_err = @uplink\receive_from_any CurrentReleaseResponse, timeout: 10
+      if not marshal_id?
+        if pkt_or_err != TIMEOUT
+          trace "ignoring error whilst getting update: #{pkt_or_err}"
+          -- Random backoff
+          os.sleep (math.random 1000) / 100
+        else
+          trace 'TIMEOUT'
+        continue
+      if pkt_or_err.idemp_tok == idemp_tok
+        trace "got release!"
+        return pkt_or_err.release
+      trace "expected #{idemp_tok} but got #{pkt_or_err.idemp_tok} (match? #{pkt_or_err.idemp_tok == idemp_tok})"
+
+export class CurrentReleaseRequest extends Packet
+  new: F '(IdempotenceToken) => <>', (@idemp_tok) =>
+
+export class CurrentReleaseResponse extends Packet
+  new: F '(IdempotenceToken, Release) => <>', (@idemp_tok, @release) =>

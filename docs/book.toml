@@ -1,7 +1,7 @@
 [book]
-title = "Freight"
+title = "Ox"
 authors = ["kcza"]
-description = "Documentation for Freight"
+description = "Documentation for Ox"
 language = "en"
 multilingual = false
 src = "src"
@@ -14,11 +14,11 @@ additional-css = ['theme/css/style.css']
 cname = "kcza.net"
 copy-fonts = true
 default-theme = "ayu"
-edit-url-template = "https://github.com/TheSignPainter98/freight/blob/master/docs/{path}"
+edit-url-template = "https://github.com/TheSignPainter98/ox/blob/master/docs/{path}"
 git-repository-icon = "fa-github"
-git-repository-url = "https://github.com/TheSignPainter98/freight"
+git-repository-url = "https://github.com/TheSignPainter98/ox"
 preferred-dark-theme = "ayu"
-site-url = "/freight/"
+site-url = "/ox/"
 smart-punctuation = true
 additional-js = ["theme/js/mermaid.min.js", "theme/js/mermaid-init.js"]
 
@@ -39,8 +39,8 @@ enable = true
 [preprocessor.diataxis]
 
 [preprocessor.diataxis.compass.tutorials]
-description = "Hands-on lessons in freighting"
+description = "Hands-on lessons in using ox"
 
 [preprocessor.diataxis.compass.reference]
 title = "Reference materials"
-description = "Technical information about freight"
+description = "Technical information about ox"

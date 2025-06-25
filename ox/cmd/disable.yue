@@ -1,0 +1,43 @@
+local *
+
+import 'clap' as :Flag, :Subcommand
+import 'ox.cmd.enable' as :_startup_script
+import 'quicktype' as :F
+
+export subcommand = with Subcommand 'disable'
+  \description 'disable ox on startup'
+  \add with Flag 'force'
+    \description 'delete edited config'
+
+export main = F '({}) -> <>', (args) ->
+  if args.force
+    remove_files true
+    return
+
+  local content
+  with? io.open 'startup.lua', 'r'
+    content = assert \read '*a'
+    assert \close!
+  if not content?
+    print 'cannot disable ox: startup.lua missing'
+    return
+
+  if content != _startup_script
+    print 'cannot disable ox: startup script contains changes\nrerun with --force to delete anyway'
+    return
+
+  remove_files false
+  return
+
+remove_files = F '(boolean) -> <>', (force) ->
+  remove_with_force = if force
+    (path) ->
+      os.remove path
+      return
+  else
+    (path) ->
+      assert (os.remove path), "cannot remove #{path}"
+      return
+
+  remove_with_force 'startup.lua'
+  remove_with_force 'ox.toml'
