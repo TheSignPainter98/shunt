@@ -6,6 +6,7 @@ import 'compat' as :HOST
 import 'ox.cmd.declare' as :DeclareTrainStateResponse
 import 'ox.configurator.main' as :GetConfigRequest, :GetConfigResponse, :MarshalIdentityRequest, :MarshalIdentityResponse, :SetConfigRequest, :SetConfigResponse
 import 'ox.data.queue' as :Queue
+import 'ox.firewall' as :Firewall
 import 'ox.logger' as :log, :trace
 import 'ox.nodes.factory.main' as :FactoryHeartbeat, :ScheduleRequest, :ScheduleResponse
 import 'ox.nodes.marshal.clock' as :MinecraftClock
