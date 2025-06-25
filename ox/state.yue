@@ -1,5 +1,6 @@
 local *
 
+import 'ox.logger' as :log
 import 'quicktype' as :declare_type, :F, :T
 import 'spec' as :spec
 
@@ -259,6 +260,53 @@ declare_type 'StateMachine', [[{
 
 valid_ident = F '(string) -> boolean', (name) ->
   (name\match '^[a-z][a-z0-9_]+[a-z0-9]$')?
+
+export data_log_reporter = (prev_state, state) =>
+  log ->
+    fragments = with {}
+      [] = '$ '
+      [] = @name
+      [] = ':'
+      [] = prev_state.name
+      [] = '->'
+      [] = state.name
+      level_1_fields = [ :key, :value for key, value in pairs state.<index> ]
+      table.sort level_1_fields, (a, b) -> a.key < b.key
+      for { :key, :value } in *level_1_fields
+        [] = '\n    '
+        [] = key
+        [] = ': '
+        value_type = type value
+        switch value_type
+          when 'function', 'thread', 'table'
+            [] = '('
+            [] = tostring value
+            [] = ')'
+          when 'string'
+            [] = '`'
+            [] = tostring value
+            [] = '\''
+          else
+            [] = tostring value
+        if value_type == 'table'
+          level_2_fields = [ :key2, :value2 for key2, value2 in pairs value ]
+          table.sort level_2_fields, (a, b) -> a.key2 < b.key2
+          for { :key2, :value2 } in *level_2_fields
+            [] = '\n      '
+            [] = key2
+            [] = ': '
+            switch type value2
+              when 'function', 'thread', 'table'
+                [] = '('
+                [] = tostring value2
+                [] = ')'
+              when 'string'
+                [] = '`'
+                [] = tostring value2
+                [] = '\''
+              else
+                [] = tostring value2
+    table.concat fragments
 
 spec ->
   import 'spec_macros' as $
