@@ -50,6 +50,7 @@ export class Instigator using Tester
 
 export class MarshalBumpRelease extends Packet
   new: F '(Release) => <>', (@release) =>
+    super!
 
 spec ->
   import 'spec_macros' as $
@@ -89,4 +90,5 @@ spec ->
       $expect_that uplink.backend.broadcasted, deep_eq
         * protocol: 'MarshalBumpRelease'
           message:
+            protocol: 'MarshalBumpRelease'
             :release

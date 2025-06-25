@@ -27,20 +27,20 @@ export class Uplink
     @deaf = true
 
   broadcast: F '(Packet) => <>', (message) =>
-    @backend\broadcast message, message\protocol!
+    @backend\broadcast message, message.protocol
 
   send_to: F '(number, Packet) => <>', (to_id, message) =>
-    ok = @backend\send to_id, message, message\protocol!
+    ok = @backend\send to_id, message, message.protocol
     if not ok
-      error "failed to send #{message\protocol!}"
+      error "failed to send #{message.protocol}"
 
-  receive_from_any: F '(?Packet, ?UplinkReceiveOpts) => <?number, Packet|TIMEOUT>', (message_type, opts={}) =>
+  receive_from_any: F '(?PacketType, ?UplinkReceiveOpts) => <?number, Packet|TIMEOUT>', (message_type, opts={}) =>
     @_receive_from nil, message_type, opts
 
-  receive_from: F '(number, ?Packet, ?UplinkReceiveOpts) => <?number, Packet|TIMEOUT>', (from_id, message_type, opts={}) =>
+  receive_from: F '(number, ?PacketType, ?UplinkReceiveOpts) => <?number, Packet|TIMEOUT>', (from_id, message_type, opts={}) =>
     @_receive_from from_id, message_type, opts
 
-  _receive_from: F '(?number, ?Packet, ?UplinkReceiveOpts) => <?number, Packet|TIMEOUT>', (from_id, message_type, opts={}) =>
+  _receive_from: F '(?number, ?PacketType, ?UplinkReceiveOpts) => <?number, Packet|TIMEOUT>', (from_id, message_type, opts={}) =>
     {:timeout} = opts
 
     local id, message, protocol
@@ -56,13 +56,14 @@ export class Uplink
         break
 
     if not message_type?
-      message.<> = __index: protocol: => protocol
+      message.protocol = protocol
       return id, message
 
-    data, ok = message_type::from message, protocol
+    message.protocol = protocol
+    data, ok = message_type::from message
     if not ok
       import 'spec' as :repr
-      error "unexpected message #{repr message}, expected #{message_type::protocol!} but got #{message\protocol!}"
+      error "unexpected message #{repr message}, expected #{message_type::protocol!} but got #{message.protocol}"
     id, data
 declare_type 'UplinkReceiveOpts', [[{
   timeout: ?number,
@@ -85,16 +86,20 @@ class MinecraftBackend
     rednet.broadcast message, protocol
 
 declare_type 'Packet', [[{
+  protocol: string,
+}]]
+declare_type 'PacketType', [[{
   protocol: () => string,
 }]]
 export class Packet
+  new: F '() => <>', =>
+    @protocol = @@protocol!
+
   @protocol: F '() => string', =>
     @.__class.__name
 
-  protocol: F '() => string', => @@protocol!
-
-  @from: F '({}, string) => <?Packet, boolean>', (raw, raw_protocol) =>
-    if raw_protocol == @@protocol!
+  @from: F '(Packet) => <?Packet, boolean>', (raw) =>
+    if raw.protocol == @@protocol!
       raw.<> = __index: @
       raw, true
     else
@@ -176,7 +181,7 @@ export class TestUplinkBackend
         frame = T 'NetworkFrame', frame!
       { :from_id, :message, :protocol } = frame
       if not protocol? and message.protocol?
-        protocol = message\protocol!
+        protocol = message.protocol
 
       if not protocol_filter? or protocol_filter == protocol
         @to_receive[i] = nil
@@ -209,9 +214,11 @@ spec ->
 
   class TestPacket extends Packet
     new: (@data) =>
+      super!
 
   class TestPacket2 extends Packet
     new: (@data) =>
+      super!
 
   describe 'Uplink', ->
     describe 'default backend', ->
@@ -307,11 +314,13 @@ spec ->
     it 'survives roundtrip', ->
       original = TestPacket 'hello'
 
-      correct_decode, ok = TestPacket::from original, TestPacket\protocol!
-      $expect_that correct_decode, deep_eq {data: 'hello'}
+      correct_decode, ok = TestPacket::from original
+      $expect_that correct_decode, deep_eq
+        protocol: 'TestPacket'
+        data: 'hello'
       $expect_that ok, eq true
 
-      incorrect_decode, ok = TestPacket2::from {protocol: ->}, TestPacket\protocol!
+      incorrect_decode, ok = TestPacket2::from {protocol: TestPacket::protocol!}
       $expect_that incorrect_decode, eq nil
       $expect_that ok, eq false
 

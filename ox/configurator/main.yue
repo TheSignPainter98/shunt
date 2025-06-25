@@ -129,9 +129,11 @@ declare_type 'MarshalIdentityRequest', [[{
 }]]
 export class MarshalIdentityRequest extends Packet
   new: F '(IdempotenceToken, number, ?string) => <>', (@idemp_tok, @pc_id, @name) =>
+    super!
 
 export class MarshalIdentityResponse extends Packet
   new: F '(IdempotenceToken, number|string) => <>', (@idemp_tok, @resp) =>
+    super!
 
 declare_type 'GetConfigRequest', [[{
   idemp_tok: IdempotenceToken,
@@ -139,9 +141,11 @@ declare_type 'GetConfigRequest', [[{
 }]]
 export class GetConfigRequest extends Packet
   new: F '(IdempotenceToken, number) => <>', (@idemp_tok, @pc_id) =>
+    super!
 
 export class GetConfigResponse extends Packet
   new: F '(IdempotenceToken, ?string) => <>', (@idemp_tok, @raw) =>
+    super!
 
 declare_type 'SetConfigRequest', [[{
   idemp_tok: IdempotenceToken,
@@ -150,9 +154,11 @@ declare_type 'SetConfigRequest', [[{
 }]]
 export class SetConfigRequest extends Packet
   new: F '(IdempotenceToken, number, string) => <>', (@idemp_tok, @pc_id, @raw) =>
+    super!
 
 export class SetConfigResponse extends Packet
   new: F '(IdempotenceToken, ?string) => <>', (@idemp_tok, @error_reason) =>
+    super!
 
 spec ->
   import 'spec_macros' as $
@@ -235,21 +241,21 @@ spec ->
         message: has_fields
           idemp_tok: not_ eq nil
           pc_id: eq CONFIGURATOR_PC_ID
-        protocol: eq MarshalIdentityRequest\protocol!
+        protocol: eq MarshalIdentityRequest::protocol!
       $expect_that #uplink.backend.sent, eq 2
       $expect_that uplink.backend.sent[1], has_fields
         id: eq MARSHAL_PC_ID
         message: has_fields
           idemp_tok: not_ eq nil
           pc_id: eq CONFIGURATOR_PC_ID
-        protocol: eq GetConfigRequest\protocol!
+        protocol: eq GetConfigRequest::protocol!
       $expect_that uplink.backend.sent[2], has_fields
         id: eq MARSHAL_PC_ID
         message: has_fields
           idemp_tok: not_ eq nil
           pc_id: eq CONFIGURATOR_PC_ID
           raw: eq edited_config
-        protocol: eq SetConfigRequest\protocol!
+        protocol: eq SetConfigRequest::protocol!
 
     it 'handles connection loss when getting marshal identity', ->
       reset!
@@ -265,7 +271,7 @@ spec ->
         message: has_fields
           idemp_tok: not_ eq nil
           pc_id: eq CONFIGURATOR_PC_ID
-        protocol: eq MarshalIdentityRequest\protocol!
+        protocol: eq MarshalIdentityRequest::protocol!
       $expect_that #uplink.backend.sent, eq 0
 
     it 'handles connection loss when getting config', ->
@@ -285,14 +291,14 @@ spec ->
         message: has_fields
           idemp_tok: not_ eq nil
           pc_id: eq CONFIGURATOR_PC_ID
-        protocol: eq MarshalIdentityRequest\protocol!
+        protocol: eq MarshalIdentityRequest::protocol!
       $expect_that #uplink.backend.sent, gt 1
       $expect_that uplink.backend.sent, each_value has_fields
         id: eq MARSHAL_PC_ID
         message: has_fields
           idemp_tok: not_ eq nil
           pc_id: eq CONFIGURATOR_PC_ID
-        protocol: eq GetConfigRequest\protocol!
+        protocol: eq GetConfigRequest::protocol!
 
     it 'handles connection loss when setting config', ->
       reset!
@@ -311,14 +317,14 @@ spec ->
         message: has_fields
           idemp_tok: not_ eq nil
           pc_id: eq CONFIGURATOR_PC_ID
-        protocol: eq MarshalIdentityRequest\protocol!
+        protocol: eq MarshalIdentityRequest::protocol!
       $expect_that #uplink.backend.sent, gt 2
       $expect_that uplink.backend.sent[1], has_fields
         id: eq MARSHAL_PC_ID
         message: has_fields
           idemp_tok: not_ eq nil
           pc_id: eq CONFIGURATOR_PC_ID
-        protocol: eq GetConfigRequest\protocol!
+        protocol: eq GetConfigRequest::protocol!
       sent_tail = [ msg for msg in *uplink.backend.sent[2,] ]
       $expect_that sent_tail, each_value has_fields
         id: eq MARSHAL_PC_ID
@@ -326,7 +332,7 @@ spec ->
           idemp_tok: not_ eq nil
           pc_id: eq CONFIGURATOR_PC_ID
           raw: eq edited_config
-        protocol: eq SetConfigRequest\protocol!
+        protocol: eq SetConfigRequest::protocol!
 
     it 'validates config', ->
       reset!

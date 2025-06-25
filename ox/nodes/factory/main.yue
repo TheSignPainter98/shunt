@@ -174,7 +174,7 @@ class Factory
     if not from_id?
       return
 
-    switch message\protocol!
+    switch message.protocol
       when 'ScheduleRequest'
         @on_schedule_request from_id, message
       when 'GetConfigRequest'
@@ -182,7 +182,7 @@ class Factory
       when 'SetConfigRequest'
         @on_set_config_request message
       else
-        log -> "ignoring #{message\protocol!} message"
+        log -> "ignoring #{message.protocol} message"
     return
 
   on_schedule_request: F '(number, Packet) => <>', (requester, request) =>
@@ -320,9 +320,11 @@ class Factory
 
 export class ScheduleRequest extends Packet
   new: F '(IdempotenceToken, string, string, Schedule) => <>', (@idemp_tok, @station_name, @train_name, @schedule) =>
+    super!
 
 export class ScheduleResponse extends Packet
   new: F '(IdempotenceToken, ?string) => <>', (@idemp_tok, @error_reason) =>
+    super!
 
 declare_type 'FactoryHeartbeat', [[{
   pc_id: number,
@@ -351,6 +353,7 @@ declare_type 'DetectedStockpile', [[{
 declare_type 'StockpileItemInfo', 'StoredItemInfo + StockpileConfig'
 export class FactoryHeartbeat extends Packet
   new: F '(number, string, DetectedStations, DetectedStockpile) => <>', (@pc_id, @name, @stations, @stockpile) =>
+    super!
 
 spec ->
   import 'spec_macros' as $
@@ -433,7 +436,7 @@ spec ->
       $expect_that uplink.backend.sent, len eq 1
       $expect_that uplink.backend.sent[1], has_fields
         id: eq SERVER_ID
-        protocol: eq ScheduleResponse\protocol!
+        protocol: eq ScheduleResponse::protocol!
         message: has_fields
           idemp_tok: eq idemp_tok
           error_reason: eq nil
@@ -493,7 +496,7 @@ spec ->
       $expect_that uplink.backend.sent, len eq 1
       $expect_that uplink.backend.sent[1], has_fields
         id: eq SERVER_ID
-        protocol: eq ScheduleResponse\protocol!
+        protocol: eq ScheduleResponse::protocol!
         message: has_fields
           idemp_tok: eq idemp_tok
           error_reason: some!
@@ -545,7 +548,7 @@ spec ->
 
         $expect_that uplink.backend.broadcasted, len eq 1
         $expect_that uplink.backend.broadcasted[1], has_fields
-          protocol: eq FactoryHeartbeat\protocol!
+          protocol: eq FactoryHeartbeat::protocol!
           message: do
             stations =
               known:
@@ -608,7 +611,7 @@ spec ->
             message: has_fields
               idemp_tok: eq idemp_tok
               raw: eq RAW
-            protocol: eq GetConfigResponse\protocol!
+            protocol: eq GetConfigResponse::protocol!
 
     describe '\\on_set_config_request', ->
       it 'applies valid config', ->
@@ -655,7 +658,7 @@ spec ->
             message: has_fields
               idemp_tok: eq idemp_tok
               error_reason: eq nil
-            protocol: eq SetConfigResponse\protocol!
+            protocol: eq SetConfigResponse::protocol!
           $expect_that .config, deep_eq
             factory:
               name: NEW_FACTORY_NAME
@@ -699,6 +702,6 @@ spec ->
             message: has_fields
               idemp_tok: eq idemp_tok
               error_reason: matches 'expected table but got nil'
-            protocol: eq SetConfigResponse\protocol!
+            protocol: eq SetConfigResponse::protocol!
           $expect_that .config, deep_eq config
           $expect_that .config.<raw>, eq ORIGINAL_RAW

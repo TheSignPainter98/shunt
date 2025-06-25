@@ -285,14 +285,14 @@ export class Marshal
     log -> "reading network..."
     _, message = @uplink\receive_from_any!
     import 'spec' as :repr
-    log -> "read a #{message\protocol!}"
+    log -> "read a #{message.protocol}"
     trace "read #{repr message}"
-    switch message\protocol!
+    switch message.protocol
       when 'FactoryHeartbeat', 'DeclareTrainState', 'MarshalIdentityRequest', 'FactoryPcRequest', 'GetConfigRequest', 'SetConfigRequest'
         @events\enqueue type: 'network-message', :message
         coroutine.yield!
       else
-        log -> "ignoring #{message\protocol!} message"
+        log -> "ignoring #{message.protocol} message"
     return
 
   handle_events: F '() => !', =>
@@ -347,8 +347,8 @@ export class Marshal
         [name] = status
 
   on_network_message: F '(Packet) => <>', (message) =>
-    log -> "handling a #{message\protocol!}"
-    switch message\protocol!
+    log -> "handling a #{message.protocol}"
+    switch message.protocol
       when 'FactoryHeartbeat'
         @on_factory_heartbeat message
       when 'DeclareTrainState'
@@ -362,7 +362,7 @@ export class Marshal
       when 'SetConfigRequest'
         @on_set_config_request message
       else
-        error "internal error: unexpected network message protocol reached marshal core '#{message\protocol!}'"
+        error "internal error: unexpected network message protocol reached marshal core '#{message.protocol}'"
 
   on_factory_heartbeat: F '(FactoryHeartbeat) => <>', (heartbeat) =>
     lost_trains = with {}
@@ -817,7 +817,7 @@ spec ->
             message: has_fields
               idemp_tok: eq idemp_tok
               error_reason: eq nil
-            protocol: eq DeclareTrainStateResponse\protocol!
+            protocol: eq DeclareTrainStateResponse::protocol!
 
           \ut_step!
           $assert_that (\ut_train_is_lost TRAIN_NAME), eq false
@@ -827,7 +827,7 @@ spec ->
             message: has_fields
               idemp_tok: eq idemp_tok
               error_reason: matches 'was not lost'
-            protocol: eq DeclareTrainStateResponse\protocol!
+            protocol: eq DeclareTrainStateResponse::protocol!
 
       it 'handles train reservations', ->
         idemp_tok = IdempotenceToken!
@@ -859,7 +859,7 @@ spec ->
             message: has_fields
               idemp_tok: eq idemp_tok
               error_reason: eq nil
-            protocol: eq DeclareTrainStateResponse\protocol!
+            protocol: eq DeclareTrainStateResponse::protocol!
 
           \ut_step!
           -- Check re-declarations are ignored
@@ -869,7 +869,7 @@ spec ->
             message: has_fields
               idemp_tok: eq idemp_tok
               error_reason: eq nil
-            protocol: eq DeclareTrainStateResponse\protocol!
+            protocol: eq DeclareTrainStateResponse::protocol!
 
     describe '\\on_marshal_identity_request', ->
       it 'responds to marshal requests', ->
@@ -898,7 +898,7 @@ spec ->
           message: has_fields
             idemp_tok: eq idemp_tok
             resp: eq MARSHAL_PC_ID
-          protocol: eq MarshalIdentityResponse\protocol!
+          protocol: eq MarshalIdentityResponse::protocol!
 
       it 'responds to factory requests', ->
         idemp_tok = IdempotenceToken!
@@ -943,13 +943,13 @@ spec ->
           message: has_fields
             idemp_tok: eq idemp_tok
             resp: matches 'no known factory'
-          protocol: eq MarshalIdentityResponse\protocol!
+          protocol: eq MarshalIdentityResponse::protocol!
         $expect_that uplink.backend.sent[2], has_fields
           id: eq REQUESTER_PC_ID
           message: has_fields
             idemp_tok: eq idemp_tok
             resp: eq FACTORY_PC_ID
-          protocol: eq MarshalIdentityResponse\protocol!
+          protocol: eq MarshalIdentityResponse::protocol!
 
     describe '\\on_get_config_request', ->
       it 'responds correctly', ->
@@ -979,7 +979,7 @@ spec ->
           message: has_fields
             idemp_tok: eq idemp_tok
             raw: eq RAW
-          protocol: eq GetConfigResponse\protocol!
+          protocol: eq GetConfigResponse::protocol!
 
     describe '\\on_set_config_request', ->
       it 'applies valid config', ->
@@ -1012,7 +1012,7 @@ spec ->
             message: has_fields
               idemp_tok: eq idemp_tok
               resp: eq nil
-            protocol: eq SetConfigResponse\protocol!
+            protocol: eq SetConfigResponse::protocol!
           $expect_that \ut_config!, deep_eq
             marshal:
               key: 'value'
@@ -1047,7 +1047,7 @@ spec ->
             message: has_fields
               idemp_tok: eq idemp_tok
               error_reason: matches 'at field %.marshal'
-            protocol: eq SetConfigResponse\protocol!
+            protocol: eq SetConfigResponse::protocol!
           $expect_that \ut_config!, deep_eq config -- Unchanged
           $expect_that \ut_config!.<raw>, eq ORIGINAL_RAW
 

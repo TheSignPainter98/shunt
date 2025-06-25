@@ -59,6 +59,8 @@ export class UpgradeMonitor
 
 export class CurrentReleaseRequest extends Packet
   new: F '(IdempotenceToken) => <>', (@idemp_tok) =>
+    super!
 
 export class CurrentReleaseResponse extends Packet
   new: F '(IdempotenceToken, Release) => <>', (@idemp_tok, @release) =>
+    super!
