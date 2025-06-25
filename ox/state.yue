@@ -261,6 +261,30 @@ declare_type 'StateMachine', [[{
 valid_ident = F '(string) -> boolean', (name) ->
   (name\match '^[a-z][a-z0-9_]+[a-z0-9]$')?
 
+declare_type 'StateResponses', '{string->()-><>}'
+export class StateResponseBuilder
+  new: F '(StateMachine) => <>', (@sm) =>
+    @responses = T '{string->()-><>}', {}
+
+  add: F '(string, () -> <>) => <>', (state, response) =>
+    if not @sm.states.<index>[state]?
+      error "cannot add response to #{@sm.name}: no such state '#{state}'"
+      -- error "no such state in #{@sm.name}: #{state}"
+    if @responses[state]?
+      error "cannot add response to #{@sm.name}: response for '#{state}' already defined"
+    @responses[state] = response
+
+  build: F '() => StateResponses', =>
+    uncovered = with {}
+      for state_name in pairs @sm.states.<index>
+        if not @responses[state_name]?
+          [] = state_name
+    table.sort uncovered
+    if #uncovered > 0
+      error "cannot build state responses: the following states have no response: #{table.concat uncovered, ', '}"
+
+    @responses
+
 export data_log_reporter = (prev_state, state) =>
   log ->
     fragments = with {}
@@ -313,7 +337,7 @@ spec ->
 
   import 'spec' as :describe, :it, :matchers
 
-  import anything, deep_eq, eq, errors, matches, no_errors from matchers
+  import anything, deep_eq, eq, errors, has_fields, len, matches, no_errors from matchers
 
   describe 'StateMachineBuilder', ->
     it 'exposes its name', ->
@@ -460,27 +484,27 @@ spec ->
       it "rejects '#{ident}'", ->
         $expect_that (valid_ident ident), eq false
 
-  describe 'StateMachine', ->
-    make_test_sm = ->
-      (StateMachineBuilder 'test_sm')
-        \set_initial_state 'state_1'
-        \add_state with StateSpec 'state_1'
-          \declare_end_state!
-          \add_transition_to 'state_2'
-          \add_transition_to 'state_3'
-        \add_state with StateSpec 'state_2'
-          \declare_end_state!
-          \set_data_type [[{
-            hello: string,
-            world: number,
-            optional: ?string,
-          }]]
-          \add_transition_to 'state_1'
-        \add_state with StateSpec 'state_3'
-          \declare_end_state!
-          \set_data_type 'number'
-        \build!
+  make_test_sm = ->
+    (StateMachineBuilder 'test_sm')
+      \set_initial_state 'state_1'
+      \add_state with StateSpec 'state_1'
+        \declare_end_state!
+        \add_transition_to 'state_2'
+        \add_transition_to 'state_3'
+      \add_state with StateSpec 'state_2'
+        \declare_end_state!
+        \set_data_type [[{
+          hello: string,
+          world: number,
+          optional: ?string,
+        }]]
+        \add_transition_to 'state_1'
+      \add_state with StateSpec 'state_3'
+        \declare_end_state!
+        \set_data_type 'number'
+      \build!
 
+  describe 'StateMachine', ->
     it 'rejects new fields', ->
       test_sm = make_test_sm!
       $expect_that (-> test_sm.foo = 'bar'), errors matches [[cannot add field 'foo' to state machine]]
@@ -636,3 +660,41 @@ spec ->
       it 'rejects modifications', ->
         test_sm = make_test_sm!
         $expect_that (-> test_sm.states.state_1 = nil), errors matches 'cannot set fields in states'
+
+  describe 'StateResponseBuilder', ->
+    it 'builds response', ->
+      calls = {}
+      builder = with StateResponseBuilder make_test_sm!
+        for name in *{'state_1', 'state_2', 'state_3'}
+          \add name, (param) ->
+            calls[] =
+              :name
+              :param
+
+      responses = builder\build!
+      responses.state_1!
+      responses.state_2!
+      responses.state_3!
+      $expect_that calls, len eq 3
+      $expect_that calls[1], has_fields
+        name: eq 'state_1'
+        param: eq nil
+      $expect_that calls[2], has_fields
+        name: eq 'state_2'
+        param: eq nil
+      $expect_that calls[3], has_fields
+        name: eq 'state_3'
+        param: eq nil
+
+    it 'rejects unknown states', ->
+      with StateResponseBuilder make_test_sm!
+        $expect_that (-> \add 'fribib', ->), errors matches "no such state"
+
+    it 'rejects redefinition', ->
+      with StateResponseBuilder make_test_sm!
+        \add 'state_1', ->
+        $expect_that (-> \add 'state_1', ->), errors matches "response for 'state_1' already defined"
+
+    it 'rejects incomplete coverage', ->
+      with StateResponseBuilder make_test_sm!
+        $expect_that \build, errors matches 'no response: state_1, state_2, state_3'
