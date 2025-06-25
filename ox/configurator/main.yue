@@ -187,13 +187,13 @@ spec ->
     active_responses = T '{string->boolean}', {}
     local idemp_tok
     uplink = Uplink TestUplinkBackend
-      on_send: (_, message, _) =>
-        if message.idemp_tok?
-          idemp_tok = message.idemp_tok
+      on_send: (_, packet, _) =>
+        if packet.idemp_tok?
+          idemp_tok = packet.idemp_tok
         true
-      on_broadcast: (message, _) =>
-        if message.idemp_tok?
-          idemp_tok = message.idemp_tok
+      on_broadcast: (packet, _) =>
+        if packet.idemp_tok?
+          idemp_tok = packet.idemp_tok
         true
       on_receive: (protocol, _) =>
         $assert_that idemp_tok, not_ eq nil
@@ -202,13 +202,13 @@ spec ->
       to_receive:
         * -> with {}
           .from_id = MARSHAL_PC_ID
-          .message = MarshalIdentityResponse idemp_tok, MARSHAL_PC_ID
+          .packet = MarshalIdentityResponse idemp_tok, MARSHAL_PC_ID
         * -> with {}
           .from_id = MARSHAL_PC_ID
-          .message = GetConfigResponse idemp_tok, ORIGINAL_CONFIG
+          .packet = GetConfigResponse idemp_tok, ORIGINAL_CONFIG
         * -> with {}
           .from_id = MARSHAL_PC_ID
-          .message = SetConfigResponse idemp_tok, nil
+          .packet = SetConfigResponse idemp_tok, nil
 
     editor = Editor TestEditorBackend
       edit_file: (path) =>
@@ -238,20 +238,20 @@ spec ->
 
       $expect_that #uplink.backend.broadcasted, eq 1
       $expect_that uplink.backend.broadcasted[1], has_fields
-        message: has_fields
+        packet: has_fields
           idemp_tok: not_ eq nil
           pc_id: eq CONFIGURATOR_PC_ID
         protocol: eq MarshalIdentityRequest::protocol!
       $expect_that #uplink.backend.sent, eq 2
       $expect_that uplink.backend.sent[1], has_fields
         id: eq MARSHAL_PC_ID
-        message: has_fields
+        packet: has_fields
           idemp_tok: not_ eq nil
           pc_id: eq CONFIGURATOR_PC_ID
         protocol: eq GetConfigRequest::protocol!
       $expect_that uplink.backend.sent[2], has_fields
         id: eq MARSHAL_PC_ID
-        message: has_fields
+        packet: has_fields
           idemp_tok: not_ eq nil
           pc_id: eq CONFIGURATOR_PC_ID
           raw: eq edited_config
@@ -268,7 +268,7 @@ spec ->
 
       $expect_that #uplink.backend.broadcasted, gt 1
       $expect_that uplink.backend.broadcasted, each_value has_fields
-        message: has_fields
+        packet: has_fields
           idemp_tok: not_ eq nil
           pc_id: eq CONFIGURATOR_PC_ID
         protocol: eq MarshalIdentityRequest::protocol!
@@ -288,14 +288,14 @@ spec ->
 
       $expect_that #uplink.backend.broadcasted, eq 1
       $expect_that uplink.backend.broadcasted[1], has_fields
-        message: has_fields
+        packet: has_fields
           idemp_tok: not_ eq nil
           pc_id: eq CONFIGURATOR_PC_ID
         protocol: eq MarshalIdentityRequest::protocol!
       $expect_that #uplink.backend.sent, gt 1
       $expect_that uplink.backend.sent, each_value has_fields
         id: eq MARSHAL_PC_ID
-        message: has_fields
+        packet: has_fields
           idemp_tok: not_ eq nil
           pc_id: eq CONFIGURATOR_PC_ID
         protocol: eq GetConfigRequest::protocol!
@@ -314,21 +314,21 @@ spec ->
 
       $expect_that #uplink.backend.broadcasted, eq 1
       $expect_that uplink.backend.broadcasted[1], has_fields
-        message: has_fields
+        packet: has_fields
           idemp_tok: not_ eq nil
           pc_id: eq CONFIGURATOR_PC_ID
         protocol: eq MarshalIdentityRequest::protocol!
       $expect_that #uplink.backend.sent, gt 2
       $expect_that uplink.backend.sent[1], has_fields
         id: eq MARSHAL_PC_ID
-        message: has_fields
+        packet: has_fields
           idemp_tok: not_ eq nil
           pc_id: eq CONFIGURATOR_PC_ID
         protocol: eq GetConfigRequest::protocol!
       sent_tail = [ msg for msg in *uplink.backend.sent[2,] ]
       $expect_that sent_tail, each_value has_fields
         id: eq MARSHAL_PC_ID
-        message: has_fields
+        packet: has_fields
           idemp_tok: not_ eq nil
           pc_id: eq CONFIGURATOR_PC_ID
           raw: eq edited_config

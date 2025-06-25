@@ -26,27 +26,27 @@ export class Uplink
   deafen: F '() => <>', =>
     @deaf = true
 
-  broadcast: F '(Packet) => <>', (message) =>
-    @backend\broadcast message, message.protocol
+  broadcast: F '(Packet) => <>', (packet) =>
+    @backend\broadcast packet, packet.protocol
 
-  send_to: F '(number, Packet) => <>', (to_id, message) =>
-    ok = @backend\send to_id, message, message.protocol
+  send_to: F '(number, Packet) => <>', (to_id, packet) =>
+    ok = @backend\send to_id, packet, packet.protocol
     if not ok
-      error "failed to send #{message.protocol}"
+      error "failed to send #{packet.protocol}"
 
-  receive_from_any: F '(?PacketType, ?UplinkReceiveOpts) => <?number, Packet|TIMEOUT>', (message_type, opts={}) =>
-    @_receive_from nil, message_type, opts
+  receive_from_any: F '(?PacketType, ?UplinkReceiveOpts) => <?number, Packet|TIMEOUT>', (packet_type, opts={}) =>
+    @_receive_from nil, packet_type, opts
 
-  receive_from: F '(number, ?PacketType, ?UplinkReceiveOpts) => <?number, Packet|TIMEOUT>', (from_id, message_type, opts={}) =>
-    @_receive_from from_id, message_type, opts
+  receive_from: F '(number, ?PacketType, ?UplinkReceiveOpts) => <?number, Packet|TIMEOUT>', (from_id, packet_type, opts={}) =>
+    @_receive_from from_id, packet_type, opts
 
-  _receive_from: F '(?number, ?PacketType, ?UplinkReceiveOpts) => <?number, Packet|TIMEOUT>', (from_id, message_type, opts={}) =>
+  _receive_from: F '(?number, ?PacketType, ?UplinkReceiveOpts) => <?number, Packet|TIMEOUT>', (from_id, packet_type, opts={}) =>
     {:timeout} = opts
 
-    local id, message, protocol
-    protocol_filter = message_type?::protocol!
+    local id, packet, protocol
+    protocol_filter = packet_type?::protocol!
     while true
-      id, message, protocol = @backend\receive protocol_filter, timeout
+      id, packet, protocol = @backend\receive protocol_filter, timeout
       if @deaf
         continue
 
@@ -55,15 +55,15 @@ export class Uplink
       if not from_id? or id == from_id
         break
 
-    if not message_type?
-      message.protocol = protocol
-      return id, message
+    if not packet_type?
+      packet.protocol = protocol
+      return id, packet
 
-    message.protocol = protocol
-    data, ok = message_type::from message
+    packet.protocol = protocol
+    data, ok = packet_type::from packet
     if not ok
       import 'spec' as :repr
-      error "unexpected message #{repr message}, expected #{message_type::protocol!} but got #{message.protocol}"
+      error "unexpected packet #{repr packet}, expected #{packet_type::protocol!} but got #{packet.protocol}"
     id, data
 declare_type 'UplinkReceiveOpts', [[{
   timeout: ?number,
@@ -76,14 +76,14 @@ class MinecraftBackend
     if not rednet.isOpen!
       error 'cannot create Uplink: no modem'
 
-  send: F '(number, any, ?string) => boolean', (recipient, message, protocol) =>
-    rednet.send recipient, message, protocol
+  send: F '(number, any, ?string) => boolean', (recipient, packet, protocol) =>
+    rednet.send recipient, packet, protocol
 
   receive: F '(?string, ?number) => <?number, ?any, ?string>', (protocol, timeout) =>
     rednet.receive protocol, timeout
 
-  broadcast: F '(any, ?string) => <>', (message, protocol) =>
-    rednet.broadcast message, protocol
+  broadcast: F '(any, ?string) => <>', (packet, protocol) =>
+    rednet.broadcast packet, protocol
 
 declare_type 'Packet', [[{
   protocol: string,
@@ -116,7 +116,7 @@ declare_type 'NetworkFrame', [[
   { from_id: number } + NetworkFrameData
 ]]
 declare_type 'NetworkFrameData', [[{
-  message: any,
+  packet: any,
   protocol: ?string,
 }]]
 export class TestUplinkBackend
@@ -157,16 +157,16 @@ export class TestUplinkBackend
     @sent = T '[NetworkFrame]', {}
     @broadcasted = T '[NetworkFrameData]', {}
 
-  send: F '(number, any, ?string) => boolean', (id, message, protocol) =>
-    if @on_send? and not @on_send id, message, protocol
+  send: F '(number, any, ?string) => boolean', (id, packet, protocol) =>
+    if @on_send? and not @on_send id, packet, protocol
       return false
-    @sent[] = :id, :message, :protocol
+    @sent[] = :id, :packet, :protocol
     true
 
-  broadcast: F '(any, ?string) => <>', (message, protocol) =>
-    if @on_broadcast? and not @on_broadcast message, protocol
+  broadcast: F '(any, ?string) => <>', (packet, protocol) =>
+    if @on_broadcast? and not @on_broadcast packet, protocol
       return false
-    @broadcasted[] = :message, :protocol
+    @broadcasted[] = :packet, :protocol
 
   receive: F '(?string, ?number) => <?number, any|TIMEOUT, ?string>', (protocol_filter, timeout) =>
     if @on_receive? and not @on_receive protocol_filter, timeout
@@ -179,14 +179,14 @@ export class TestUplinkBackend
         continue
       if 'function' == type frame
         frame = T 'NetworkFrame', frame!
-      { :from_id, :message, :protocol } = frame
-      if not protocol? and message.protocol?
-        protocol = message.protocol
+      { :from_id, :packet, :protocol } = frame
+      if not protocol? and packet.protocol?
+        protocol = packet.protocol
 
       if not protocol_filter? or protocol_filter == protocol
         @to_receive[i] = nil
         @num_receives += 1
-        return from_id, message, protocol
+        return from_id, packet, protocol
 
     trace "! no more #{protocol_filter? and protocol_filter .. ' ' or ''}packets to receive"
     @on_absent_frame protocol_filter, timeout
@@ -239,25 +239,25 @@ spec ->
         uplink\broadcast TestPacket 'data-2'
 
         $expect_that uplink.backend.broadcasted, deep_eq
-          * protocol: 'TestPacket', message: TestPacket 'data-1'
-          * protocol: 'TestPacket', message: TestPacket 'data-2'
+          * protocol: 'TestPacket', packet: TestPacket 'data-1'
+          * protocol: 'TestPacket', packet: TestPacket 'data-2'
 
     describe '\\send_to', ->
       it 'sends the given packet', ->
         uplink = Uplink TestUplinkBackend!
 
-        uplink\send_to 1, TestPacket 'message-1'
-        uplink\send_to 2, TestPacket 'message-2'
+        uplink\send_to 1, TestPacket 'packet-1'
+        uplink\send_to 2, TestPacket 'packet-2'
 
         $expect_that uplink.backend.sent, deep_eq
-          * id: 1, protocol: 'TestPacket', message: TestPacket 'message-1'
-          * id: 2, protocol: 'TestPacket', message: TestPacket 'message-2'
+          * id: 1, protocol: 'TestPacket', packet: TestPacket 'packet-1'
+          * id: 2, protocol: 'TestPacket', packet: TestPacket 'packet-2'
 
       it 'handles transmission failure', ->
         uplink = Uplink TestUplinkBackend
           on_send: (_, _, _) -> false
 
-        $expect_that (-> uplink\send_to 1, TestPacket 'message-1'), errors matches "failed to send TestPacket"
+        $expect_that (-> uplink\send_to 1, TestPacket 'packet-1'), errors matches "failed to send TestPacket"
 
     describe '\\receive_from_any', ->
       it 'receives the only given packet', ->
@@ -265,13 +265,13 @@ spec ->
         uplink = Uplink TestUplinkBackend
           to_receive:
             * from_id: 1
-              message: TestPacket 'message-1'
+              packet: TestPacket 'packet-1'
             * from_id: 2
-              message: TestPacket2 'message-2'
+              packet: TestPacket2 'packet-2'
             * from_id: 3
-              message: TestPacket 'message-3'
+              packet: TestPacket 'packet-3'
             * from_id: 4
-              message: TestPacket2 'message-4'
+              packet: TestPacket2 'packet-4'
 
         received = with {}
           [] = { uplink\receive_from_any TestPacket2, timeout: 1 }
@@ -280,10 +280,10 @@ spec ->
           [] = { uplink\receive_from_any TestPacket, timeout: 1 }
 
         $expect_that received, deep_eq
-          * { 2, TestPacket2 'message-2' }
-          * { 1, TestPacket 'message-1' }
-          * { 4, TestPacket2 'message-4' }
-          * { 3, TestPacket 'message-3' }
+          * { 2, TestPacket2 'packet-2' }
+          * { 1, TestPacket 'packet-1' }
+          * { 4, TestPacket2 'packet-4' }
+          * { 3, TestPacket 'packet-3' }
 
       it 'gracefully handles timeout', ->
         uplink = Uplink TestUplinkBackend to_receive: {}
@@ -297,18 +297,18 @@ spec ->
         uplink = Uplink TestUplinkBackend
           to_receive:
             * from_id: 1
-              message: TestPacket 'message-1'
+              packet: TestPacket 'packet-1'
             * from_id: 2
-              message: TestPacket2 'message-2'
+              packet: TestPacket2 'packet-2'
             * from_id: 3
-              message: TestPacket 'message-3'
+              packet: TestPacket 'packet-3'
             * from_id: 4
-              message: TestPacket2 'message-4'
+              packet: TestPacket2 'packet-4'
         received = with {}
           [] = { uplink\receive_from 3, TestPacket, timeout: 1 }
 
         $expect_that received, deep_eq
-          * { 3, TestPacket 'message-3' }
+          * { 3, TestPacket 'packet-3' }
 
   describe 'Packet', ->
     it 'survives roundtrip', ->
