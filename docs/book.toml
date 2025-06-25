@@ -36,6 +36,8 @@ enable = true
 
 [preprocessor.mermaid]
 
+[preprocessor.diataxis]
+
 [preprocessor.diataxis.compass.tutorials]
 description = "Hands-on lessons in freighting"
 
