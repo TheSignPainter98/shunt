@@ -63,6 +63,7 @@ run = (args) ->
   else if args.start?
     if not args.ignore_monitor
       detect_and_use_monitor!
+    -- deactivate_typechecks!
     start.main args.start
   else if args.init?
     init.main args.init

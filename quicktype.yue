@@ -4,6 +4,11 @@ local Symbol
 import 'spec' as :repr, :spec
 
 export T = (type_spec, value) ->
+  if skip_typechecking
+    return
+  t_impl type_spec, value
+
+t_impl = (type_spec, value) ->
   if not type_spec?
     error 'cannot typecheck: no type spec provided'
 
@@ -41,6 +46,8 @@ type_checker = (type_spec) ->
     checker
 
 export F = (type_spec, fn) ->
+  if skip_typechecking
+    return
   if not type_spec?
     error 'cannot typecheck: no type spec provided'
   if 'function' != type fn
@@ -67,6 +74,9 @@ export F = (type_spec, fn) ->
   param_types = fn_type\param_checkers!
   n_param_types = #param_types
   (...) ->
+    if skip_typechecking
+      return fn ...
+
     for i = 1, n_param_types
       err = check param_types[i], (select i, ...)
       if err?
@@ -1247,9 +1257,9 @@ export declare_singleton_type = (value) ->
   user_types[name] = ty
   type_checkers[name] = ty\checker!\build!
 
-export deactivate = ->
-  T = (_, value) -> value
-  F = (_, fn) -> fn
+skip_typechecking = false
+export deactivate_typechecks = ->
+  skip_typechecking = true
 
 export stats = ->
   stats_arr = [:instruction, :count for instruction, count in pairs instruction_counts]
@@ -1815,3 +1825,19 @@ spec ->
       $expect_that (is_valid_type_spec 'unknown'), eq false
       $expect_that (is_valid_type_spec '('), eq false
       $expect_that (is_valid_type_spec ')'), eq false
+
+  describe 'deactivate_typechecks', ->
+    activate_typechecks = ->
+      skip_typechecking = false
+
+    it 'deactivates typechecks', ->
+      local received
+      f = F '(number) => <>', (r) ->
+        received = r
+      $assert_that (-> f 'adf'), errors anything!
+
+      deactivate_typechecks!
+      $assert_that (-> f 'adf'), no_errors!
+
+      activate_typechecks!
+      $assert_that (-> f 'adf'), errors anything!
