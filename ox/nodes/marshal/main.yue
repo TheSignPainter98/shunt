@@ -40,8 +40,7 @@ export main = F '(MarshalConfig) -> <>', (config) ->
 
   pc = Pc!
   uplink = Uplink!
-  upgrade_listener = UpgradeListener config, uplink
-  with Marshal :config, :pc, :uplink, :upgrade_listener
+  with Marshal :config, :pc, :uplink
     \load!
     \run!
 
@@ -111,7 +110,6 @@ declare_type 'MarshalOpts', [[{
   config: MarshalConfig+StoredConfig,
   pc: Pc,
   uplink: Uplink,
-  upgrade_listener: UpgradeListener,
   rand: ?Random,
   clock: ?Clock,
 }]]
@@ -123,13 +121,11 @@ export class Marshal
       :config,
       :pc,
       :uplink,
-      :upgrade_listener,
       :rand=PseudoRandom!,
       :clock=MinecraftClock!
     } = opts
     @pc = pc
     @uplink = uplink
-    @upgrade_listener = upgrade_listener
     @clock = clock
 
     @set_config config
@@ -147,6 +143,9 @@ export class Marshal
 
     @do_count_epochs = T 'boolean', true
     @throttle = T 'boolean', HOST == 'minecraft'
+
+    @upgrade_listener = T 'UpgradeListener',
+      UpgradeListener config, uplink
 
     @events = T 'Queue', Queue!
 
@@ -676,10 +675,9 @@ spec ->
               [] =
                 from_id: i
                 message: FactoryHeartbeat i, "factory_#{i}", (stations i), stockpile
-        upgrade_listener = UpgradeListener config, uplink
 
         pc = Pc!
-        with Marshal :config, :pc, :uplink, :upgrade_listener, clock: TestClock!
+        with Marshal :config, :pc, :uplink, clock: TestClock!
           \ut_stop_counting_epochs!
           for i = 1, EXPECTED_FACTORIES
             \ut_step!
@@ -805,9 +803,8 @@ spec ->
               message: DeclareTrainState idemp_tok, PC_ID, TRAIN_NAME, 'cleared'
             * from_id: PC_ID
               message: DeclareTrainState idemp_tok, PC_ID, TRAIN_NAME, 'cleared'
-        upgrade_listener = UpgradeListener config, uplink
         pc = Pc!
-        with Marshal :config, :pc, :uplink, :upgrade_listener, clock: TestClock!
+        with Marshal :config, :pc, :uplink, clock: TestClock!
           \ut_stop_counting_epochs!
           \ut_declare_train_lost TRAIN_NAME
           $assert_that (\ut_train_is_lost TRAIN_NAME), eq true
@@ -849,9 +846,8 @@ spec ->
             * from_id: PC_ID
               message: DeclareTrainState idemp_tok, PC_ID, TRAIN_NAME, 'reserved'
 
-        upgrade_listener = UpgradeListener config, uplink
         pc = Pc!
-        with Marshal :config, :pc, :uplink, :upgrade_listener, clock: TestClock!
+        with Marshal :config, :pc, :uplink, clock: TestClock!
           \ut_stop_counting_epochs!
           $assert_that (\ut_train_is_reserved TRAIN_NAME), eq false
 
@@ -890,10 +886,9 @@ spec ->
           to_receive:
             * from_id: REQUESTER_PC_ID
               message: MarshalIdentityRequest idemp_tok, REQUESTER_PC_ID
-        upgrade_listener = UpgradeListener config, uplink
         pc = Pc TestPcBackend
           id: => MARSHAL_PC_ID
-        with Marshal :config, :pc, :uplink, :upgrade_listener, clock: TestClock!
+        with Marshal :config, :pc, :uplink, clock: TestClock!
           \ut_stop_counting_epochs!
           \ut_step!
 
@@ -934,10 +929,9 @@ spec ->
             * from_id: REQUESTER_PC_ID
               message: MarshalIdentityRequest idemp_tok, REQUESTER_PC_ID, FACTORY_NAME
 
-        upgrade_listener = UpgradeListener config, uplink
         pc = Pc TestPcBackend
           id: -> MARSHAL_PC_ID
-        with Marshal :config, :pc, :uplink, :upgrade_listener, clock: TestClock!
+        with Marshal :config, :pc, :uplink, clock: TestClock!
           \ut_stop_counting_epochs!
           \ut_step!
           \ut_step!
@@ -973,10 +967,9 @@ spec ->
           to_receive:
             * from_id: REQUESTER_PC_ID
               message: GetConfigRequest idemp_tok, REQUESTER_PC_ID
-        upgrade_listener = UpgradeListener config, uplink
         pc = Pc TestPcBackend
           id: -> MARSHAL_PC_ID
-        with Marshal :config, :pc, :uplink, :upgrade_listener, clock: TestClock!
+        with Marshal :config, :pc, :uplink, clock: TestClock!
           \ut_stop_counting_epochs!
           \ut_step!
 
@@ -1007,10 +1000,9 @@ spec ->
             * from_id: REQUESTER_PC_ID
               message: SetConfigRequest idemp_tok, REQUESTER_PC_ID, NEW_RAW
 
-        upgrade_listener = UpgradeListener config, uplink
         pc = Pc TestPcBackend
           id: -> MARSHAL_PC_ID
-        with Marshal :config, :pc, :uplink, :upgrade_listener, clock: TestClock!
+        with Marshal :config, :pc, :uplink, clock: TestClock!
           \ut_stop_counting_epochs!
           \ut_step!
 
@@ -1043,10 +1035,9 @@ spec ->
           to_receive:
             * from_id: REQUESTER_PC_ID
               message: SetConfigRequest idemp_tok, REQUESTER_PC_ID, NEW_RAW
-        upgrade_listener = UpgradeListener config, uplink
         pc = Pc TestPcBackend
           id: -> MARSHAL_PC_ID
-        with Marshal :config, :pc, :uplink, :upgrade_listener, clock: TestClock!
+        with Marshal :config, :pc, :uplink, clock: TestClock!
           \ut_stop_counting_epochs!
           \ut_step!
 
@@ -1071,7 +1062,6 @@ spec ->
         <raw>: RAW_CONFIG
         marshal: {}
       uplink = Uplink TestUplinkBackend!
-      upgrade_listener = UpgradeListener config, uplink
       pc = Pc TestPcBackend
         id: -> MARSHAL_PC_ID
       rand = PseudoRandom!
@@ -1080,7 +1070,6 @@ spec ->
         :config
         :pc
         :uplink
-        :upgrade_listener
         :rand
         :clock
 
