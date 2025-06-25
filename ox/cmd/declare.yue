@@ -87,19 +87,19 @@ spec ->
       ERR = 'some error message'
       local idemp_tok
       uplink = Uplink TestUplinkBackend
-        on_send: (_, message, _) =>
-          idemp_tok = message.idemp_tok
+        on_send: (_, packet, _) =>
+          idemp_tok = packet.idemp_tok
           true
-        on_broadcast: (message, _) =>
-          idemp_tok = message.idemp_tok
+        on_broadcast: (packet, _) =>
+          idemp_tok = packet.idemp_tok
           true
         to_receive:
           * -> with {}
             .from_id = PC_ID
-            .message = DeclareTrainStateResponse idemp_tok, nil
+            .packet = DeclareTrainStateResponse idemp_tok, nil
           * -> with {}
             .from_id = PC_ID
-            .message = DeclareTrainStateResponse idemp_tok, ERR
+            .packet = DeclareTrainStateResponse idemp_tok, ERR
       pc = Pc TestPcBackend
         id: => 1
       with Declarer uplink, pc

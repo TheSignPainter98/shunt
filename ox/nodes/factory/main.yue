@@ -163,26 +163,26 @@ class Factory
       @\run_heartbeats,
       @\run_peripheral_detection,
       @\run_peripheral_detach_detection
-      -- TODO(kcza): detect marshal ID, messages sent to nil marshal shall be ignored
+      -- TODO(kcza): detect marshal ID, packets sent to nil marshal shall be ignored
 
   run_steps: F '() => !', =>
     while true
       @do_network_step!
 
   do_network_step: F '() => <>', =>
-    from_id, message = @uplink\receive_from_any!
+    from_id, packet = @uplink\receive_from_any!
     if not from_id?
       return
 
-    switch message.protocol
+    switch packet.protocol
       when 'ScheduleRequest'
-        @on_schedule_request from_id, message
+        @on_schedule_request from_id, packet
       when 'GetConfigRequest'
-        @on_get_config_request message
+        @on_get_config_request packet
       when 'SetConfigRequest'
-        @on_set_config_request message
+        @on_set_config_request packet
       else
-        log -> "ignoring #{message.protocol} message"
+        log -> "ignoring #{packet.protocol} packet"
     return
 
   on_schedule_request: F '(number, Packet) => <>', (requester, request) =>
@@ -207,12 +207,12 @@ class Factory
         return station
     nil
 
-  on_get_config_request: F '(GetConfigRequest) => <>', (message) =>
-    { :idemp_tok, :pc_id } = message
+  on_get_config_request: F '(GetConfigRequest) => <>', (packet) =>
+    { :idemp_tok, :pc_id } = packet
     @uplink\send_to pc_id, GetConfigResponse idemp_tok, @config.<raw>
 
-  on_set_config_request: F '(SetConfigRequest) => <>', (message) =>
-    { :idemp_tok, :pc_id, :raw } = message
+  on_set_config_request: F '(SetConfigRequest) => <>', (packet) =>
+    { :idemp_tok, :pc_id, :raw } = packet
     config, err = toml.decode raw
     if err?
       @uplink\send_to pc_id, SetConfigResponse idemp_tok, err
@@ -428,7 +428,7 @@ spec ->
       uplink = Uplink TestUplinkBackend
         to_receive:
           * from_id: SERVER_ID
-            message: ScheduleRequest idemp_tok, STATION_NAME, TRAIN_NAME, schedule
+            packet: ScheduleRequest idemp_tok, STATION_NAME, TRAIN_NAME, schedule
       factory = Factory config, pc, stations, stockpile, uplink
 
       factory\do_network_step!
@@ -437,7 +437,7 @@ spec ->
       $expect_that uplink.backend.sent[1], has_fields
         id: eq SERVER_ID
         protocol: eq ScheduleResponse::protocol!
-        message: has_fields
+        packet: has_fields
           idemp_tok: eq idemp_tok
           error_reason: eq nil
 
@@ -488,7 +488,7 @@ spec ->
       uplink = Uplink TestUplinkBackend
         to_receive:
           * from_id: SERVER_ID
-            message: ScheduleRequest idemp_tok, STATION_NAME, TRAIN_NAME, schedule
+            packet: ScheduleRequest idemp_tok, STATION_NAME, TRAIN_NAME, schedule
       factory = Factory config, pc, stations, stockpile, uplink
 
       factory\do_network_step!
@@ -497,7 +497,7 @@ spec ->
       $expect_that uplink.backend.sent[1], has_fields
         id: eq SERVER_ID
         protocol: eq ScheduleResponse::protocol!
-        message: has_fields
+        packet: has_fields
           idemp_tok: eq idemp_tok
           error_reason: some!
 
@@ -549,7 +549,7 @@ spec ->
         $expect_that uplink.backend.broadcasted, len eq 1
         $expect_that uplink.backend.broadcasted[1], has_fields
           protocol: eq FactoryHeartbeat::protocol!
-          message: do
+          packet: do
             stations =
               known:
                 * name: 'known_station'
@@ -601,14 +601,14 @@ spec ->
         uplink = Uplink TestUplinkBackend
           to_receive:
             * from_id: REQUESTER_PC_ID
-              message: GetConfigRequest idemp_tok, REQUESTER_PC_ID
+              packet: GetConfigRequest idemp_tok, REQUESTER_PC_ID
         with Factory config, pc, {}, stockpile, uplink
           \do_network_step!
 
           $assert_that #uplink.backend.sent, eq 1
           $expect_that uplink.backend.sent[1], has_fields
             id: eq REQUESTER_PC_ID
-            message: has_fields
+            packet: has_fields
               idemp_tok: eq idemp_tok
               raw: eq RAW
             protocol: eq GetConfigResponse::protocol!
@@ -648,14 +648,14 @@ spec ->
         uplink = Uplink TestUplinkBackend
           to_receive:
             * from_id: REQUESTER_PC_ID
-              message: SetConfigRequest idemp_tok, REQUESTER_PC_ID, NEW_RAW
+              packet: SetConfigRequest idemp_tok, REQUESTER_PC_ID, NEW_RAW
         with Factory config, pc, {}, stockpile, uplink
           \do_network_step!
 
           $assert_that #uplink.backend.sent, eq 1
           $expect_that uplink.backend.sent[1], has_fields
             id: eq REQUESTER_PC_ID
-            message: has_fields
+            packet: has_fields
               idemp_tok: eq idemp_tok
               error_reason: eq nil
             protocol: eq SetConfigResponse::protocol!
@@ -692,14 +692,14 @@ spec ->
         uplink = Uplink TestUplinkBackend
           to_receive:
             * from_id: REQUESTER_PC_ID
-              message: SetConfigRequest idemp_tok, REQUESTER_PC_ID, NEW_RAW
+              packet: SetConfigRequest idemp_tok, REQUESTER_PC_ID, NEW_RAW
         with Factory config, pc, {}, stockpile, uplink
           \do_network_step!
 
           $assert_that #uplink.backend.sent, eq 1
           $expect_that uplink.backend.sent[1], has_fields
             id: eq REQUESTER_PC_ID
-            message: has_fields
+            packet: has_fields
               idemp_tok: eq idemp_tok
               error_reason: matches 'expected table but got nil'
             protocol: eq SetConfigResponse::protocol!

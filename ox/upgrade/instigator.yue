@@ -78,7 +78,7 @@ spec ->
       uplink = Uplink TestUplinkBackend
         to_receive:
           * from_id: 1
-            message: RebootRequest!
+            packet: RebootRequest!
         on_send: (id, packet, protocol) =>
           last_idemp_tok = packet.idemp_tok
           true
@@ -89,6 +89,6 @@ spec ->
       $expect_that uplink.backend.sent, deep_eq {}
       $expect_that uplink.backend.broadcasted, deep_eq
         * protocol: 'MarshalBumpRelease'
-          message:
+          packet:
             protocol: 'MarshalBumpRelease'
             :release

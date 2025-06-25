@@ -75,7 +75,7 @@ declare_type 'MarshalConfig', [[{
 }]]
 declare_type 'MarshalEventType', [[
   "new-epoch"
-  |"network-message"
+  |"network-packet"
 ]]
 declare_type 'StationAddress', [[{
   factory: Factory,
@@ -283,16 +283,16 @@ export class Marshal
 
   read_network: F '() => <>', =>
     log -> "reading network..."
-    _, message = @uplink\receive_from_any!
+    _, packet = @uplink\receive_from_any!
     import 'spec' as :repr
-    log -> "read a #{message.protocol}"
-    trace "read #{repr message}"
-    switch message.protocol
+    log -> "read a #{packet.protocol}"
+    trace "read #{repr packet}"
+    switch packet.protocol
       when 'FactoryHeartbeat', 'DeclareTrainState', 'MarshalIdentityRequest', 'FactoryPcRequest', 'GetConfigRequest', 'SetConfigRequest'
-        @events\enqueue type: 'network-message', :message
+        @events\enqueue type: 'network-packet', :packet
         coroutine.yield!
       else
-        log -> "ignoring #{message.protocol} message"
+        log -> "ignoring #{packet.protocol} packet"
     return
 
   handle_events: F '() => !', =>
@@ -317,8 +317,8 @@ export class Marshal
       switch .type
         when 'new-epoch'
           @on_new_epoch .epoch
-        when 'network-message'
-          @on_network_message .message
+        when 'network-packet'
+          @on_network_packet .packet
         else
           error "internal error: unrecognised event type '#{.type}'"
     return
@@ -346,23 +346,23 @@ export class Marshal
           continue -- Prune
         [name] = status
 
-  on_network_message: F '(Packet) => <>', (message) =>
-    log -> "handling a #{message.protocol}"
-    switch message.protocol
+  on_network_packet: F '(Packet) => <>', (packet) =>
+    log -> "handling a #{packet.protocol}"
+    switch packet.protocol
       when 'FactoryHeartbeat'
-        @on_factory_heartbeat message
+        @on_factory_heartbeat packet
       when 'DeclareTrainState'
-        @on_declare_train_state message
+        @on_declare_train_state packet
       when 'MarshalIdentityRequest'
-        @on_marshal_identity_request message
+        @on_marshal_identity_request packet
       when 'FactoryPcRequest'
-        @on_factory_pc_request message
+        @on_factory_pc_request packet
       when 'GetConfigRequest'
-        @on_get_config_request message
+        @on_get_config_request packet
       when 'SetConfigRequest'
-        @on_set_config_request message
+        @on_set_config_request packet
       else
-        error "internal error: unexpected network message protocol reached marshal core '#{message.protocol}'"
+        error "internal error: unexpected network packet protocol reached marshal core '#{packet.protocol}'"
 
   on_factory_heartbeat: F '(FactoryHeartbeat) => <>', (heartbeat) =>
     lost_trains = with {}
@@ -479,8 +479,8 @@ export class Marshal
     trace "no trains available to take #{resource} to #{factory.name}, will re-attempt next heartbeat"
     return
 
-  on_declare_train_state: F '(DeclareTrainState) => <>', (message) =>
-    { :idemp_tok, :pc_id, :name, :state } = message
+  on_declare_train_state: F '(DeclareTrainState) => <>', (packet) =>
+    { :idemp_tok, :pc_id, :name, :state } = packet
     err = switch state
       when 'cleared' -- TODO(kcza): this name is a leak from the CLI
         @promise_tracker\declare_train_found name
@@ -491,8 +491,8 @@ export class Marshal
         "internal error: unknown train state '#{state}'"
     @uplink\send_to pc_id, DeclareTrainStateResponse idemp_tok, err
 
-  on_marshal_identity_request: F '(MarshalIdentityRequest) => <>', (message) =>
-    { :idemp_tok, :pc_id, :name } = message
+  on_marshal_identity_request: F '(MarshalIdentityRequest) => <>', (packet) =>
+    { :idemp_tok, :pc_id, :name } = packet
     if not name?
       @uplink\send_to pc_id, MarshalIdentityResponse idemp_tok, @pc\id!
       return
@@ -501,8 +501,8 @@ export class Marshal
       MarshalIdentityResponse idemp_tok,
         @factories[name]?.pc_id or "no known factory '#{name}'"
 
-  on_factory_pc_request: F '(FactoryPcRequest) => <>', (message) =>
-    { :idemp_tok, :pc_id, :name } = message
+  on_factory_pc_request: F '(FactoryPcRequest) => <>', (packet) =>
+    { :idemp_tok, :pc_id, :name } = packet
     factory = @factories[name]
     if not factory?
       @uplink\send_to pc_id, FactoryPcResponse idemp_tok, "no known factory '#{name}'"
@@ -510,12 +510,12 @@ export class Marshal
 
     @uplink\send_to pc_id, FactoryPcResponse idemp_tok, factory.pc_id
 
-  on_get_config_request: F '(GetConfigRequest) => <>', (message) =>
-    { :idemp_tok, :pc_id } = message
+  on_get_config_request: F '(GetConfigRequest) => <>', (packet) =>
+    { :idemp_tok, :pc_id } = packet
     @uplink\send_to pc_id, GetConfigResponse idemp_tok, @config.<raw>
 
-  on_set_config_request: F '(SetConfigRequest) => <>', (message) =>
-    { :idemp_tok, :pc_id, :raw } = message
+  on_set_config_request: F '(SetConfigRequest) => <>', (packet) =>
+    { :idemp_tok, :pc_id, :raw } = packet
     config, err = toml.decode raw
     if err?
       @uplink\send_to pc_id, SetConfigResponse idemp_tok, err
@@ -674,7 +674,7 @@ spec ->
             for i = 1, EXPECTED_FACTORIES
               [] =
                 from_id: i
-                message: FactoryHeartbeat i, "factory_#{i}", (stations i), stockpile
+                packet: FactoryHeartbeat i, "factory_#{i}", (stations i), stockpile
 
         pc = Pc!
         with Marshal :config, :pc, :uplink, clock: TestClock!
@@ -800,9 +800,9 @@ spec ->
         uplink = Uplink TestUplinkBackend
           to_receive:
             * from_id: PC_ID
-              message: DeclareTrainState idemp_tok, PC_ID, TRAIN_NAME, 'cleared'
+              packet: DeclareTrainState idemp_tok, PC_ID, TRAIN_NAME, 'cleared'
             * from_id: PC_ID
-              message: DeclareTrainState idemp_tok, PC_ID, TRAIN_NAME, 'cleared'
+              packet: DeclareTrainState idemp_tok, PC_ID, TRAIN_NAME, 'cleared'
         pc = Pc!
         with Marshal :config, :pc, :uplink, clock: TestClock!
           \ut_stop_counting_epochs!
@@ -814,7 +814,7 @@ spec ->
           $assert_that uplink.backend.sent, len eq 1
           $expect_that uplink.backend.sent[1], has_fields
             id: eq PC_ID
-            message: has_fields
+            packet: has_fields
               idemp_tok: eq idemp_tok
               error_reason: eq nil
             protocol: eq DeclareTrainStateResponse::protocol!
@@ -824,7 +824,7 @@ spec ->
           $assert_that uplink.backend.sent, len eq 2
           $expect_that uplink.backend.sent[2], has_fields
             id: eq PC_ID
-            message: has_fields
+            packet: has_fields
               idemp_tok: eq idemp_tok
               error_reason: matches 'was not lost'
             protocol: eq DeclareTrainStateResponse::protocol!
@@ -842,9 +842,9 @@ spec ->
         uplink = Uplink TestUplinkBackend
           to_receive:
             * from_id: PC_ID
-              message: DeclareTrainState idemp_tok, PC_ID, TRAIN_NAME, 'reserved'
+              packet: DeclareTrainState idemp_tok, PC_ID, TRAIN_NAME, 'reserved'
             * from_id: PC_ID
-              message: DeclareTrainState idemp_tok, PC_ID, TRAIN_NAME, 'reserved'
+              packet: DeclareTrainState idemp_tok, PC_ID, TRAIN_NAME, 'reserved'
 
         pc = Pc!
         with Marshal :config, :pc, :uplink, clock: TestClock!
@@ -856,7 +856,7 @@ spec ->
           $assert_that uplink.backend.sent, len eq 1
           $expect_that uplink.backend.sent[1], has_fields
             id: eq PC_ID
-            message: has_fields
+            packet: has_fields
               idemp_tok: eq idemp_tok
               error_reason: eq nil
             protocol: eq DeclareTrainStateResponse::protocol!
@@ -866,7 +866,7 @@ spec ->
           $assert_that uplink.backend.sent, len eq 2
           $expect_that uplink.backend.sent[2], has_fields
             id: eq PC_ID
-            message: has_fields
+            packet: has_fields
               idemp_tok: eq idemp_tok
               error_reason: eq nil
             protocol: eq DeclareTrainStateResponse::protocol!
@@ -885,7 +885,7 @@ spec ->
         uplink = Uplink TestUplinkBackend
           to_receive:
             * from_id: REQUESTER_PC_ID
-              message: MarshalIdentityRequest idemp_tok, REQUESTER_PC_ID
+              packet: MarshalIdentityRequest idemp_tok, REQUESTER_PC_ID
         pc = Pc TestPcBackend
           id: => MARSHAL_PC_ID
         with Marshal :config, :pc, :uplink, clock: TestClock!
@@ -895,7 +895,7 @@ spec ->
         $expect_that uplink.backend.sent, len eq 1
         $expect_that uplink.backend.sent[1], has_fields
           id: eq REQUESTER_PC_ID
-          message: has_fields
+          packet: has_fields
             idemp_tok: eq idemp_tok
             resp: eq MARSHAL_PC_ID
           protocol: eq MarshalIdentityResponse::protocol!
@@ -915,9 +915,9 @@ spec ->
         uplink = Uplink TestUplinkBackend
           to_receive:
             * from_id: REQUESTER_PC_ID
-              message: MarshalIdentityRequest idemp_tok, REQUESTER_PC_ID, FACTORY_NAME
+              packet: MarshalIdentityRequest idemp_tok, REQUESTER_PC_ID, FACTORY_NAME
             * from_id: FACTORY_PC_ID
-              message: do
+              packet: do
                 stations =
                   known: {}
                   unknown: {}
@@ -927,7 +927,7 @@ spec ->
                   estimated_capacity: 0
                 FactoryHeartbeat FACTORY_PC_ID, FACTORY_NAME, stations, stockpile
             * from_id: REQUESTER_PC_ID
-              message: MarshalIdentityRequest idemp_tok, REQUESTER_PC_ID, FACTORY_NAME
+              packet: MarshalIdentityRequest idemp_tok, REQUESTER_PC_ID, FACTORY_NAME
 
         pc = Pc TestPcBackend
           id: -> MARSHAL_PC_ID
@@ -940,13 +940,13 @@ spec ->
         $expect_that uplink.backend.sent, len eq 2
         $expect_that uplink.backend.sent[1], has_fields
           id: eq REQUESTER_PC_ID
-          message: has_fields
+          packet: has_fields
             idemp_tok: eq idemp_tok
             resp: matches 'no known factory'
           protocol: eq MarshalIdentityResponse::protocol!
         $expect_that uplink.backend.sent[2], has_fields
           id: eq REQUESTER_PC_ID
-          message: has_fields
+          packet: has_fields
             idemp_tok: eq idemp_tok
             resp: eq FACTORY_PC_ID
           protocol: eq MarshalIdentityResponse::protocol!
@@ -966,7 +966,7 @@ spec ->
         uplink = Uplink TestUplinkBackend
           to_receive:
             * from_id: REQUESTER_PC_ID
-              message: GetConfigRequest idemp_tok, REQUESTER_PC_ID
+              packet: GetConfigRequest idemp_tok, REQUESTER_PC_ID
         pc = Pc TestPcBackend
           id: -> MARSHAL_PC_ID
         with Marshal :config, :pc, :uplink, clock: TestClock!
@@ -976,7 +976,7 @@ spec ->
         $expect_that uplink.backend.sent, len eq 1
         $expect_that uplink.backend.sent[1], has_fields
           id: eq REQUESTER_PC_ID
-          message: has_fields
+          packet: has_fields
             idemp_tok: eq idemp_tok
             raw: eq RAW
           protocol: eq GetConfigResponse::protocol!
@@ -998,7 +998,7 @@ spec ->
         uplink = Uplink TestUplinkBackend
           to_receive:
             * from_id: REQUESTER_PC_ID
-              message: SetConfigRequest idemp_tok, REQUESTER_PC_ID, NEW_RAW
+              packet: SetConfigRequest idemp_tok, REQUESTER_PC_ID, NEW_RAW
 
         pc = Pc TestPcBackend
           id: -> MARSHAL_PC_ID
@@ -1009,7 +1009,7 @@ spec ->
           $expect_that uplink.backend.sent, len eq 1
           $expect_that uplink.backend.sent[1], has_fields
             id: eq REQUESTER_PC_ID
-            message: has_fields
+            packet: has_fields
               idemp_tok: eq idemp_tok
               resp: eq nil
             protocol: eq SetConfigResponse::protocol!
@@ -1034,7 +1034,7 @@ spec ->
         uplink = Uplink TestUplinkBackend
           to_receive:
             * from_id: REQUESTER_PC_ID
-              message: SetConfigRequest idemp_tok, REQUESTER_PC_ID, NEW_RAW
+              packet: SetConfigRequest idemp_tok, REQUESTER_PC_ID, NEW_RAW
         pc = Pc TestPcBackend
           id: -> MARSHAL_PC_ID
         with Marshal :config, :pc, :uplink, clock: TestClock!
@@ -1044,7 +1044,7 @@ spec ->
           $expect_that uplink.backend.sent, len eq 1
           $expect_that uplink.backend.sent[1], has_fields
             id: eq REQUESTER_PC_ID
-            message: has_fields
+            packet: has_fields
               idemp_tok: eq idemp_tok
               error_reason: matches 'at field %.marshal'
             protocol: eq SetConfigResponse::protocol!
