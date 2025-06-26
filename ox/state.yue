@@ -262,26 +262,25 @@ valid_ident = F '(string) -> boolean', (name) ->
   (name\match '^[a-z][a-z0-9_]+[a-z0-9]$')?
 
 declare_type 'StateResponses', '{string->()-><>}'
-export class StateResponseBuilder
+export class StateResponsesBuilder
   new: F '(StateMachine) => <>', (@sm) =>
     @responses = T '{string->()-><>}', {}
 
   add: F '(string, () -> <>) => <>', (state, response) =>
     if not @sm.states.<index>[state]?
       error "cannot add response to #{@sm.name}: no such state '#{state}'"
-      -- error "no such state in #{@sm.name}: #{state}"
     if @responses[state]?
       error "cannot add response to #{@sm.name}: response for '#{state}' already defined"
     @responses[state] = response
 
   build: F '() => StateResponses', =>
-    uncovered = with {}
+    uncovered_states = with {}
       for state_name in pairs @sm.states.<index>
         if not @responses[state_name]?
           [] = state_name
-    table.sort uncovered
-    if #uncovered > 0
-      error "cannot build state responses: the following states have no response: #{table.concat uncovered, ', '}"
+    if #uncovered_states > 0
+      table.sort uncovered_states
+      error "cannot build state responses: the following states have no response: #{table.concat uncovered_states, ', '}"
 
     @responses
 
@@ -661,15 +660,13 @@ spec ->
         test_sm = make_test_sm!
         $expect_that (-> test_sm.states.state_1 = nil), errors matches 'cannot set fields in states'
 
-  describe 'StateResponseBuilder', ->
+  describe 'StateResponsesBuilder', ->
     it 'builds response', ->
       calls = {}
-      builder = with StateResponseBuilder make_test_sm!
+      builder = with StateResponsesBuilder make_test_sm!
         for name in *{'state_1', 'state_2', 'state_3'}
-          \add name, (param) ->
-            calls[] =
-              :name
-              :param
+          \add name, F '() -> <>', () ->
+            calls[] = :name
 
       responses = builder\build!
       responses.state_1!
@@ -678,23 +675,20 @@ spec ->
       $expect_that calls, len eq 3
       $expect_that calls[1], has_fields
         name: eq 'state_1'
-        param: eq nil
       $expect_that calls[2], has_fields
         name: eq 'state_2'
-        param: eq nil
       $expect_that calls[3], has_fields
         name: eq 'state_3'
-        param: eq nil
 
     it 'rejects unknown states', ->
-      with StateResponseBuilder make_test_sm!
+      with StateResponsesBuilder make_test_sm!
         $expect_that (-> \add 'fribib', ->), errors matches "no such state"
 
     it 'rejects redefinition', ->
-      with StateResponseBuilder make_test_sm!
+      with StateResponsesBuilder make_test_sm!
         \add 'state_1', ->
         $expect_that (-> \add 'state_1', ->), errors matches "response for 'state_1' already defined"
 
     it 'rejects incomplete coverage', ->
-      with StateResponseBuilder make_test_sm!
+      with StateResponsesBuilder make_test_sm!
         $expect_that \build, errors matches 'no response: state_1, state_2, state_3'
