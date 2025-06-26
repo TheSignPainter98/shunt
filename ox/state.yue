@@ -145,14 +145,20 @@ export class StateMachineBuilder
           [] = '  bgcolor = black'
           [] = '  color = white'
           [] = "  label = \"#{@name}\""
+          [] = '  graph ['
+          [] = '    fontname = "NewCenturySchlbk-Roman"'
+          [] = '  ]'
           [] = '  node ['
           [] = '    color = white'
           [] = '    fontcolor = white'
           [] = '    fillcolor = white'
+          [] = '    shape = plaintext'
+          [] = '    fontname = "NewCenturySchlbk-Roman"'
           [] = '  ]'
           [] = '  edge ['
           [] = '    color = white'
           [] = '    fontcolor = white'
+          [] = '    fontname = "NewCenturySchlbk-Roman"'
           [] = '  ]'
           [] = '  levels=1'
 
@@ -161,25 +167,15 @@ export class StateMachineBuilder
 
           for state_name, state in pairs states
             [] = ''
+            fontname_override = ''
+            if state._is_end
+              fontname_override = "fontname=\"NewCenturySchlbk-Italic\""
+            [] = "  #{state_name}[#{fontname_override}]"
 
-            if not state._data_type?
-              [] = "  #{state_name}"
-            else
-              local shape
-              if state._is_end
-                shape = 'shape=doublecircle'
-              else
-                shape = 'shape=circle'
-
-              data_type = state._data_type
-              if data_type == 'nil'
-                [] = "  #{state_name}[#{shape}]"
-              else
-                data_type_repr = state._data_type\gsub '\n *', ' '
-                [] = "  #{state_name}[label=\"#{state_name}\\n#{data_type_repr}\",#{shape}]"
-
-            for other_state in pairs state._transitions
-              [] = "  #{state_name} -> #{other_state}"
+            num_transitions = #state._transition_list
+            for i = 1, num_transitions
+              other_state = state._transition_list[i]
+              [] = "  #{state_name} -> #{other_state}[weight=#{1 + num_transitions - i}]"
 
           [] = '}'
         table.concat lines, '\n'
@@ -233,6 +229,7 @@ export class State
       error "cannot build state machine: state name '#{@_name}' not a valid identifier"
 
     @_transitions = T '{string}', {}
+    @_transition_list = T '[string]', {}
     @_data_type = T 'string', 'nil'
     @_data_type_set = T 'boolean', false
     @_is_end = T 'boolean', false
@@ -243,6 +240,7 @@ export class State
     if @_transitions[name]?
       error "cannot build state machine: transition #{@_name}->#{name} redefined"
     @_transitions[name] = true
+    @_transition_list[] = name
     @
 
   declare_end_state: F '() => Self', =>
