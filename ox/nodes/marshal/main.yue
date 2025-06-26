@@ -15,7 +15,7 @@ import 'ox.nodes.marshal.util.clock' as :MinecraftClock
 import 'ox.nodes.marshal.util.pseudo_random' as :PseudoRandom
 import 'ox.pc' as :Pc
 import 'ox.peripheral.uplink' as :IdempotenceToken, :Packet, :TestUplinkBackend, :TIMEOUT, :Uplink
-import 'ox.state' as :StateMachineBuilder, :StateSpec
+import 'ox.state' as :State, :StateMachineBuilder
 import 'ox.upgrade.listener' as :UpgradeListener
 import 'quicktype' as :declare_type, :F, :is, :T
 import 'spec' as :spec
@@ -152,12 +152,12 @@ export class Marshal
   make_sm: F '() => StateMachine', =>
     StateMachineBuilder'marshal'
       \set_initial_state 'initial'
-      \add_state with StateSpec 'initial'
+      \add (State 'initial')
         \add_transition_to 'middle'
-      \add_state with StateSpec 'middle'
+      \add (State 'middle')
         \add_transition_to 'initial'
         \add_transition_to 'end'
-      \add_state with StateSpec 'end'
+      \add (State 'end')
         \declare_end_state!
       \build!
 

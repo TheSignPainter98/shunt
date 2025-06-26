@@ -18,7 +18,7 @@ export class StateMachineBuilder
 
   set_reporter: F '((State, State) => <>) => Self', (@_reporter) => @
 
-  add_state: F '(StateSpec) => Self', (state) =>
+  add: F '(State) => Self', (state) =>
     if @_states[state._name]?
       error "cannot build state machine: state '#{state._name}' redefined"
     @_states[state._name] = state
@@ -222,12 +222,12 @@ make_state = F '(string, string, any) -> {}', (name, data_type, data) ->
         key_repr = "[#{key}]"
       error "cannot directly assign state fields"
 
-declare_type 'StateSpec', [[{
+declare_type 'State', [[{
   _is_end: boolean,
   _transitions: {string},
   _data_type: ?string,
 }]]
-export class StateSpec
+export class State
   new: F '(string) => <>', (@_name) =>
     if not valid_ident @_name
       error "cannot build state machine: state name '#{@_name}' not a valid identifier"
@@ -237,21 +237,24 @@ export class StateSpec
     @_data_type_set = T 'boolean', false
     @_is_end = T 'boolean', false
 
-  add_transition_to: F '(string) => <>', (name) =>
+  add_transition_to: F '(string) => Self', (name) =>
     if not valid_ident name
       error "cannot build state machine: state name '#{name}' not a valid identifier"
     if @_transitions[name]?
       error "cannot build state machine: transition #{@_name}->#{name} redefined"
     @_transitions[name] = true
+    @
 
-  declare_end_state: F '() => <>', =>
+  declare_end_state: F '() => Self', =>
     @_is_end = true
+    @
 
-  set_data_type: F '(string) => <>', (data_type) =>
+  set_data_type: F '(string) => Self', (data_type) =>
     if @_data_type_set
       error "cannot build state machine: data type for state #{@_name} already set"
     @_data_type_set = true
     @_data_type = data_type
+    @
 
 declare_type 'StateMachine', [[{
   state: {name: string},
@@ -343,7 +346,7 @@ spec ->
       EXPECTED = 'some_name'
       sm = (StateMachineBuilder EXPECTED)
         \set_initial_state 'q_0'
-        \add_state with StateSpec 'q_0'
+        \add (State 'q_0')
           \declare_end_state!
         \build!
       $expect_that sm.name, eq EXPECTED
@@ -360,14 +363,14 @@ spec ->
     it 'rejects duplicate state names', ->
       $expect_that (-> (StateMachineBuilder 'test_sm')
         \set_initial_state 'waiting'
-        \add_state StateSpec 'waiting'
-        \add_state StateSpec 'waiting'
+        \add State 'waiting'
+        \add State 'waiting'
         \build!), errors matches "cannot build state machine: state 'waiting' redefined"
 
     it 'rejects repeated \\set_data_type calls', ->
       $expect_that (-> (StateMachineBuilder 'test_sm')
         \set_initial_state 'waiting'
-        \add_state with StateSpec 'waiting'
+        \add (State 'waiting')
           \set_data_type 'string'
           \set_data_type 'number'
         \build!), errors matches "cannot build state machine: data type for state waiting already set"
@@ -375,16 +378,16 @@ spec ->
     it 'rejects invalid state names', ->
       $expect_that (-> (StateMachineBuilder 'test_sm')
         \set_initial_state '-invalid'
-        \add_state StateSpec '-invalid'
+        \add State '-invalid'
         \build!), errors matches "cannot build state machine: state name '%-invalid' not a valid identifier"
 
     it 'formats itself as graphviz', ->
       graphviz_repr = (StateMachineBuilder 'test_sm')
         \set_initial_state 'state_1'
-        \add_state with StateSpec 'state_1'
+        \add (State 'state_1')
           \declare_end_state!
           \add_transition_to 'state_2'
-        \add_state with StateSpec 'state_2'
+        \add (State 'state_2')
           \add_transition_to 'state_1'
           \set_data_type [[{
             hello: string,
@@ -405,10 +408,10 @@ spec ->
     it 'formats itself as mermaid', ->
       mermaid_repr = (StateMachineBuilder 'test_sm')
         \set_initial_state 'state_1'
-        \add_state with StateSpec 'state_1'
+        \add (State 'state_1')
           \declare_end_state!
           \add_transition_to 'state_2'
-        \add_state with StateSpec 'state_2'
+        \add (State 'state_2')
           \add_transition_to 'state_1'
           \set_data_type [[{
             hello: string,
@@ -430,39 +433,39 @@ spec ->
     it 'rejects invalid transition graphs', ->
       builder = (StateMachineBuilder 'test_sm')
         \set_initial_state 'state_1'
-        \add_state StateSpec 'state_1'
+        \add State 'state_1'
       $expect_that builder\build, errors matches 'no end states declared'
 
       builder = (StateMachineBuilder 'test_sm')
         \set_initial_state 'state_1'
-        \add_state with StateSpec 'state_1'
+        \add (State 'state_1')
           \declare_end_state!
           \add_transition_to 'state_2'
-        \add_state with StateSpec 'state_2'
+        \add (State 'state_2')
           \add_transition_to 'state_3'
-        \add_state with StateSpec 'state_3'
+        \add (State 'state_3')
           \add_transition_to 'state_1'
       $expect_that builder\build, no_errors!
 
       builder = (StateMachineBuilder 'test_sm')
         \set_initial_state 'state_1'
-        \add_state with StateSpec 'state_1'
+        \add (State 'state_1')
           \declare_end_state!
-        \add_state with StateSpec 'unreachable_1'
+        \add (State 'unreachable_1')
           \add_transition_to 'unreachable_2'
-        \add_state StateSpec 'unreachable_2'
+        \add (State 'unreachable_2')
       $expect_that builder\build, errors matches 'the following states are not reachable from the start state: unreachable_1, unreachable_2'
 
       builder = (StateMachineBuilder 'test_sm')
         \set_initial_state 'state_1'
-        \add_state with StateSpec 'state_1'
+        \add (State 'state_1')
           \add_transition_to 'state_2'
-        \add_state with StateSpec 'state_2'
+        \add (State 'state_2')
           \declare_end_state!
           \add_transition_to 'interminable_1'
-        \add_state with StateSpec 'interminable_1'
+        \add (State 'interminable_1')
           \add_transition_to 'interminable_2'
-        \add_state StateSpec 'interminable_2'
+        \add (State'interminable_2')
       $expect_that builder\build, errors matches 'the following states are not reachable from any end state: interminable_1, interminable_2'
 
   describe 'valid_ident', ->
@@ -486,11 +489,11 @@ spec ->
   make_test_sm = ->
     (StateMachineBuilder 'test_sm')
       \set_initial_state 'state_1'
-      \add_state with StateSpec 'state_1'
+      \add (State 'state_1')
         \declare_end_state!
         \add_transition_to 'state_2'
         \add_transition_to 'state_3'
-      \add_state with StateSpec 'state_2'
+      \add (State 'state_2')
         \declare_end_state!
         \set_data_type [[{
           hello: string,
@@ -498,7 +501,7 @@ spec ->
           optional: ?string,
         }]]
         \add_transition_to 'state_1'
-      \add_state with StateSpec 'state_3'
+      \add (State 'state_3')
         \declare_end_state!
         \set_data_type 'number'
       \build!
@@ -584,15 +587,15 @@ spec ->
       it 'accepts valid end state', ->
         state_machine = (StateMachineBuilder 'test_sm')
           \set_initial_state 'state_1'
-          \add_state with StateSpec 'state_1'
+          \add (State 'state_1')
             \declare_end_state!
 
       it 'rejects invalid end state', ->
         state_machine = (StateMachineBuilder 'test_sm')
           \set_initial_state 'state_1'
-          \add_state with StateSpec 'state_1'
+          \add (State 'state_1')
             \add_transition_to 'state_2'
-          \add_state with StateSpec 'state_2'
+          \add (State 'state_2')
             \declare_end_state!
           \build!
         $expect_that state_machine\end, errors matches 'state_1 is not a valid end state'
@@ -604,9 +607,9 @@ spec ->
           \set_initial_state 'state_1'
           \set_reporter (prev_state, state) =>
             states[] = :prev_state, :state
-          \add_state with StateSpec 'state_1'
+          \add (State 'state_1')
             \add_transition_to 'state_2'
-          \add_state with StateSpec 'state_2'
+          \add (State 'state_2')
             \declare_end_state!
             \add_transition_to 'state_1'
             \set_data_type [[{
