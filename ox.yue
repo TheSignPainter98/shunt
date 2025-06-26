@@ -93,7 +93,10 @@ try
   main args
 catch err
   if err != 'EXIT(0)'
-    print debug.traceback err
+    if HOST == 'native'
+      io.stderr\write debug.traceback err
+    else
+      print debug.traceback err
     ok = false
 switch HOST
   when 'native'
