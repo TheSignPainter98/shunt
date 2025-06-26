@@ -1,6 +1,7 @@
 LUA = luajit
 
-DIAGRAMS = docs/src/reference-materials/marshal.mmd
+DIAGRAM_NAMES = marshal-main
+DIAGRAMS = $(patsubst %,docs/src/reference-materials/%.mmd,$(DIAGRAM_NAMES))
 SOURCES = $(shell find -name '*.yue')
 OBJECTS = $(patsubst %.yue,%.lua,$(SOURCES))
 BINARIES = bin/ox bin/goo bin/snoop
@@ -12,15 +13,15 @@ GRAPHVIZ_OPTS = -Gfontname="$(NODE_FONTNAME)" -Nfontname="$(NODE_FONTNAME)" -Efo
 all: $(BINARIES)
 .PHONY: all
 
-# docs/%.svg: docs/%.dot Makefile
-# 	./$< $(GRAPHVIZ_OPTS) -Tsvg >$@
-
-doc: $(DIAGRAMS)
+docs: $(DIAGRAMS)
 	mdbook build docs/
 .PHONY: doc
 
-docs/src/reference-materials/marshal.mmd: ox/nodes/marshal/main.yue ox.lua $(OBJECTS)
-	$(LUA) ox.lua debug mermaid marshal/main > $@
+docs/src/reference-materials/%.mmd: $(OBJECTS)
+	luajit ox.lua debug mermaid $(patsubst docs/src/reference-materials/%.mmd,%,$@) >$@
+
+# docs/src/reference-materials/marshal.mmd: ox/nodes/marshal/main.yue ox.lua $(OBJECTS)
+# 	$(LUA) ox.lua debug mermaid marshal/main >$@
 
 serve-docs: $(DIAGRAMS)
 	mdbook serve docs/ --open

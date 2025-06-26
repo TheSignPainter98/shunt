@@ -4,9 +4,9 @@ import 'clap' as :Param, :Subcommand
 import 'quicktype' as :F, :T
 
 mermaid_what_responses = T '{string->()->string}'
-  ['marshal/main']: ->
+  ['marshal-main']: ->
     import 'ox.nodes.marshal.main' as :Marshal
-    Marshal\make_sm!\to_mermaid!
+    Marshal::make_sm!\to_mermaid!
   -- TODO(kcza): complete this!
 
 export subcommand = with Subcommand 'debug'
