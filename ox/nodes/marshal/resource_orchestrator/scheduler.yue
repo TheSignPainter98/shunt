@@ -1,8 +1,8 @@
 local *
 
 import 'ox.logger' as :log, :trace
-import 'ox.nodes.marshal.promise_tracker' as :PromiseTracker
-import 'ox.nodes.marshal.pseudo_random' as :PseudoRandom
+import 'ox.nodes.marshal.resource_orchestrator.promise_tracker' as :PromiseTracker
+import 'ox.nodes.marshal.util.pseudo_random' as :PseudoRandom
 import 'ox.peripheral.station' as :time_units
 import 'quicktype' as :declare_type, :F, :T
 import 'spec' as :spec
@@ -446,7 +446,7 @@ export class Scheduler
 spec ->
   import 'spec_macros' as $
 
-  import 'ox.nodes.marshal.clock' as :TestClock
+  import 'ox.nodes.marshal.util.clock' as :TestClock
   import 'spec' as :describe, :it, :matchers
 
   import deep_eq, eq, ge, gt, has_fields, le, len, lt, matches, not_ from matchers
