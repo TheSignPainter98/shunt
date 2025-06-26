@@ -1,0 +1,45 @@
+local *
+
+import 'ox.data.queue' as :Queue
+import 'ox.state' as :State, :StateMachineBuilder
+import 'quicktype' as :declare_type, :F
+
+declare_type 'ResourceOrchestrator', 'Component'
+declare_type 'ResourceOrchestratorOpts', [[{}]]
+export class ResourceOrchestrator
+  new: F '(ResourceOrchestratorOpts) => <>', =>
+    { :x } = opts
+
+    @events = Queue!
+    @sm = @@make_sm!
+
+  make_sm: F '() => StateMachine', =>
+    (StateMachineBuilder 'resource_orchestrator')
+      \set_initial_state 'waiting'
+      \add (State 'waiting')
+        \declare_end_state!
+        \add_transition_to 'inspecting_packet'
+      \add (State 'inspecting_packet')
+        \add_transition_to 'analysing_factory_heartbeat'
+      \add (State 'analysing_factory_heartbeat')
+        \add_transition_to 'managing_resources'
+        \add_transition_to 'waiting'
+      \add (State 'managing_resources')
+        \add_transition_to 'managing_resource'
+        \add_transition_to 'waiting'
+      \add (State 'managing_resource')
+        \add_transition_to 'generating_schedule'
+      \add (State 'generating_schedule')
+        \add_transition_to 'sending_schedule'
+        \add_transition_to 'managing_resources'
+      \add (State 'sending_schedule')
+        \add_transition_to 'awaiting_schedule_response'
+      \add (State 'awaiting_schedule_response')
+        \add_transition_to 'schedule_applied'
+        \add_transition_to 'schedule_not_applied'
+      \add (State 'schedule_applied')
+        \add_transition_to 'managing_resources'
+      \add (State 'schedule_not_applied')
+        \add_transition_to 'generating_schedule'
+        \add_transition_to 'managing_resources'
+      \build!

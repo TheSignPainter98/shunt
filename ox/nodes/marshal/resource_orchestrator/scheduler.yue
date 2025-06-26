@@ -4,6 +4,7 @@ import 'ox.logger' as :log, :trace
 import 'ox.nodes.marshal.resource_orchestrator.promise_tracker' as :PromiseTracker
 import 'ox.nodes.marshal.util.pseudo_random' as :PseudoRandom
 import 'ox.peripheral.station' as :time_units
+import 'ox.state' as :State, :StateMachineBuilder, :StateResponsesBuilder
 import 'quicktype' as :declare_type, :F, :T
 import 'spec' as :spec
 
@@ -41,6 +42,26 @@ export class Scheduler
     @promise_tracker = promise_tracker
 
     @resend_cooldowns = T '{string->{string->number}}', {}
+
+    @sm = @@make_sm!
+
+  @make_sm: F '() => StateMachine', =>
+    @sm_builder ??= (StateMachineBuilder 'scheduler')
+      \set_initial_state 'waiting'
+      \add (State 'waiting')
+        \declare_end_state!
+        \add_transition_to 'generating_schedule'
+      \add (State 'generating_schedule')
+        \add_transition_to 'proposing_schedule'
+        \add_transition_to 'out_of_schedules'
+      \add (State 'proposing_schedule')
+        \add_transition_to 'generating_schedule'
+        \add_transition_to 'schedule_applied'
+      \add (State 'schedule_applied')
+        \add_transition_to 'waiting'
+      \add (State 'out_of_schedules')
+        \add_transition_to 'waiting'
+    @sm_builder\build!
 
   @DEFAULT_RESEND_COOLDOWN_SECONDS: 90
 
@@ -442,6 +463,43 @@ export class Scheduler
       free_inbound_station_addrs_by_network,
       outbound_station_addrs_by_network,
       train_addrs
+
+declare_type 'ScheduleGeneratorOpts', [[{
+
+}]]
+export class ScheduleGenerator
+  new: F '(ScheduleGeneratorOpts) => <>', (opts) =>
+    {:x} = opts
+
+    @sm = @@make_sm!
+
+  @make_sm: F '() => StateMachine', =>
+    (StateMachineBuilder 'schedule_generator')
+      \set_initial_state 'waiting'
+      \add (State 'waiting')
+        \declare_end_state!
+        \add_transition_to 'generating_inbound_local_schedule'
+      \add (State 'generating_inbound_local_schedule')
+        \add_transition_to 'emitting_inbound_local_schedule'
+        \add_transition_to 'generating_outbound_local_schedule'
+      \add (State 'emitting_inbound_local_schedule')
+        \add_transition_to 'generating_inbound_local_schedule'
+        \add_transition_to 'waiting'
+      \add (State 'generating_outbound_local_schedule')
+        \add_transition_to 'emitting_inbound_outbound_schedule'
+        \add_transition_to 'generating_global_schedule'
+      \add (State 'emitting_inbound_outbound_schedule')
+        \add_transition_to 'generating_outbound_local_schedule'
+        \add_transition_to 'waiting'
+      \add (State 'generating_global_schedule')
+        \add_transition_to 'emitting_global_schedule'
+        \add_transition_to 'out_of_schedules'
+      \add (State 'emitting_global_schedule')
+        \add_transition_to 'generating_global_schedule'
+        \add_transition_to 'waiting'
+      \add (State 'out_of_schedules')
+        \add_transition_to 'waiting'
+      \build!
 
 spec ->
   import 'spec_macros' as $

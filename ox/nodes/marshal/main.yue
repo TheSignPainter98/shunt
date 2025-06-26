@@ -150,15 +150,23 @@ export class Marshal
     @events = T 'Queue', Queue!
 
   make_sm: F '() => StateMachine', =>
-    StateMachineBuilder'marshal'
-      \set_initial_state 'initial'
-      \add (State 'initial')
-        \add_transition_to 'middle'
-      \add (State 'middle')
-        \add_transition_to 'initial'
-        \add_transition_to 'end'
-      \add (State 'end')
+    (StateMachineBuilder 'marshal')
+      \set_initial_state 'waiting'
+      \add (State 'waiting')
+        \add_transition_to 'inspecting_packet'
+        \add_transition_to 'changing_epoch'
+        \add_transition_to 'applying_config'
         \declare_end_state!
+      \add (State 'inspecting_packet')
+        \add_transition_to 'analysing_marshal_identity_request'
+      \add (State 'analysing_marshal_identity_request')
+        \add_transition_to 'sending_marshal_identity_response'
+      \add (State 'sending_marshal_identity_response')
+        \add_transition_to 'waiting'
+      \add (State 'changing_epoch')
+        \add_transition_to 'waiting'
+      \add (State 'applying_config')
+        \add_transition_to 'waiting'
       \build!
 
   save: F '() => <>', =>

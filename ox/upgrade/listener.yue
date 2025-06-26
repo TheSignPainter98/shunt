@@ -1,6 +1,7 @@
 local *
 
 import 'ox.logger' as :log, :trace
+import 'ox.state' as :State, :StateMachineBuilder
 import 'ox.upgrade.instigator' as :MarshalBumpRelease
 import 'ox.upgrade.monitor' as :CurrentReleaseRequest, :CurrentReleaseResponse
 import 'ox.upgrade.rebooter' as :MinecraftRebooter, :RebootRequest
@@ -23,6 +24,37 @@ export class UpgradeListener using Tester
       'follower'
 
     @_current_release = nil
+
+  @make_sm: F '() => StateMachine', =>
+    (StateMachineBuilder 'upgrade_listener')
+      \set_initial_state 'waiting'
+      \add (State 'waiting')
+        \declare_end_state!
+        \add_transition_to 'inspecting_packet'
+      \add (State 'inspecting_packet')
+        \add_transition_to 'analysing_current_release_request'
+        \add_transition_to 'analysing_reboot_request'
+        \add_transition_to 'analysing_update'
+      \add (State 'analysing_current_release_request')
+        \add_transition_to 'sending_current_release_response'
+      \add (State 'sending_current_release_response')
+        \add_transition_to 'waiting'
+      \add (State 'analysing_reboot_request')
+        \add_transition_to 'rebooting'
+      \add (State 'analysing_update')
+        \add_transition_to 'testing_update'
+      \add (State 'testing_update')
+        \add_transition_to 'applying_update'
+        \add_transition_to 'rejecting_update'
+      \add (State 'applying_update')
+        \add_transition_to 'broadcasting_reboot'
+      \add (State 'broadcasting_reboot')
+        \add_transition_to 'rebooting'
+      \add (State 'rejecting_update')
+        \add_transition_to 'waiting'
+      \add (State 'rebooting')
+        \declare_end_state!
+      \build!
 
   tasks: F '() => [() -> !]', =>
     switch @kind

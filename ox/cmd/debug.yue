@@ -3,25 +3,39 @@ local *
 import 'clap' as :Param, :Subcommand
 import 'quicktype' as :F, :T
 
-mermaid_what_responses = T '{string->()->string}'
+state_machines = T '{string->()->string}'
+  ['config_listener']: ->
+    import 'ox.configurator.listener' as :ConfigListener
+    ConfigListener::make_sm!
   ['marshal-main']: ->
     import 'ox.nodes.marshal.main' as :Marshal
-    Marshal::make_sm!\to_mermaid!
-  -- TODO(kcza): complete this!
+    Marshal::make_sm!
+  ['marshal-resource_orchestrator']: ->
+    import 'ox.nodes.marshal.resource_orchestrator.main' as :ResourceOrchestrator
+    ResourceOrchestrator::make_sm!
+  ['marshal-schedule_generator']: ->
+    import 'ox.nodes.marshal.resource_orchestrator.scheduler' as :ScheduleGenerator
+    ScheduleGenerator::make_sm!
+  ['marshal-scheduler']: ->
+    import 'ox.nodes.marshal.resource_orchestrator.scheduler' as :Scheduler
+    Scheduler::make_sm!
+  ['upgrade_listener']: ->
+    import 'ox.upgrade.listener' as :UpgradeListener
+    UpgradeListener::make_sm!
 
 export subcommand = with Subcommand 'debug'
   \hidden!
   \description 'helper functions for generating documentation'
   \add with Subcommand 'mermaid'
     \description 'generate mermaid diagrams'
-    \add with Param 'what'
+    \add with Param 'which'
       \description 'the diagram to print'
       \options do
-        opts = [ response for response in pairs mermaid_what_responses ]
+        opts = [ name for name in pairs state_machines ]
         table.sort opts
         opts
 
 export main = F '({}) -> <>', (args) ->
   if mermaid = args.mermaid
-    print mermaid_what_responses[mermaid.what]!
+    print state_machines[mermaid.which]!\to_mermaid!
   return

@@ -1,0 +1,8 @@
+local *
+
+import 'quicktype' as :declare_type
+
+declare_type 'Component', [[{
+  events: Queue,
+  step: () => <>,
+}]]

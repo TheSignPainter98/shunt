@@ -1,0 +1,50 @@
+local *
+
+import 'ox.data.queue' as :Queue
+import 'ox.state' as :State, :StateMachineBuilder
+import 'quicktype' as :declare_type, :F
+
+declare_type 'ConfigListener', 'Component'
+declare_type 'ConfigListenerOpts', [[{
+  target: Component,
+  uplink: Uplink,
+}]]
+export class ConfigListener
+  new: F '(ConfigListenerOpts) => <>', (opts) =>
+    {
+      :target
+      :uplink
+    } = opts
+    @target = target
+    @uplink = uplink
+
+    @events = Queue!
+
+    @sm = @@make_sm!
+
+  @make_sm: F '() => StateMachine', =>
+    (StateMachineBuilder 'config_listener')
+      \set_initial_state 'waiting'
+      \add (State 'waiting')
+        \declare_end_state!
+        \add_transition_to 'inspecting_packet'
+      \add (State 'inspecting_packet')
+        \add_transition_to 'waiting'
+        \add_transition_to 'analysing_get_config_request'
+        \add_transition_to 'analysing_set_config_request'
+      \add (State 'analysing_get_config_request')
+        \add_transition_to 'sending_get_config_response'
+      \add (State 'sending_get_config_response')
+        \add_transition_to 'waiting'
+      \add (State 'analysing_set_config_request')
+        \add_transition_to 'testing_config'
+      \add (State 'testing_config')
+        \add_transition_to 'sending_set_config_response'
+      \add (State 'sending_set_config_response')
+        \add_transition_to 'scheduling_config_application'
+        \add_transition_to 'waiting'
+      \add (State 'scheduling_config_application')
+        \add_transition_to 'waiting'
+      \build!
+
+  step: F '() => <>', => error 'todo'

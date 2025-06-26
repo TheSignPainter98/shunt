@@ -24,6 +24,9 @@ import 'ox.cmd.upgrade'
 import 'ox.logger'
 import 'spec'
 
+-- Import type definitions
+require 'ox.component'
+
 debug_ = require 'ox.cmd.debug'
 
 global skip_minecraft_tests = false

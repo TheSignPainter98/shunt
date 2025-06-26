@@ -1,6 +1,6 @@
 LUA = luajit
 
-DIAGRAM_NAMES = marshal-main
+DIAGRAM_NAMES = marshal-main marshal-resource_orchestrator marshal-schedule_generator marshal-scheduler upgrade_listener config_listener
 DIAGRAMS = $(patsubst %,docs/src/reference-materials/%.mmd,$(DIAGRAM_NAMES))
 SOURCES = $(shell find -name '*.yue')
 OBJECTS = $(patsubst %.yue,%.lua,$(SOURCES))
