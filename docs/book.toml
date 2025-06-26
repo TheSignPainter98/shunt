@@ -10,7 +10,7 @@ src = "src"
 create-missing = false
 
 [output.html]
-additional-css = ['theme/css/style.css']
+additional-css = ['theme/css/style.css', 'theme/css/mermaid.css']
 cname = "kcza.net"
 copy-fonts = true
 default-theme = "ayu"
