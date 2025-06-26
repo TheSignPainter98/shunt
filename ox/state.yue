@@ -165,7 +165,9 @@ export class StateMachineBuilder
           [] = "  __init[shape=point]"
           [] = "  __init -> #{initial_state_name}"
 
-          for state_name, state in pairs states
+          state_list = [ :state_name, :state for state_name, state in pairs states ]
+          table.sort state_list, (a, b) -> a.state_name < b.state_name
+          for { :state_name, :state } in *state_list
             [] = ''
             fontname_override = ''
             if state._is_end
@@ -393,15 +395,38 @@ spec ->
           }]]
         \build!
         \to_graphviz!
-      must_contain =
+      expected_lines =
         * 'digraph {'
-        * '[^ ]*init[^ ]* *%-> *state_1'
-        * 'state_1%[shape=doublecircle%]'
-        * 'state_1 *%-> *state_2'
-        * 'state_2 *%[label="state_2%\\n{ hello: string, world: number,? }%",shape=circle%]'
-        * 'state_2 *%-> *state_1'
-      for str in *must_contain
-        $expect_that graphviz_repr, matches str
+        * '  bgcolor = black'
+        * '  color = white'
+        * '  label = "test_sm"'
+        * '  graph ['
+        * '    fontname = "NewCenturySchlbk-Roman"'
+        * '  ]'
+        * '  node ['
+        * '    color = white'
+        * '    fontcolor = white'
+        * '    fillcolor = white'
+        * '    shape = plaintext'
+        * '    fontname = "NewCenturySchlbk-Roman"'
+        * '  ]'
+        * '  edge ['
+        * '    color = white'
+        * '    fontcolor = white'
+        * '    fontname = "NewCenturySchlbk-Roman"'
+        * '  ]'
+        * '  levels=1'
+        * '  __init[shape=point]'
+        * '  __init -> state_1'
+        * ''
+        * '  state_1[fontname="NewCenturySchlbk-Italic"]'
+        * '  state_1 -> state_2[weight=1]'
+        * ''
+        * '  state_2[]'
+        * '  state_2 -> state_1[weight=1]'
+        * '}'
+      expected_repr = table.concat expected_lines, '\n'
+      $expect_that graphviz_repr, eq expected_repr
 
     it 'formats itself as mermaid', ->
       mermaid_repr = (StateMachineBuilder 'test_sm')
