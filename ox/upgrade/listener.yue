@@ -92,7 +92,7 @@ export class UpgradeListener using Tester
       \build!
 
   step: F '() => <>', =>
-    error 'TODO'
+    @sm_responses[@sm.state.name]!
 
   on_waiting: F '() => <>', =>
     error 'TODO'

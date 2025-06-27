@@ -64,7 +64,7 @@ export class ResourceOrchestrator
       \build!
 
   step: F '() => <>', =>
-    error 'TODO'
+    @sm_responses[@sm.state.name]!
 
   on_waiting: F '() => <>', =>
     error 'TODO'

@@ -200,7 +200,10 @@ export class Marshal
       \build!
 
   step: F '() => <>', =>
-    error 'TODO'
+    @sm_responses[@sm.state.name]!
+    @resource_orchestrator\step!
+    @upgrade_listener\step!
+    @config_listener\step!
 
   on_waiting: F '() => <>', =>
     error 'TODO'
