@@ -270,7 +270,7 @@ export class StateResponsesBuilder
     @responses = T '{string->()-><>}', {}
 
   add: F '(string, () -> <>) => <>', (state, response) =>
-    if not @sm.states.<index>[state]?
+    if not (rawget @sm.states.<index>, state)?
       error "cannot add response to #{@sm.name}: no such state '#{state}'"
     if @responses[state]?
       error "cannot add response to #{@sm.name}: response for '#{state}' already defined"
