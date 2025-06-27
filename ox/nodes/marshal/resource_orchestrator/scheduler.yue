@@ -475,6 +475,7 @@ export class ScheduleGenerator
     {:x} = opts
 
     @sm = @@make_sm!
+    @sm_responses = @make_sm_responses @sm
 
   @make_sm: F '() => StateMachine', =>
     (StateMachineBuilder 'schedule_generator')
@@ -503,6 +504,45 @@ export class ScheduleGenerator
       \add (State 'out_of_schedules')
         \add_transition_to 'waiting'
       \build!
+
+  make_sm_responses: F '(StateMachine) => StateResponses', (sm) =>
+    (StateResponsesBuilder sm)
+      \add 'waiting', @\on_waiting
+      \add 'generating_inbound_local_schedule', @\on_generating_inbound_local_schedule
+      \add 'emitting_inbound_local_schedule', @\on_emitting_inbound_local_schedule
+      \add 'generating_outbound_local_schedule', @\on_generating_outbound_local_schedule
+      \add 'emitting_inbound_outbound_schedule', @\on_emitting_inbound_outbound_schedule
+      \add 'generating_global_schedule', @\on_generating_global_schedule
+      \add 'emitting_global_schedule', @\on_emitting_global_schedule
+      \add 'out_of_schedules', @\on_out_of_schedules
+      \build!
+
+  step: F '() => <>', =>
+    error 'TODO'
+
+  on_waiting: F '() => <>', =>
+    error 'TODO'
+
+  on_generating_inbound_local_schedule: F '() => <>', =>
+    error 'TODO'
+
+  on_emitting_inbound_local_schedule: F '() => <>', =>
+    error 'TODO'
+
+  on_generating_outbound_local_schedule: F '() => <>', =>
+    error 'TODO'
+
+  on_emitting_inbound_outbound_schedule: F '() => <>', =>
+    error 'TODO'
+
+  on_generating_global_schedule: F '() => <>', =>
+    error 'TODO'
+
+  on_emitting_global_schedule: F '() => <>', =>
+    error 'TODO'
+
+  on_out_of_schedules: F '() => <>', =>
+    error 'TODO'
 
 spec ->
   import 'spec_macros' as $

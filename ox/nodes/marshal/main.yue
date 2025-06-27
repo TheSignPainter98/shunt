@@ -18,7 +18,7 @@ import 'ox.nodes.marshal.util.clock' as :MinecraftClock
 import 'ox.nodes.marshal.util.pseudo_random' as :PseudoRandom
 import 'ox.pc' as :Pc
 import 'ox.peripheral.uplink' as :IdempotenceToken, :Packet, :TestUplinkBackend, :TIMEOUT, :Uplink
-import 'ox.state' as :State, :StateMachineBuilder
+import 'ox.state' as :State, :StateMachineBuilder, :StateResponsesBuilder
 import 'ox.upgrade.listener' as :UpgradeListener
 import 'quicktype' as :declare_type, :F, :is, :T
 import 'spec' as :spec
@@ -166,8 +166,10 @@ export class Marshal
       \add_child @resource_orchestrator.firewall
       \add_child @upgrade_listener.firewall
       \add_child @config_listener.firewall
+    @sm = @@make_sm!
+    @sm_responses = @make_sm_responses @sm
 
-  make_sm: F '() => StateMachine', =>
+  @make_sm: F '() => StateMachine', =>
     (StateMachineBuilder 'marshal')
       \set_initial_state 'waiting'
       \add (State 'waiting')
@@ -187,7 +189,35 @@ export class Marshal
         \add_transition_to 'waiting'
       \build!
 
+  make_sm_responses: F '(StateMachine) => StateResponses', (sm) =>
+    (StateResponsesBuilder sm)
+      \add 'waiting', @\on_waiting
+      \add 'inspecting_packet', @\on_inspecting_packet
+      \add 'analysing_marshal_identity_request', @\on_analysing_marshal_identity_request
+      \add 'sending_marshal_identity_response', @\on_sending_marshal_identity_response
+      \add 'changing_epoch', @\on_changing_epoch
+      \add 'applying_config', @\on_applying_config
+      \build!
+
   step: F '() => <>', =>
+    error 'TODO'
+
+  on_waiting: F '() => <>', =>
+    error 'TODO'
+
+  on_inspecting_packet: F '() => <>', =>
+    error 'TODO'
+
+  on_analysing_marshal_identity_request: F '() => <>', =>
+    error 'TODO'
+
+  on_sending_marshal_identity_response: F '() => <>', =>
+    error 'TODO'
+
+  on_changing_epoch: F '() => <>', =>
+    error 'TODO'
+
+  on_applying_config: F '() => <>', =>
     error 'TODO'
 
   save: F '() => <>', =>

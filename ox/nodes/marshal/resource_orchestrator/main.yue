@@ -3,7 +3,7 @@ local *
 import 'ox.data.queue' as :Queue
 import 'ox.firewall' as :Firewall
 import 'ox.nodes.factory.main' as :FactoryHeartbeat, :ScheduleRequest, :ScheduleResponse
-import 'ox.state' as :State, :StateMachineBuilder
+import 'ox.state' as :State, :StateMachineBuilder, :StateResponsesBuilder
 import 'quicktype' as :declare_type, :F
 
 declare_type 'ResourceOrchestrator', 'NetworkComponent'
@@ -16,6 +16,7 @@ export class ResourceOrchestrator
       * FactoryHeartbeat
     @events = Queue!
     @sm = @@make_sm!
+    @sm_responses = @make_sm_responses @sm
 
   make_sm: F '() => StateMachine', =>
     (StateMachineBuilder 'resource_orchestrator')
@@ -48,5 +49,49 @@ export class ResourceOrchestrator
         \add_transition_to 'managing_resources'
       \build!
 
+  make_sm_responses: F '(StateMachine) => StateResponses', (sm) =>
+    (StateResponsesBuilder sm)
+      \add 'waiting', @\on_waiting
+      \add 'inspecting_packet', @\on_inspecting_packet
+      \add 'analysing_factory_heartbeat', @\on_analysing_factory_heartbeat
+      \add 'managing_resources', @\on_managing_resources
+      \add 'managing_resource', @\on_managing_resource
+      \add 'generating_schedule', @\on_generating_schedule
+      \add 'sending_schedule', @\on_sending_schedule
+      \add 'awaiting_schedule_response', @\on_awaiting_schedule_response
+      \add 'schedule_applied', @\on_schedule_applied
+      \add 'schedule_not_applied', @\on_schedule_not_applied
+      \build!
+
   step: F '() => <>', =>
+    error 'TODO'
+
+  on_waiting: F '() => <>', =>
+    error 'TODO'
+
+  on_inspecting_packet: F '() => <>', =>
+    error 'TODO'
+
+  on_analysing_factory_heartbeat: F '() => <>', =>
+    error 'TODO'
+
+  on_managing_resources: F '() => <>', =>
+    error 'TODO'
+
+  on_managing_resource: F '() => <>', =>
+    error 'TODO'
+
+  on_generating_schedule: F '() => <>', =>
+    error 'TODO'
+
+  on_sending_schedule: F '() => <>', =>
+    error 'TODO'
+
+  on_awaiting_schedule_response: F '() => <>', =>
+    error 'TODO'
+
+  on_schedule_applied: F '() => <>', =>
+    error 'TODO'
+
+  on_schedule_not_applied: F '() => <>', =>
     error 'TODO'
