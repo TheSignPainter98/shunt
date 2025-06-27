@@ -6,3 +6,8 @@ declare_type 'Component', [[{
   events: Queue,
   step: () => <>,
 }]]
+declare_type 'NetworkComponent', [[
+  Component + {
+    firewall: Firewall,
+  }
+]]

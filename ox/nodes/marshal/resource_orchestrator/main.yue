@@ -1,15 +1,19 @@
 local *
 
 import 'ox.data.queue' as :Queue
+import 'ox.firewall' as :Firewall
+import 'ox.nodes.factory.main' as :FactoryHeartbeat, :ScheduleRequest, :ScheduleResponse
 import 'ox.state' as :State, :StateMachineBuilder
 import 'quicktype' as :declare_type, :F
 
-declare_type 'ResourceOrchestrator', 'Component'
+declare_type 'ResourceOrchestrator', 'NetworkComponent'
 declare_type 'ResourceOrchestratorOpts', [[{}]]
 export class ResourceOrchestrator
-  new: F '(ResourceOrchestratorOpts) => <>', =>
+  new: F '(ResourceOrchestratorOpts) => <>', (opts) =>
     { :x } = opts
 
+    @firewall = Firewall
+      * FactoryHeartbeat
     @events = Queue!
     @sm = @@make_sm!
 
@@ -43,3 +47,6 @@ export class ResourceOrchestrator
         \add_transition_to 'generating_schedule'
         \add_transition_to 'managing_resources'
       \build!
+
+  step: F '() => <>', =>
+    error 'TODO'

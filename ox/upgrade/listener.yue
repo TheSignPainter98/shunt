@@ -1,5 +1,7 @@
 local *
 
+import 'ox.data.queue' as :Queue
+import 'ox.firewall' as :Firewall
 import 'ox.logger' as :log, :trace
 import 'ox.state' as :State, :StateMachineBuilder
 import 'ox.upgrade.instigator' as :MarshalBumpRelease
@@ -9,21 +11,38 @@ import 'ox.upgrade.tester' as :Tester
 import 'ox.version' as :VERSION
 import 'quicktype' as :declare_type, :F, :T
 
-declare_type 'UpgradeListener', [[{
-  tasks: () => [() -> !],
-}]]
+declare_type 'UpgradeListener', 'NetworkComponent'
 declare_type 'UpgradeListenerKind', '"leader"|"follower"'
+declare_type 'UpgradeListenerOpts', [[{
+  config: UpgradeListenerConfig,
+  uplink: Uplink,
+  rebooter: ?Rebooter,
+}]]
 declare_type 'UpgradeListenerConfig', [[{
   marshal: ?{},
 }]]
 export class UpgradeListener using Tester
-  new: F '(UpgradeListenerConfig, Uplink, ?Rebooter) => <>', (config, @uplink, @rebooter=MinecraftRebooter!) =>
+  new: F '(UpgradeListenerOpts) => <>', (opts) =>
+    {
+      :config
+      :uplink
+      :rebooter=MinecraftRebooter!
+    } = opts
+    @config = config
+    @uplink = uplink
+    @rebooter = rebooter
+
     @kind = T 'UpgradeListenerKind', if config.marshal?
       'leader'
     else
       'follower'
+    @_current_release = T '?Release', nil
 
-    @_current_release = nil
+    @firewall = Firewall
+      * CurrentReleaseRequest
+      * MarshalBumpRelease
+    @events = Queue!
+    @sm = @@make_sm!
 
   @make_sm: F '() => StateMachine', =>
     (StateMachineBuilder 'upgrade_listener')
@@ -55,6 +74,9 @@ export class UpgradeListener using Tester
       \add (State 'rebooting')
         \declare_end_state!
       \build!
+
+  step: F '() => <>', =>
+    error 'TODO'
 
   tasks: F '() => [() -> !]', =>
     switch @kind

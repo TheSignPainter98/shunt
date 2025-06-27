@@ -1,5 +1,6 @@
 local *
 
+import 'ox.firewall' as :Firewall
 import 'ox.logger' as :log, :trace
 import 'ox.nodes.marshal.resource_orchestrator.promise_tracker' as :PromiseTracker
 import 'ox.nodes.marshal.util.pseudo_random' as :PseudoRandom
@@ -43,6 +44,8 @@ export class Scheduler
 
     @resend_cooldowns = T '{string->{string->number}}', {}
 
+    @firewall = Firewall
+      * ScheduleResponse
     @sm = @@make_sm!
 
   @make_sm: F '() => StateMachine', =>
