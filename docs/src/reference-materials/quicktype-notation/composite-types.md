@@ -1,4 +1,4 @@
-# Composite types {#composite-types}
+# Composite types
 
 This section covers all quicktype types which are composed of other types.
 

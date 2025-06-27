@@ -1,4 +1,4 @@
-# Type aliases -- `Named` {#type-aliases}
+# Type aliases
 
 A type alias is a name given to a quicktype type.
 Type aliases always start with an uppercase letter.
