@@ -269,12 +269,13 @@ export class StateResponsesBuilder
   new: F '(StateMachine) => <>', (@sm) =>
     @responses = T '{string->()-><>}', {}
 
-  add: F '(string, () -> <>) => <>', (state, response) =>
+  add: F '(string, () -> <>) => Self', (state, response) =>
     if not @sm.states.<index>[state]?
       error "cannot add response to #{@sm.name}: no such state '#{state}'"
     if @responses[state]?
       error "cannot add response to #{@sm.name}: response for '#{state}' already defined"
     @responses[state] = response
+    @
 
   build: F '() => StateResponses', =>
     uncovered_states = with {}
