@@ -3,7 +3,7 @@ local *
 import 'ox.data.queue' as :Queue
 import 'ox.firewall' as :Firewall
 import 'ox.logger' as :log, :trace
-import 'ox.state' as :State, :StateMachineBuilder
+import 'ox.state' as :State, :StateMachineBuilder, :StateResponsesBuilder
 import 'ox.upgrade.instigator' as :MarshalBumpRelease
 import 'ox.upgrade.monitor' as :CurrentReleaseRequest, :CurrentReleaseResponse
 import 'ox.upgrade.rebooter' as :MinecraftRebooter, :RebootRequest
@@ -43,6 +43,7 @@ export class UpgradeListener using Tester
       * MarshalBumpRelease
     @events = Queue!
     @sm = @@make_sm!
+    @sm_responses = @make_sm_responses @sm
 
   @make_sm: F '() => StateMachine', =>
     (StateMachineBuilder 'upgrade_listener')
@@ -75,7 +76,55 @@ export class UpgradeListener using Tester
         \declare_end_state!
       \build!
 
+  make_sm_responses: F '(StateMachine) => StateResponses', (sm) =>
+    (StateResponsesBuilder sm)
+      \add 'waiting', @\on_waiting
+      \add 'inspecting_packet', @\on_inspecting_packet
+      \add 'analysing_current_release_request', @\on_analysing_current_release_request
+      \add 'sending_current_release_response', @\on_sending_current_release_response
+      \add 'analysing_reboot_request', @\on_analysing_reboot_request
+      \add 'analysing_update', @\on_analysing_update
+      \add 'testing_update', @\on_testing_update
+      \add 'applying_update', @\on_applying_update
+      \add 'broadcasting_reboot', @\on_broadcasting_reboot
+      \add 'rejecting_update', @\on_rejecting_update
+      \add 'rebooting', @\on_rebooting
+      \build!
+
   step: F '() => <>', =>
+    @sm_responses[@sm.state.name]!
+
+  on_waiting: F '() => <>', =>
+    error 'TODO'
+
+  on_inspecting_packet: F '() => <>', =>
+    error 'TODO'
+
+  on_analysing_current_release_request: F '() => <>', =>
+    error 'TODO'
+
+  on_sending_current_release_response: F '() => <>', =>
+    error 'TODO'
+
+  on_analysing_reboot_request: F '() => <>', =>
+    error 'TODO'
+
+  on_analysing_update: F '() => <>', =>
+    error 'TODO'
+
+  on_testing_update: F '() => <>', =>
+    error 'TODO'
+
+  on_applying_update: F '() => <>', =>
+    error 'TODO'
+
+  on_broadcasting_reboot: F '() => <>', =>
+    error 'TODO'
+
+  on_rejecting_update: F '() => <>', =>
+    error 'TODO'
+
+  on_rebooting: F '() => <>', =>
     error 'TODO'
 
   tasks: F '() => [() -> !]', =>

@@ -691,6 +691,9 @@ reflow = (prefix, string, width=80) ->
         first_line = false
   table.concat lines, '\n'
 
+testing = false
+export running_tests = () -> testing
+
 export run_tests = (filter) ->
   -- Gather specs
   if not spec_fns?
@@ -698,7 +701,9 @@ export run_tests = (filter) ->
   for spec_fn in *spec_fns
     spec_fn!
 
+  testing = true
   root_spec?\test filter
+  testing = false
 
   log ->
     "#{Test.num_run} checks run"

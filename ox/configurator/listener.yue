@@ -3,7 +3,7 @@ local *
 import 'ox.configurator.main' as :GetConfigRequest, :GetConfigResponse, :SetConfigRequest, :SetConfigResponse
 import 'ox.data.queue' as :Queue
 import 'ox.firewall' as :Firewall
-import 'ox.state' as :State, :StateMachineBuilder
+import 'ox.state' as :State, :StateMachineBuilder, :StateResponsesBuilder
 import 'quicktype' as :declare_type, :F
 
 declare_type 'ConfigListener', 'Component'
@@ -26,6 +26,7 @@ export class ConfigListener
       * GetConfigRequest
       * SetConfigRequest
     @sm = @@make_sm!
+    @sm_responses = @make_sm_responses @sm
 
   @make_sm: F '() => StateMachine', =>
     (StateMachineBuilder 'config_listener')
@@ -52,4 +53,41 @@ export class ConfigListener
         \add_transition_to 'waiting'
       \build!
 
-  step: F '() => <>', => error 'todo'
+  make_sm_responses: F '(StateMachine) => StateResponses', (sm) =>
+    (StateResponsesBuilder sm)
+      \add 'waiting', @\on_waiting
+      \add 'inspecting_packet', @\on_inspecting_packet
+      \add 'analysing_get_config_request', @\on_analysing_get_config_request
+      \add 'sending_get_config_response', @\on_sending_get_config_response
+      \add 'analysing_set_config_request', @\on_analysing_set_config_request
+      \add 'testing_config', @\on_testing_config
+      \add 'sending_set_config_response', @\on_sending_set_config_response
+      \add 'scheduling_config_application', @\on_scheduling_config_application
+      \build!
+
+  step: F '() => <>', =>
+    @sm_responses[@sm.state.name]!
+
+  on_waiting: F '() => <>', =>
+    error 'TODO'
+
+  on_inspecting_packet: F '() => <>', =>
+    error 'TODO'
+
+  on_analysing_get_config_request: F '() => <>', =>
+    error 'TODO'
+
+  on_sending_get_config_response: F '() => <>', =>
+    error 'TODO'
+
+  on_analysing_set_config_request: F '() => <>', =>
+    error 'TODO'
+
+  on_testing_config: F '() => <>', =>
+    error 'TODO'
+
+  on_sending_set_config_response: F '() => <>', =>
+    error 'TODO'
+
+  on_scheduling_config_application: F '() => <>', =>
+    error 'TODO'
