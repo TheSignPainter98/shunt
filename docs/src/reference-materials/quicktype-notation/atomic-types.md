@@ -54,4 +54,8 @@ Examples:
 
 ## Never type -- `!` {#never}
 
-The never type represents a value which can never exist. This is typically only useful to represent functions which never return. E.g. a function which accepts no arguments and which either loops forever or kills the program implements `() -> !`.
+The never type represents a value which can never exist.
+This is typically only useful to represent [functions][functions] which never return.
+E.g. a function which accepts no arguments and which either loops forever or kills the program implements `() -> !`.
+
+[functions]: ./composite-types.md#functions-and-methods
