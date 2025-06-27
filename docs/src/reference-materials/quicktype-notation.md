@@ -2,7 +2,25 @@
 
 The quicktype notation is used to specify type constraints.
 
-## Primitives
+- [Primitive types -- `boolean`, `string`](#primitives)
+- [Universal type -- `any`](#any)
+- [Existential type -- `some`](#some)
+- [Value-types -- `"str"`, `123`](#value-types)
+- [The never type -- `!`](#never)
+- [Type aliases -- `Named`](#type-aliases)
+- [Composite types](#composite-types)
+  - [Optional types -- `?type`](#option)
+  - [Structs -- `{field: type}`](#structs)
+  - [Mappings -- `{type->type}`](#mappings)
+  - [Sets -- `{type}`](#sets)
+  - [Arrays -- `[type]`](#arrays)
+  - [Tuples -- `(type, type)`](#tuples)
+  - [Functions and methods -- `(type) -> type`, `(type) => type`](#functions-and-methods)
+  - [Type unions -- `type|type`](#unions)
+  - [Type intersections -- `type+type`](#intersections)
+- [Subtyping](#subtyping)
+
+## Primitive types -- `boolean`, `string` {#primitives}
 
 All values returned from Lua’s `type` function are valid quicktype types.
 All Lua 5.1 types are supported:
@@ -15,7 +33,7 @@ All Lua 5.1 types are supported:
 - `thread`
 - `userdata`
 
-## The `any` type
+## Universal type -- `any` {#any}
 
 A value of `any` type, including `nil`.
 
@@ -25,7 +43,7 @@ Examples:
 - `123` implements `any`
 - `nil` implements `any`
 
-## The `some` type
+## Existential type -- `some` {#some}
 
 A value implements `some` if it is not `nil`.
 
@@ -35,7 +53,7 @@ Examples:
 - `123` implements `some`
 - `nil` does _not_ implement `some`
 
-## Value-types
+## Value-types -- `"str"`, `123` {#value-types}
 
 A value implements a value-type if it is equal to the expected value.
 Only strings and numbers are supported as value-types.
@@ -46,13 +64,23 @@ Examples:
 - `123` implements `123`
 - `'hello'` does _not_ implement `"world"`
 
-## The never type (`!`)
+## The never type -- `!` {#never}
 
 The never type represents a value which can never exist. This is typically only useful to represent functions which never return. E.g. a function which accepts no arguments and which either loops forever or kills the program implements `() -> !`.
 
-## Optional types (`?type`)
+## Type aliases -- `Named` {#type-aliases}
 
-A value `v` implements the optional type `?type` if is either `nil` or implements `type`.
+A type alias is a name given to a quicktype type.
+Type aliases always start with an uppercase letter.
+For example, let the type alias `MyNumber` expands to `number`. The value `123` is both a `number` _and_ a `MyNumber`.
+
+## Composite types {#composite-types}
+
+The following types combine other types into more expressive constraints.
+
+## Optional types -- `?type` {#option}
+
+An option is a Lua value which is either `nil` or which implements the specified type.
 
 Examples:
 
@@ -60,27 +88,7 @@ Examples:
 - `123` implements `?number`
 - `'hello'` does _not_ implement `?number`
 
-## Type aliases
-
-A type alias is a name given to a quicktype type.
-Type aliases always start with an uppercase letter.
-For example, let the type alias `MyNumber` expands to `number`. The value `123` is both a `number` _and_ a `MyNumber`.
-
-## Composite types
-
-Types can be combined together to describe a wide range of Lua values.
-Quicktype defines:
-
-- [Structs](#structs--field-type)
-- [Mappings](#mappings--type-type)
-- [Sets](#sets--type)
-- [Arrays](#arrays--type)
-- [Tuples](#tuples--type-type)
-- [Functions and methods](#functions-and-methods--type---type-type--type)
-- [Type unions](#type-unions-typetype)
-- [Type intersections](#type-intersections-typetype)
-
-### Structs -- `{field: type}`
+### Structs -- `{field: type}` {#structs}
 
 A struct is a Lua table in which all specified fields have the specified types.
 Multiple fields may be specified as a comma-separated lists---`{field_1: type_1, field_2: type_2}`.
@@ -95,7 +103,7 @@ Examples:
 The metatable of a struct can be constrained using the `<>` field.
 For example, the constraint `{<>: { __add: function }, hello: string}` accepts structs with `hello` containing a string and whose metatable’s `__add` field contains a function.
 
-### Mappings -- `{type->type}`
+### Mappings -- `{type->type}` {#mappings}
 
 A mapping is a Lua table in which all keys have the same type and in which all values have the same type. The key type and value type may differ.
 
@@ -108,7 +116,7 @@ Examples:
 The metatable of a mapping can be constrained using the `<>` field.
 For example, the constraint `{<>: { __add: function }, string -> number}` accepts mappings from strings to numbers whose metatable’s `__add` field contains a function.
 
-### Sets -- `{type}`
+### Sets -- `{type}` {#sets}
 
 A set is a Lua table in which all keys have the specified type and in which all values are truthy (i.e. not `false` or `nil`).
 
@@ -122,7 +130,7 @@ Examples:
 The metatable of a set can be constrained using the `<>` field.
 For example, the constraint `{<>: { __add: function }, string}` accepts sets of strings whose metatable’s `__add` field contains a function.
 
-### Arrays -- `[type]`
+### Arrays -- `[type]` {#arrays}
 
 An array is a Lua table in which there exists a consecutive sequence of numeric keys starting at 1 and ending at some _n_ for which all values have the specified type.
 Further, the length of the table (defined by Lua’s `#` operator) is equal to _n._
@@ -138,7 +146,7 @@ Examples:
 The metatable of an array can be constrained using the `<>` field.
 For example, the constraint `[<>: { __add: function }, string]` accepts sets of strings whose metatable’s `__add` field contains a function.
 
-### Tuples -- `(type, type)`
+### Tuples -- `(type, type)` {#tuples}
 
 A tuple is a Lua table in which the fields _1,_ ..., _n_ have the respective, specified types.
 
@@ -152,7 +160,7 @@ Examples:
 
 Metatable constraints are not currently supported on tables.
 
-### Functions and methods -- `(type) -> type`, `(type) => type`
+### Functions and methods -- `(type) -> type`, `(type) => type` {#functions-and-methods}
 
 A function is a Lua value which may be called, which expects to take parameters of the types specified and returns the specified values.
 A function is specified using the `->` arrow.
@@ -172,7 +180,7 @@ Examples:
 - `(string) => <>` represents a function which takes a non-`nil` parameter followed by a string and returns no values.
 - `() -> !` represents a function which takes no parameters and never returns
 
-### Type unions, `type|type`
+### Type unions -- `type|type` {#unions}
 
 A value implements a type union if and only if it implements at least one type in the union.
 
@@ -184,7 +192,7 @@ Examples:
 - `true` does _not_ implement `string|number`
 - `'how do?'` does _not_ implement `"hello"|"world"`
 
-### Type intersections, `type+type`
+### Type intersections -- `type+type` {#intersections}
 
 A value implements a type intersection if and only if it implements all types in the intersection.
 
@@ -195,7 +203,7 @@ Examples:
 - `{'hello', 'world'}` implements `[string]+{number}`
 - Nothing implements `string+number`
 
-## Subtyping
+## Subtyping {#subtyping}
 
 A type _T_ is a subtype of a type _U_ if and only if all values of type _T_ implement _U._
 It is possible to use such a _T_ in any place which accepts a _U._
