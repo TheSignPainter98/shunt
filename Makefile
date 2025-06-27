@@ -1,7 +1,7 @@
 LUA = luajit
 
 DIAGRAM_NAMES = marshal-main marshal-resource_orchestrator marshal-schedule_generator marshal-scheduler upgrade_listener config_listener
-DIAGRAMS = $(patsubst %,docs/src/reference-materials/%.mmd,$(DIAGRAM_NAMES))
+DIAGRAMS = $(patsubst %,docs/src/reference-materials/state-machine-diagrams/%.mmd,$(DIAGRAM_NAMES))
 SOURCES = $(shell find -name '*.yue')
 OBJECTS = $(patsubst %.yue,%.lua,$(SOURCES))
 BINARIES = bin/ox bin/goo bin/snoop
@@ -17,11 +17,8 @@ docs: $(DIAGRAMS)
 	mdbook build docs/
 .PHONY: doc
 
-docs/src/reference-materials/%.mmd: $(OBJECTS)
-	luajit ox.lua debug mermaid $(patsubst docs/src/reference-materials/%.mmd,%,$@) >$@
-
-# docs/src/reference-materials/marshal.mmd: ox/nodes/marshal/main.yue ox.lua $(OBJECTS)
-# 	$(LUA) ox.lua debug mermaid marshal/main >$@
+docs/src/reference-materials/state-machine-diagrams/%.mmd: $(OBJECTS)
+	luajit ox.lua debug mermaid $(patsubst docs/src/reference-materials/state-machine-diagrams/%.mmd,%,$@) >$@
 
 serve-docs: $(DIAGRAMS)
 	mdbook serve docs/ --open
