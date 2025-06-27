@@ -528,6 +528,7 @@ known_primitives =
   function: true
   table: true
   thread: true
+  userdata: true
 named_type = (name) ->
   if known_primitives[name]?
     Primitive name
@@ -1363,6 +1364,7 @@ spec ->
         $expect_that (parse 'table'), deep_eq Primitive type {}
         $expect_that (parse 'function'), deep_eq Primitive type ->
         $expect_that (parse 'thread'), deep_eq Primitive type coroutine.create ->
+        $expect_that (parse 'userdata'), deep_eq Primitive 'userdata'
         $expect_that (parse 'any'), deep_eq Any!
         $expect_that (parse 'some'), deep_eq Some!
         $expect_that (parse '!'), deep_eq Never!
