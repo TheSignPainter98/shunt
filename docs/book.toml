@@ -34,6 +34,8 @@ enable = true
 
 [output.linkcheck]
 
+[preprocessor.ox]
+
 [preprocessor.mermaid]
 
 [preprocessor.diataxis]

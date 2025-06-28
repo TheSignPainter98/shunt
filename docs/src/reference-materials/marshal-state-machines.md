@@ -6,6 +6,8 @@
 {{#include state-machine-diagrams/marshal-main.mmd}}
 ```
 
+{{#state-machine-spec ../../../ox/nodes/marshal/main.yue Marshal::make_sm}}
+
 ## `resource_orchestrator`
 
 ```mermaid
