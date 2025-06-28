@@ -1,5 +1,5 @@
-use clap::builder::styling::{AnsiColor, Effects};
 use clap::builder::Styles;
+use clap::builder::styling::{AnsiColor, Effects};
 use clap::{Parser, Subcommand};
 
 #[derive(Debug, Parser)]
