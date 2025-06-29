@@ -13,6 +13,10 @@ import 'quicktype' as :declare_type, :F, :T
 
 declare_type 'UpgradeListener', 'NetworkComponent'
 declare_type 'UpgradeListenerKind', '"leader"|"follower"'
+declare_type 'UpgradeListenerEvent', [[{
+  type: "network-packet",
+  packet: Packet,
+}]]
 declare_type 'UpgradeListenerOpts', [[{
   config: UpgradeListenerConfig,
   uplink: Uplink,
@@ -41,7 +45,7 @@ export class UpgradeListener using Tester
     @firewall = Firewall
       * CurrentReleaseRequest
       * MarshalBumpRelease
-    @events = Queue!
+    @events = Queue 'UpgradeListenerEvent'
     @sm = @@make_sm!
     @sm_responses = @make_sm_responses @sm
 

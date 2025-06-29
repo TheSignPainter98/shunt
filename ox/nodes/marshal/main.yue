@@ -80,6 +80,16 @@ declare_type 'MarshalEventType', [[
   "new-epoch"
   |"network-packet"
 ]]
+declare_type 'MarshalEvent', [[{
+  type: "network-packet",
+  packet: Packet,
+} | {
+  type: "new-epoch",
+  epoch: number,
+} | {
+  type: "change-config",
+  config: MarshalConfig,
+}]]
 declare_type 'StationAddress', [[{
   factory: Factory,
   station: StationConfig,
@@ -147,7 +157,7 @@ export class Marshal
     @do_count_epochs = T 'boolean', true
     @throttle = T 'boolean', HOST == 'minecraft'
 
-    @events = T 'Queue', Queue!
+    @events = T 'Queue', Queue 'MarshalEvent'
 
     @resource_orchestrator = T 'ResourceOrchestrator',
       ResourceOrchestrator {}
@@ -369,7 +379,7 @@ export class Marshal
     return
 
   handle_events: F '() => !', =>
-    local events = Queue!
+    local events = Queue 'MarshalEvent'
     while true
       @events, events = events, @events
 

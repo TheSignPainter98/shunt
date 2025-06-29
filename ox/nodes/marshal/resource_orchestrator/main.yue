@@ -7,6 +7,10 @@ import 'ox.state' as :State, :StateMachineBuilder, :StateResponsesBuilder
 import 'quicktype' as :declare_type, :F
 
 declare_type 'ResourceOrchestrator', 'NetworkComponent'
+declare_type 'ResoruceOrchestratorEvent', [[{
+  type: "network-packet",
+  packet: Packet,
+}]]
 declare_type 'ResourceOrchestratorOpts', [[{}]]
 export class ResourceOrchestrator
   new: F '(ResourceOrchestratorOpts) => <>', (opts) =>
@@ -14,7 +18,7 @@ export class ResourceOrchestrator
 
     @firewall = Firewall
       * FactoryHeartbeat
-    @events = Queue!
+    @events = Queue 'ResourceOrchestratorEvent'
     @sm = @@make_sm!
     @sm_responses = @make_sm_responses @sm
 

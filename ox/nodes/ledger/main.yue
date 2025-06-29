@@ -42,8 +42,8 @@ declare_type 'Entry', [[{
 }]]
 class Ledger
   new: F '(?number, ?string) => <>', (@max_len=100, @save_path=".ledger-state.toml") =>
-    @entries = Queue!
-    @entry_save_fragments = Queue!
+    @entries = Queue 'Entry'
+    @entry_save_fragments = Queue 'string'
 
   iter: F '() => function', =>
     @entries\iter!
@@ -60,7 +60,7 @@ class Ledger
 
     @max_len = T 'number', assert data.max_len, 'saved ledger missing max_len field'
     entries = T '[Entry]', data.entries ?? {}
-    @entries = Queue!
+    @entries = Queue 'Entry'
     for entry in *entries
       @entries\enqueue entry
       @entry_save_fragments\enqueue @fmt_entry_as_toml entry

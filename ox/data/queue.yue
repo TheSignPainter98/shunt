@@ -1,6 +1,6 @@
 local *
 
-import 'quicktype' as :declare_type, :F
+import 'quicktype' as :declare_type, :F, :T
 import 'spec' as :spec
 
 declare_type 'Queue', [[{
@@ -11,8 +11,8 @@ declare_type 'Queue', [[{
   iter: () => function,
 }]]
 export class Queue
-  new: =>
-    @entries = {}
+  new: F '(string) => <>', (@elem_type) =>
+    @elems = {}
     @front = 1
     @back = 1
 
@@ -20,26 +20,29 @@ export class Queue
     @back - @front
 
   enqueue: F '(any) => <>', (elem) =>
-    @entries[@back] = elem
+    @elems[@back] = T @elem_type, elem
     @back += 1
 
   dequeue: F '() => ?some', =>
-    with? @entries[@front]
-      @entries[@front] = nil
+    ret = @elems[@front]
+    if ret?
+      T @elem_type, ret
+      @elems[@front] = nil
       @front += 1
+    ret
 
   peek: F '() => ?any', =>
-    @entries[@front]
+    @elems[@front]
 
   iter: =>
     coroutine.wrap ->
       i = @front
       back = @back
       while i != back
-        entry = @entries[i]
-        if not entry?
+        elem = @elems[i]
+        if not elem?
           continue
-        coroutine.yield entry
+        coroutine.yield T @elem_type, elem
         i += 1
 
 spec ->
@@ -47,15 +50,15 @@ spec ->
 
   import 'spec' as :describe, :it, :matchers
 
-  import contains, deep_eq, eq from matchers
+  import contains, deep_eq, eq, errors, matches from matchers
 
   describe 'Queue', ->
     it 'dequeues nil on empty', ->
-      with Queue!
+      with Queue 'any'
         $expect_that \dequeue!, eq nil
 
     it 'dequeues in the right order', ->
-      with Queue!
+      with Queue 'string'
         $expect_that \len!, eq 0
         \enqueue 'one'
         \enqueue 'two'
@@ -72,14 +75,34 @@ spec ->
         $expect_that \dequeue!, eq 'four'
         $expect_that \dequeue!, eq 'five'
 
+    it 'typechecks on enqueue', ->
+      with Queue 'string'
+        $expect_that (-> \enqueue 123), errors matches 'expected string but got number'
+
+    it 'typechecks on dequeue', ->
+      with Queue '{ interloper: nil }'
+        elem = {}
+        \enqueue elem
+        elem.interloper = 'interloper'
+
+        $expect_that (-> \dequeue!), errors matches 'expected nil but got string'
+
     describe '\\iter', ->
       it 'yields in the correct order', ->
-        with Queue!
+        with Queue 'string'
           \enqueue 'one'
           \enqueue 'two'
           \enqueue 'three'
 
-          $expect_that [ entry for entry in \iter! ], deep_eq
+          $expect_that [ elem for elem in \iter! ], deep_eq
             * 'one'
             * 'two'
             * 'three'
+
+      it 'typechecks yielded elements', ->
+        with Queue '{interloper: nil}'
+          elem = {}
+          \enqueue elem
+          elem.interloper = 'interloper'
+
+          $expect_that (-> [ elem for elem in \iter! ]), errors matches 'expected nil but got string'

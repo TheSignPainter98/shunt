@@ -7,6 +7,9 @@ import 'ox.state' as :State, :StateMachineBuilder, :StateResponsesBuilder
 import 'quicktype' as :declare_type, :F
 
 declare_type 'ConfigListener', 'Component'
+declare_type 'ConfigListenerEvent', [[{
+  type: "network-packet",
+}]]
 declare_type 'ConfigListenerOpts', [[{
   target: Component,
   uplink: Uplink,
@@ -20,7 +23,7 @@ export class ConfigListener
     @target = target
     @uplink = uplink
 
-    @events = Queue!
+    @events = Queue 'ConfigListenerEvent'
 
     @firewall = Firewall
       * GetConfigRequest
