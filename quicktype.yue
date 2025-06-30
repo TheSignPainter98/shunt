@@ -1834,10 +1834,10 @@ spec ->
       local received
       f = F '(number) => <>', (r) ->
         received = r
-      $assert_that (-> f 'adf'), errors anything!
+      $assert_that (-> f 'prepare for'), errors anything!
 
       deactivate_typechecks!
-      $assert_that (-> f 'adf'), no_errors!
+      $assert_that (-> f 'unforeseen'), no_errors!
 
       activate_typechecks!
-      $assert_that (-> f 'adf'), errors anything!
+      $assert_that (-> f 'consequences'), errors anything!
