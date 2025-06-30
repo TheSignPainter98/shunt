@@ -2,7 +2,7 @@
 
 This section covers all quicktype types which are composed of other types.
 
-- [Optional types -- `?type`](#option)
+- [Optionals -- `?type`](#option)
 - [Structs -- `{field: type}`](#structs)
 - [Mappings -- `{type->type}`](#mappings)
 - [Sets -- `{type}`](#sets)
@@ -12,9 +12,9 @@ This section covers all quicktype types which are composed of other types.
 - [Type unions -- `type|type`](#unions)
 - [Type intersections -- `type+type`](#intersections)
 
-## Optional types -- `?type` {#option}
+## Optionals -- `?type` {#option}
 
-An option is a Lua value which is either `nil` or which implements the specified type.
+An optional is a Lua value which is either `nil` or which implements the specified type.
 
 Examples:
 
