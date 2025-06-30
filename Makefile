@@ -2,6 +2,8 @@ LUA = luajit
 
 DIAGRAM_NAMES = marshal-main marshal-resource_orchestrator marshal-schedule_generator marshal-scheduler upgrade_listener config_listener
 DIAGRAMS = $(patsubst %,docs/src/reference-materials/state-machine-diagrams/%.mmd,$(DIAGRAM_NAMES))
+DOC_HELPERS = docs/mdbook-ox/target/release/mdbook-ox
+RUST_SOURCES = $(shell find docs/mdbook-ox/src/ -name '*.rs')
 SOURCES = $(shell find -name '*.yue')
 OBJECTS = $(patsubst %.yue,%.lua,$(SOURCES))
 BINARIES = bin/ox bin/goo bin/snoop
@@ -13,16 +15,19 @@ GRAPHVIZ_OPTS = -Gfontname="$(NODE_FONTNAME)" -Nfontname="$(NODE_FONTNAME)" -Efo
 all: $(BINARIES)
 .PHONY: all
 
-docs: $(DIAGRAMS)
+docs: $(DIAGRAMS) $(DOC_HELPERS)
 	mdbook build docs/
 .PHONY: doc
 
 docs/src/reference-materials/state-machine-diagrams/%.mmd: $(OBJECTS)
 	luajit ox.lua debug mermaid $(patsubst docs/src/reference-materials/state-machine-diagrams/%.mmd,%,$@) >$@
 
-serve-docs: $(DIAGRAMS)
+serve-docs: $(DIAGRAMS) $(DOC_HELPERS)
 	mdbook serve docs/ --open
 .PHONY: serve-doc
+
+docs/mdbook-ox/target/release/mdbook-ox: docs/mdbook-ox/Cargo.toml $(RUST_SOURCES)
+	cargo build --release --manifest-path $<
 
 bin/%: bin/%.lua.packed nitro.lua clap.lua spec.lua
 # $(LUA) ./nitro.lua $< -o $@
@@ -42,6 +47,7 @@ ox.yue: compat.lua
 
 clean:
 	$(RM) $(OBJECTS) startup.lua packed/ox ox.goo $(BINARIES) bin/*
+	cargo clean --manifest-path docs/mdbook-ox/Cargo.toml
 .PHONY: clean
 
 install: scripts/install $(BINARIES)

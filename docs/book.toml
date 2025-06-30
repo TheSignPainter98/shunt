@@ -35,6 +35,7 @@ enable = true
 [output.linkcheck]
 
 [preprocessor.ox]
+command = "docs/mdbook-ox/target/release/mdbook-ox"
 
 [preprocessor.mermaid]
 
