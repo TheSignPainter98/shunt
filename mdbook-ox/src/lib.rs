@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::fmt::Display;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
@@ -12,9 +13,6 @@ use mdbook::errors::Result as MdbookResult;
 use mdbook::preprocess::{Preprocessor, PreprocessorContext};
 use pulldown_cmark::{Event, Parser};
 use regex::Regex;
-
-// TODO(kcza): fix this preprocessor adding an extra paragraph to the start of the diataxis grid
-// TODO(kcza): figure out how to remove the remainder of the invocation
 
 #[derive(Default)]
 pub struct OxPreprocessor;
@@ -58,36 +56,55 @@ impl OxPreprocessor {
             chapter,
             preprocessor: ctx,
         };
-        let mut ret = String::with_capacity(text.len());
-        MATCHER.replace_all_with(text, &mut ret, |result, raw_match, ret| {
-            if let Err(err) = self.handle_replacement(text, result, ret, &replacement_ctx) {
-                eprintln!("cannot replace {raw_match}...}}}}: {err}");
-                ret.push_str(raw_match);
+        let mut fragments = Vec::with_capacity(8);
+        let mut cursor = 0;
+        MATCHER.find_iter(text).for_each(|match_result| {
+            fragments.push(Cow::from(&text[cursor..match_result.start()]));
+            cursor = match_result.start();
+
+            match self.replacement(text, &match_result, &replacement_ctx) {
+                Ok(replacement) => {
+                    let Replacement {
+                        gobble,
+                        new_content,
+                    } = replacement;
+                    cursor += gobble;
+                    fragments.push(new_content.into());
+                }
+                Err(err) => {
+                    let raw_match = &text[match_result.range()];
+                    eprintln!("cannot replace {raw_match}...}}}}: {err}");
+                    fragments.push(raw_match.into());
+                }
             }
-            true
         });
-        ret
+        fragments.push(text[cursor..].into());
+        fragments.concat()
     }
 
-    fn handle_replacement(
+    fn replacement(
         &self,
         text: &str,
         result: &Match,
-        buf: &mut String,
         ctx: &ReplacementCtx<'_>,
-    ) -> Result<()> {
+    ) -> Result<Replacement> {
         let directive_name_end = result.span().end;
         let (arg_end_offset, _) = text[directive_name_end..]
             .match_indices("}}")
             .next()
             .ok_or_else(|| anyhow!("cannot find end of command invocation"))?;
         let directive_args = &text[directive_name_end..directive_name_end + arg_end_offset];
+        let gobble = directive_name_end + arg_end_offset + "}}".len();
+
         let directive = match result.pattern().as_u32() {
             0 => OxDirective::StateSpec(StateSpecDirective::new(directive_args)?),
             index => panic!("internal error: unexpected pattern index {index}"),
         };
-        directive.write_replacement_to(buf, ctx)?;
-        Ok(())
+        let new_content = directive.replacement(ctx)?;
+        Ok(Replacement {
+            gobble,
+            new_content,
+        })
     }
 }
 
@@ -113,9 +130,9 @@ enum OxDirective<'src> {
 }
 
 impl OxDirective<'_> {
-    fn write_replacement_to(&self, buf: &mut String, ctx: &ReplacementCtx<'_>) -> Result<()> {
+    fn replacement(&self, ctx: &ReplacementCtx<'_>) -> Result<String> {
         match self {
-            Self::StateSpec(d) => d.write_replacement_to(buf, ctx),
+            Self::StateSpec(d) => d.replacement(ctx),
         }
     }
 }
@@ -143,12 +160,10 @@ impl<'src> StateSpecDirective<'src> {
         })
     }
 
-    fn write_replacement_to(&self, buf: &mut String, ctx: &ReplacementCtx<'_>) -> Result<()> {
-        use std::fmt::Write;
+    fn replacement(&self, ctx: &ReplacementCtx<'_>) -> Result<String> {
         let source_reader = self.source_reader(ctx)?;
         let state_machine = self.parse_state_machine_declaration(source_reader)?;
-        write!(buf, "{state_machine}")?;
-        Ok(())
+        Ok(format!("{state_machine}"))
     }
 
     fn source_reader(&self, ctx: &ReplacementCtx<'_>) -> Result<impl BufRead> {
@@ -356,4 +371,9 @@ impl PartialOrd for State {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         Some(self.cmp(other))
     }
+}
+
+struct Replacement {
+    gobble: usize,
+    new_content: String,
 }
