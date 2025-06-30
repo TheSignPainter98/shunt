@@ -290,6 +290,7 @@ impl<'src> StateSpecDirective<'src> {
             });
         }
 
+        states.sort();
         Ok(StateMachineDeclaration {
             name: self.state_machine_name.to_owned(),
             states,
@@ -310,52 +311,49 @@ struct StateMachineDeclaration {
 impl Display for StateMachineDeclaration {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let Self { name, states } = self;
-        writeln!(f, "The {name} state machine has the following states:")?;
+        writeln!(f, "The states of `{name}` contain the following data:")?;
         for state in states {
             let State {
                 state_name,
                 data_type_lines,
-                transitions,
-                is_start_state,
-                is_end_state,
+                transitions: _,
+                is_start_state: _,
+                is_end_state: _,
             } = state;
-            if *is_start_state && *is_end_state {
-                writeln!(f, "- `{state_name}` (start state, end state)")?;
-            } else if *is_start_state {
-                writeln!(f, "- `{state_name}` (start state)")?;
-            } else if *is_end_state {
-                writeln!(f, "- `{state_name}` (end state)")?;
-            } else {
-                writeln!(f, "- `{state_name}`")?;
-            }
+            writeln!(f, "- {state_name}:")?;
 
             if !data_type_lines.is_empty() {
-                writeln!(f, "  - Contains data:")?;
+                writeln!(f, "  ```yaml")?;
                 for data_type_line in data_type_lines {
-                    writeln!(f, "    - `{data_type_line}`")?;
+                    writeln!(f, "  {data_type_line}")?;
                 }
+                writeln!(f, "  ```")?;
             } else {
-                writeln!(f, "  - Contains no data")?;
-            }
-
-            if !transitions.is_empty() {
-                writeln!(f, "  - Possible next states:")?;
-                for possible_next_state in transitions {
-                    writeln!(f, "    - `{possible_next_state}`")?;
-                }
-            } else {
-                writeln!(f, "  - Has no possible next states")?;
+                writeln!(f, "  _none_")?;
             }
         }
         Ok(())
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Eq, PartialEq)]
 struct State {
     state_name: String,
     data_type_lines: Vec<String>,
+    #[allow(unused)]
     transitions: Vec<String>,
     is_start_state: bool,
     is_end_state: bool,
+}
+
+impl Ord for State {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.state_name.cmp(&other.state_name)
+    }
+}
+
+impl PartialOrd for State {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
 }
