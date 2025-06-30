@@ -219,6 +219,7 @@ impl<'src> StateSpecDirective<'src> {
             .take_while(|line| !line.trim_end().ends_with(r"\build!"));
         #[derive(Default)]
         struct ParserState {
+            machine_found: bool,
             state_name: Option<String>,
             parsing_data_type: bool,
             data_type_lines: Vec<String>,
@@ -231,6 +232,7 @@ impl<'src> StateSpecDirective<'src> {
         let mut parser_state = ParserState::default();
         let mut states = Vec::new();
         for line in declaration_lines {
+            parser_state.machine_found = true;
             if parser_state.parsing_data_type {
                 if END_SET_DATA_TYPE_LINE.is_match(&line) {
                     parser_state.parsing_data_type = false;
@@ -283,18 +285,27 @@ impl<'src> StateSpecDirective<'src> {
                 parser_state.transitions.push(captures[1].to_owned())
             } else {
                 return Err(anyhow!(
-                    "cannot parse state machine declaration: unexpected line: {line}"
+                    "cannot parse state machine {} declaration: unexpected line: {line}",
+                    self.state_machine_name,
                 ));
             }
         }
         let ParserState {
+            machine_found,
             state_name,
             data_type_lines,
             transitions,
             is_start_state,
             is_end_state,
-            ..
+            parsing_data_type: _,
+            data_type_prefix_len: _,
         } = parser_state;
+        if !machine_found {
+            return Err(anyhow!(
+                "cannot parse state machine {} declaration: machine not found",
+                self.state_machine_name,
+            ));
+        }
         if let Some(state_name) = state_name {
             states.push(State {
                 state_name,
