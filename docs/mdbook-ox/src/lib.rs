@@ -74,7 +74,6 @@ impl OxPreprocessor {
                 Err(err) => {
                     let raw_match = &text[match_result.range()];
                     eprintln!("cannot replace {raw_match}...}}}}: {err}");
-                    fragments.push(raw_match.into());
                 }
             }
         });
