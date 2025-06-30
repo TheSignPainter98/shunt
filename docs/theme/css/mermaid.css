@@ -2,3 +2,8 @@
   stroke: #0000 !important;
   fill: #0000 !important;
 }
+
+g.edgeLabels {
+  font-style: italic;
+  fill: #0000 !important;
+}
