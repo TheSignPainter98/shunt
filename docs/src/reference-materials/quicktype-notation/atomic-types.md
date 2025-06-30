@@ -2,13 +2,13 @@
 
 This section covers all quicktype types which cannot be broken down:
 
-- [Primitive types -- `boolean`, `string`](#primitive)
+- [Primitive types -- `nil`, `number`, ...](#primitive)
 - [Universal type -- `any`](#any)
 - [Existential type -- `some`](#some)
 - [Value-types -- `"str"`, `123`](#value-types)
 - [Never type -- `!`](#never)
 
-## Primitive types -- `boolean`, `string` {#primitive}
+## Primitive types -- `nil`, `number`, ... {#primitive}
 
 All values returned from Lua’s `type` function are valid quicktype types.
 All Lua 5.1 types are supported:
