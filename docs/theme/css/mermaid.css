@@ -7,3 +7,8 @@ g.edgeLabels {
   font-style: italic;
   fill: #0000 !important;
 }
+
+pre.mermaid {
+  display: grid;
+  place-items: center;
+}
