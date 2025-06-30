@@ -214,6 +214,7 @@ impl<'src> StateSpecDirective<'src> {
             .map(Option::unwrap)
             .skip_while(|line| !line.contains(&state_machine_declaration))
             .skip(1)
+            .filter(|line| !line.trim_start().starts_with("--"))
             .take_while(|line| !line.trim().is_empty())
             .take_while(|line| !line.trim_end().ends_with(r"\build!"));
         #[derive(Default)]
