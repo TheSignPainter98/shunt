@@ -194,6 +194,8 @@ impl<'src> StateSpecDirective<'src> {
     ) -> Result<StateMachineDeclaration> {
         static SET_INITIAL_STATE_LINE: LazyLock<Regex> =
             LazyLock::new(|| Regex::new(r" *\\set_initial_state '([^']*)'").unwrap());
+        static SET_REPORTER_LINE: LazyLock<Regex> =
+            LazyLock::new(|| Regex::new(r" *\\set_reporter (.*)").unwrap());
         static ADD_STATE_LINE: LazyLock<Regex> =
             LazyLock::new(|| Regex::new(r" *\\add \(State '([^']*)'\)").unwrap());
         static DECLARE_END_STATE_LINE: LazyLock<Regex> =
@@ -229,6 +231,7 @@ impl<'src> StateSpecDirective<'src> {
             is_end_state: bool,
         }
         let mut initial_state_name = None;
+        let mut reporter = None;
         let mut parser_state = ParserState::default();
         let mut states = Vec::new();
         for line in declaration_lines {
@@ -250,6 +253,8 @@ impl<'src> StateSpecDirective<'src> {
                 parser_state.parsing_data_type = true;
             } else if let Some(captures) = SET_INITIAL_STATE_LINE.captures(&line) {
                 initial_state_name = Some(captures[1].to_owned());
+            } else if let Some(captures) = SET_REPORTER_LINE.captures(&line) {
+                reporter = Some(captures[1].to_owned())
             } else if let Some(captures) = ADD_STATE_LINE.captures(&line) {
                 parser_state = match parser_state {
                     ParserState {
@@ -285,8 +290,9 @@ impl<'src> StateSpecDirective<'src> {
                 parser_state.transitions.push(captures[1].to_owned())
             } else {
                 return Err(anyhow!(
-                    "cannot parse state machine {} declaration: unexpected line: {line}",
+                    "cannot parse state machine {} declaration: unexpected line: {}",
                     self.state_machine_name,
+                    line.trim(),
                 ));
             }
         }
@@ -315,10 +321,17 @@ impl<'src> StateSpecDirective<'src> {
                 is_end_state,
             });
         }
+        if reporter.is_none() {
+            eprintln!(
+                "Warning: state machine {} has no reporter",
+                self.state_machine_name
+            );
+        }
 
         states.sort();
         Ok(StateMachineDeclaration {
             name: self.state_machine_name.to_owned(),
+            reporter,
             states,
         })
     }
@@ -331,12 +344,23 @@ struct ReplacementCtx<'ctx> {
 
 struct StateMachineDeclaration {
     name: String,
+    reporter: Option<String>,
     states: Vec<State>,
 }
 
 impl Display for StateMachineDeclaration {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let Self { name, states } = self;
+        let Self {
+            name,
+            reporter,
+            states,
+        } = self;
+
+        if reporter.is_none() {
+            writeln!(f, "! **WARNING**: _this state machine has no reporter!_")?;
+            writeln!(f)?;
+        }
+
         writeln!(f, "The states of `{name}` contain the following data:")?;
         for state in states {
             let State {
