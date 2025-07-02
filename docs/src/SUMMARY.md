@@ -12,4 +12,5 @@
     - [Composite types](./reference-materials/quicktype-notation/composite-types.md)
     - [Type aliases](./reference-materials/quicktype-notation/type-aliases.md)
     - [Subtyping](./reference-materials/quicktype-notation/subtyping.md)
+  - [Types](./reference-materials/types.md)
 - [Explanations](./explanations/README.md)
