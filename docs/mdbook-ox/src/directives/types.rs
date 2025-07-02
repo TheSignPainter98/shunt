@@ -6,7 +6,7 @@ use std::{fmt::Display, path::PathBuf};
 // TODO(kcza): scan for declare_singleton_type
 // TODO(kcza): link to source files on github for definitions! (Track line numbers)
 
-use anyhow::{anyhow, Result};
+use anyhow::{Result, anyhow};
 use regex::Regex;
 use walkdir::WalkDir;
 
@@ -179,7 +179,7 @@ impl<R: BufRead> Iterator for TypeDeclarations<R> {
                         }));
                     }
                     assert!(captures.get(4).is_some()); // Must be a multi-line
-                                                        // declaration.
+                    // declaration.
 
                     let mut alias_lines = Vec::with_capacity(10);
                     let mut forced_indent = None;
@@ -330,7 +330,7 @@ impl Alias {
 
 impl Display for Alias {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        writeln!(f, "```yaml")?;
+        writeln!(f, "```moonscript")?;
         match self {
             Self::SingleLine(line) => {
                 writeln!(f, "{line}")?;

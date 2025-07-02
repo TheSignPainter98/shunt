@@ -217,7 +217,7 @@ impl Display for StateMachineDeclaration {
             writeln!(f, "- {state_name}:")?;
 
             if !data_type_lines.is_empty() {
-                writeln!(f, "  ```yaml")?;
+                writeln!(f, "  ```moonscript")?;
                 for data_type_line in data_type_lines {
                     writeln!(f, "  {data_type_line}")?;
                 }
