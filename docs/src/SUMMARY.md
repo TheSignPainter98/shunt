@@ -7,6 +7,7 @@
 - [Reference materials](./reference-materials/README.md)
   - [Data flow](./reference-materials/data-flow.md)
   - [Marshal state machines](./reference-materials/marshal-state-machines.md)
+  - [Public protocols](./reference-materials/public-protocols.md)
   - [Quicktype notation](./reference-materials/quicktype-notation/README.md)
     - [Atomic types](./reference-materials/quicktype-notation/atomic-types.md)
     - [Composite types](./reference-materials/quicktype-notation/composite-types.md)

@@ -12,3 +12,12 @@ pre.mermaid {
   display: grid;
   place-items: center;
 }
+
+.actor-bottom,
+.actor-bottom *,
+.actor-bottom + .actor-box * {
+  fill: #0000 !important;
+  color: #0000 !important;
+  background-color: #0000 !important;
+  stroke: #0000 !important;
+}
