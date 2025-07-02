@@ -4,7 +4,6 @@ use std::sync::LazyLock;
 use std::{fmt::Display, path::PathBuf};
 
 // TODO(kcza): scan for declare_singleton_type
-// TODO(kcza): link to source files on github for definitions! (Track line numbers)
 
 use anyhow::{Result, anyhow};
 use regex::Regex;
