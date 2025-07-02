@@ -68,6 +68,10 @@ export class DeclareTrainState extends Packet
   new: F '(IdempotenceToken, number, string, TrainState) => <>', (@idemp_tok, @pc_id, @name, @state) =>
     super!
 
+declare_type 'DeclareTrainStateResponse', [[{
+  idemp_tok: IdempotenceToken,
+  error_reason: ?string,
+}]]
 export class DeclareTrainStateResponse extends Packet
   new: F '(IdempotenceToken, ?string) => <>', (@idemp_tok, @error_reason) =>
     super!

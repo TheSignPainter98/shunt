@@ -13,6 +13,11 @@ sequenceDiagram
     Marshal --) -Requester: DeclareTrainStateResponse
 ```
 
+Types involved:
+
+- [`DeclareTrainState`](./types.html#declaretrainstate)
+- [`DeclareTrainStateResponse`](./types.html#declaretrainstateresponse)
+
 ## `MarshalIdentityRequest`
 
 <!-- TODO(kcza): separate MarshalIdentityRequest and FactoryIdentityRequest to hide the latter -->
@@ -25,3 +30,8 @@ sequenceDiagram
     Requester -) +Marshal: MarshalIdentityRequest
     Marshal --) -Requester: MarshalIdentityResponse
 ```
+
+Types involved:
+
+- [`MarshalIdentityRequest`](./types.html#marshalidentityrequest)
+- [`MarshalIdentityResponse`](./types.html#marshalidentityresponse)

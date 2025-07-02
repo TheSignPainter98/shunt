@@ -131,6 +131,10 @@ export class MarshalIdentityRequest extends Packet
   new: F '(IdempotenceToken, number, ?string) => <>', (@idemp_tok, @pc_id, @name) =>
     super!
 
+declare_type 'MarshalIdentityResponse', [[{
+  idemp_tok: IdempotenceToken,
+  resp: number|string,
+}]]
 export class MarshalIdentityResponse extends Packet
   new: F '(IdempotenceToken, number|string) => <>', (@idemp_tok, @resp) =>
     super!
