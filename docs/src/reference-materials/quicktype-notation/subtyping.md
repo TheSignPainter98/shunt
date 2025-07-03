@@ -11,7 +11,7 @@ Examples:
 - `(string|number) -> "hello"` is a subtype of `(string) -> string`
 
 By design, quicktype always accepts subtypes.
-For example, on many Lua distributions the length (`#`) of a [struct][structs] is always 0.
-In such environments, all struct types are a subtype of all array types.
+For example, on many Lua distributions, the length (`#`) of a [struct][structs] is always 0.
+In such environments, all struct types are subtypes of all array types.
 
 [structs]: ./composite-types.md#structs
