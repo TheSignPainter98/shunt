@@ -54,7 +54,7 @@ impl<'src> TypesDirective<'src> {
         &self,
         ctx: &ReplacementCtx<'_>,
     ) -> Result<impl Iterator<Item = YueSource<impl BufRead>>> {
-        let walker = WalkDir::new(ctx.project_relative_path(self.yue_root)?)
+        let walker = WalkDir::new(ctx.relative_path(self.yue_root)?)
             .into_iter()
             .filter_entry(|entry| {
                 let path = entry.path();

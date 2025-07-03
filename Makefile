@@ -2,7 +2,8 @@ LUA = luajit
 
 DIAGRAM_NAMES = marshal-main marshal-resource_orchestrator marshal-schedule_generator marshal-scheduler upgrade_listener config_listener
 DIAGRAMS = $(patsubst %,docs/src/reference-materials/state-machine-diagrams/%.mmd,$(DIAGRAM_NAMES))
-DOC_HELPERS = docs/mdbook-ox/target/release/mdbook-ox
+DOCS_HELPERS = docs/mdbook-ox/target/release/mdbook-ox
+DOCS_SRCS = $(DIAGRAMS) $(DOCS_HELPERS) .version.txt
 RUST_SOURCES = $(shell find docs/mdbook-ox/src/ -name '*.rs')
 SOURCES = $(shell find -name '*.yue')
 OBJECTS = $(patsubst %.yue,%.lua,$(SOURCES))
@@ -15,14 +16,14 @@ GRAPHVIZ_OPTS = -Gfontname="$(NODE_FONTNAME)" -Nfontname="$(NODE_FONTNAME)" -Efo
 all: $(BINARIES)
 .PHONY: all
 
-docs: $(DIAGRAMS) $(DOC_HELPERS)
+docs: $(DOCS_SRCS)
 	mdbook build docs/
 .PHONY: doc
 
 docs/src/reference-materials/state-machine-diagrams/%.mmd: $(OBJECTS)
 	luajit ox.lua debug mermaid $(patsubst docs/src/reference-materials/state-machine-diagrams/%.mmd,%,$@) >$@
 
-serve-docs: $(DIAGRAMS) $(DOC_HELPERS)
+serve-docs: $(DOCS_SRCS)
 	mdbook serve docs/ --open
 .PHONY: serve-doc
 

@@ -7,14 +7,14 @@ use std::path::{self, Path, PathBuf};
 use std::sync::LazyLock;
 
 use aho_corasick::{AhoCorasick, Match};
-use anyhow::{Context, Result, anyhow};
-use mdbook::BookItem;
+use anyhow::{anyhow, Context, Result};
 use mdbook::book::{Book, Chapter};
 use mdbook::errors::Result as MdbookResult;
 use mdbook::preprocess::{Preprocessor, PreprocessorContext};
+use mdbook::BookItem;
 use pulldown_cmark::{Event, Parser};
 
-use crate::directives::{StateSpecDirective, TypesDirective};
+use crate::directives::{StateSpecDirective, TypesDirective, VersionDirective};
 
 #[derive(Default)]
 pub struct OxPreprocessor;
@@ -49,7 +49,11 @@ impl OxPreprocessor {
     }
 
     fn preprocess_text(&self, text: &str, chapter: &Chapter, ctx: &PreprocessorContext) -> String {
-        static PATTERNS: [&str; 2] = [StateSpecDirective::pattern(), TypesDirective::pattern()];
+        static PATTERNS: [&str; 3] = [
+            StateSpecDirective::pattern(),
+            TypesDirective::pattern(),
+            VersionDirective::pattern(),
+        ];
         static MATCHER: LazyLock<AhoCorasick> = LazyLock::new(|| {
             AhoCorasick::new(PATTERNS)
                 .expect("internal error: cannot construct aho-corasick searcher")
@@ -96,11 +100,13 @@ impl OxPreprocessor {
             .next()
             .ok_or_else(|| anyhow!("cannot find end of command invocation"))?;
         let directive_args = &text[directive_name_end..directive_name_end + arg_end_offset];
-        let gobble = directive_name_end + arg_end_offset + "}}".len();
+        let directive_name_start = result.span().start;
+        let gobble = directive_name_end - directive_name_start + arg_end_offset + "}}".len();
 
         let directive = match result.pattern().as_u32() {
             0 => OxDirective::StateSpec(StateSpecDirective::new(directive_args)?),
-            1 => OxDirective::TypesDirective(TypesDirective::new(directive_args)?),
+            1 => OxDirective::Types(TypesDirective::new(directive_args)?),
+            2 => OxDirective::Version(VersionDirective::new(directive_args)?),
             index => panic!("internal error: unexpected pattern index {index}"),
         };
         let new_content = directive.replacement(ctx)?;
@@ -130,14 +136,16 @@ impl Preprocessor for OxPreprocessor {
 
 enum OxDirective<'src> {
     StateSpec(StateSpecDirective<'src>),
-    TypesDirective(TypesDirective<'src>),
+    Types(TypesDirective<'src>),
+    Version(VersionDirective),
 }
 
 impl OxDirective<'_> {
     fn replacement(&self, ctx: &ReplacementCtx<'_>) -> Result<String> {
         match self {
             Self::StateSpec(d) => d.replacement(ctx),
-            Self::TypesDirective(d) => d.replacement(ctx),
+            Self::Types(d) => d.replacement(ctx),
+            Self::Version(d) => d.replacement(ctx),
         }
     }
 }
@@ -148,7 +156,7 @@ struct ReplacementCtx<'ctx> {
 }
 
 impl ReplacementCtx<'_> {
-    pub(crate) fn project_relative_path(&self, file_path: &Path) -> Result<PathBuf> {
+    pub(crate) fn relative_path(&self, file_path: impl AsRef<Path>) -> Result<PathBuf> {
         let ret = path::absolute(
             self.preprocessor
                 .root
@@ -166,8 +174,13 @@ impl ReplacementCtx<'_> {
         Ok(ret)
     }
 
+    pub(crate) fn book_relative_path(&self, file_path: impl AsRef<Path>) -> Result<PathBuf> {
+        let ret = path::absolute(self.preprocessor.root.join(file_path))?;
+        Ok(ret)
+    }
+
     pub(crate) fn file_reader(&self, file_path: &Path) -> Result<impl BufRead + use<>> {
-        let project_relative_path = self.project_relative_path(file_path)?;
+        let project_relative_path = self.relative_path(file_path)?;
         let abs_src_path = project_relative_path
             .canonicalize()
             .with_context(|| anyhow!("cannot canonicalise {}", project_relative_path.display()))?;
