@@ -251,6 +251,8 @@ class TypeSpecParser extends Parser
     @select
       * token: T_NAME
         action: @\parse_named_type
+      * token: T_BOOLEAN
+        action: @\parse_boolean_type
       * token: T_NUMBER
         action: @\parse_number_type
       * token: T_STRING
@@ -264,6 +266,9 @@ class TypeSpecParser extends Parser
 
   parse_named_type: =>
     named_type @expect T_NAME
+
+  parse_boolean_type: =>
+    BooleanType @expect T_BOOLEAN
 
   parse_number_type: =>
     NumberType @expect T_NUMBER
@@ -420,6 +425,7 @@ T_QUESTION = <tostring>: => "'?'"
 T_PLUS = <tostring>: => "'+'"
 T_PIPE = <tostring>: => "'|'"
 T_NAME = <tostring>: => "<name>"
+T_BOOLEAN = <tostring>: => "<boolean>"
 T_NUMBER = <tostring>: => "<number>"
 T_STRING = <tostring>: => "<string>"
 
@@ -468,6 +474,10 @@ class Lexer
           T_PLUS, nil, #match
         else if match = type_spec\match '^|', @index
           T_PIPE, nil, #match
+        else if match = type_spec\match '^true', @index
+          T_BOOLEAN, true, #match
+        else if match = type_spec\match '^false', @index
+          T_BOOLEAN, false, #match
         else if name = type_spec\match '^([a-zA-Z_][a-zA-Z0-9_-]*[a-zA-Z0-9_])', @index
           T_NAME, name, #name
         else if number = type_spec\match '^%-?[0-9]*%.[0-9]+', @index
@@ -609,6 +619,17 @@ class SingletonType using Is
 
   checker: (checker_builder=CheckerBuilder!) =>
     with checker_builder
+      \add C_ASSERT_EQ, @value
+
+class BooleanType using Is
+  new: (@value) =>
+
+  __tostring: =>
+    tostring @value
+
+  checker: (checker_builder=CheckerBuilder!) =>
+    with checker_builder
+      \add C_ASSERT_PRIMITIVE, 'boolean'
       \add C_ASSERT_EQ, @value
 
 class NumberType using Is
@@ -1300,6 +1321,11 @@ spec ->
         Symbol T_BANG
       }
 
+    it 'emits boolean types', ->
+      $expect_that (tokens 'true false'), deep_eq
+        * Symbol T_BOOLEAN, true
+        * Symbol T_BOOLEAN, false
+
     it 'emits number types', ->
       $expect_that (tokens '123 456.654 .789 -123 -456.654 -.789'), deep_eq {
         Symbol T_NUMBER, 123
@@ -1381,6 +1407,10 @@ spec ->
 
       it 'accepts user types', ->
         $expect_that (parse 'UserType'), deep_eq UserType 'UserType'
+
+      it 'accepts boolean types', ->
+        $expect_that (parse 'true'), deep_eq BooleanType true
+        $expect_that (parse 'false'), deep_eq BooleanType false
 
       it 'accepts number types', ->
         $expect_that (parse '123'), deep_eq NumberType 123
@@ -1552,6 +1582,15 @@ spec ->
 
       declare_type 'ChildDoesNotExist', 'IDoNotExist'
       $expect_that (-> T 'ChildDoesNotExist', 123), errors matches 'cannot typecheck: type IDoNotExist not defined'
+
+    it 'checks boolean types', ->
+      $expect_that (-> T 'true', true), no_errors!
+      $expect_that (-> T 'true', false), errors matches 'incorrect type: expected boolean true but got false'
+      $expect_that (-> T 'true', nil), errors matches 'incorrect type: expected boolean but got nil'
+
+      $expect_that (-> T 'false', false), no_errors!
+      $expect_that (-> T 'false', true), errors matches 'incorrect type: expected boolean false but got true'
+      $expect_that (-> T 'false', nil), errors matches 'incorrect type: expected boolean but got nil'
 
     it 'checks number types', ->
       $expect_that (-> T '123', 123), no_errors!
