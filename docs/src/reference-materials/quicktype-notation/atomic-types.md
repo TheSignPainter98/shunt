@@ -13,7 +13,6 @@ This section covers all quicktype types which cannot be broken down:
 All values returned from Lua’s `type` function are valid quicktype types.
 All Lua 5.1 types are supported:
 
-- `nil`
 - `number`
 - `string`
 - `table`
@@ -41,15 +40,18 @@ Examples:
 - `123` implements `some`
 - `nil` does _not_ implement `some`
 
-## Value-types -- `"str"`, `123` {#value-types}
+## Value-types -- `true`, "str"`, `123` {#value-types}
 
 A value implements a value-type if it is equal to the expected value.
-Only strings and numbers are supported as value-types.
+Only `nil`, booleans, strings and numbers are supported as value-types.
 
 Examples:
 
+- `nil` implements `nil`
+- `true` implements `true`
 - `'hello'` implements `"hello"`
 - `123` implements `123`
+- `123` does not implement `true`
 - `'hello'` does _not_ implement `"world"`
 
 ## Never type -- `!` {#never}
