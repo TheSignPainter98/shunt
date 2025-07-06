@@ -18,6 +18,7 @@ import 'ox.cmd.declare'
 import 'ox.cmd.disable'
 import 'ox.cmd.edit'
 import 'ox.cmd.enable'
+import 'ox.cmd.flash'
 import 'ox.cmd.init'
 import 'ox.cmd.start'
 import 'ox.cmd.upgrade'
@@ -74,6 +75,8 @@ run = (args) ->
     disable.main args.disable
   else if args.edit?
     edit.main args.edit
+  else if args.flash?
+    flash.main args.flash
   else if args.declare?
     declare.main args.declare
   else if args.upgrade?

@@ -49,6 +49,7 @@ export class Args
       \add (require 'ox.cmd.disable').subcommand
       \add (require 'ox.cmd.edit').subcommand
       \add (require 'ox.cmd.enable').subcommand
+      \add (require 'ox.cmd.flash').subcommand
       \add (require 'ox.cmd.init').subcommand
       \add (require 'ox.cmd.start').subcommand
       \add (require 'ox.cmd.upgrade').subcommand

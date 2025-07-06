@@ -1,0 +1,41 @@
+local *
+local MinecraftBackend
+
+import 'quicktype' as :declare_type, :F
+
+declare_type 'Drive', [[{}]]
+export class Drive
+  new: F '(?string) => <>', (direction) =>
+    local drive
+    if direction?
+      if 'drive' != peripheral.getType direction
+        error "no drive attached to #{direction}"
+      drive = peripheral.wrap direction
+      if not drive?
+        error "no drive attached to #{direction}"
+    else
+      drives = { peripheral.find 'drive' }
+      if #drives == 0
+        error 'no drives attached'
+      if #drives > 1
+        error 'too many drives attached'
+      drive = drives[1]
+    @drive = drive
+
+  is_disk_present: F '() => boolean', =>
+    @drive.isDiskPresent!
+
+  mount_path: F '() => ?string', =>
+    @drive.getMountPath!
+
+  disk_label: F '() => ?string', =>
+    @drive.getDiskLabel!
+
+  set_disk_label: F '(string) => boolean', (label) =>
+    local ret
+    try
+      @drive.setDiskLabel label
+      ret = true
+    catch _
+      ret = false
+    ret
