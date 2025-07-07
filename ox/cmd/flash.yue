@@ -29,7 +29,7 @@ class OxFlasher
 
   @label: 'ox installer'
 
-  flash: F '() => <>', =>
+  flash: F '(?string) => <>', (input_dir='')=>
     if not @drive\set_disk_label @@label
       error 'cannot flash disk: cannot set disk label'
     current_label = @drive\disk_label!
@@ -42,7 +42,7 @@ class OxFlasher
     if not mount_path?
       error 'cannot flash disk: not mounted'
     ox_content = do
-      with assert io.open 'ox', 'r'
+      with assert io.open "#{input_dir}/ox", 'r'
         ox_content = assert \read '*a'
         assert \close!
       ox_content
@@ -115,9 +115,51 @@ startup_script = F '(string) -> string', (label) ->
 spec ->
   import 'spec_macros' as $
 
+  import 'ox.peripheral.drive' as :TestDrive
   import 'spec' as :describe, :it, :matchers
 
-  import eq from matchers
+  import eq, gt, len from matchers
+
+  describe 'Flasher', ->
+    it 'flashes the given drive', ->
+      TEMP_PATH = '.test'
+      MOUNT_PATH = "#{TEMP_PATH}/mnt"
+      fs.makeDir TEMP_PATH
+      fs.makeDir MOUNT_PATH
+
+      EXPECTED_CONTENT = 'expected-content'
+
+      with assert io.open "#{TEMP_PATH}/ox", 'w+'
+        assert \write EXPECTED_CONTENT
+        assert \close!
+
+      disk_label = nil
+      flasher = OxFlasher TestDrive
+        is_disk_present: => true
+        mount_path: => MOUNT_PATH
+        disk_label: => disk_label
+        set_disk_label: (label) =>
+          disk_label = label
+          true
+      flasher\flash TEMP_PATH
+
+      ox_content = nil
+      with? io.open "#{MOUNT_PATH}/ox", 'r'
+        ox_content = assert \read '*a'
+        assert \close!
+      $expect_that ox_content, eq EXPECTED_CONTENT
+
+      startup_content = nil
+      with? io.open "#{MOUNT_PATH}/startup.lua", 'r'
+        startup_content = assert \read '*a'
+        assert \close!
+      $expect_that startup_content, len gt 0
+
+      assert os.remove "#{MOUNT_PATH}/ox"
+      assert os.remove "#{MOUNT_PATH}/startup.lua"
+      assert os.remove MOUNT_PATH
+      assert os.remove "#{TEMP_PATH}/ox"
+      assert os.remove TEMP_PATH
 
   describe 'startup_script', ->
     it 'has expected value', ->

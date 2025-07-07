@@ -3,7 +3,12 @@ local MinecraftBackend
 
 import 'quicktype' as :declare_type, :F
 
-declare_type 'Drive', [[{}]]
+declare_type 'Drive', [[{
+  is_disk_present: () => boolean,
+  mount_path: () => ?string,
+  disk_label: () => ?string,
+  set_disk_label: (?string) => boolean,
+}]]
 export class Drive
   new: F '(?string) => <>', (direction) =>
     local drive
@@ -31,7 +36,7 @@ export class Drive
   disk_label: F '() => ?string', =>
     @drive.getDiskLabel!
 
-  set_disk_label: F '(string) => boolean', (label) =>
+  set_disk_label: F '(?string) => boolean', (label) =>
     local ret
     try
       @drive.setDiskLabel label
@@ -39,3 +44,22 @@ export class Drive
     catch _
       ret = false
     ret
+
+declare_type 'TestDriveOpts', [[{
+  is_disk_present: ?() => boolean,
+  mount_path: ?() => ?string,
+  disk_label: ?() => ?string,
+  set_disk_label: ?(?string) => boolean,
+}]]
+export class TestDrive
+  new: F '(TestDriveOpts) => <>', (opts) =>
+    {
+      :is_disk_present=-> error "is_disk_present unimplemented"
+      :mount_path=-> error "mount_path unimplemented"
+      :disk_label=-> error "disk_label unimplemented"
+      :set_disk_label=-> error "set_disk_label unimplemented"
+    } = opts
+    @is_disk_present = is_disk_present
+    @mount_path = mount_path
+    @disk_label = disk_label
+    @set_disk_label = set_disk_label
