@@ -14,4 +14,3 @@
    ```bash
    ox flash
    ```
-   You should see that the disk is now called `ox-installer`.
