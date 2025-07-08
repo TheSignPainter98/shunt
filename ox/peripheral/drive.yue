@@ -1,0 +1,65 @@
+local *
+local MinecraftBackend
+
+import 'quicktype' as :declare_type, :F
+
+declare_type 'Drive', [[{
+  is_disk_present: () => boolean,
+  mount_path: () => ?string,
+  disk_label: () => ?string,
+  set_disk_label: (?string) => boolean,
+}]]
+export class Drive
+  new: F '(?string) => <>', (direction) =>
+    local drive
+    if direction?
+      if 'drive' != peripheral.getType direction
+        error "no drive attached to #{direction}"
+      drive = peripheral.wrap direction
+      if not drive?
+        error "no drive attached to #{direction}"
+    else
+      drives = { peripheral.find 'drive' }
+      if #drives == 0
+        error 'no drives attached'
+      if #drives > 1
+        error 'too many drives attached'
+      drive = drives[1]
+    @drive = drive
+
+  is_disk_present: F '() => boolean', =>
+    @drive.isDiskPresent!
+
+  mount_path: F '() => ?string', =>
+    @drive.getMountPath!
+
+  disk_label: F '() => ?string', =>
+    @drive.getDiskLabel!
+
+  set_disk_label: F '(?string) => boolean', (label) =>
+    local ret
+    try
+      @drive.setDiskLabel label
+      ret = true
+    catch _
+      ret = false
+    ret
+
+declare_type 'TestDriveOpts', [[{
+  is_disk_present: ?() => boolean,
+  mount_path: ?() => ?string,
+  disk_label: ?() => ?string,
+  set_disk_label: ?(?string) => boolean,
+}]]
+export class TestDrive
+  new: F '(TestDriveOpts) => <>', (opts) =>
+    {
+      :is_disk_present=-> error "is_disk_present unimplemented"
+      :mount_path=-> error "mount_path unimplemented"
+      :disk_label=-> error "disk_label unimplemented"
+      :set_disk_label=-> error "set_disk_label unimplemented"
+    } = opts
+    @is_disk_present = is_disk_present
+    @mount_path = mount_path
+    @disk_label = disk_label
+    @set_disk_label = set_disk_label
