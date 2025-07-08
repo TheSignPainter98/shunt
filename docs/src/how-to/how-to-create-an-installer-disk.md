@@ -1,0 +1,17 @@
+# How to create an installer disk
+
+## You will need
+
+- A computercraft computer with `ox` installed ([how to install `ox`](./how-to-install-ox.md))
+- A disk drive
+- A floppy disk
+
+## Complete the following steps
+
+1. Place the disk drive directly adjacent to the computer
+2. Insert the disk into the disk drive
+3. Type and run the following command---
+   ```bash
+   ox flash
+   ```
+   You should see that the disk is now called `ox-installer`.

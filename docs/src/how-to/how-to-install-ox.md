@@ -6,7 +6,7 @@
 
 ## You will need
 
-- A computer block
+- A computercraft computer
 - An internet connection
 
 ## Complete the following steps
