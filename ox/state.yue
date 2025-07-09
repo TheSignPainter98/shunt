@@ -13,8 +13,13 @@ export class StateMachineBuilder
     @_states = T '{string -> table}', {}
     @_initial_state_name = T '?string', nil
     @_reporter = T '?(State, State) => <>', nil
+    @_endless = T 'boolean', false
 
   set_initial_state: F '(string) => Self', (@_initial_state_name) => @
+
+  declare_endless: F '() => Self', =>
+    @_endless = true
+    @
 
   set_reporter: F '((State, State) => <>) => Self', (@_reporter) => @
 
@@ -36,8 +41,9 @@ export class StateMachineBuilder
       return "initial state '#{@_initial_state_name}' undefined"
     if @_states[@_initial_state_name]._data_type != 'nil'
       return 'initial state has data present'
-    if err = @validate_end_states!
-      return err
+    if not @_endless
+      if err = @validate_end_states!
+        return err
     if err = @validate_transitions!
       return err
 
@@ -76,25 +82,26 @@ export class StateMachineBuilder
       table.sort non_reachable_from_start
       return "the following states are not reachable from the start state: #{table.concat non_reachable_from_start, ', '}"
 
-    seen = {}
-    stack = {}
-    back_transitions = with {}
-      for _, state in pairs @_states
-        [state._name] = {}
-      for _, state in pairs @_states
-        for neighbour, _ in pairs state._transitions
-          [neighbour][] = state._name
-    end_states = [ state._name for _, state in pairs @_states when state._is_end ]
-    for end_state in *end_states
-      dfs end_state, back_transitions
+    if not @_endless
+      seen = {}
+      stack = {}
+      back_transitions = with {}
+        for _, state in pairs @_states
+          [state._name] = {}
+        for _, state in pairs @_states
+          for neighbour, _ in pairs state._transitions
+            [neighbour][] = state._name
+      end_states = [ state._name for _, state in pairs @_states when state._is_end ]
+      for end_state in *end_states
+        dfs end_state, back_transitions
 
-    non_reachable_from_end = with {}
-      for state_name, _ in pairs @_states
-        if not seen[state_name]
-          [] = state_name
-    if #non_reachable_from_end > 0
-      table.sort non_reachable_from_end
-      return "the following states are not reachable from any end state: #{table.concat non_reachable_from_end, ', '}"
+      non_reachable_from_end = with {}
+        for state_name, _ in pairs @_states
+          if not seen[state_name]
+            [] = state_name
+      if #non_reachable_from_end > 0
+        table.sort non_reachable_from_end
+        return "the following states are not reachable from any end state: #{table.concat non_reachable_from_end, ', '}"
 
     return nil
 
@@ -453,6 +460,13 @@ spec ->
         * '  state_2 --> state_1'
       expected_repr = table.concat expected_lines, '\n'
       $expect_that mermaid_repr, eq expected_repr
+
+    it 'accepts endless state machines', ->
+      builder = (StateMachineBuilder 'test_sm')
+        \set_initial_state 'state_1'
+        \declare_endless!
+        \add State 'state_1'
+      $expect_that builder\build, no_errors!
 
     it 'rejects invalid transition graphs', ->
       builder = (StateMachineBuilder 'test_sm')

@@ -7,11 +7,11 @@ use std::path::{self, Path, PathBuf};
 use std::sync::LazyLock;
 
 use aho_corasick::{AhoCorasick, Match};
-use anyhow::{anyhow, Context, Result};
+use anyhow::{Context, Result, anyhow};
+use mdbook::BookItem;
 use mdbook::book::{Book, Chapter};
 use mdbook::errors::Result as MdbookResult;
 use mdbook::preprocess::{Preprocessor, PreprocessorContext};
-use mdbook::BookItem;
 use pulldown_cmark::{Event, Parser};
 
 use crate::directives::{StateSpecDirective, TypesDirective, VersionDirective};

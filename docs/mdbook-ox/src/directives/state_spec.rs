@@ -43,6 +43,8 @@ impl<'src> StateSpecDirective<'src> {
     ) -> Result<StateMachineDeclaration> {
         static SET_INITIAL_STATE_LINE: LazyLock<Regex> =
             LazyLock::new(|| Regex::new(r" *\\set_initial_state '([^']*)'").unwrap());
+        static DECLARE_ENDLESS_LINE: LazyLock<Regex> =
+            LazyLock::new(|| Regex::new(r" *\\declare_endless!").unwrap());
         static SET_REPORTER_LINE: LazyLock<Regex> =
             LazyLock::new(|| Regex::new(r" *\\set_reporter (.*)").unwrap());
         static ADD_STATE_LINE: LazyLock<Regex> =
@@ -80,6 +82,7 @@ impl<'src> StateSpecDirective<'src> {
             is_end_state: bool,
         }
         let mut initial_state_name = None;
+        let mut endless = false;
         let mut reporter = None;
         let mut parser_state = ParserState::default();
         let mut states = Vec::new();
@@ -102,6 +105,8 @@ impl<'src> StateSpecDirective<'src> {
                 parser_state.parsing_data_type = true;
             } else if let Some(captures) = SET_INITIAL_STATE_LINE.captures(&line) {
                 initial_state_name = Some(captures[1].to_owned());
+            } else if DECLARE_ENDLESS_LINE.is_match(&line) {
+                endless = true;
             } else if let Some(captures) = SET_REPORTER_LINE.captures(&line) {
                 reporter = Some(captures[1].to_owned())
             } else if let Some(captures) = ADD_STATE_LINE.captures(&line) {
@@ -180,6 +185,7 @@ impl<'src> StateSpecDirective<'src> {
         states.sort();
         Ok(StateMachineDeclaration {
             name: self.state_machine_name.to_owned(),
+            endless,
             reporter,
             states,
         })
@@ -189,6 +195,7 @@ impl<'src> StateSpecDirective<'src> {
 struct StateMachineDeclaration {
     name: String,
     reporter: Option<String>,
+    endless: bool,
     states: Vec<State>,
 }
 
@@ -196,6 +203,7 @@ impl Display for StateMachineDeclaration {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let Self {
             name,
+            endless: _,
             reporter,
             states,
         } = self;
