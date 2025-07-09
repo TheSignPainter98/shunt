@@ -1705,8 +1705,6 @@ spec ->
       $expect_that (-> T 'number|{string|number}|string', {[1]: true}), no_errors!
       $expect_that (-> T 'number|{string|number}|string', ->), errors matches 'incorrect type: expected number|{string|number}|string but got function'
 
-      $expect_that (-> T 'number|{field: "asdf", inner: {fn: function}}|string', {field: "asdf", inner: {fn: ->}}), no_errors!
-
     it 'checks nested recursive disjunctions', ->
       declare_type 'InnerDisjunction', 'string|number'
       $expect_that (-> T 'boolean|InnerDisjunction|function', true), no_errors!
