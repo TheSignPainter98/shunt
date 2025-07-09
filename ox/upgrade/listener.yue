@@ -53,7 +53,6 @@ export class UpgradeListener using Tester
   @make_sm: F '() => StateMachine', =>
     (StateMachineBuilder 'upgrade_listener')
       \set_initial_state 'waiting'
-      \declare_endless!
       \set_reporter shallow_log_reporter
       \add (State 'waiting')
         \add_transition_to 'inspecting_packet'

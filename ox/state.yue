@@ -44,6 +44,8 @@ export class StateMachineBuilder
     if not @_endless
       if err = @validate_end_states!
         return err
+    else if err = @validate_endless!
+        return err
     if err = @validate_transitions!
       return err
 
@@ -52,6 +54,16 @@ export class StateMachineBuilder
       if state._is_end
         return nil
     return "no end states declared"
+
+  validate_endless: F '() => ?string', =>
+    dead_ends = with {}
+      for _, state in pairs @_states
+        if #state._transition_list < 1
+          [] = state._name
+    if #dead_ends > 0
+      table.sort dead_ends
+      return "the following states are dead ends: #{table.concat dead_ends, ', '}"
+    nil
 
   validate_transitions: F '() => ?string', =>
     seen = T '{string}', {}
@@ -465,7 +477,8 @@ spec ->
       builder = (StateMachineBuilder 'test_sm')
         \set_initial_state 'state_1'
         \declare_endless!
-        \add State 'state_1'
+        \add (State 'state_1')
+          \add_transition_to 'state_1'
       $expect_that builder\build, no_errors!
 
     it 'rejects invalid transition graphs', ->
@@ -505,6 +518,21 @@ spec ->
           \add_transition_to 'interminable_2'
         \add (State'interminable_2')
       $expect_that builder\build, errors matches 'the following states are not reachable from any end state: interminable_1, interminable_2'
+
+      builder = (StateMachineBuilder 'test_sm')
+        \set_initial_state 'dead_end'
+        \declare_endless!
+        \add State 'dead_end'
+      $expect_that builder\build, errors matches 'the following states are dead ends: dead_end'
+      builder = (StateMachineBuilder 'test_sm')
+        \set_initial_state 'hub'
+        \declare_endless!
+        \add (State 'hub')
+          \add_transition_to 'dead_end_2'
+          \add_transition_to 'dead_end_1'
+        \add State 'dead_end_2'
+        \add State 'dead_end_1'
+      $expect_that builder\build, errors matches 'the following states are dead ends: dead_end_1, dead_end_2'
 
   describe 'valid_ident', ->
     valid_idents =
