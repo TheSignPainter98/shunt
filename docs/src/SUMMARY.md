@@ -17,4 +17,5 @@
     - [Type aliases](./reference-materials/quicktype-notation/type-aliases.md)
     - [Subtyping](./reference-materials/quicktype-notation/subtyping.md)
   - [Types](./reference-materials/types.md)
+  - [Writelite file format](./reference-materials/writelite-file-format.md)
 - [Explanations](./explanations/README.md)
