@@ -4,7 +4,7 @@
 
 - [Tutorials](./tutorials/README.md)
 - [How-to guides](./how-to/README.md)
-  - [How to install ox](./how-to/how-to-install-ox.md)
+  - [How to install shunt](./how-to/how-to-install-shunt.md)
   - [How to create an installer disk](./how-to/how-to-create-an-installer-disk.md)
   - [How to use an installer disk](./how-to/how-to-use-an-installer-disk.md)
 - [Reference materials](./reference-materials/README.md)

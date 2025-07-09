@@ -1,0 +1,214 @@
+local *
+
+import 'clap' as :Param, :Subcommand
+import 'quicktype' as :declare_type, :F
+import 'shunt.peripheral.drive' as :Drive
+import 'spec' as :spec
+
+export subcommand = with Subcommand 'flash'
+  \description 'create an installer disk'
+  \add with Param 'drive'
+    \description 'the drive containing the disk to flash. If omitted, shunt searches for a drive'
+    \default nil
+
+declare_type 'FlashArgs', [[{
+  drive: ?string,
+}]]
+export main = F '(FlashArgs) -> <>', (args) ->
+  { :drive } = args
+
+  try
+    flasher = ShuntFlasher Drive drive
+    flasher\flash!
+  catch err
+    print err
+  return
+
+class ShuntFlasher
+  new: F '(Drive) => <>', (@drive) =>
+
+  @label: 'shunt installer'
+
+  flash: F '(?string) => <>', (input_dir='')=>
+    if not @drive\set_disk_label @@label
+      error 'cannot flash disk: cannot set disk label'
+    current_label = @drive\disk_label!
+    if not current_label?
+      error 'cannot flash disk: no disk present'
+    if current_label != @@label
+      error 'cannot flash disk: cannot set disk label'
+
+    mount_path = @drive\mount_path!
+    if not mount_path?
+      error 'cannot flash disk: not mounted'
+    shunt_content = do
+      with assert io.open "#{input_dir}/shunt", 'r'
+        shunt_content = assert \read '*a'
+        assert \close!
+      shunt_content
+
+    startup_script_content = startup_script @@label
+
+    disk_free_space = fs.getFreeSpace mount_path
+    required_disk_space = #shunt_content + #startup_script_content
+    if disk_free_space < required_disk_space
+      error "cannot flash disk: insufficient space, need #{required_disk_space}B but only #{disk_free_space}B available"
+
+    with assert io.open "#{mount_path}/shunt", 'w+'
+      assert \write shunt_content
+      assert \close!
+
+    with assert io.open "#{mount_path}/startup.lua", 'w+'
+      assert \write startup_script_content
+      assert \close!
+    return
+
+startup_script = F '(string) -> string', (label) ->
+  lines =
+    * "term.clear()"
+    * "term.setCursorPos(1, 1)"
+    * "local installer_header = '--- shunt installer ---'"
+    * "print(('-'):rep(#installer_header))"
+    * "print(installer_header)"
+    * "print(('-'):rep(#installer_header))"
+    * "print('')"
+    * "print('Welcome to the shunt installer!')"
+    * "while true do"
+    * "  print('')"
+    * "  print('Options:')"
+    * "  print(\"* To install shunt, type `y' then hit <enter>\")"
+    * "  print(\"* To cancel, type `n' then hit <enter>\")"
+    * "  print('')"
+    * "  io.write('$ ')"
+    * "  local resp = io.read('*l'):sub(1, 1):lower()"
+    * "  print('')"
+    * ""
+    * "  if resp == 'y' then"
+    * "    break"
+    * "  elseif resp == 'n' then"
+    * "    print('aborting install')"
+    * "    return"
+    * "  end"
+    * "  print('! response \\'' .. resp .. '\\' unrecognised')"
+    * "end"
+    * ""
+    * "local disk_mount_path = nil"
+    * "do"
+    * "  disk_drive = peripheral.find('drive', function(_, drive)"
+    * "    disk_mount_path = drive.getMountPath()"
+    * "    return drive.getDiskLabel() == '#{label}'"
+    * "  end)"
+    * "end"
+    * "assert(disk_mount_path, 'unable to find disk where label=#{label}')"
+    * ""
+    * "-- Copy files"
+    * "print('Copying ' .. disk_mount_path .. '/shunt -> /shunt ...')"
+    * "local shunt_dest = assert(io.open('shunt', 'w+'))"
+    * "for line in io.lines(disk_mount_path .. '/shunt') do"
+    * "  assert(shunt_dest:write(line))"
+    * "  assert(shunt_dest:write('\\n'))"
+    * "end"
+    * "assert(shunt_dest:close())"
+    * "print('Done!')"
+  table.concat lines, '\n'
+
+spec ->
+  import 'spec_macros' as $
+
+  import 'shunt.peripheral.drive' as :TestDrive
+  import 'spec' as :describe, :it, :matchers
+
+  import eq, gt, len from matchers
+
+  describe 'Flasher', ->
+    it 'flashes the given drive', ->
+      TEMP_PATH = '.test'
+      MOUNT_PATH = "#{TEMP_PATH}/mnt"
+      fs.makeDir TEMP_PATH
+      fs.makeDir MOUNT_PATH
+
+      EXPECTED_CONTENT = 'expected-content'
+
+      with assert io.open "#{TEMP_PATH}/shunt", 'w+'
+        assert \write EXPECTED_CONTENT
+        assert \close!
+
+      disk_label = nil
+      flasher = ShuntFlasher TestDrive
+        is_disk_present: => true
+        mount_path: => MOUNT_PATH
+        disk_label: => disk_label
+        set_disk_label: (label) =>
+          disk_label = label
+          true
+      flasher\flash TEMP_PATH
+
+      shunt_content = nil
+      with? io.open "#{MOUNT_PATH}/shunt", 'r'
+        shunt_content = assert \read '*a'
+        assert \close!
+      $expect_that shunt_content, eq EXPECTED_CONTENT
+
+      startup_content = nil
+      with? io.open "#{MOUNT_PATH}/startup.lua", 'r'
+        startup_content = assert \read '*a'
+        assert \close!
+      $expect_that startup_content, len gt 0
+
+      assert os.remove "#{MOUNT_PATH}/shunt"
+      assert os.remove "#{MOUNT_PATH}/startup.lua"
+      assert os.remove MOUNT_PATH
+      assert os.remove "#{TEMP_PATH}/shunt"
+      assert os.remove TEMP_PATH
+
+  describe 'startup_script', ->
+    it 'has expected value', ->
+      LABEL = 'expected_label'
+      expected_lines =
+        * "term.clear()"
+        * "term.setCursorPos(1, 1)"
+        * "local installer_header = '--- shunt installer ---'"
+        * "print(('-'):rep(#installer_header))"
+        * "print(installer_header)"
+        * "print(('-'):rep(#installer_header))"
+        * "print('')"
+        * "print('Welcome to the shunt installer!')"
+        * "while true do"
+        * "  print('')"
+        * "  print('Options:')"
+        * "  print(\"* To install shunt, type `y' then hit <enter>\")"
+        * "  print(\"* To cancel, type `n' then hit <enter>\")"
+        * "  print('')"
+        * "  io.write('$ ')"
+        * "  local resp = io.read('*l'):sub(1, 1):lower()"
+        * "  print('')"
+        * ""
+        * "  if resp == 'y' then"
+        * "    break"
+        * "  elseif resp == 'n' then"
+        * "    print('aborting install')"
+        * "    return"
+        * "  end"
+        * "  print('! response \\'' .. resp .. '\\' unrecognised')"
+        * "end"
+        * ""
+        * "local disk_mount_path = nil"
+        * "do"
+        * "  disk_drive = peripheral.find('drive', function(_, drive)"
+        * "    disk_mount_path = drive.getMountPath()"
+        * "    return drive.getDiskLabel() == '#{LABEL}'"
+        * "  end)"
+        * "end"
+        * "assert(disk_mount_path, 'unable to find disk where label=#{LABEL}')"
+        * ""
+        * "-- Copy files"
+        * "print('Copying ' .. disk_mount_path .. '/shunt -> /shunt ...')"
+        * "local shunt_dest = assert(io.open('shunt', 'w+'))"
+        * "for line in io.lines(disk_mount_path .. '/shunt') do"
+        * "  assert(shunt_dest:write(line))"
+        * "  assert(shunt_dest:write('\\n'))"
+        * "end"
+        * "assert(shunt_dest:close())"
+        * "print('Done!')"
+      expected_content = table.concat expected_lines, '\n'
+      $expect_that (startup_script LABEL), eq expected_content

@@ -1,0 +1,480 @@
+local *
+
+import 'quicktype' as :declare_type, :F, :T
+import 'shunt.clock' as :MinecraftClock
+import 'shunt.logger' as :log, :trace
+import 'spec' as :spec
+
+declare_type 'PromiseTracker', [[{
+  promise: (string, [PromiseStation], ?number, ?number) => Promise,
+  break_promise: (Promise) => <>,
+  train_is_promised: (string) => boolean,
+  station_is_fully_promised: (string) => boolean,
+  declare_train_seen: (string, string) => <>,
+}]]
+declare_type 'Promise', [[{
+  id: number,
+  train: string,
+  stations: ?[PromiseStation],
+  should_approach_index: number,
+  deadline: ?number,
+  max_step_duration: number,
+  lost: boolean,
+}]]
+declare_type 'PromiseStation', [[{
+  name: string,
+  capacity: number,
+}]]
+declare_type 'PromiseSet', [[{
+  count: number,
+  promises: {number},
+}]]
+declare_type 'PromiseTrackerSnapshot', '[Promise]'
+export class PromiseTracker
+  new: F '(Random, ?Clock) => <>', (@rand, @clock=MinecraftClock!) =>
+    @promises = T '{number->Promise}', {}
+    @train_promises = T '{string->Promise}', {}
+    @station_promise_sets = T '{string->PromiseSet}', {}
+    @train_lost_promises = T '{string->Promise}', {}
+
+  snapshot: F '() => PromiseTrackerSnapshot', =>
+    promises = [ promise for _, promise in pairs @promises ]
+    table.sort promises, (a, b) -> a.id < b.id
+    promises
+
+  load_snapshot: F '(PromiseTrackerSnapshot) => <>', (raw_promises) =>
+    @promises = {}
+    @train_promises = {}
+    @station_promise_sets = {}
+    @train_lost_promises = {}
+    for raw_promise in *raw_promises
+      with raw_promise
+        @promises[.id] = raw_promise
+        @train_promises[.train] = raw_promise
+        if .lost
+          @train_lost_promises[.train] = raw_promise
+        else if raw_promise.stations?
+          for station in *.stations
+            @station_promise_sets[station.name] ??= count: 0, promises: {}
+            @station_promise_sets[station.name].count += 1
+            @station_promise_sets[station.name].promises[.id] = true
+
+  promise: F '(string, [PromiseStation], ?number, ?number) => Promise', (train, stations, max_step_duration=30*60, max_unload_duration=60) =>
+    @_promise train, stations, max_step_duration, max_unload_duration
+
+  reserve: F '(string) => <>', (train) =>
+    if promise = @train_promises[train] ?? @train_lost_promises[train]
+      @break_promise promise
+    @_promise train
+    return
+
+  _promise: F '(string, ?[PromiseStation], ?number, ?number) => Promise', (train, stations, max_step_duration=30*60, max_unload_duration=60) =>
+    if @train_promises[train]?
+      error "internal error: cannot promise already-promised train '#{train}'"
+
+    id = @_generate_id!
+    deadline = @clock\now! + max_step_duration
+    promise = T 'Promise',
+      :id
+      :train
+      :stations
+      should_approach_index: 1
+      :deadline
+      :max_step_duration
+      :max_unload_duration
+      lost: false
+    @promises[id] = promise
+    @train_promises[promise.train] = promise
+    if stations?
+      for station in *stations
+        promise_set = @station_promise_sets[station.name] ?? do
+          promise_set =
+            count: 0
+            promises: {}
+          @station_promise_sets[station.name] = promise_set
+          promise_set
+        with promise_set
+          .count += 1
+          .promises[id] = true
+    promise
+
+  _generate_id: F '() => number', =>
+    local id
+    repeat
+      id = @rand\random 2000000
+    until not @promises[id]?
+    id
+
+  break_promise: F '(Promise) => <>', (promise) =>
+    id = promise.id
+    @promises[id] = nil
+    @train_lost_promises[promise.train] = nil
+    @train_promises[promise.train] = nil
+    if not promise.stations?
+      return
+    for station in *promise.stations
+      with? @station_promise_sets[station.name]
+        if .promises[id]?
+          .count -= 1
+        .promises[id] = nil
+
+  train_is_promised: F '(string) => boolean', (train_name) =>
+    @_prune!
+    @train_promises[train_name]?
+
+  train_is_lost: F '(string) => boolean', (train_name) =>
+    @_prune!
+    if @train_lost_promises[train_name]?
+      log -> "train #{train_name} was lost!"
+    @train_lost_promises[train_name]?
+
+  declare_train_found: F '(string) => ?string', (train_name) =>
+    promise = @train_lost_promises[train_name]
+    if not promise?
+      return "train '#{train_name}' was not lost"
+    @break_promise promise
+
+  station_is_fully_promised: F '(PromiseStation) => boolean', (station) =>
+    @_prune!
+
+    promise_set = @station_promise_sets[station.name]
+    if not promise_set?
+      return false
+    promise_set.count >= station.capacity
+
+  promise_valid: F '(Promise) => boolean', (promise) =>
+    if not promise.deadline?
+      return true
+    if not @promises[promise.id]?
+      return false
+    @clock\now! < promise.deadline
+
+  declare_train_seen: F '(string, string) => <>', (train_name, station_name) =>
+    trace "declaring train #{train_name} seen at #{station_name}"
+    promise = @train_promises[train_name]
+    if not promise?
+      return
+    if promise.lost or @train_lost_promises[train_name]?
+      return
+
+    if not promise.stations?
+      return
+    with promise
+      switch station_name
+        when .stations[.should_approach_index].name
+          promise_set = @station_promise_sets[station_name]
+          if promise_set.promises[.id]?
+            promise_set.count -= 1
+          promise_set.promises[.id] = nil
+
+          .should_approach_index += 1
+
+          max_duration = if .should_approach_index <= #.stations
+            promise.max_step_duration
+          else
+            promise.max_unload_duration
+          .deadline = @clock\now! + max_duration
+        when .stations[.should_approach_index-1]?.name
+          -- Ignore repeat observations.
+          trace "repeat-observation of #{.train} at #{.stations[.should_approach_index-1].name} (this is index #{.should_approach_index} of #{#.stations})"
+        else
+          trace "train reached unexpected station: #{station_name} (expected #{.stations[.should_approach_index]}, but would also have accepted #{.stations[.should_approach_index-1]})"
+          promise.lost = true
+          @train_lost_promises[train_name] = promise
+
+          -- Release remaining stops
+          for station in *promise.stations
+            promise_set = @station_promise_sets[station.name]
+            if not promise_set?
+              continue
+            if promise_set.promises[.id]?
+              promise_set.count -= 1
+            promise_set.promises[.id] = nil
+
+          -- Do not use train until manually cleared for use.
+          .deadline = nil
+    return
+
+  _prune: F '() => <>', =>
+    ids_to_prune = with {}
+      for id, promise in pairs @promises
+        if not @promise_valid promise
+          [] = id
+
+    now = @clock\now!
+    for id in *ids_to_prune
+      promise = @promises[id]
+      trace "pruning promise for #{promise.train}"
+
+      deadline_expired = promise.deadline? and now >= promise.deadline
+      if deadline_expired
+        schedule_complete = promise.stations? and promise.should_approach_index >= #promise.stations
+        if schedule_complete
+          trace "schedule was completed"
+          @promises[id] = nil
+          @train_promises[promise.train] = nil
+        else
+          trace "train #{promise.train} was lost (deadline expiry)"
+          promise.lost = true
+          @train_lost_promises[promise.train] = promise
+      else
+        continue -- Already pruned
+
+      if not promise.stations?
+        continue
+      for station in *promise.stations
+        promise_set = @station_promise_sets[station.name]
+        if promise_set.promises[id]?
+          promise_set.count -= 1
+        promise_set.promises[id] = nil
+
+  ut_break_all_promises: F '() => <>', =>
+    promises = [ promise for _, promise in pairs @promises ]
+    for promise in *promises
+      @break_promise promise
+
+  ut_declare_train_lost: F '(string) => <>', (train_name) =>
+    DUMMY_STATIONS =
+      * name: 'dummy-station-1'
+        capacity: 1
+      * name: 'dummy-station-2'
+        capacity: 1
+    promise = @promise train_name, DUMMY_STATIONS
+    promise.lost = true
+    @train_lost_promises[train_name] = promise
+    assert @train_is_lost train_name
+    return
+
+spec ->
+  import 'spec_macros' as $
+
+  import 'compat' as :HOST
+  import 'shunt.clock' as :TestClock
+  import 'shunt.nodes.marshal.util.pseudo_random' as :PseudoRandom
+  import 'spec' as :describe, :it, :matchers
+
+  import deep_eq, eq from matchers
+
+  describe 'PromiseTracker', ->
+    it 'makes and breaks promises', ->
+      rand = PseudoRandom 12345
+      clock = TestClock!
+      with PromiseTracker rand, clock
+        TRAIN_NAME_1 = 'test_train_name_1'
+        STATIONS_1 =
+          * name: 'bank-gold-outbound'
+            capacity: 1
+          * name: 'tower-hill-gold-inbound'
+            capacity: 2
+        TRAIN_NAME_2 = 'test_train_name_2'
+        STATIONS_2 =
+          * name: 'canary-wharf-gold-outbound'
+            capacity: 1
+          * name: 'tower-hill-gold-inbound'
+            capacity: 2
+
+        promise_1 = \promise TRAIN_NAME_1, STATIONS_1
+        $expect_that (\train_is_promised TRAIN_NAME_1), eq true
+        for station in *STATIONS_1
+          $expect_that (\station_is_fully_promised station), eq station.capacity == 1
+        for station in *STATIONS_2
+          $expect_that (\station_is_fully_promised station), eq false
+
+        promise_2 = \promise TRAIN_NAME_2, STATIONS_2
+        for station in *STATIONS_1
+          $expect_that (\station_is_fully_promised station), eq true
+        for station in *STATIONS_2
+          $expect_that (\station_is_fully_promised station), eq true
+
+        \break_promise promise_1
+        for station in *STATIONS_1
+          $expect_that (\station_is_fully_promised station), eq false
+        for station in *STATIONS_2
+          $expect_that (\station_is_fully_promised station), eq station.capacity == 1
+
+        \break_promise promise_2
+        for station in *STATIONS_1
+          $expect_that (\station_is_fully_promised station), eq false
+        for station in *STATIONS_2
+          $expect_that (\station_is_fully_promised station), eq false
+
+    it 'handles valid train arrival', ->
+      rand = PseudoRandom 12345
+      clock = TestClock!
+      with PromiseTracker rand, clock
+        TRAIN_NAME = 'test-train-name'
+        STATIONS =
+          * name: 'station-1'
+            capacity: 1
+          * name: 'station-2'
+            capacity: 1
+        MAX_STEP_DURATION = 100
+        MAX_UNLOAD_DURATION = 10
+
+        $expect_that (\train_is_promised TRAIN_NAME), eq false
+
+        \promise TRAIN_NAME, STATIONS, MAX_STEP_DURATION, MAX_UNLOAD_DURATION
+        $expect_that (\train_is_promised TRAIN_NAME), eq true
+        $expect_that (\station_is_fully_promised STATIONS[1]), eq true
+        $expect_that (\station_is_fully_promised STATIONS[2]), eq true
+        clock.time += MAX_STEP_DURATION - 1
+
+        \declare_train_seen TRAIN_NAME, 'station-1'
+        $expect_that (\train_is_promised TRAIN_NAME), eq true
+        $expect_that (\station_is_fully_promised STATIONS[1]), eq false
+        $expect_that (\station_is_fully_promised STATIONS[2]), eq true
+        clock.time += MAX_STEP_DURATION - 1
+
+        \declare_train_seen TRAIN_NAME, 'station-1'
+        $expect_that (\train_is_promised TRAIN_NAME), eq true
+        $expect_that (\station_is_fully_promised STATIONS[1]), eq false
+        $expect_that (\station_is_fully_promised STATIONS[2]), eq true
+        clock.time += MAX_STEP_DURATION - 1
+
+        \declare_train_seen TRAIN_NAME, 'station-2'
+        $expect_that (\train_is_promised TRAIN_NAME), eq true
+        $expect_that (\station_is_fully_promised STATIONS[1]), eq false
+        $expect_that (\station_is_fully_promised STATIONS[2]), eq false
+
+        clock.time += MAX_UNLOAD_DURATION - 1
+        $expect_that (\train_is_promised TRAIN_NAME), eq true
+        $expect_that (\station_is_fully_promised STATIONS[1]), eq false
+        $expect_that (\station_is_fully_promised STATIONS[2]), eq false
+
+        clock.time += 1
+        $expect_that (\train_is_promised TRAIN_NAME), eq false
+        $expect_that (\station_is_fully_promised STATIONS[1]), eq false
+        $expect_that (\station_is_fully_promised STATIONS[2]), eq false
+
+    it 'handles invalid train arrival', ->
+      rand = PseudoRandom 12345
+      clock = TestClock!
+      with PromiseTracker rand, clock
+        TRAIN_NAME = 'test-train-name'
+        STATIONS =
+          * name: 'station-1'
+            capacity: 1
+        MAX_STEP_DURATION = 100
+        MAX_UNLOAD_DURATION = 10
+        promise = \promise TRAIN_NAME, STATIONS, MAX_STEP_DURATION, MAX_UNLOAD_DURATION
+
+        $assert_that (\station_is_fully_promised STATIONS[1]), eq true
+
+        \declare_train_seen TRAIN_NAME, 'unrelated-station'
+        $expect_that (\train_is_lost TRAIN_NAME), eq true
+        $expect_that (\station_is_fully_promised STATIONS[1]), eq false
+
+        \break_promise promise
+        $expect_that (\train_is_lost TRAIN_NAME), eq false
+        $expect_that (\station_is_fully_promised STATIONS[1]), eq false
+
+    it 'handles promise expiry', ->
+      rand = PseudoRandom 12345
+      clock = TestClock!
+      with PromiseTracker rand, clock
+        TRAIN_NAME = 'test-train-name'
+        STATIONS =
+          * name: 'station-1'
+            capacity: 1
+          * name: 'station-2'
+            capacity: 1
+        MAX_STEP_DURATION = 100
+        MAX_UNLOAD_DURATION = 10
+        promise = \promise TRAIN_NAME, STATIONS, MAX_STEP_DURATION, MAX_UNLOAD_DURATION
+
+        $assert_that (\train_is_promised TRAIN_NAME), eq true
+        $assert_that (\station_is_fully_promised STATIONS[1]), eq true
+        $expect_that (\train_is_lost TRAIN_NAME), eq false
+
+        clock.time += MAX_STEP_DURATION
+
+        $expect_that (\train_is_promised TRAIN_NAME), eq true
+        $expect_that (\station_is_fully_promised STATIONS[1]), eq false
+        $expect_that (\train_is_lost TRAIN_NAME), eq true
+
+        \break_promise promise
+
+        $expect_that (\train_is_promised TRAIN_NAME), eq false
+        $expect_that (\station_is_fully_promised STATIONS[1]), eq false
+
+    it 'handles unseen trains', ->
+      rand = PseudoRandom 12345
+      clock = TestClock!
+      with PromiseTracker rand, clock
+        $expect_that (\train_is_promised 'spurious-train'), eq false
+
+    it 'handles finding lost trains', ->
+      rand = PseudoRandom 12345
+      clock = TestClock!
+      with PromiseTracker rand, clock
+        TRAIN_NAME = 'test-train-name'
+
+        $expect_that (\declare_train_found TRAIN_NAME), eq "train '#{TRAIN_NAME}' was not lost"
+
+        STATIONS =
+          * name: 'station-1'
+            capacity: 1
+          * name: 'station-2'
+            capacity: 1
+        MAX_STEP_DURATION = 100
+        MAX_UNLOAD_DURATION = 10
+        \promise TRAIN_NAME, STATIONS, MAX_STEP_DURATION, MAX_UNLOAD_DURATION
+
+        clock.time += 2 * MAX_STEP_DURATION
+
+        $assert_that (\train_is_lost TRAIN_NAME), eq true
+        $expect_that (\declare_train_found TRAIN_NAME), eq nil
+        $expect_that (\train_is_lost TRAIN_NAME), eq false
+
+    it 'handles train reservation requests', ->
+      rand = PseudoRandom 12345
+      clock = TestClock!
+      with PromiseTracker rand, clock
+        TRAIN_NAME = 'test-train-name'
+
+        STATIONS =
+          * name: 'station-1'
+            capacity: 1
+          * name: 'station-2'
+            capacity: 1
+        MAX_STEP_DURATION = 100
+        MAX_UNLOAD_DURATION = 10
+        \promise TRAIN_NAME, STATIONS, MAX_STEP_DURATION, MAX_UNLOAD_DURATION
+
+        clock.time += 2 * MAX_STEP_DURATION
+        $assert_that (\train_is_lost TRAIN_NAME), eq true
+
+        \reserve TRAIN_NAME
+        $expect_that (\train_is_promised 'test-train-name'), eq true
+        $assert_that (\train_is_lost TRAIN_NAME), eq false
+
+        clock.time += 2000000 -- Test no expiry
+        $expect_that (\train_is_promised 'test-train-name'), eq true
+
+    it 'survives snapshotting', ->
+      rand = PseudoRandom 12345
+      clock = TestClock!
+      promise_tracker = with PromiseTracker rand, clock
+        TRAIN_NAME = 'test-train-name'
+        TRAIN_NAME_2 = 'test-train-name-2'
+        TRAIN_NAME_3 = 'test-train-name-3'
+
+        STATIONS =
+          * name: 'station-1'
+            capacity: 1
+          * name: 'station-2'
+            capacity: 1
+        MAX_STEP_DURATION = 100
+        MAX_UNLOAD_DURATION = 10
+        \promise TRAIN_NAME, STATIONS, MAX_STEP_DURATION, MAX_UNLOAD_DURATION
+        \reserve TRAIN_NAME_2
+
+        clock.time += 2 * MAX_STEP_DURATION
+        $assert_that (\train_is_lost TRAIN_NAME), eq true
+
+        \promise TRAIN_NAME_3, STATIONS, MAX_STEP_DURATION, MAX_UNLOAD_DURATION
+
+      save_data = promise_tracker\snapshot!
+      loaded_promise_tracker = with PromiseTracker rand, clock
+        \load_snapshot save_data
+      $assert_that loaded_promise_tracker, deep_eq promise_tracker

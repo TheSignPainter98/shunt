@@ -2,7 +2,7 @@
 
 ## You will need
 
-- A computercraft computer with `ox` installed ([how to install `ox`](./how-to-install-ox.md))
+- A computercraft computer with `shunt` installed ([how to install `shunt`](./how-to-install-shunt.md))
 - A disk drive
 - A floppy disk
 
@@ -12,5 +12,5 @@
 2. Insert the disk into the disk drive
 3. Type and run the following command---
    ```bash
-   ox flash
+   shunt flash
    ```

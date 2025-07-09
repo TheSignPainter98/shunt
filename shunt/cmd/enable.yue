@@ -1,0 +1,32 @@
+local *
+
+import 'clap' as :Flag, :Subcommand
+import 'quicktype' as :F
+
+export subcommand = with Subcommand 'enable'
+  \description 'enable shunt on startup'
+  \add with Flag 'force'
+    \description 'overwrite existing config'
+  \add with Flag 'start'
+    \short nil
+    \description 'start running immediately'
+
+export main = F '({}) -> <>', (args) ->
+  if not args.force
+    with? io.open 'startup.lua', 'r'
+      \close!
+      print 'cannot enable shunt: existing startup script detected\nre-run with --force to overwrite'
+      return
+
+  with assert io.open 'startup.lua', 'w+'
+    assert \write _startup_script
+    assert \close!
+
+  if args.start
+    os.reboot?!
+  return
+
+export _startup_script = [[
+settings.set('motd.enable', false)
+shell.run('shunt start')
+]]

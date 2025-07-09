@@ -1,0 +1,39 @@
+local *
+
+import 'clap' as :Flag, :Param, :Subcommand
+import 'quicktype' as :declare_type, :F
+import 'shunt.configurator.main' as :Configurator
+
+export subcommand = with Subcommand 'edit'
+  \description 'remotely configure a shunt instance'
+  \add with Subcommand 'marshal'
+    \description 'edit the marshal'
+  \add with Subcommand 'factory'
+    \description 'edit a factory'
+    \add with Param 'which'
+      \description 'the name of the factory to edit'
+
+declare_type 'EditArgs', [[{
+  marshal: ?EditMarshalArgs,
+  factory: ?EditFactoryArgs,
+}]]
+declare_type 'EditMarshalArgs', '{}'
+declare_type 'EditFactoryArgs', [[{
+  which: string,
+}]]
+export main = F '(EditArgs) -> <>', (args) ->
+  configurator = Configurator!
+
+  what = if args.marshal?
+    'marshal'
+  else
+    args.factory.which
+  id, err = configurator\get_pc_id what
+  if err?
+    print err
+    return
+
+  err = configurator\configure id
+  if err?
+    print err
+    return

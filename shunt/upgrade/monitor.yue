@@ -1,0 +1,82 @@
+local *
+local CurrentReleaseRequest
+local CurrentReleaseResponse
+
+import 'quicktype' as :declare_type, :F
+import 'shunt.logger' as :log, :trace
+import 'shunt.peripheral.uplink' as :IdempotenceToken, :Packet, :TIMEOUT
+import 'shunt.version' as :VERSION
+
+declare_type 'UpgradeMonitorConfig', [[{
+  marshal: ?{},
+}]]
+declare_type 'UpgradeMonitorOpts', [[{
+  config: UpgradeMonitorConfig,
+  pc: Pc,
+  uplink: Uplink,
+}]]
+export class UpgradeMonitor
+  new: F '(UpgradeMonitorOpts) => <>', (opts) =>
+    {
+      :config
+      :pc
+      :uplink
+    } = opts
+    @pc = pc
+    @uplink = uplink
+
+    @is_marshal = config.marshal?
+    @new_release = nil
+
+  upgrade_available: F '() => boolean', =>
+    if @is_marshal
+      return false
+
+    release = @get_latest_release!
+    if release.version <= VERSION
+      return false
+    @new_release = release
+    true
+
+  upgrade_now: F '() => !', =>
+    log -> "upgrading to version #{@new_release.version}"
+    @uplink\deafen!
+    with assert io.open @new_release.file, 'w+'
+      \write @new_release.content
+      assert \close!
+    os.reboot!
+
+  get_latest_release: F '() => Release', =>
+    attempt = 0
+    idemp_tok = IdempotenceToken!
+    while true
+      attempt += 1
+      if attempt > 1
+        trace "getting release from marshal, attempt #{attempt}"
+
+      @uplink\broadcast CurrentReleaseRequest idemp_tok, @pc\id!
+      marshal_id, pkt_or_err = @uplink\receive_from_any CurrentReleaseResponse, timeout: 10
+      if not marshal_id?
+        if pkt_or_err != TIMEOUT
+          trace "ignoring error whilst getting update: #{pkt_or_err}"
+          -- Random backoff
+          os.sleep (math.random 1000) / 100
+        else
+          trace 'TIMEOUT'
+        continue
+      if pkt_or_err.idemp_tok == idemp_tok
+        trace "got release!"
+        return pkt_or_err.release
+      trace "expected #{idemp_tok} but got #{pkt_or_err.idemp_tok} (match? #{pkt_or_err.idemp_tok == idemp_tok})"
+
+declare_type 'CurrentReleaseRequest', [[{
+  idemp_tok: number,
+  pc_id: number,
+}]]
+export class CurrentReleaseRequest extends Packet
+  new: F '(IdempotenceToken, number) => <>', (@idemp_tok, @pc_id) =>
+    super!
+
+export class CurrentReleaseResponse extends Packet
+  new: F '(IdempotenceToken, Release) => <>', (@idemp_tok, @release) =>
+    super!

@@ -447,7 +447,7 @@ spec ->
         import spec from require 'spec'
         import 'spec' as :repr
 
-        import 'ox.toml'
+        import 'shunt.toml'
         import 'spec' as :repr
 
         import concat from table
@@ -478,7 +478,7 @@ spec ->
       errs = run_check ImportBlockKindsSorted!, 'test.yue', [[
         import concat from table
 
-        import 'ox.toml'
+        import 'shunt.toml'
 
         import spec from require 'spec'
 

@@ -1,0 +1,89 @@
+local *
+
+import 'clap' as :Flag, :Param, :Subcommand
+import 'quicktype' as :F, :T
+import 'shunt.config' as :CONFIG_FILE
+import 'shunt.configurator.editor' as :ABORT, :Editor
+import 'shunt.configurator.main' as :Configurator
+import 'spec' as :spec
+
+import 'shunt.toml'
+
+display = require 'shunt.nodes.display.main'
+factory = require 'shunt.nodes.factory.main'
+ledger = require 'shunt.nodes.ledger.main'
+marshal = require 'shunt.nodes.marshal.main'
+
+export subcommand = with Subcommand 'init'
+  \description 'initialise this shunt instance'
+  \add with Flag 'force'
+    \description 'overwrite existing config'
+  \add with Param 'instance-type'
+    \description 'the type of instance to initialise'
+    \options
+      * 'display'
+      * 'factory'
+      * 'ledger'
+      * 'marshal'
+
+default_config_by_type = T '{string->()-><?string, ?string>}',
+  display: display.default_config
+  factory: factory.default_config
+  ledger: ledger.default_config
+  marshal: marshal.default_config
+
+export main = F '({}) -> <>', (args) ->
+  default_config_fn = default_config_by_type[args.instance_type]
+  if not default_config_fn?
+    error "internal error: unrecognised instance type '#{args.instance_type}'"
+
+  if not args.force
+    with? io.open CONFIG_FILE, 'r'
+      \close!
+      print "#{CONFIG_FILE} already exists"
+      return
+
+  editor = Editor!
+  checker = Configurator::config_checker args.instance_type
+  on_attempt = Configurator::ask_permission_on_attempt
+  config, err = editor\edit_text default_config_fn!, CONFIG_FILE, checker, on_attempt
+
+  if err != nil
+    print "cannot init: #{err}"
+    return
+
+  with assert io.open CONFIG_FILE, 'w+'
+    assert \write config
+    assert \close!
+
+  message_lines =
+    * "#{args.instance_type} configured. To enable, run:"
+    * ''
+    * '> shunt enable'
+    * ''
+    * 'then, to start, run:'
+    * ''
+    * '> shunt start'
+    * ''
+  print table.concat message_lines, '\n'
+  return
+
+spec ->
+  import 'spec_macros' as $
+
+  import 'spec' as :describe, :it, :matchers
+
+  import eq, has_fields, has_type, no_errors from matchers
+
+  configs = [:name, :raw_fn for name, raw_fn in pairs default_config_by_type]
+  table.sort configs, (a, b) -> a.name < b.name
+
+  for config in *configs
+    describe "default #{config.name} config", ->
+      it 'is valid toml', ->
+        parsed_default_config, err = toml.decode config.raw_fn!
+
+        $expect_that err, eq nil
+        $expect_that parsed_default_config, has_type 'table'
+        $expect_that parsed_default_config, has_fields
+          [config.name]: has_type 'table'

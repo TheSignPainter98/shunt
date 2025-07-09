@@ -1,0 +1,78 @@
+local *
+
+import 'clap' as :Flag, :Subcommand
+import 'quicktype' as :F
+import 'shunt.config' as :config
+import 'shunt.logger' as :log
+import 'shunt.pc' as :Pc
+import 'shunt.peripheral.uplink' as :Uplink
+import 'shunt.upgrade.monitor' as :UpgradeMonitor
+
+display = require 'shunt.nodes.display.main'
+factory = require 'shunt.nodes.factory.main'
+ledger = require 'shunt.nodes.ledger.main'
+marshal = require 'shunt.nodes.marshal.main'
+
+export subcommand = with Subcommand 'start'
+  \description 'start this shunt instance'
+  \add with Flag 'fragile'
+    \description 'exit on failure, rather than reattempting'
+    \short nil
+    \dest 'no_reattempt'
+  \add with Flag 'allow-outdated'
+    \description 'skip upgrade check'
+    \short nil
+
+export main = F '({}) -> <>', (args) ->
+  pc = Pc!
+  log -> "starting shunt on pc ##{pc\id!}"
+
+  cfg, err = config!
+  if err?
+    print "cannot start shunt: cannot load config: #{err}"
+    return
+  if not cfg?
+    print 'cannot start shunt: config missing\ntry running `shunt init <instance-type>` first'
+    return
+
+  if not args.allow_outdated
+    with UpgradeMonitor config: cfg, :pc, uplink: Uplink!
+      if \upgrade_available!
+        \upgrade_now!
+
+  to_spam = if cfg.marshal?
+    -> marshal.main cfg
+  else if cfg.display?
+    -> display.main cfg
+  else if cfg.factory?
+    -> factory.main cfg
+  else if cfg.ledger?
+    -> ledger.main cfg
+  else
+    print 'cannot detect instance type'
+    return
+  spam args.no_reattempt, to_spam
+
+spam = F '(boolean, () -> <>) -> <>', (no_reattempt, fn) ->
+  if no_reattempt
+    fn!
+    return
+
+  attempt = 1
+  done = false
+  while not done
+    try
+      fn!
+      done = true
+    catch err
+      colour = term?.getTextColor!
+      term?.setTextColor colors.red
+      print debug.traceback err
+      term?.setTextColor colour
+
+      print "[failed]"
+      os.sleep 10
+      term?.clear!
+
+      attempt += 1
+      print "[attempt #{attempt}]"

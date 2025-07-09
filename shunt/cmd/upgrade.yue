@@ -1,0 +1,65 @@
+local *
+
+import 'clap' as :Flag, :Subcommand
+import 'quicktype' as :declare_type, :F
+import 'shunt.config' as :config
+import 'shunt.logger' as :log
+import 'shunt.upgrade.instigator' as :Instigator
+import 'shunt.version' as :VERSION
+
+export subcommand = with Subcommand 'upgrade'
+  \description 'upgrade all shunt versions across all networks'
+  \add with Flag 'force'
+    \short nil
+    \description 'skip version check'
+  \add with Flag 'yes'
+    \description 'skip confirmation'
+
+export main = F '({}) -> <>', (args) ->
+  local release
+  RELEASE_REPO_URL = 'https://gitlab.legitcorp.com/kcza/shunt/-/raw/master'
+  with ReleaseDownloader RELEASE_REPO_URL
+    release, err = \get_file 'shunt'
+    if err?
+      error err
+  if not args.force and release.version <= VERSION
+    print 'already up to date'
+    return
+
+  cfg, err = config!
+  if err?
+    print "cannot load config: #{err}"
+    return
+
+  with Instigator config!, release
+    \upgrade not args.yes
+  return
+
+export TMP_DIR = '.upgrade_tmp'
+
+declare_type 'Release', [[{
+  file: string,
+  version: string,
+  content: string,
+}]]
+
+class ReleaseDownloader
+  new: (@release_repo_url) =>
+
+  get_file: F '(string) => Release', (file) =>
+    log -> "getting #{file}..."
+
+    local content
+    with assert http.get "#{@release_repo_url}/#{file}"
+      content = \readAll!
+      \close!
+
+    version = nil
+    for v in content\gmatch [=[VERSION = ['"]([0-9][^'"]*)['"]]=]
+      if version?
+        error 'internal error: multiple versions found in downloaded file'
+      version = v
+    if not version?
+      error 'internal error: no version found in downloaded file'
+
+    :file, :version, :content

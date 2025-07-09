@@ -1,0 +1,721 @@
+local *
+local FactoryHeartbeat
+local ScheduleRequest
+local ScheduleResponse
+
+import 'compat' as :HOST
+import 'quicktype' as :declare_type, :F, :is, :T
+import 'shunt.configurator.main' as :GetConfigRequest, :GetConfigResponse, :SetConfigRequest, :SetConfigResponse
+import 'shunt.logger' as :fatal, :log
+import 'shunt.pc' as :Pc
+import 'shunt.peripheral.station' as MinecraftBackend: MinecraftStationBackend, :Station
+import 'shunt.peripheral.stockpile' as :Inventory, MinecraftBackend: MinecraftInventoryBackend, :Stockpile
+import 'shunt.peripheral.uplink' as :IdempotenceToken, :Packet, :Uplink
+import 'spec' as :repr, :spec
+
+import 'shunt.toml'
+
+export default_config = ->
+  root_config = [=[
+[factory]
+name = '<factory-name>'
+]=]
+  stockpile_config = F '(string) -> string', (resource_name) -> "[[stockpile]]
+name = '#{resource_name}'
+# surplus_amount = 1152
+# shortage_amount = 576
+"
+  station_config = F '(string, [string]) -> string', (station_name, resource_names) ->
+    "[[stations]]
+name = '#{station_name}'
+type = 'inbound' # or 'outbound'
+handles = #{table.concat ["'#{name}'" for name in *resource_names], '# or '}
+network = 'mainline'
+"
+  resource_names, inventories_found = switch HOST
+    when 'minecraft'
+      log -> 'scanning inventories...'
+      inventories = [ Inventory backend for backend in *MinecraftInventoryBackend::find! ]
+      log -> "found #{#inventories} inventories"
+      stockpile = Stockpile inventories
+
+      log -> 'scanning inventories...'
+      resources = [ stored_item.name for stored_item in *stockpile\content!.stored_items ]
+      table.sort resources
+      log -> "found #{#resources} resource(s)"
+      resources, #inventories > 0
+    when 'native'
+      {'test-resource'}, true
+    else
+      error "internal error: unknown host #{HOST}"
+
+  station_names = switch HOST
+    when 'minecraft'
+      stations = [ Station backend for backend in *MinecraftStationBackend::find! ]
+      log -> "found #{#stations} station(s)"
+      seen_station_names = {}
+      for station in *stations
+        err = station\validate!
+        if err?
+          fatal err
+        seen_station_names[station\name!] = true
+
+      station_names = [ station_name for station_name, _ in pairs seen_station_names ]
+      table.sort station_names
+      station_names
+    when 'native'
+      {'test-station'}
+    else
+      error "internal error: unknown host #{HOST}"
+
+  issues =
+    no_stations: #station_names == 0
+    no_inventories: not inventories_found
+    no_resources: #resource_names == 0
+  num_issues = do
+    num_issues = 0
+    for _, present in pairs issues
+      if present
+        num_issues += 1
+    num_issues
+  config_fragments = with {}
+    if num_issues > 0
+      [] = '# Issues detected! Please resolve the following:'
+      [] = '#'
+    if issues.no_stations
+      [] = '# * No stations detected'
+    if issues.no_inventories
+      [] = '# * No inventories detected'
+    else if issues.no_resources
+      [] = '# * No resources detected in inventories'
+    if num_issues > 0
+      [] = '#'
+      [] = '# Once resolved, run the following command to'
+      [] = '# overwrite this config file:'
+      [] = '#'
+      -- TODO(kcza): reword once remote configuration is added
+      [] = '# > shunt init factory --force'
+
+    [] = root_config
+    for resource_name in *resource_names
+      [] = stockpile_config resource_name
+    for station_name in *station_names
+      [] = station_config station_name, resource_names
+  table.concat config_fragments, '\n'
+
+export main = F '(FactoryConfig) -> <>', (config) ->
+  print 'starting factory'
+
+  pc = Pc!
+
+  stations = do
+    stations = [ Station backend for backend in *MinecraftStationBackend::find! ]
+    if #stations == 0
+      fatal "cannot find any stations"
+    stations
+
+  stockpile = do
+    inventories = [ Inventory backend for backend in *MinecraftInventoryBackend::find! ]
+    if #inventories == 0
+      fatal 'cannot find any inventories'
+    Stockpile inventories
+
+  with Factory config, pc, stations, stockpile, Uplink!
+    \run!
+
+declare_type 'FactoryConfig', [[{
+  factory: {
+    name: string,
+  },
+  stockpile: [StockpileConfig],
+  stations: [StationConfig],
+}]]
+declare_type 'StockpileConfig', [[
+  {name: string}
+  + StockpileLevelConfig
+]]
+declare_type 'StockpileLevelConfig', [[
+  {
+    surplus_amount: number,
+    shortage_amount: ?number,
+  } | {
+    surplus_amount: ?number,
+    shortage_amount: number,
+  }
+]]
+declare_type 'StationConfig', [[{
+  name: string,
+  type: "inbound"|"outbound",
+  handles: string,
+  network: string,
+}]]
+class Factory
+  new: F '(FactoryConfig+StoredConfig, Pc, [Station], Stockpile, Uplink) => <>', (config, @pc, @stations, @stockpile, @uplink) =>
+    @set_config config
+    @heartbeat_num = T 'number', 0
+
+  name: F '() => string', =>
+    @config.factory.name
+
+  run: F '() => !', =>
+    @send_heartbeat!
+    parallel.waitForAny @\run_steps,
+      @\run_heartbeats,
+      @\run_peripheral_detection,
+      @\run_peripheral_detach_detection
+      -- TODO(kcza): detect marshal ID, packets sent to nil marshal shall be ignored
+
+  run_steps: F '() => !', =>
+    while true
+      @do_network_step!
+
+  do_network_step: F '() => <>', =>
+    from_id, packet = @uplink\receive_from_any!
+    if not from_id?
+      return
+
+    switch packet.protocol
+      when 'ScheduleRequest'
+        @on_schedule_request from_id, packet
+      when 'GetConfigRequest'
+        @on_get_config_request packet
+      when 'SetConfigRequest'
+        @on_set_config_request packet
+      else
+        log -> "ignoring #{packet.protocol} packet"
+    return
+
+  on_schedule_request: F '(number, Packet) => <>', (requester, request) =>
+    log -> 'handling schedule request'
+
+    { :idemp_tok, :station_name, :train_name, :schedule } = request
+    station = @get_train_station station_name, train_name
+    if not station?
+      @uplink\send_to requester, ScheduleResponse idemp_tok, "no train #{train_name} at #{station_name} of #{@name!}"
+      return
+    -- NOTE: this successful response is sent before applying the schedule to
+    -- avoid creating a rogue train: one which has a schedule and cargo, but
+    -- which the system knows nothing about
+    @uplink\send_to requester, ScheduleResponse idemp_tok, nil
+
+    station\apply_schedule schedule
+    return
+
+  get_train_station: F '(string, string) => ?Station', (station_name, train_name) =>
+    for station in *@stations
+      if station\name! == station_name and station\train_name! == train_name
+        return station
+    nil
+
+  on_get_config_request: F '(GetConfigRequest) => <>', (packet) =>
+    { :idemp_tok, :pc_id } = packet
+    @uplink\send_to pc_id, GetConfigResponse idemp_tok, @config.<raw>
+
+  on_set_config_request: F '(SetConfigRequest) => <>', (packet) =>
+    { :idemp_tok, :pc_id, :raw } = packet
+    config, err = toml.decode raw
+    if err?
+      @uplink\send_to pc_id, SetConfigResponse idemp_tok, err
+      return
+
+    ok, err = is 'FactoryConfig', config
+    if not ok
+      @uplink\send_to pc_id, SetConfigResponse idemp_tok, err
+      return
+
+    config.<> = {}
+    config.<raw> = raw
+    @set_config config
+    @uplink\send_to pc_id, SetConfigResponse idemp_tok, nil
+
+  set_config: F '(FactoryConfig+StoredConfig) => <>', (@config) =>
+    name = @name!
+    if @pc\name! != name
+      @pc\set_name name
+
+  run_heartbeats: F '() => !', =>
+    HEARTBEAT_PERIOD = 10
+    while true
+      @send_heartbeat!
+      os.sleep HEARTBEAT_PERIOD
+
+  run_peripheral_detection: F '() => !', =>
+    while true
+      os.pullEvent 'peripheral'
+      @send_heartbeat!
+
+  run_peripheral_detach_detection: F '() => !', =>
+    while true
+      os.pullEvent 'peripheral_detach'
+      @send_heartbeat!
+
+  send_heartbeat: F '() => <>', =>
+    stations = @detect_stations!
+    stockpile = @detect_stockpile!
+    heartbeat = FactoryHeartbeat @pc\id!, @name!, stations, stockpile
+
+    @heartbeat_num += 1
+    log -> "sending heartbeat #{@heartbeat_num}: #{repr heartbeat}"
+
+    @uplink\broadcast heartbeat
+
+  detect_stations: F '() => DetectedStations', =>
+    -- TODO(kcza): get station detector backend to update @stations here
+
+    detected_station_info = with {}
+      for station in *@stations
+        name = station\name!
+        info = [name]
+        if not info?
+          [name] = do
+            config = @get_station_config name
+            known = config?
+            info = :name, :known, capacity: 0, present_trains: {}
+            if known
+              info = { ...config, ...info }
+            info
+
+        present_train = station\train_name!
+        if present_train?
+          info.present_trains[] = present_train
+        info.capacity += 1
+
+    with known: {}, unknown: {}
+      for _, station_info in pairs detected_station_info
+        known = station_info.known
+        station_info.known = nil
+
+        if known
+          .known[] = station_info
+        else
+          .unknown[] = station_info
+
+      table.sort .known, (a, b) -> a.name < b.name
+      table.sort .unknown, (a, b) -> a.name < b.name
+
+  get_station_config: F '(string) => ?StationConfig', (name) =>
+    for station_config in *@config.stations
+      if station_config.name == name
+        return station_config
+    nil
+
+  detect_stockpile: F '() => DetectedStockpile', =>
+    { :stored_items, :estimated_capacity } = @stockpile\content!
+
+    seen_resources = T '{string}', {}
+    expected_resource_configs = T '{string->StockpileConfig}', { cfg.name, cfg for cfg in *@config.stockpile }
+    with known: {}, unknown: {}, :estimated_capacity
+      for stored_item in *stored_items
+        seen_resources[stored_item.name] = true
+        config = expected_resource_configs[stored_item.name]
+        if config?
+          .known[] = { ...config, ...stored_item }
+        else
+          .unknown[] = stored_item
+
+      for config in *@config.stockpile
+        if seen_resources[config.name]
+          continue
+        .known[] = { ...config, stored: 0 }
+
+declare_type 'ScheduleRequest', [[
+  Packet + {
+    idemp_tok: IdempotenceToken,
+    station_name: string,
+    train_name: string,
+    schedule: Schedule,
+  }
+]]
+export class ScheduleRequest extends Packet
+  new: F '(IdempotenceToken, string, string, Schedule) => <>', (@idemp_tok, @station_name, @train_name, @schedule) =>
+    super!
+
+declare_type 'ScheduleResponse', [[
+  Packet + {
+    idemp_tok: IdempotenceToken,
+    error_reason: ?string,
+  }
+]]
+export class ScheduleResponse extends Packet
+  new: F '(IdempotenceToken, ?string) => <>', (@idemp_tok, @error_reason) =>
+    super!
+
+declare_type 'FactoryHeartbeat', [[{
+  pc_id: number,
+  name: string,
+  stations: DetectedStations,
+  stockpile: DetectedStockpile,
+}]]
+declare_type 'DetectedStations', [[{
+  known: [KnownDetectedStation],
+  unknown: [UnknownDetectedStation],
+}]]
+declare_type 'KnownDetectedStation', 'StationConfig + DetectedTrains'
+declare_type 'UnknownDetectedStation', [[
+  { name: string }
+  + DetectedTrains
+]]
+declare_type 'DetectedTrains', [[{
+  capacity: number,
+  present_trains: [string],
+}]]
+declare_type 'DetectedStockpile', [[{
+  known: [StockpileItemInfo],
+  unknown: [StoredItemInfo],
+  estimated_capacity: number,
+}]]
+declare_type 'StockpileItemInfo', 'StoredItemInfo + StockpileConfig'
+export class FactoryHeartbeat extends Packet
+  new: F '(number, string, DetectedStations, DetectedStockpile) => <>', (@pc_id, @name, @stations, @stockpile) =>
+    super!
+
+spec ->
+  import 'spec_macros' as $
+
+  import 'shunt.pc' as :TestPcBackend
+  import 'shunt.peripheral.station' as :TestStationBackend
+  import 'shunt.peripheral.stockpile' as :TestInventoryBackend
+  import 'shunt.peripheral.uplink' as :TestUplinkBackend
+  import 'spec' as :describe, :it, :matchers
+
+  import deep_eq, eq, has_fields, len, matches, some from matchers
+
+  describe 'Factory', ->
+    it 'resolves label and name mismatches', ->
+      CONFIG_NAME = 'config-name'
+      PC_NAME = 'pc-name'
+      new_name = nil
+
+      config =
+        <raw>: ''
+        factory:
+          name: CONFIG_NAME
+          network: 'mainline'
+        stockpile: {}
+        stations: {}
+      pc = Pc TestPcBackend
+        name: => PC_NAME
+        set_name: (name) =>
+          new_name = name
+      stations = {}
+      stockpile = Stockpile { Inventory TestInventoryBackend! }
+      uplink = Uplink TestUplinkBackend!
+
+      Factory config, pc, stations, stockpile, uplink
+
+      $expect_that new_name, eq CONFIG_NAME
+
+    it 'responds to valid schedule requests', ->
+      SERVER_ID = 12345
+      TRAIN_NAME = 'test-train-name'
+      idemp_tok = IdempotenceToken!
+      applied_schedules = {}
+
+      STATION_NAME = 'test-station-name'
+      schedule =
+        cyclic: false
+        entries:
+          * instruction:
+              id: 'create:destination'
+              data: text: STATION_NAME
+            conditions: {}
+
+      PC_NAME = 'test-factory-name'
+      config =
+        <raw>: ''
+        factory:
+          name: PC_NAME
+          network: 'mainline'
+        stockpile: {}
+        stations: {}
+      pc = Pc TestPcBackend
+        id: => PC_ID
+        name: => PC_NAME
+      stations =
+        * Station TestStationBackend
+          name: => STATION_NAME
+          train_set_schedule: (schedule) =>
+            applied_schedules[] = schedule
+            true
+          train_name: => TRAIN_NAME
+      stockpile = Stockpile {}
+      uplink = Uplink TestUplinkBackend
+        to_receive:
+          * from_id: SERVER_ID
+            packet: ScheduleRequest idemp_tok, STATION_NAME, TRAIN_NAME, schedule
+      factory = Factory config, pc, stations, stockpile, uplink
+
+      factory\do_network_step!
+
+      $expect_that uplink.backend.sent, len eq 1
+      $expect_that uplink.backend.sent[1], has_fields
+        id: eq SERVER_ID
+        protocol: eq ScheduleResponse::protocol!
+        packet: has_fields
+          idemp_tok: eq idemp_tok
+          error_reason: eq nil
+
+      $expect_that applied_schedules, len eq 1
+      $expect_that applied_schedules, deep_eq {schedule}
+
+    it 'responds to invalid schedule requests', ->
+      SERVER_ID = 12345
+      TRAIN_NAME = 'test-train-name'
+      idemp_tok = IdempotenceToken!
+
+      STATION_NAME = 'test-station-name'
+      schedule =
+        cyclic: false
+        entries:
+          * instruction:
+              id: 'create:destination'
+              data: text: STATION_NAME
+            conditions: {}
+
+      FACTORY_NAME = 'test-factory-name'
+      present_train_name = TRAIN_NAME
+      config =
+        <raw>: ''
+        factory:
+          name: FACTORY_NAME
+          network: 'mainline'
+        stockpile: {}
+        stations: {}
+      pc = Pc TestPcBackend
+        id: => PC_ID
+        name: => FACTORY_NAME
+      stations =
+        * Station TestStationBackend
+            name: => 'some-other-station'
+            train_set_schedule: (schedule) =>
+              error 'train_set_schedule unexpectedly called'
+            train_name: => present_train_name
+      stockpile = Stockpile
+        * Inventory TestInventoryBackend
+          size: => 1
+          slot_content: (i) =>
+            $assert_that i, eq 1
+            count: 32, displayName: 'Stone Bricks'
+          slot_capacity: (i) =>
+            $assert_that i, eq 1
+            64
+      uplink = Uplink TestUplinkBackend
+        to_receive:
+          * from_id: SERVER_ID
+            packet: ScheduleRequest idemp_tok, STATION_NAME, TRAIN_NAME, schedule
+      factory = Factory config, pc, stations, stockpile, uplink
+
+      factory\do_network_step!
+
+      $expect_that uplink.backend.sent, len eq 1
+      $expect_that uplink.backend.sent[1], has_fields
+        id: eq SERVER_ID
+        protocol: eq ScheduleResponse::protocol!
+        packet: has_fields
+          idemp_tok: eq idemp_tok
+          error_reason: some!
+
+    describe '\\send_heartbeat', ->
+      it 'sends a heartbeat', ->
+        SERVER_ID = 12345
+        PC_ID = 54321
+        PC_NAME = 'test-factory-name'
+
+        config =
+          <raw>: ''
+          factory:
+            name: PC_NAME
+            network: 'mainline'
+          stockpile:
+            * name: 'minecraft:stone_bricks'
+              surplus_amount: 128
+            * name: 'unseen_resource'
+              surplus_amount: 256
+          stations:
+            * name: 'known_station'
+              network: 'some-network'
+              type: 'inbound'
+              handles: 'minecraft:stone_bricks'
+        pc = Pc TestPcBackend
+          id: => PC_ID
+          name: => PC_NAME
+        stations =
+          * Station TestStationBackend
+              name: => 'known_station'
+              train_name: => 'train_1'
+          * Station TestStationBackend
+              name: => 'unknown_station'
+              train_name: => 'train_2'
+        stockpile = Stockpile
+          * Inventory TestInventoryBackend
+            size: => 2
+            list: =>
+              with {}
+                [] = name: 'minecraft:stone_bricks', count: 32
+                [] = name: 'minecraft:dirt', count: 16
+            slot_capacity: (i) => 64
+        uplink = Uplink TestUplinkBackend!
+        with Factory config, pc, stations, stockpile, uplink
+          \send_heartbeat!
+
+        $expect_that uplink.backend.sent, deep_eq {}
+
+        $expect_that uplink.backend.broadcasted, len eq 1
+        $expect_that uplink.backend.broadcasted[1], has_fields
+          protocol: eq FactoryHeartbeat::protocol!
+          packet: do
+            stations =
+              known:
+                * name: 'known_station'
+                  network: 'some-network'
+                  type: 'inbound'
+                  handles: 'minecraft:stone_bricks'
+                  capacity: 1
+                  present_trains:
+                    * 'train_1'
+              unknown:
+                * name: 'unknown_station'
+                  capacity: 1
+                  present_trains:
+                    * 'train_2'
+
+            stockpile_info =
+              known:
+                * name: 'minecraft:stone_bricks'
+                  stored: 32
+                  surplus_amount: 128
+                * name: 'unseen_resource'
+                  stored: 0
+                  surplus_amount: 256
+              unknown:
+                * name: 'minecraft:dirt'
+                  stored: 16
+              estimated_capacity: 128
+            deep_eq FactoryHeartbeat PC_ID, PC_NAME, stations, stockpile_info
+
+    describe '\\on_get_config_request', ->
+      it 'responds correctly', ->
+        idemp_tok = IdempotenceToken!
+
+        REQUESTER_PC_ID = 1
+        FACTORY_PC_ID = 1
+        FACTORY_NAME = 'factory-name'
+        RAW = '[config]\n'
+
+        config =
+          <raw>: RAW
+          factory:
+            name: FACTORY_NAME
+          stockpile: {}
+          stations: {}
+        pc = Pc TestPcBackend
+          id: => FACTORY_PC_ID
+          name: => FACTORY_NAME
+        stockpile = Stockpile {}
+        uplink = Uplink TestUplinkBackend
+          to_receive:
+            * from_id: REQUESTER_PC_ID
+              packet: GetConfigRequest idemp_tok, REQUESTER_PC_ID
+        with Factory config, pc, {}, stockpile, uplink
+          \do_network_step!
+
+          $assert_that #uplink.backend.sent, eq 1
+          $expect_that uplink.backend.sent[1], has_fields
+            id: eq REQUESTER_PC_ID
+            packet: has_fields
+              idemp_tok: eq idemp_tok
+              raw: eq RAW
+            protocol: eq GetConfigResponse::protocol!
+
+    describe '\\on_set_config_request', ->
+      it 'applies valid config', ->
+        idemp_tok = IdempotenceToken!
+
+        REQUESTER_PC_ID = 1
+        FACTORY_PC_ID = 1
+        FACTORY_NAME = 'factory-name'
+
+        NEW_FACTORY_NAME = 'new-factory-name'
+        NEW_RAW = "
+          [factory]
+          name = '#{NEW_FACTORY_NAME}'
+
+          # NB: these are usually arrays of tables, but for ease of testing,
+          # they are left empty
+          [stockpile]
+          [stations]
+        "
+
+        config =
+          <raw>: ''
+          factory:
+            name: FACTORY_NAME
+          stockpile: {}
+          stations: {}
+        pc = Pc TestPcBackend with {}
+            name = FACTORY_NAME
+            .id = => FACTORY_PC_ID
+            .name = => name
+            .set_name = (new_name) =>
+              name = new_name
+        stockpile = Stockpile {}
+        uplink = Uplink TestUplinkBackend
+          to_receive:
+            * from_id: REQUESTER_PC_ID
+              packet: SetConfigRequest idemp_tok, REQUESTER_PC_ID, NEW_RAW
+        with Factory config, pc, {}, stockpile, uplink
+          \do_network_step!
+
+          $assert_that #uplink.backend.sent, eq 1
+          $expect_that uplink.backend.sent[1], has_fields
+            id: eq REQUESTER_PC_ID
+            packet: has_fields
+              idemp_tok: eq idemp_tok
+              error_reason: eq nil
+            protocol: eq SetConfigResponse::protocol!
+          $expect_that .config, deep_eq
+            factory:
+              name: NEW_FACTORY_NAME
+            stations: {}
+            stockpile: {}
+          $expect_that .config.<raw>, eq NEW_RAW
+          $expect_that \name!, eq NEW_FACTORY_NAME
+          $expect_that pc\name!, eq NEW_FACTORY_NAME
+
+      it 'rejects invalid config', ->
+        idemp_tok = IdempotenceToken!
+
+        REQUESTER_PC_ID = 1
+        FACTORY_PC_ID = 1
+        FACTORY_NAME = 'factory-name'
+
+        NEW_FACTORY_NAME = 'factory-name'
+        NEW_RAW = ''
+
+        ORIGINAL_RAW = 'original raw config'
+        config =
+          <raw>: ORIGINAL_RAW
+          factory:
+            name: FACTORY_NAME
+          stockpile: {}
+          stations: {}
+        pc = Pc TestPcBackend
+          id: => FACTORY_PC_ID
+          name: => FACTORY_NAME
+        stockpile = Stockpile {}
+        uplink = Uplink TestUplinkBackend
+          to_receive:
+            * from_id: REQUESTER_PC_ID
+              packet: SetConfigRequest idemp_tok, REQUESTER_PC_ID, NEW_RAW
+        with Factory config, pc, {}, stockpile, uplink
+          \do_network_step!
+
+          $assert_that #uplink.backend.sent, eq 1
+          $expect_that uplink.backend.sent[1], has_fields
+            id: eq REQUESTER_PC_ID
+            packet: has_fields
+              idemp_tok: eq idemp_tok
+              error_reason: matches 'expected table but got nil'
+            protocol: eq SetConfigResponse::protocol!
+          $expect_that .config, deep_eq config
+          $expect_that .config.<raw>, eq ORIGINAL_RAW

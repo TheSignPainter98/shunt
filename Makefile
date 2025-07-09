@@ -2,12 +2,12 @@ LUA = luajit
 
 DIAGRAM_NAMES = marshal-main marshal-resource_orchestrator marshal-scheduler marshal-schedule_generator marshal-schedule_generator_impl upgrade_listener config_listener
 DIAGRAMS = $(patsubst %,docs/src/reference-materials/state-machine-diagrams/%.mmd,$(DIAGRAM_NAMES))
-DOCS_HELPERS = docs/mdbook-ox/target/release/mdbook-ox
+DOCS_HELPERS = docs/mdbook-shunt/target/release/mdbook-shunt
 DOCS_SRCS = $(DIAGRAMS) $(DOCS_HELPERS) .version.txt
-RUST_SOURCES = $(shell find docs/mdbook-ox/src/ -name '*.rs')
+RUST_SOURCES = $(shell find docs/mdbook-shunt/src/ -name '*.rs')
 SOURCES = $(shell find -name '*.yue')
 OBJECTS = $(patsubst %.yue,%.lua,$(SOURCES))
-BINARIES = bin/ox bin/goo bin/snoop
+BINARIES = bin/shunt bin/goo bin/snoop
 
 NODE_FONTNAME = C059
 EDGE_FONTNAME = $(NODE_FONTNAME)
@@ -21,13 +21,13 @@ docs: $(DOCS_SRCS)
 .PHONY: doc
 
 docs/src/reference-materials/state-machine-diagrams/%.mmd: $(OBJECTS)
-	luajit ox.lua debug mermaid $(patsubst docs/src/reference-materials/state-machine-diagrams/%.mmd,%,$@) >$@
+	luajit shunt.lua debug mermaid $(patsubst docs/src/reference-materials/state-machine-diagrams/%.mmd,%,$@) >$@
 
 serve-docs: $(DOCS_SRCS)
 	mdbook serve docs/ --open
 .PHONY: serve-doc
 
-docs/mdbook-ox/target/release/mdbook-ox: docs/mdbook-ox/Cargo.toml $(RUST_SOURCES)
+docs/mdbook-shunt/target/release/mdbook-shunt: docs/mdbook-shunt/Cargo.toml $(RUST_SOURCES)
 	cargo build --release --manifest-path $<
 
 bin/%: bin/%.lua.packed nitro.lua clap.lua spec.lua
@@ -44,11 +44,12 @@ bin/%.lua.packed: %.lua $(OBJECTS) moonpack.lua
 	@touch $@
 .PRECIOUS: %.lua
 
-ox.yue: compat.lua
+shunt.yue: compat.lua
 
 clean:
-	$(RM) $(OBJECTS) startup.lua packed/ox ox.goo $(BINARIES) bin/*
-	cargo clean --manifest-path docs/mdbook-ox/Cargo.toml
+	$(RM) $(OBJECTS) startup.lua packed/shunt shunt.goo $(BINARIES) bin/*
+	cargo clean --manifest-path docs/mdbook-shunt/Cargo.toml
+	mdbook clean docs/
 .PHONY: clean
 
 install: scripts/install $(BINARIES)
@@ -59,18 +60,18 @@ uninstall: scripts/uninstall
 	./$<
 .PHONY: uninstall
 
-test: test_ox test_ylint
+test: test_shunt test_ylint
 .PHONY: test
 
-test_ox: ox.lua $(OBJECTS)
+test_shunt: shunt.lua $(OBJECTS)
 	@$(LUA) $< test
-.PHONY: test_ox
+.PHONY: test_shunt
 
 test_ylint: ylint.lua
 	@$(LUA) ylint.lua test
 .PHONY: test_ylint
 
-ox/version.lua: .version.txt
+shunt/version.lua: .version.txt
 
 .version.txt: scripts/version .FORCE
 	./$< > $@
@@ -78,7 +79,7 @@ ox/version.lua: .version.txt
 .FORCE:
 .PHONY: .FORCE
 
-release: bin/ox ./scripts/release bin/snoop
-	./scripts/release bin/ox
+release: bin/shunt ./scripts/release bin/snoop
+	./scripts/release bin/shunt
 	./scripts/release bin/snoop
 .PHONY: release

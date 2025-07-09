@@ -1,5 +1,5 @@
 [book]
-title = "Ox"
+title = "Shunt"
 authors = ["kcza"]
 description = "Documentation for Ox"
 language = "en"
@@ -18,11 +18,11 @@ additional-css = [
 cname = "kcza.net"
 copy-fonts = true
 default-theme = "ayu"
-edit-url-template = "https://github.com/TheSignPainter98/ox/blob/master/docs/{path}"
+edit-url-template = "https://github.com/TheSignPainter98/shunt/blob/master/docs/{path}"
 git-repository-icon = "fa-github"
-git-repository-url = "https://github.com/TheSignPainter98/ox"
+git-repository-url = "https://github.com/TheSignPainter98/shunt"
 preferred-dark-theme = "ayu"
-site-url = "/ox/"
+site-url = "/shunt/"
 smart-punctuation = true
 additional-js = ["theme/js/mermaid.min.js", "theme/js/mermaid-init.js"]
 
@@ -38,16 +38,16 @@ enable = true
 
 [output.linkcheck]
 
-[preprocessor.ox]
-command = "docs/mdbook-ox/target/release/mdbook-ox"
+[preprocessor.shunt]
+command = "docs/mdbook-shunt/target/release/mdbook-shunt"
 
 [preprocessor.mermaid]
 
 [preprocessor.diataxis]
 
 [preprocessor.diataxis.compass.tutorials]
-description = "Hands-on lessons in using ox"
+description = "Hands-on lessons in using shunt"
 
 [preprocessor.diataxis.compass.reference]
 title = "Reference materials"
-description = "Technical information about ox"
+description = "Technical information about shunt"

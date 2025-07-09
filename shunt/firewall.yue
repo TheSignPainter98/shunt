@@ -1,0 +1,46 @@
+local *
+
+import 'quicktype' as :declare_type, :F, :T
+import 'spec' as :spec
+
+-- TODO(kcza): ignore packets with recent idempotence tokens
+
+declare_type 'Firewall', [[{
+  add_child: (Firewall) => <>,
+  permits: (Packet) => boolean,
+}]]
+export class Firewall
+  new: F '([PacketType]) => <>', (packet_types) =>
+    @protocol_list = T '[string]', [ packet_type::protocol! for packet_type in *packet_types ]
+    @protocols = T '{string}', { protocol, true for protocol in *@protocol_list }
+
+  add_child: F '(Firewall) => <>', (child) =>
+    for protocol in *child.protocol_list
+      @protocols[protocol] = true
+
+  permits: F '(Packet) => boolean', (packet) =>
+    @protocols[packet.protocol] or false
+
+spec ->
+  import 'spec_macros' as $
+
+  import 'shunt.peripheral.uplink' as :Packet
+  import 'spec' as :describe, :it, :matchers
+
+  import eq from matchers
+
+  describe 'permits', ->
+    class AdmittedPacket extends Packet
+    class BlockedPacket extends Packet
+
+    it 'accepts packets correctly', ->
+      with Firewall { AdmittedPacket }
+        $expect_that (\permits AdmittedPacket!), eq true
+        $expect_that (\permits BlockedPacket!), eq false
+
+    it 'accepts child-permitted packets correctly', ->
+      with Firewall {}
+        \add_child Firewall { AdmittedPacket }
+        $expect_that (\permits AdmittedPacket!), eq true
+        $expect_that (\permits BlockedPacket!), eq false
+        $expect_that false, eq false
