@@ -46,8 +46,8 @@ jobs:
 
       - name: Install yuescript
         run:
-          snap install yuescript
-          snap alias yuescript.yue yue
+          sudo snap install yuescript
+          sudo snap alias yuescript.yue yue
 
       - run: make docs
 
