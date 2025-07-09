@@ -1,0 +1,148 @@
+local *
+
+import 'compat' as :HOST
+import 'quicktype' as :declare_type, :F, :T
+import 'shunt.data.queue' as :Queue
+import 'spec' as :spec
+
+NO_YIELD_BACKOFF_SECS = 0.1
+
+declare_type 'Multiplexer', [[{
+  add: (() -> <>) => <>,
+  send: (some) => <>,
+  stream: () => function,
+}]]
+export class Multiplexer
+  new: F '(string) => <>', (@to_send_type) =>
+    @sources = T '{number->function}', {}
+    @num_sources = T 'number', 0
+    @output_coroutine = T '?thread', nil
+    @running = T 'boolean', false
+    @channel = T 'Queue', Queue!
+    @throttle = T 'boolean', HOST == 'minecraft'
+
+  add: F '(() -> <>) => <>', (source_fn) =>
+    if @running
+      error 'cannot add multiplexer sources after starting polling'
+
+    @sources[@num_sources + 1] = source_fn
+    @num_sources += 1
+
+  set_no_yield_backoff: F '(number) => <>', (@no_yield_backoff_secs) =>
+
+  send: F '(some) => <>', (to_send) =>
+    @channel\enqueue T @to_send_type, to_send
+    if coroutine.running!?
+      coroutine.yield!
+    return
+
+  next: F '() => ?some', =>
+    @stream!!
+
+  stream: F '() => function', =>
+    @output_coroutine ??= @stream_fn!
+    @output_coroutine
+
+  stream_fn: F '() => function', =>
+    if _G.parallel?
+      coroutine.wrap ->
+        @running = true
+        co = coroutine.create ->
+          parallel.waitForAll unpack @sources
+
+        while true
+          yielded_this_iter = false
+          switch coroutine.status co
+            when 'running', 'normal', 'suspended'
+              ok, v = coroutine.resume co
+              if not ok
+                error v
+              while @channel\len! != 0
+                @yield @channel\dequeue!
+                yielded_this_iter = true
+            when 'dead'
+              break
+
+          if not yielded_this_iter and @throttle
+            os.sleep 0.001
+    else
+      coroutine.wrap ->
+        @running = true
+
+        source_resumed_this_iter = @num_sources != 0
+        sources = [ coroutine.create source for source in *@sources ]
+        while source_resumed_this_iter
+          source_resumed_this_iter = false
+          yielded_this_iter = false
+          for i = 1, @num_sources
+            source = sources[i]
+            if not source?
+              continue
+            source_resumed_this_iter = true
+
+            switch coroutine.status source
+              when 'running', 'normal', 'suspended'
+                ok, err = coroutine.resume source
+                if not ok
+                  error err
+                while @channel\len! != 0
+                  coroutine.yield @channel\dequeue!
+                  yielded_this_iter = true
+              when 'dead'
+                @sources[i] = nil
+                sources[i] = nil
+
+          if not yielded_this_iter and @throttle
+            os.sleep 0.001 -- Avoid CPU-hogging.
+
+  yield: F '(any) => <>', (v) =>
+    if v?
+      coroutine.yield v
+    return
+
+spec ->
+  import 'spec_macros' as $
+
+  import 'spec' as :describe, :it, :matchers
+
+  import anything, deep_eq, errors, eq from matchers
+
+  describe 'Multiplexer', ->
+    it 'handles no sources', ->
+      with Multiplexer 'string'
+        sent = [ v for v in \stream! ]
+        $expect_that sent, deep_eq {}
+
+    it 'handles a single source', ->
+      with Multiplexer 'string'
+        source = ->
+          \send 'a'
+          \send 'b'
+          \send 'c'
+        $expect_that (\add source), eq nil
+
+        sent = [ v for v in \stream! ]
+        $expect_that sent, deep_eq
+          * 'a'
+          * 'b'
+          * 'c'
+
+        $expect_that (-> [ v for v in \stream! ]), errors anything!
+
+    it 'round-robin-schedules other sources', ->
+      with Multiplexer 'string'
+        \add ->
+          \send 'my'
+          \send 'is'
+        \add ->
+          \send 'name'
+          \send 'methos'
+
+        sent = [ v for v in \stream! ]
+        $expect_that sent, deep_eq
+          * 'my'
+          * 'name'
+          * 'is'
+          * 'methos'
+
+        $expect_that (-> [ v for v in \stream! ]), errors anything!

@@ -1,0 +1,55 @@
+local *
+
+import 'clap' as :ArgParser, :Flag, :Param, :Subcommand
+import 'shunt.version' as :VERSION
+
+export class Args
+  @parse: (args) =>
+    arg_parser = @_arg_parser!
+    arg_parser\parse args
+
+  @_arg_parser: =>
+    with ArgParser 'shunt'
+      \version VERSION
+      \description 'an automatic cargo router'
+      \add with Flag 'terse'
+        \short nil
+        \description 'log tersely'
+        \global!
+      if not pocket?
+        \add with Flag 'ignore-monitor'
+          \description 'log output on this computer'
+          \short nil
+          \global!
+      \add with Flag 'instrument'
+        \description 'gather performance data when executing'
+        \short nil
+        \global!
+        \hidden!
+      \add with Flag 'force-error-on-bad-exit'
+        \hidden!
+        \short nil
+        \global!
+      \add with Subcommand 'test'
+        \description 'test the program and exit'
+        \add with Flag 'no-minecraft'
+          \description 'skip in-world tests'
+          \short nil
+        \add with Flag 'run-ugly-tests'
+          \description 'tests with deliberate unsuppressible errors'
+          \short nil
+        \add with Flag 'verbose'
+          \description 'log tersely'
+        \add with Param 'filter'
+          \description 'run only tests matching this pattern'
+          \default nil
+      \add (require 'shunt.cmd.clean').subcommand
+      \add (require 'shunt.cmd.debug').subcommand
+      \add (require 'shunt.cmd.declare').subcommand
+      \add (require 'shunt.cmd.disable').subcommand
+      \add (require 'shunt.cmd.edit').subcommand
+      \add (require 'shunt.cmd.enable').subcommand
+      \add (require 'shunt.cmd.flash').subcommand
+      \add (require 'shunt.cmd.init').subcommand
+      \add (require 'shunt.cmd.start').subcommand
+      \add (require 'shunt.cmd.upgrade').subcommand

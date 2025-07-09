@@ -1,6 +1,6 @@
 # Public protocols
 
-The following network interactions with `ox` are supported for external programs.
+The following network interactions with Shunt are supported for external programs.
 
 ## `DeclareTrainState`
 

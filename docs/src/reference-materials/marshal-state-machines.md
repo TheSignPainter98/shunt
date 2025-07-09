@@ -6,7 +6,7 @@
 {{#include state-machine-diagrams/marshal-main.mmd}}
 ```
 
-{{#state-machine-spec ../../../ox/nodes/marshal/main.yue marshal}}
+{{#state-machine-spec ../../../shunt/nodes/marshal/main.yue marshal}}
 
 ## `resource_orchestrator`
 
@@ -14,7 +14,7 @@
 {{#include state-machine-diagrams/marshal-resource_orchestrator.mmd}}
 ```
 
-{{#state-machine-spec ../../../ox/nodes/marshal/resource_orchestrator/main.yue resource_orchestrator}}
+{{#state-machine-spec ../../../shunt/nodes/marshal/resource_orchestrator/main.yue resource_orchestrator}}
 
 ## `scheduler`
 
@@ -22,7 +22,7 @@
 {{#include state-machine-diagrams/marshal-scheduler.mmd}}
 ```
 
-{{#state-machine-spec ../../../ox/nodes/marshal/resource_orchestrator/scheduler.yue scheduler}}
+{{#state-machine-spec ../../../shunt/nodes/marshal/resource_orchestrator/scheduler.yue scheduler}}
 
 ## `schedule_generator`
 
@@ -30,7 +30,7 @@
 {{#include state-machine-diagrams/marshal-schedule_generator.mmd}}
 ```
 
-{{#state-machine-spec ../../../ox/nodes/marshal/resource_orchestrator/scheduler.yue schedule_generator}}
+{{#state-machine-spec ../../../shunt/nodes/marshal/resource_orchestrator/scheduler.yue schedule_generator}}
 
 ## `schedule_generator_impl`
 
@@ -38,7 +38,7 @@
 {{#include state-machine-diagrams/marshal-schedule_generator_impl.mmd}}
 ```
 
-{{#state-machine-spec ../../../ox/nodes/marshal/resource_orchestrator/scheduler.yue schedule_generator_impl}}
+{{#state-machine-spec ../../../shunt/nodes/marshal/resource_orchestrator/scheduler.yue schedule_generator_impl}}
 
 ## `upgrade_listener`
 
@@ -46,7 +46,7 @@
 {{#include state-machine-diagrams/upgrade_listener.mmd}}
 ```
 
-{{#state-machine-spec ../../../ox/upgrade/listener.yue upgrade_listener}}
+{{#state-machine-spec ../../../shunt/upgrade/listener.yue upgrade_listener}}
 
 ## `config_listener`
 
@@ -54,4 +54,4 @@
 {{#include state-machine-diagrams/config_listener.mmd}}
 ```
 
-{{#state-machine-spec ../../../ox/configurator/listener.yue config_listener}}
+{{#state-machine-spec ../../../shunt/configurator/listener.yue config_listener}}
