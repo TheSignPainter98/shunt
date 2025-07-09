@@ -1,0 +1,42 @@
+local *
+
+import 'quicktype' as :declare_type, :F
+
+-- export class CachedWrite
+--   new: F '(string|CachedWriteBackend) => <>', =>
+
+declare_type 'CachedWriteBuffer', [[{
+  write: (string) => <>,
+  clear: () => <>,
+  pages: () => [Page],
+}]]
+class Buffer
+  new: F '() => <>', =>
+    @pages = T '[string]', {}
+    @current_page = T '[number]', {}
+    @current_page_cursor = T 'number', 0
+
+  pages: F '() => [Page]', =>
+    if @current_page_cursor > 0
+      @pages[] = string.dump @current_page
+    @pages
+
+export class Writelite
+  @open: F '(string) => Self', (@path) =>
+    @journal_path = @path .. '~'
+
+  start_transaction: F '() => Transaction', =>
+    -- Assert only one transaction is happening (acquire write-lock)
+
+  close: F '() => <>', =>
+    -- Flush both if not flushed since last write, delete journal, close file handles
+
+class Transaction
+  write: F '(string) => <>', (to_write) =>
+    -- Write the chunks
+
+  end: F '() => <>', =>
+    -- End the transaction, don't allow it to continue.
+    -- Flush the journal
+    -- Write the pages into main
+    -- Delete the journal
