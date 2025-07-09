@@ -59,9 +59,9 @@ export class ResourceOrchestrator
   make_sm: F '() => StateMachine', =>
     (StateMachineBuilder 'resource_orchestrator')
       \set_initial_state 'waiting'
+      \declare_endless!
       \set_reporter shallow_log_reporter
       \add (State 'waiting')
-        \declare_end_state!
         \add_transition_to 'inspecting_packet'
         \add_transition_to 'changing_epoch'
         \add_transition_to 'applying_config'

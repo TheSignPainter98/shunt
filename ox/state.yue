@@ -13,8 +13,13 @@ export class StateMachineBuilder
     @_states = T '{string -> table}', {}
     @_initial_state_name = T '?string', nil
     @_reporter = T '?(State, State) => <>', nil
+    @_endless = T 'boolean', false
 
   set_initial_state: F '(string) => Self', (@_initial_state_name) => @
+
+  declare_endless: F '() => Self', =>
+    @_endless = true
+    @
 
   set_reporter: F '((State, State) => <>) => Self', (@_reporter) => @
 
@@ -36,8 +41,11 @@ export class StateMachineBuilder
       return "initial state '#{@_initial_state_name}' undefined"
     if @_states[@_initial_state_name]._data_type != 'nil'
       return 'initial state has data present'
-    if err = @validate_end_states!
-      return err
+    if not @_endless
+      if err = @validate_end_states!
+        return err
+    else if err = @validate_endless!
+        return err
     if err = @validate_transitions!
       return err
 
@@ -46,6 +54,16 @@ export class StateMachineBuilder
       if state._is_end
         return nil
     return "no end states declared"
+
+  validate_endless: F '() => ?string', =>
+    dead_ends = with {}
+      for _, state in pairs @_states
+        if #state._transition_list < 1
+          [] = state._name
+    if #dead_ends > 0
+      table.sort dead_ends
+      return "the following states are dead ends: #{table.concat dead_ends, ', '}"
+    nil
 
   validate_transitions: F '() => ?string', =>
     seen = T '{string}', {}
@@ -76,25 +94,26 @@ export class StateMachineBuilder
       table.sort non_reachable_from_start
       return "the following states are not reachable from the start state: #{table.concat non_reachable_from_start, ', '}"
 
-    seen = {}
-    stack = {}
-    back_transitions = with {}
-      for _, state in pairs @_states
-        [state._name] = {}
-      for _, state in pairs @_states
-        for neighbour, _ in pairs state._transitions
-          [neighbour][] = state._name
-    end_states = [ state._name for _, state in pairs @_states when state._is_end ]
-    for end_state in *end_states
-      dfs end_state, back_transitions
+    if not @_endless
+      seen = {}
+      stack = {}
+      back_transitions = with {}
+        for _, state in pairs @_states
+          [state._name] = {}
+        for _, state in pairs @_states
+          for neighbour, _ in pairs state._transitions
+            [neighbour][] = state._name
+      end_states = [ state._name for _, state in pairs @_states when state._is_end ]
+      for end_state in *end_states
+        dfs end_state, back_transitions
 
-    non_reachable_from_end = with {}
-      for state_name, _ in pairs @_states
-        if not seen[state_name]
-          [] = state_name
-    if #non_reachable_from_end > 0
-      table.sort non_reachable_from_end
-      return "the following states are not reachable from any end state: #{table.concat non_reachable_from_end, ', '}"
+      non_reachable_from_end = with {}
+        for state_name, _ in pairs @_states
+          if not seen[state_name]
+            [] = state_name
+      if #non_reachable_from_end > 0
+        table.sort non_reachable_from_end
+        return "the following states are not reachable from any end state: #{table.concat non_reachable_from_end, ', '}"
 
     return nil
 
@@ -454,6 +473,14 @@ spec ->
       expected_repr = table.concat expected_lines, '\n'
       $expect_that mermaid_repr, eq expected_repr
 
+    it 'accepts endless state machines', ->
+      builder = (StateMachineBuilder 'test_sm')
+        \set_initial_state 'state_1'
+        \declare_endless!
+        \add (State 'state_1')
+          \add_transition_to 'state_1'
+      $expect_that builder\build, no_errors!
+
     it 'rejects invalid transition graphs', ->
       builder = (StateMachineBuilder 'test_sm')
         \set_initial_state 'state_1'
@@ -491,6 +518,21 @@ spec ->
           \add_transition_to 'interminable_2'
         \add (State'interminable_2')
       $expect_that builder\build, errors matches 'the following states are not reachable from any end state: interminable_1, interminable_2'
+
+      builder = (StateMachineBuilder 'test_sm')
+        \set_initial_state 'dead_end'
+        \declare_endless!
+        \add State 'dead_end'
+      $expect_that builder\build, errors matches 'the following states are dead ends: dead_end'
+      builder = (StateMachineBuilder 'test_sm')
+        \set_initial_state 'hub'
+        \declare_endless!
+        \add (State 'hub')
+          \add_transition_to 'dead_end_2'
+          \add_transition_to 'dead_end_1'
+        \add State 'dead_end_2'
+        \add State 'dead_end_1'
+      $expect_that builder\build, errors matches 'the following states are dead ends: dead_end_1, dead_end_2'
 
   describe 'valid_ident', ->
     valid_idents =

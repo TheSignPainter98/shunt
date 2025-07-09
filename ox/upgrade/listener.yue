@@ -55,7 +55,6 @@ export class UpgradeListener using Tester
       \set_initial_state 'waiting'
       \set_reporter shallow_log_reporter
       \add (State 'waiting')
-        \declare_end_state!
         \add_transition_to 'inspecting_packet'
       \add (State 'inspecting_packet')
         \set_data_type [[{
