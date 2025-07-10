@@ -21,6 +21,7 @@ docs: $(DOCS_SRCS)
 .PHONY: doc
 
 docs/src/reference-materials/state-machine-diagrams/%.mmd: $(OBJECTS)
+	mkdir -p docs/src/reference-materials/state-machine-diagrams/
 	luajit shunt.lua debug mermaid $(patsubst docs/src/reference-materials/state-machine-diagrams/%.mmd,%,$@) >$@
 
 serve-docs: $(DOCS_SRCS)
