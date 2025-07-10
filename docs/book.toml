@@ -22,7 +22,7 @@ edit-url-template = "https://github.com/TheSignPainter98/shunt/blob/master/docs/
 git-repository-icon = "fa-github"
 git-repository-url = "https://github.com/TheSignPainter98/shunt"
 preferred-dark-theme = "ayu"
-site-url = "/shunt-docs/"
+site-url = "/shunt/"
 smart-punctuation = true
 additional-js = ["theme/js/mermaid.min.js", "theme/js/mermaid-init.js"]
 
