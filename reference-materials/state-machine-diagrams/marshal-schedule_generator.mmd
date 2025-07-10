@@ -1,0 +1,11 @@
+stateDiagram
+  [*] --> generating_schedules
+  generating_schedules
+  generating_schedules --> out_of_schedules
+  generating_schedules --> proposing_schedule
+  out_of_schedules
+  out_of_schedules --> [*]
+  proposing_schedule
+  proposing_schedule --> [*]
+  proposing_schedule --> generating_schedules
+  proposing_schedule --> proposing_schedule
