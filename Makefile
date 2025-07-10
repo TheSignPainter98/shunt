@@ -3,7 +3,7 @@ LUA = luajit
 DIAGRAM_NAMES = marshal-main marshal-resource_orchestrator marshal-scheduler marshal-schedule_generator marshal-schedule_generator_impl upgrade_listener config_listener
 DIAGRAMS = $(patsubst %,docs/src/reference-materials/state-machine-diagrams/%.mmd,$(DIAGRAM_NAMES))
 DOCS_HELPERS = docs/mdbook-shunt/target/release/mdbook-shunt
-DOCS_SRCS = $(DIAGRAMS) $(DOCS_HELPERS) .version.txt
+SITE_SRCS = $(DIAGRAMS) $(DOCS_HELPERS) .version.txt docs/src/shunt
 RUST_SOURCES = $(shell find docs/mdbook-shunt/src/ -name '*.rs')
 SOURCES = $(shell find -name '*.yue')
 OBJECTS = $(patsubst %.yue,%.lua,$(SOURCES))
@@ -16,7 +16,7 @@ GRAPHVIZ_OPTS = -Gfontname="$(NODE_FONTNAME)" -Nfontname="$(NODE_FONTNAME)" -Efo
 all: $(BINARIES)
 .PHONY: all
 
-docs: $(DOCS_SRCS)
+site: $(SITE_SRCS)
 	mdbook build docs/
 .PHONY: doc
 
@@ -24,12 +24,15 @@ docs/src/reference-materials/state-machine-diagrams/%.mmd: $(OBJECTS)
 	mkdir -p docs/src/reference-materials/state-machine-diagrams/
 	luajit shunt.lua debug mermaid $(patsubst docs/src/reference-materials/state-machine-diagrams/%.mmd,%,$@) >$@
 
-serve-docs: $(DOCS_SRCS)
+serve-site: $(SITE_SRCS)
 	mdbook serve docs/ --open
 .PHONY: serve-doc
 
 docs/mdbook-shunt/target/release/mdbook-shunt: docs/mdbook-shunt/Cargo.toml $(RUST_SOURCES)
 	cargo build --release --manifest-path $<
+
+docs/src/shunt: bin/shunt
+	cp $< $@
 
 bin/%: bin/%.lua.packed nitro.lua clap.lua spec.lua
 # $(LUA) ./nitro.lua $< -o $@
