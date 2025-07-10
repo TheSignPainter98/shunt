@@ -1,0 +1,14 @@
+stateDiagram
+  [*] --> waiting
+  analysing_factory_heartbeat
+  analysing_factory_heartbeat --> waiting
+  enacting_train_state_declaration
+  enacting_train_state_declaration --> waiting
+  inspecting_packet
+  inspecting_packet --> analysing_factory_heartbeat
+  scheduling
+  scheduling --> waiting
+  waiting
+  waiting --> enacting_train_state_declaration
+  waiting --> inspecting_packet
+  waiting --> scheduling
