@@ -18,7 +18,7 @@ all: $(BINARIES)
 
 site: $(SITE_SRCS)
 	mdbook build docs/
-.PHONY: doc
+.PHONY: site
 
 docs/src/reference-materials/state-machine-diagrams/%.mmd: $(OBJECTS)
 	mkdir -p docs/src/reference-materials/state-machine-diagrams/
@@ -26,7 +26,7 @@ docs/src/reference-materials/state-machine-diagrams/%.mmd: $(OBJECTS)
 
 serve-site: $(SITE_SRCS)
 	mdbook serve docs/ --open
-.PHONY: serve-doc
+.PHONY: serve-site
 
 docs/mdbook-shunt/target/release/mdbook-shunt: docs/mdbook-shunt/Cargo.toml $(RUST_SOURCES)
 	cargo build --release --manifest-path $<
