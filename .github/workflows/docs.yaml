@@ -45,7 +45,7 @@ jobs:
           args: mdbook-diataxis
 
       - name: Install yuescript
-        run:
+        run: |
           sudo snap install yuescript
           sudo snap alias yuescript.yue yue
 
