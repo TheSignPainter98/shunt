@@ -49,6 +49,10 @@ jobs:
           sudo snap install yuescript
           sudo snap alias yuescript.yue yue
 
+      - name: Install luajit
+        run: |
+          sudo apt install luajit
+
       - run: make docs
 
       - name: Deploy
