@@ -1267,14 +1267,24 @@ export declare_type = (name, type_spec) ->
   if 'string' != type type_spec
     error "declare_type requires a string type_spec"
 
-  if #name < 2
-    error "cannot declare type '#{name}': name too short"
-  if not (name\sub 1, 1)\match '^[A-Z_]$'
-    error "cannot declare type '#{name}': user types must start with uppercase or '_'"
-  if not name\match '^[a-zA-Z0-9_-]*[a-zA-Z0-9_]$'
-    error "cannot declare type '#{name}': not a valid identifier"
+  prefix, unprefixed_name = name\match '^([^.]+)%.([^.]*)$'
+  unprefixed_name ??= name
+
+  if prefix?
+    if known_primitives[prefix]?
+      error "cannot use '#{prefix}' as type-prefix: must not be a primitive"
+    if not prefix\match '^[a-z]'
+      error "cannot use '#{prefix}' as type-prefix: must start with a lowercase letter"
+
+  if #unprefixed_name < 2
+    error "cannot declare type '#{unprefixed_name}': name too short"
+  if not (unprefixed_name\sub 1, 1)\match '^[A-Z_]$'
+    error "cannot declare type '#{unprefixed_name}': user types must start with uppercase or '_'"
+  if not unprefixed_name\match '^[a-zA-Z0-9_-]*[a-zA-Z0-9_]$'
+    error "cannot declare type '#{unprefixed_name}': not a valid identifier"
+
   if user_types[name]?
-    error "cannot redefine type '#{name}'"
+    error "cannot redefine type '#{unprefixed_name}'"
   parsed_type = parse type_spec
   user_types[name] = parsed_type
   type_checkers[name] = parsed_type\checker!\build!
@@ -1781,6 +1791,9 @@ spec ->
     it 'supports non-recursive types', ->
       declare_type 'NonRecursive', '[string]'
       $expect_that (-> T '[NonRecursive]', {{'hello'}}), no_errors!
+
+      declare_type 'prefixed.NonRecursive', '[string]'
+      $expect_that (-> T '[prefixed.NonRecursive]', {{'hello'}}), no_errors!
 
     it 'supports recursive types', ->
       declare_type 'Recursive', '[?Recursive]'
