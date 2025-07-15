@@ -1,42 +1,95 @@
 local *
 
-import 'quicktype' as :declare_type, :F
+import 'quicktype' as :declare_singleton_type, :declare_type, :F
 
--- export class CachedWrite
---   new: F '(string|CachedWriteBackend) => <>', =>
-
-declare_type 'CachedWriteBuffer', [[{
-  write: (string) => <>,
-  clear: () => <>,
-  pages: () => [Page],
+declare_type 'writelite.Writelite', [[{
+  transaction: ((Transaction) -> <>) => <>,
+  close: () => ?BUSY,
 }]]
-class Buffer
-  new: F '() => <>', =>
-    @pages = T '[string]', {}
-    @current_page = T '[number]', {}
-    @current_page_cursor = T 'number', 0
-
-  pages: F '() => [Page]', =>
-    if @current_page_cursor > 0
-      @pages[] = string.dump @current_page
-    @pages
-
 export class Writelite
-  @open: F '(string) => Self', (@path) =>
-    @journal_path = @path .. '~'
+  new: F '(string, writelite.File) => <>', (@_path) =>
+    @_journal_path = @_path .. '~'
+    @_main_file = with assert io.open @_path, 'w+'
+      \setvbuf 'full' -- Minimise writes.
+    @_writelite_open = true
+    @_transaction_open = false
 
-  start_transaction: F '() => Transaction', =>
-    -- Assert only one transaction is happening (acquire write-lock)
+    if journal = io.open @_journal_path, 'r'
+      @_recover_journal @_main_file, journal
+
+  _recover_journal: F '() => <>', =>
+    error 'todo'
+
+  transaction: F '((Transaction) -> <>) => ?BUSY', (f) =>
+    @_transaction_open = true
+
+    txn = Transaction @_main_file, @_journal_path
+    err = nil
+    try
+      f txn
+    catch err2
+      err = err2
+    txn\_close!
+
+    @_transaction_open = false
+
+    if err?
+      error err
+    return
 
   close: F '() => <>', =>
-    -- Flush both if not flushed since last write, delete journal, close file handles
+    assert not @_transaction_open, 'cannot close Writelite whilst transaction is open'
+    assert @_writelite_open, 'cannot close Writelite twice'
 
+    @_main_file\close!
+
+    @_writelite_open = false
+
+export BUSY = <tostring>: => 'BUSY'
+declare_singleton_type BUSY
+
+declare_type 'writelite.Transaction', [[{
+  write: (string) => <>,
+  seek: (Whence, ?number) => <>,
+  abort: () => <>,
+}]]
+declare_type 'writelite.File', [[{
+  write: (string) => <>
+  seek: (Whence, ?number) => <>,
+  close: () => <>,
+}]]
+declare_type 'Whence', '"set"|"cur"|"end"'
 class Transaction
-  write: F '(string) => <>', (to_write) =>
-    -- Write the chunks
+  new: F '(writelite.File, string) => <>', (@_main_file, @_journal_path) =>
+    @_pages = T '[writelite.Page]', {}
+    @_len = T 'number', 0
+    @_cursor = T 'number', 0
+    @_main_file\seek 'set', 0
 
-  end: F '() => <>', =>
-    -- End the transaction, don't allow it to continue.
-    -- Flush the journal
-    -- Write the pages into main
+  write: F '(string) => <>', (bytes) =>
+    -- TODO(kcza): update @_len
+    error 'todo'
+
+  seek: F '(Whence, ?number) => <>', (whence, offset) =>
+    switch whence
+      when 'set'
+        @_cursor = offset ?? 0
+      when 'cur'
+        assert offset?, 'internal error: "cur"-whence requires offset'
+        @_cursor += offset
+      when 'end'
+        assert not offset?, 'internal error: "end"-whence cannot have no offset'
+        @_cursor = @_len
+      else
+        error 'internal error: unreachable'
+
+  _close: F '() => <>', =>
+    -- Write to the journal
+    -- Close the journal
+    -- Write to the main file
     -- Delete the journal
+    error 'todo'
+
+class Page
+  new: F '(number, string) => <>', (@_offset, @_content) =>
+    error 'todo'
