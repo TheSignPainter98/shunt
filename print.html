@@ -1008,6 +1008,8 @@ Type aliases always start with an uppercase letter.</p>
 <pre><code class="language-moonscript">{ value: any }
 | { left_child: BinaryTree, right_child: BinaryTree }
 </code></pre>
+<p>A type alias may have a <em>disambiguator</em> before a literal <code>.</code> in its name.
+For example, a station in a marshal’s world-model could be differentiated from a Create station peripheral by calling one <code>marshal.Station</code> and the other <code>peripheral.Station</code>.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="subtyping"><a class="header" href="#subtyping">Subtyping</a></h1>
 <p>A type <em>T</em> is a subtype of a type <em>U</em> if and only if all values of type <em>T</em> implement <em>U.</em>
 It is possible to use such a <em>T</em> in any place which accepts a <em>U.</em></p>
