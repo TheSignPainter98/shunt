@@ -251,6 +251,8 @@ class TypeSpecParser extends Parser
     @select
       * token: T_NAME
         action: @\parse_named_type
+      * token: T_PREFIXED_NAME
+        action: @\parse_prefixed_named_type
       * token: T_BOOLEAN
         action: @\parse_boolean_type
       * token: T_NUMBER
@@ -266,6 +268,9 @@ class TypeSpecParser extends Parser
 
   parse_named_type: =>
     named_type @expect T_NAME
+
+  parse_prefixed_named_type: =>
+    prefixed_named_type @expect T_PREFIXED_NAME
 
   parse_boolean_type: =>
     BooleanType @expect T_BOOLEAN
@@ -425,6 +430,7 @@ T_QUESTION = <tostring>: => "'?'"
 T_PLUS = <tostring>: => "'+'"
 T_PIPE = <tostring>: => "'|'"
 T_NAME = <tostring>: => "<name>"
+T_PREFIXED_NAME = <tostring>: => "<prefixed-name>"
 T_BOOLEAN = <tostring>: => "<boolean>"
 T_NUMBER = <tostring>: => "<number>"
 T_STRING = <tostring>: => "<string>"
@@ -478,6 +484,8 @@ class Lexer
           T_BOOLEAN, true, #match
         else if match = type_spec\match '^false', @index
           T_BOOLEAN, false, #match
+        else if prefixed_name = type_spec\match '^([a-zA-Z_][a-zA-Z0-9_]*[a-zA-Z0-9_]%.[a-zA-Z_][a-zA-Z0-9_]*[a-zA-Z0-9_])', @index
+          T_PREFIXED_NAME, prefixed_name, #prefixed_name
         else if name = type_spec\match '^([a-zA-Z_][a-zA-Z0-9_-]*[a-zA-Z0-9_])', @index
           T_NAME, name, #name
         else if number = type_spec\match '^%-?[0-9]*%.[0-9]+', @index
@@ -549,6 +557,7 @@ known_primitives =
   table: true
   thread: true
   userdata: true
+
 named_type = (name) ->
   if known_primitives[name]?
     Primitive name
@@ -560,6 +569,18 @@ named_type = (name) ->
     error "cannot use '#{name}' as user type name: name must start with an uppercase letter"
   else
     UserType name
+
+prefixed_named_type = (prefixed_name) ->
+  prefix, name = prefixed_name\match '^([^.]+)%.([^.]*)$'
+  if not prefix? or not name?
+    error "internal error: cannot parse prefixed name '#{prefixed_name}'"
+  if known_primitives[prefix]?
+    error "cannot use '#{prefix}' as type-prefix: must not be a primitive"
+  if not prefix\match '^[a-z]'
+    error "cannot use '#{prefix}' as type-prefix: must start with a lowercase letter"
+  if not name\match '^[A-Z]'
+    error "cannot use '#{name}' as disambiguated type name: must start with an uppercase letter"
+  UserType prefixed_name
 
 class Is
   is: (ty) =>
@@ -1246,14 +1267,24 @@ export declare_type = (name, type_spec) ->
   if 'string' != type type_spec
     error "declare_type requires a string type_spec"
 
-  if #name < 2
-    error "cannot declare type '#{name}': name too short"
-  if not (name\sub 1, 1)\match '^[A-Z_]$'
-    error "cannot declare type '#{name}': user types must start with uppercase or '_'"
-  if not name\match '^[a-zA-Z0-9_-]*[a-zA-Z0-9_]$'
-    error "cannot declare type '#{name}': not a valid identifier"
+  prefix, unprefixed_name = name\match '^([^.]+)%.([^.]*)$'
+  unprefixed_name ??= name
+
+  if prefix?
+    if known_primitives[prefix]?
+      error "cannot use '#{prefix}' as type-prefix: must not be a primitive"
+    if not prefix\match '^[a-z]'
+      error "cannot use '#{prefix}' as type-prefix: must start with a lowercase letter"
+
+  if #unprefixed_name < 2
+    error "cannot declare type '#{unprefixed_name}': name too short"
+  if not (unprefixed_name\sub 1, 1)\match '^[A-Z_]$'
+    error "cannot declare type '#{unprefixed_name}': user types must start with uppercase or '_'"
+  if not unprefixed_name\match '^[a-zA-Z0-9_-]*[a-zA-Z0-9_]$'
+    error "cannot declare type '#{unprefixed_name}': not a valid identifier"
+
   if user_types[name]?
-    error "cannot redefine type '#{name}'"
+    error "cannot redefine type '#{unprefixed_name}'"
   parsed_type = parse type_spec
   user_types[name] = parsed_type
   type_checkers[name] = parsed_type\checker!\build!
@@ -1315,6 +1346,11 @@ spec ->
         $expect_that (tokens simple_type), deep_eq {
           Symbol T_NAME, simple_type
         }
+
+    it 'emits prefixed simple type', ->
+      $expect_that (tokens 'prefixed.Name'), deep_eq {
+        Symbol T_PREFIXED_NAME, 'prefixed.Name'
+      }
 
     it 'emits the never type', ->
       $expect_that (tokens '!'), deep_eq {
@@ -1408,6 +1444,9 @@ spec ->
       it 'accepts user types', ->
         $expect_that (parse 'UserType'), deep_eq UserType 'UserType'
 
+      it 'accepts prefixed user types', ->
+        $expect_that (parse 'prefixed.UserType'), deep_eq UserType 'prefixed.UserType'
+
       it 'accepts boolean types', ->
         $expect_that (parse 'true'), deep_eq BooleanType true
         $expect_that (parse 'false'), deep_eq BooleanType false
@@ -1420,6 +1459,13 @@ spec ->
 
       it 'rejects unknown primitives', ->
         $expect_that (-> parse 'user'), errors matches [[cannot use 'user' as user type name: name must start with an uppercase letter]]
+
+      it 'rejects malformed prefixed identifiers', ->
+        $expect_that (-> parse 'foo.'), errors matches 'foo'
+        $expect_that (-> parse '.Bar'), errors matches "unexpected character '%.'"
+        $expect_that (-> parse 'Foo.bar'), errors matches "cannot use 'Foo' as type%-prefix: must start with a lowercase letter"
+        $expect_that (-> parse 'foo.bar'), errors matches "cannot use 'bar' as disambiguated type name: must start with an uppercase letter"
+        $expect_that (-> parse 'number.Bar'), errors matches "cannot use 'number' as type%-prefix: must not be a primitive"
 
       it 'rejects incomplete types', ->
         $expect_that (-> parse '['), errors matches [[unexpected EOF]]
@@ -1745,6 +1791,9 @@ spec ->
     it 'supports non-recursive types', ->
       declare_type 'NonRecursive', '[string]'
       $expect_that (-> T '[NonRecursive]', {{'hello'}}), no_errors!
+
+      declare_type 'prefixed.NonRecursive', '[string]'
+      $expect_that (-> T '[prefixed.NonRecursive]', {{'hello'}}), no_errors!
 
     it 'supports recursive types', ->
       declare_type 'Recursive', '[?Recursive]'
