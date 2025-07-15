@@ -3,6 +3,7 @@ local *
 import 'quicktype' as :declare_type, :F, :T
 import 'shunt.logger' as :log
 import 'spec' as :spec
+import 'writelite' as :Writelite
 
 UNIMPLEMENTED = <call>: (...) ->
 
