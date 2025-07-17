@@ -7569,7 +7569,7 @@ package.preload['shunt.version'] = function(...)
 local _module_0 = { } -- shunt/version.yue:1
 local VERSION -- shunt/version.yue:1
 local spec = require('spec').spec -- shunt/version.yue:0
-VERSION = ' (2025-07-15@00:40:14)' -- shunt/version.yue:13
+VERSION = ' (2025-07-17@19:21:56)' -- shunt/version.yue:13
 _module_0["VERSION"] = VERSION -- shunt/version.yue:13
 spec(function() -- shunt/version.yue:15
   local describe, expect_that, it, matchers -- shunt/version.yue:0
@@ -11672,150 +11672,158 @@ do -- shunt/state.yue:9
             return reporter(self, prev_state, _with_0.state) -- shunt/state.yue:150
           end -- shunt/state.yue:149
         end) -- shunt/state.yue:139
-        local end_states -- shunt/state.yue:152
-        do -- shunt/state.yue:152
-          local _tbl_0 = { } -- shunt/state.yue:152
-          for _, state in pairs(self._states) do -- shunt/state.yue:152
-            if state._is_end then -- shunt/state.yue:152
-              _tbl_0[state._name] = true -- shunt/state.yue:152
-            end -- shunt/state.yue:152
-          end -- shunt/state.yue:152
-          end_states = _tbl_0 -- shunt/state.yue:152
-        end -- shunt/state.yue:152
-        _with_0["end"] = F('() => <>', function(self) -- shunt/state.yue:153
-          if ended then -- shunt/state.yue:154
-            error("internal error: cannot end state machine twice") -- shunt/state.yue:155
-          end -- shunt/state.yue:154
-          if not end_states[self.state.name] then -- shunt/state.yue:156
-            error("internal error: state " .. tostring(self.state.name) .. " is not a valid end state") -- shunt/state.yue:157
-          end -- shunt/state.yue:156
-          ended = true -- shunt/state.yue:158
-        end) -- shunt/state.yue:153
-        local initial_state_name = self._initial_state_name -- shunt/state.yue:160
-        _with_0.to_graphviz = F('() => string', function(self) -- shunt/state.yue:161
-          local lines -- shunt/state.yue:162
-          do -- shunt/state.yue:162
-            local _with_1 = { } -- shunt/state.yue:162
-            _with_1[#_with_1 + 1] = 'digraph {' -- shunt/state.yue:163
-            _with_1[#_with_1 + 1] = '  bgcolor = black' -- shunt/state.yue:164
-            _with_1[#_with_1 + 1] = '  color = white' -- shunt/state.yue:165
-            _with_1[#_with_1 + 1] = "  label = \"" .. tostring(self.name) .. "\"" -- shunt/state.yue:166
-            _with_1[#_with_1 + 1] = '  graph [' -- shunt/state.yue:167
-            _with_1[#_with_1 + 1] = '    fontname = "NewCenturySchlbk-Roman"' -- shunt/state.yue:168
-            _with_1[#_with_1 + 1] = '  ]' -- shunt/state.yue:169
-            _with_1[#_with_1 + 1] = '  node [' -- shunt/state.yue:170
-            _with_1[#_with_1 + 1] = '    color = white' -- shunt/state.yue:171
-            _with_1[#_with_1 + 1] = '    fontcolor = white' -- shunt/state.yue:172
-            _with_1[#_with_1 + 1] = '    fillcolor = white' -- shunt/state.yue:173
-            _with_1[#_with_1 + 1] = '    shape = plaintext' -- shunt/state.yue:174
+        _with_0.recover_to = F('(string, any) => <>', function(self, name, data) -- shunt/state.yue:152
+          ended = false -- shunt/state.yue:153
+          local new_state_spec = states[name] -- shunt/state.yue:154
+          if not (new_state_spec ~= nil) then -- shunt/state.yue:155
+            error("internal error: no such state '" .. tostring(name) .. "'") -- shunt/state.yue:156
+          end -- shunt/state.yue:155
+          _with_0.state = make_state(name, new_state_spec._data_type, data) -- shunt/state.yue:157
+        end) -- shunt/state.yue:152
+        local end_states -- shunt/state.yue:159
+        do -- shunt/state.yue:159
+          local _tbl_0 = { } -- shunt/state.yue:159
+          for _, state in pairs(self._states) do -- shunt/state.yue:159
+            if state._is_end then -- shunt/state.yue:159
+              _tbl_0[state._name] = true -- shunt/state.yue:159
+            end -- shunt/state.yue:159
+          end -- shunt/state.yue:159
+          end_states = _tbl_0 -- shunt/state.yue:159
+        end -- shunt/state.yue:159
+        _with_0["end"] = F('() => <>', function(self) -- shunt/state.yue:160
+          if ended then -- shunt/state.yue:161
+            error("internal error: cannot end state machine twice") -- shunt/state.yue:162
+          end -- shunt/state.yue:161
+          if not end_states[self.state.name] then -- shunt/state.yue:163
+            error("internal error: state " .. tostring(self.state.name) .. " is not a valid end state") -- shunt/state.yue:164
+          end -- shunt/state.yue:163
+          ended = true -- shunt/state.yue:165
+        end) -- shunt/state.yue:160
+        local initial_state_name = self._initial_state_name -- shunt/state.yue:167
+        _with_0.to_graphviz = F('() => string', function(self) -- shunt/state.yue:168
+          local lines -- shunt/state.yue:169
+          do -- shunt/state.yue:169
+            local _with_1 = { } -- shunt/state.yue:169
+            _with_1[#_with_1 + 1] = 'digraph {' -- shunt/state.yue:170
+            _with_1[#_with_1 + 1] = '  bgcolor = black' -- shunt/state.yue:171
+            _with_1[#_with_1 + 1] = '  color = white' -- shunt/state.yue:172
+            _with_1[#_with_1 + 1] = "  label = \"" .. tostring(self.name) .. "\"" -- shunt/state.yue:173
+            _with_1[#_with_1 + 1] = '  graph [' -- shunt/state.yue:174
             _with_1[#_with_1 + 1] = '    fontname = "NewCenturySchlbk-Roman"' -- shunt/state.yue:175
             _with_1[#_with_1 + 1] = '  ]' -- shunt/state.yue:176
-            _with_1[#_with_1 + 1] = '  edge [' -- shunt/state.yue:177
+            _with_1[#_with_1 + 1] = '  node [' -- shunt/state.yue:177
             _with_1[#_with_1 + 1] = '    color = white' -- shunt/state.yue:178
             _with_1[#_with_1 + 1] = '    fontcolor = white' -- shunt/state.yue:179
-            _with_1[#_with_1 + 1] = '    fontname = "NewCenturySchlbk-Roman"' -- shunt/state.yue:180
-            _with_1[#_with_1 + 1] = '  ]' -- shunt/state.yue:181
-            _with_1[#_with_1 + 1] = '  levels=1' -- shunt/state.yue:182
-            _with_1[#_with_1 + 1] = "  __init[shape=point]" -- shunt/state.yue:184
-            _with_1[#_with_1 + 1] = "  __init -> " .. tostring(initial_state_name) -- shunt/state.yue:185
-            local state_list -- shunt/state.yue:187
-            do -- shunt/state.yue:187
-              local _accum_0 = { } -- shunt/state.yue:187
-              local _len_0 = 1 -- shunt/state.yue:187
-              for state_name, state in pairs(states) do -- shunt/state.yue:187
-                _accum_0[_len_0] = { -- shunt/state.yue:187
-                  state_name = state_name, -- shunt/state.yue:187
-                  state = state -- shunt/state.yue:187
-                } -- shunt/state.yue:187
-                _len_0 = _len_0 + 1 -- shunt/state.yue:187
-              end -- shunt/state.yue:187
-              state_list = _accum_0 -- shunt/state.yue:187
-            end -- shunt/state.yue:187
-            table.sort(state_list, function(a, b) -- shunt/state.yue:188
-              return a.state_name < b.state_name -- shunt/state.yue:188
-            end) -- shunt/state.yue:188
-            for _index_0 = 1, #state_list do -- shunt/state.yue:189
-              local _des_0 = state_list[_index_0] -- shunt/state.yue:189
-              local state_name, state = _des_0.state_name, _des_0.state -- shunt/state.yue:189
-              _with_1[#_with_1 + 1] = '' -- shunt/state.yue:190
-              local fontname_override = '' -- shunt/state.yue:191
-              if state._is_end then -- shunt/state.yue:192
-                fontname_override = "fontname=\"NewCenturySchlbk-Italic\"" -- shunt/state.yue:193
-              end -- shunt/state.yue:192
-              _with_1[#_with_1 + 1] = "  " .. tostring(state_name) .. "[" .. tostring(fontname_override) .. "]" -- shunt/state.yue:194
-              local num_transitions = #state._transition_list -- shunt/state.yue:196
-              for i = 1, num_transitions do -- shunt/state.yue:197
-                local other_state = state._transition_list[i] -- shunt/state.yue:198
-                _with_1[#_with_1 + 1] = "  " .. tostring(state_name) .. " -> " .. tostring(other_state) .. "[weight=" .. tostring(1 + num_transitions - i) .. "]" -- shunt/state.yue:199
+            _with_1[#_with_1 + 1] = '    fillcolor = white' -- shunt/state.yue:180
+            _with_1[#_with_1 + 1] = '    shape = plaintext' -- shunt/state.yue:181
+            _with_1[#_with_1 + 1] = '    fontname = "NewCenturySchlbk-Roman"' -- shunt/state.yue:182
+            _with_1[#_with_1 + 1] = '  ]' -- shunt/state.yue:183
+            _with_1[#_with_1 + 1] = '  edge [' -- shunt/state.yue:184
+            _with_1[#_with_1 + 1] = '    color = white' -- shunt/state.yue:185
+            _with_1[#_with_1 + 1] = '    fontcolor = white' -- shunt/state.yue:186
+            _with_1[#_with_1 + 1] = '    fontname = "NewCenturySchlbk-Roman"' -- shunt/state.yue:187
+            _with_1[#_with_1 + 1] = '  ]' -- shunt/state.yue:188
+            _with_1[#_with_1 + 1] = '  levels=1' -- shunt/state.yue:189
+            _with_1[#_with_1 + 1] = "  __init[shape=point]" -- shunt/state.yue:191
+            _with_1[#_with_1 + 1] = "  __init -> " .. tostring(initial_state_name) -- shunt/state.yue:192
+            local state_list -- shunt/state.yue:194
+            do -- shunt/state.yue:194
+              local _accum_0 = { } -- shunt/state.yue:194
+              local _len_0 = 1 -- shunt/state.yue:194
+              for state_name, state in pairs(states) do -- shunt/state.yue:194
+                _accum_0[_len_0] = { -- shunt/state.yue:194
+                  state_name = state_name, -- shunt/state.yue:194
+                  state = state -- shunt/state.yue:194
+                } -- shunt/state.yue:194
+                _len_0 = _len_0 + 1 -- shunt/state.yue:194
+              end -- shunt/state.yue:194
+              state_list = _accum_0 -- shunt/state.yue:194
+            end -- shunt/state.yue:194
+            table.sort(state_list, function(a, b) -- shunt/state.yue:195
+              return a.state_name < b.state_name -- shunt/state.yue:195
+            end) -- shunt/state.yue:195
+            for _index_0 = 1, #state_list do -- shunt/state.yue:196
+              local _des_0 = state_list[_index_0] -- shunt/state.yue:196
+              local state_name, state = _des_0.state_name, _des_0.state -- shunt/state.yue:196
+              _with_1[#_with_1 + 1] = '' -- shunt/state.yue:197
+              local fontname_override = '' -- shunt/state.yue:198
+              if state._is_end then -- shunt/state.yue:199
+                fontname_override = "fontname=\"NewCenturySchlbk-Italic\"" -- shunt/state.yue:200
               end -- shunt/state.yue:199
-            end -- shunt/state.yue:199
-            _with_1[#_with_1 + 1] = '}' -- shunt/state.yue:201
-            lines = _with_1 -- shunt/state.yue:162
-          end -- shunt/state.yue:162
-          return table.concat(lines, '\n') -- shunt/state.yue:202
-        end) -- shunt/state.yue:161
-        _with_0.to_mermaid = F('() => string', function(self) -- shunt/state.yue:204
-          local lines -- shunt/state.yue:205
-          do -- shunt/state.yue:205
-            local _with_1 = { } -- shunt/state.yue:205
-            _with_1[#_with_1 + 1] = 'stateDiagram' -- shunt/state.yue:206
-            _with_1[#_with_1 + 1] = "  [*] --> " .. tostring(initial_state_name) -- shunt/state.yue:207
-            local state_list -- shunt/state.yue:208
-            do -- shunt/state.yue:208
-              local _accum_0 = { } -- shunt/state.yue:208
-              local _len_0 = 1 -- shunt/state.yue:208
-              for state_name, state in pairs(states) do -- shunt/state.yue:208
-                _accum_0[_len_0] = { -- shunt/state.yue:208
-                  state_name = state_name, -- shunt/state.yue:208
-                  state = state -- shunt/state.yue:208
-                } -- shunt/state.yue:208
-                _len_0 = _len_0 + 1 -- shunt/state.yue:208
-              end -- shunt/state.yue:208
-              state_list = _accum_0 -- shunt/state.yue:208
-            end -- shunt/state.yue:208
-            table.sort(state_list, function(a, b) -- shunt/state.yue:209
-              return a.state_name < b.state_name -- shunt/state.yue:209
-            end) -- shunt/state.yue:209
-            for _index_0 = 1, #state_list do -- shunt/state.yue:210
-              local _des_0 = state_list[_index_0] -- shunt/state.yue:210
-              local state_name, state = _des_0.state_name, _des_0.state -- shunt/state.yue:210
-              _with_1[#_with_1 + 1] = "  " .. tostring(state_name) -- shunt/state.yue:211
-              if state._is_end then -- shunt/state.yue:212
-                _with_1[#_with_1 + 1] = "  " .. tostring(state_name) .. " --> [*]" -- shunt/state.yue:213
-              end -- shunt/state.yue:212
-              local neighbours -- shunt/state.yue:215
-              do -- shunt/state.yue:215
-                local _accum_0 = { } -- shunt/state.yue:215
-                local _len_0 = 1 -- shunt/state.yue:215
-                for other_state in pairs(state._transitions) do -- shunt/state.yue:215
-                  _accum_0[_len_0] = other_state -- shunt/state.yue:215
-                  _len_0 = _len_0 + 1 -- shunt/state.yue:215
-                end -- shunt/state.yue:215
-                neighbours = _accum_0 -- shunt/state.yue:215
+              _with_1[#_with_1 + 1] = "  " .. tostring(state_name) .. "[" .. tostring(fontname_override) .. "]" -- shunt/state.yue:201
+              local num_transitions = #state._transition_list -- shunt/state.yue:203
+              for i = 1, num_transitions do -- shunt/state.yue:204
+                local other_state = state._transition_list[i] -- shunt/state.yue:205
+                _with_1[#_with_1 + 1] = "  " .. tostring(state_name) .. " -> " .. tostring(other_state) .. "[weight=" .. tostring(1 + num_transitions - i) .. "]" -- shunt/state.yue:206
+              end -- shunt/state.yue:206
+            end -- shunt/state.yue:206
+            _with_1[#_with_1 + 1] = '}' -- shunt/state.yue:208
+            lines = _with_1 -- shunt/state.yue:169
+          end -- shunt/state.yue:169
+          return table.concat(lines, '\n') -- shunt/state.yue:209
+        end) -- shunt/state.yue:168
+        _with_0.to_mermaid = F('() => string', function(self) -- shunt/state.yue:211
+          local lines -- shunt/state.yue:212
+          do -- shunt/state.yue:212
+            local _with_1 = { } -- shunt/state.yue:212
+            _with_1[#_with_1 + 1] = 'stateDiagram' -- shunt/state.yue:213
+            _with_1[#_with_1 + 1] = "  [*] --> " .. tostring(initial_state_name) -- shunt/state.yue:214
+            local state_list -- shunt/state.yue:215
+            do -- shunt/state.yue:215
+              local _accum_0 = { } -- shunt/state.yue:215
+              local _len_0 = 1 -- shunt/state.yue:215
+              for state_name, state in pairs(states) do -- shunt/state.yue:215
+                _accum_0[_len_0] = { -- shunt/state.yue:215
+                  state_name = state_name, -- shunt/state.yue:215
+                  state = state -- shunt/state.yue:215
+                } -- shunt/state.yue:215
+                _len_0 = _len_0 + 1 -- shunt/state.yue:215
               end -- shunt/state.yue:215
-              table.sort(neighbours) -- shunt/state.yue:216
-              for _index_1 = 1, #neighbours do -- shunt/state.yue:217
-                local neighbour = neighbours[_index_1] -- shunt/state.yue:217
-                _with_1[#_with_1 + 1] = "  " .. tostring(state_name) .. " --> " .. tostring(neighbour) -- shunt/state.yue:218
-              end -- shunt/state.yue:218
-            end -- shunt/state.yue:218
-            lines = _with_1 -- shunt/state.yue:205
-          end -- shunt/state.yue:205
-          return table.concat(lines, '\n') -- shunt/state.yue:220
-        end) -- shunt/state.yue:204
+              state_list = _accum_0 -- shunt/state.yue:215
+            end -- shunt/state.yue:215
+            table.sort(state_list, function(a, b) -- shunt/state.yue:216
+              return a.state_name < b.state_name -- shunt/state.yue:216
+            end) -- shunt/state.yue:216
+            for _index_0 = 1, #state_list do -- shunt/state.yue:217
+              local _des_0 = state_list[_index_0] -- shunt/state.yue:217
+              local state_name, state = _des_0.state_name, _des_0.state -- shunt/state.yue:217
+              _with_1[#_with_1 + 1] = "  " .. tostring(state_name) -- shunt/state.yue:218
+              if state._is_end then -- shunt/state.yue:219
+                _with_1[#_with_1 + 1] = "  " .. tostring(state_name) .. " --> [*]" -- shunt/state.yue:220
+              end -- shunt/state.yue:219
+              local neighbours -- shunt/state.yue:222
+              do -- shunt/state.yue:222
+                local _accum_0 = { } -- shunt/state.yue:222
+                local _len_0 = 1 -- shunt/state.yue:222
+                for other_state in pairs(state._transitions) do -- shunt/state.yue:222
+                  _accum_0[_len_0] = other_state -- shunt/state.yue:222
+                  _len_0 = _len_0 + 1 -- shunt/state.yue:222
+                end -- shunt/state.yue:222
+                neighbours = _accum_0 -- shunt/state.yue:222
+              end -- shunt/state.yue:222
+              table.sort(neighbours) -- shunt/state.yue:223
+              for _index_1 = 1, #neighbours do -- shunt/state.yue:224
+                local neighbour = neighbours[_index_1] -- shunt/state.yue:224
+                _with_1[#_with_1 + 1] = "  " .. tostring(state_name) .. " --> " .. tostring(neighbour) -- shunt/state.yue:225
+              end -- shunt/state.yue:225
+            end -- shunt/state.yue:225
+            lines = _with_1 -- shunt/state.yue:212
+          end -- shunt/state.yue:212
+          return table.concat(lines, '\n') -- shunt/state.yue:227
+        end) -- shunt/state.yue:211
         index = _with_0 -- shunt/state.yue:121
       end -- shunt/state.yue:121
-      return T('StateMachine', setmetatable({ }, { -- shunt/state.yue:223
-        __index = index, -- shunt/state.yue:223
-        __newindex = function(self, key, v) -- shunt/state.yue:224
-          return error("cannot add field '" .. tostring(key) .. "' to state machine") -- shunt/state.yue:225
-        end -- shunt/state.yue:224
-      })) -- shunt/state.yue:225
+      return T('StateMachine', setmetatable({ }, { -- shunt/state.yue:230
+        __index = index, -- shunt/state.yue:230
+        __newindex = function(self, key, v) -- shunt/state.yue:231
+          return error("cannot add field '" .. tostring(key) .. "' to state machine") -- shunt/state.yue:232
+        end -- shunt/state.yue:231
+      })) -- shunt/state.yue:232
     end) -- shunt/state.yue:9
   } -- shunt/state.yue:9
   if _base_0.__index == nil then -- shunt/state.yue:9
     _base_0.__index = _base_0 -- shunt/state.yue:9
-  end -- shunt/state.yue:225
+  end -- shunt/state.yue:232
   _class_0 = setmetatable({ -- shunt/state.yue:9
     __init = F('(string) => <>', function(self, _name) -- shunt/state.yue:10
       self._name = _name -- shunt/state.yue:10
@@ -11839,834 +11847,855 @@ do -- shunt/state.yue:9
   }) -- shunt/state.yue:9
   _base_0.__class = _class_0 -- shunt/state.yue:9
   StateMachineBuilder = _class_0 -- shunt/state.yue:9
-end -- shunt/state.yue:225
+end -- shunt/state.yue:232
 _module_0["StateMachineBuilder"] = StateMachineBuilder -- shunt/state.yue:9
-make_state = F('(string, string, any) -> {}', function(name, data_type, data) -- shunt/state.yue:227
-  T(data_type, data) -- shunt/state.yue:228
-  local _with_0 = setmetatable({ -- shunt/state.yue:229
-    name = name, -- shunt/state.yue:229
-  }, { }) -- shunt/state.yue:229
-  if 'table' == type(data) then -- shunt/state.yue:230
-    getmetatable(_with_0).__index = data -- shunt/state.yue:231
-  else -- shunt/state.yue:233
-    getmetatable(_with_0).__index = { -- shunt/state.yue:233
-      value = data -- shunt/state.yue:233
-    } -- shunt/state.yue:233
-  end -- shunt/state.yue:230
-  getmetatable(_with_0).__newindex = function(self, key) -- shunt/state.yue:234
-    local key_repr -- shunt/state.yue:235
-    if 'string' == type(key) then -- shunt/state.yue:236
-      key_repr = "." .. tostring(key) -- shunt/state.yue:237
-    else -- shunt/state.yue:239
-      key_repr = "[" .. tostring(key) .. "]" -- shunt/state.yue:239
-    end -- shunt/state.yue:236
-    return error("cannot directly assign state fields") -- shunt/state.yue:240
-  end -- shunt/state.yue:234
-  return _with_0 -- shunt/state.yue:229
-end) -- shunt/state.yue:227
+make_state = F('(string, string, any) -> {}', function(name, data_type, data) -- shunt/state.yue:234
+  T(data_type, data) -- shunt/state.yue:235
+  local _with_0 = setmetatable({ -- shunt/state.yue:236
+    name = name, -- shunt/state.yue:236
+  }, { }) -- shunt/state.yue:236
+  if 'table' == type(data) then -- shunt/state.yue:237
+    getmetatable(_with_0).__index = data -- shunt/state.yue:238
+  else -- shunt/state.yue:240
+    getmetatable(_with_0).__index = { -- shunt/state.yue:240
+      value = data -- shunt/state.yue:240
+    } -- shunt/state.yue:240
+  end -- shunt/state.yue:237
+  getmetatable(_with_0).__newindex = function(self, key) -- shunt/state.yue:241
+    local key_repr -- shunt/state.yue:242
+    if 'string' == type(key) then -- shunt/state.yue:243
+      key_repr = "." .. tostring(key) -- shunt/state.yue:244
+    else -- shunt/state.yue:246
+      key_repr = "[" .. tostring(key) .. "]" -- shunt/state.yue:246
+    end -- shunt/state.yue:243
+    return error("cannot directly assign state fields") -- shunt/state.yue:247
+  end -- shunt/state.yue:241
+  return _with_0 -- shunt/state.yue:236
+end) -- shunt/state.yue:234
 declare_type('State', [[{
   _is_end: boolean,
   _transitions: {string},
   _data_type: ?string,
-}]]) -- shunt/state.yue:242
-local State -- shunt/state.yue:247
-do -- shunt/state.yue:247
-  local _class_0 -- shunt/state.yue:247
-  local _base_0 = { -- shunt/state.yue:247
-    add_transition_to = F('(string) => Self', function(self, name) -- shunt/state.yue:258
-      if not valid_ident(name) then -- shunt/state.yue:259
-        error("cannot build state machine: state name '" .. tostring(name) .. "' not a valid identifier") -- shunt/state.yue:260
-      end -- shunt/state.yue:259
-      if (self._transitions[name] ~= nil) then -- shunt/state.yue:261
-        error("cannot build state machine: transition " .. tostring(self._name) .. "->" .. tostring(name) .. " redefined") -- shunt/state.yue:262
-      end -- shunt/state.yue:261
-      self._transitions[name] = true -- shunt/state.yue:263
-      do -- shunt/state.yue:264
-        local _obj_0 = self._transition_list -- shunt/state.yue:264
-        _obj_0[#_obj_0 + 1] = name -- shunt/state.yue:264
-      end -- shunt/state.yue:264
-      return self -- shunt/state.yue:265
-    end), -- shunt/state.yue:267
-    declare_end_state = F('() => Self', function(self) -- shunt/state.yue:267
-      self._is_end = true -- shunt/state.yue:268
-      return self -- shunt/state.yue:269
-    end), -- shunt/state.yue:271
-    set_data_type = F('(string) => Self', function(self, data_type) -- shunt/state.yue:271
-      if self._data_type_set then -- shunt/state.yue:272
-        error("cannot build state machine: data type for state " .. tostring(self._name) .. " already set") -- shunt/state.yue:273
-      end -- shunt/state.yue:272
-      self._data_type_set = true -- shunt/state.yue:274
-      self._data_type = data_type -- shunt/state.yue:275
+}]]) -- shunt/state.yue:249
+local State -- shunt/state.yue:254
+do -- shunt/state.yue:254
+  local _class_0 -- shunt/state.yue:254
+  local _base_0 = { -- shunt/state.yue:254
+    add_transition_to = F('(string) => Self', function(self, name) -- shunt/state.yue:265
+      if not valid_ident(name) then -- shunt/state.yue:266
+        error("cannot build state machine: state name '" .. tostring(name) .. "' not a valid identifier") -- shunt/state.yue:267
+      end -- shunt/state.yue:266
+      if (self._transitions[name] ~= nil) then -- shunt/state.yue:268
+        error("cannot build state machine: transition " .. tostring(self._name) .. "->" .. tostring(name) .. " redefined") -- shunt/state.yue:269
+      end -- shunt/state.yue:268
+      self._transitions[name] = true -- shunt/state.yue:270
+      do -- shunt/state.yue:271
+        local _obj_0 = self._transition_list -- shunt/state.yue:271
+        _obj_0[#_obj_0 + 1] = name -- shunt/state.yue:271
+      end -- shunt/state.yue:271
+      return self -- shunt/state.yue:272
+    end), -- shunt/state.yue:274
+    declare_end_state = F('() => Self', function(self) -- shunt/state.yue:274
+      self._is_end = true -- shunt/state.yue:275
       return self -- shunt/state.yue:276
-    end) -- shunt/state.yue:247
-  } -- shunt/state.yue:247
-  if _base_0.__index == nil then -- shunt/state.yue:247
-    _base_0.__index = _base_0 -- shunt/state.yue:247
-  end -- shunt/state.yue:276
-  _class_0 = setmetatable({ -- shunt/state.yue:247
-    __init = F('(string) => <>', function(self, _name) -- shunt/state.yue:248
-      self._name = _name -- shunt/state.yue:248
-      if not valid_ident(self._name) then -- shunt/state.yue:249
-        error("cannot build state machine: state name '" .. tostring(self._name) .. "' not a valid identifier") -- shunt/state.yue:250
-      end -- shunt/state.yue:249
-      self._transitions = T('{string}', { }) -- shunt/state.yue:252
-      self._transition_list = T('[string]', { }) -- shunt/state.yue:253
-      self._data_type = T('string', 'nil') -- shunt/state.yue:254
-      self._data_type_set = T('boolean', false) -- shunt/state.yue:255
-      self._is_end = T('boolean', false) -- shunt/state.yue:256
-    end), -- shunt/state.yue:247
-    __base = _base_0, -- shunt/state.yue:247
-    __name = "State" -- shunt/state.yue:247
-  }, { -- shunt/state.yue:247
-    __index = _base_0, -- shunt/state.yue:247
-    __call = function(cls, ...) -- shunt/state.yue:247
-      local _self_0 = setmetatable({ }, _base_0) -- shunt/state.yue:247
-      cls.__init(_self_0, ...) -- shunt/state.yue:247
-      return _self_0 -- shunt/state.yue:247
-    end -- shunt/state.yue:247
-  }) -- shunt/state.yue:247
-  _base_0.__class = _class_0 -- shunt/state.yue:247
-  State = _class_0 -- shunt/state.yue:247
-end -- shunt/state.yue:276
-_module_0["State"] = State -- shunt/state.yue:247
+    end), -- shunt/state.yue:278
+    set_data_type = F('(string) => Self', function(self, data_type) -- shunt/state.yue:278
+      if self._data_type_set then -- shunt/state.yue:279
+        error("cannot build state machine: data type for state " .. tostring(self._name) .. " already set") -- shunt/state.yue:280
+      end -- shunt/state.yue:279
+      self._data_type_set = true -- shunt/state.yue:281
+      self._data_type = data_type -- shunt/state.yue:282
+      return self -- shunt/state.yue:283
+    end) -- shunt/state.yue:254
+  } -- shunt/state.yue:254
+  if _base_0.__index == nil then -- shunt/state.yue:254
+    _base_0.__index = _base_0 -- shunt/state.yue:254
+  end -- shunt/state.yue:283
+  _class_0 = setmetatable({ -- shunt/state.yue:254
+    __init = F('(string) => <>', function(self, _name) -- shunt/state.yue:255
+      self._name = _name -- shunt/state.yue:255
+      if not valid_ident(self._name) then -- shunt/state.yue:256
+        error("cannot build state machine: state name '" .. tostring(self._name) .. "' not a valid identifier") -- shunt/state.yue:257
+      end -- shunt/state.yue:256
+      self._transitions = T('{string}', { }) -- shunt/state.yue:259
+      self._transition_list = T('[string]', { }) -- shunt/state.yue:260
+      self._data_type = T('string', 'nil') -- shunt/state.yue:261
+      self._data_type_set = T('boolean', false) -- shunt/state.yue:262
+      self._is_end = T('boolean', false) -- shunt/state.yue:263
+    end), -- shunt/state.yue:254
+    __base = _base_0, -- shunt/state.yue:254
+    __name = "State" -- shunt/state.yue:254
+  }, { -- shunt/state.yue:254
+    __index = _base_0, -- shunt/state.yue:254
+    __call = function(cls, ...) -- shunt/state.yue:254
+      local _self_0 = setmetatable({ }, _base_0) -- shunt/state.yue:254
+      cls.__init(_self_0, ...) -- shunt/state.yue:254
+      return _self_0 -- shunt/state.yue:254
+    end -- shunt/state.yue:254
+  }) -- shunt/state.yue:254
+  _base_0.__class = _class_0 -- shunt/state.yue:254
+  State = _class_0 -- shunt/state.yue:254
+end -- shunt/state.yue:283
+_module_0["State"] = State -- shunt/state.yue:254
 declare_type('StateMachine', [[{
   state: {name: string},
   goto: (string, ?{string -> any}) => <>,
-}]]) -- shunt/state.yue:278
-valid_ident = F('(string) -> boolean', function(name) -- shunt/state.yue:283
-  return ((name:match('^[a-z][a-z0-9_]+[a-z0-9]$')) ~= nil) -- shunt/state.yue:284
-end) -- shunt/state.yue:283
-declare_type('StateResponses', '{string->()-><>}') -- shunt/state.yue:286
-local StateResponsesBuilder -- shunt/state.yue:287
-do -- shunt/state.yue:287
-  local _class_0 -- shunt/state.yue:287
-  local _base_0 = { -- shunt/state.yue:287
-    add = F('(string, () -> <>) => Self', function(self, state, response) -- shunt/state.yue:291
-      if not ((rawget(getmetatable(self.sm.states).__index, state)) ~= nil) then -- shunt/state.yue:292
-        error("cannot add response to " .. tostring(self.sm.name) .. ": no such state '" .. tostring(state) .. "'") -- shunt/state.yue:293
-      end -- shunt/state.yue:292
-      if (self.responses[state] ~= nil) then -- shunt/state.yue:294
-        error("cannot add response to " .. tostring(self.sm.name) .. ": response for '" .. tostring(state) .. "' already defined") -- shunt/state.yue:295
-      end -- shunt/state.yue:294
-      self.responses[state] = response -- shunt/state.yue:296
-      return self -- shunt/state.yue:297
-    end), -- shunt/state.yue:299
-    build = F('() => StateResponses', function(self) -- shunt/state.yue:299
-      local uncovered_states -- shunt/state.yue:300
-      do -- shunt/state.yue:300
-        local _with_0 = { } -- shunt/state.yue:300
-        for state_name in pairs(getmetatable(self.sm.states).__index) do -- shunt/state.yue:301
-          if not (self.responses[state_name] ~= nil) then -- shunt/state.yue:302
-            _with_0[#_with_0 + 1] = state_name -- shunt/state.yue:303
-          end -- shunt/state.yue:302
-        end -- shunt/state.yue:303
-        uncovered_states = _with_0 -- shunt/state.yue:300
-      end -- shunt/state.yue:300
-      if #uncovered_states > 0 then -- shunt/state.yue:304
-        table.sort(uncovered_states) -- shunt/state.yue:305
-        error("cannot build state responses: the following states have no response: " .. tostring(table.concat(uncovered_states, ', '))) -- shunt/state.yue:306
-      end -- shunt/state.yue:304
-      return self.responses -- shunt/state.yue:308
-    end) -- shunt/state.yue:287
-  } -- shunt/state.yue:287
-  if _base_0.__index == nil then -- shunt/state.yue:287
-    _base_0.__index = _base_0 -- shunt/state.yue:287
-  end -- shunt/state.yue:308
-  _class_0 = setmetatable({ -- shunt/state.yue:287
-    __init = F('(StateMachine) => <>', function(self, sm) -- shunt/state.yue:288
-      self.sm = sm -- shunt/state.yue:288
-      self.responses = T('{string->()-><>}', { }) -- shunt/state.yue:289
-    end), -- shunt/state.yue:287
-    __base = _base_0, -- shunt/state.yue:287
-    __name = "StateResponsesBuilder" -- shunt/state.yue:287
-  }, { -- shunt/state.yue:287
-    __index = _base_0, -- shunt/state.yue:287
-    __call = function(cls, ...) -- shunt/state.yue:287
-      local _self_0 = setmetatable({ }, _base_0) -- shunt/state.yue:287
-      cls.__init(_self_0, ...) -- shunt/state.yue:287
-      return _self_0 -- shunt/state.yue:287
-    end -- shunt/state.yue:287
-  }) -- shunt/state.yue:287
-  _base_0.__class = _class_0 -- shunt/state.yue:287
-  StateResponsesBuilder = _class_0 -- shunt/state.yue:287
-end -- shunt/state.yue:308
-_module_0["StateResponsesBuilder"] = StateResponsesBuilder -- shunt/state.yue:287
-shallow_log_reporter = function(self, prev_state, state) -- shunt/state.yue:310
-  return log(function() -- shunt/state.yue:311
-    local fragments -- shunt/state.yue:312
-    do -- shunt/state.yue:312
-      local _with_0 = { } -- shunt/state.yue:312
-      _with_0[#_with_0 + 1] = '$ ' -- shunt/state.yue:313
-      _with_0[#_with_0 + 1] = self.name -- shunt/state.yue:314
-      _with_0[#_with_0 + 1] = ':' -- shunt/state.yue:315
-      _with_0[#_with_0 + 1] = prev_state.name -- shunt/state.yue:316
-      _with_0[#_with_0 + 1] = '->' -- shunt/state.yue:317
-      _with_0[#_with_0 + 1] = state.name -- shunt/state.yue:318
-      local level_1_fields -- shunt/state.yue:319
-      do -- shunt/state.yue:319
-        local _accum_0 = { } -- shunt/state.yue:319
-        local _len_0 = 1 -- shunt/state.yue:319
-        for key, value in pairs(getmetatable(state).__index) do -- shunt/state.yue:319
-          _accum_0[_len_0] = { -- shunt/state.yue:319
-            key = key, -- shunt/state.yue:319
-            value = value -- shunt/state.yue:319
-          } -- shunt/state.yue:319
-          _len_0 = _len_0 + 1 -- shunt/state.yue:319
-        end -- shunt/state.yue:319
-        level_1_fields = _accum_0 -- shunt/state.yue:319
-      end -- shunt/state.yue:319
-      table.sort(level_1_fields, function(a, b) -- shunt/state.yue:320
-        return a.key < b.key -- shunt/state.yue:320
-      end) -- shunt/state.yue:320
-      for _index_0 = 1, #level_1_fields do -- shunt/state.yue:321
-        local _des_0 = level_1_fields[_index_0] -- shunt/state.yue:321
-        local key, value = _des_0.key, _des_0.value -- shunt/state.yue:321
-        _with_0[#_with_0 + 1] = '\n    ' -- shunt/state.yue:322
-        _with_0[#_with_0 + 1] = key -- shunt/state.yue:323
-        _with_0[#_with_0 + 1] = ': ' -- shunt/state.yue:324
-        local value_type = type(value) -- shunt/state.yue:325
-        if 'function' == value_type or 'thread' == value_type or 'table' == value_type then -- shunt/state.yue:327
-          _with_0[#_with_0 + 1] = '(' -- shunt/state.yue:328
-          _with_0[#_with_0 + 1] = tostring(value) -- shunt/state.yue:329
-          _with_0[#_with_0 + 1] = ')' -- shunt/state.yue:330
-        elseif 'string' == value_type then -- shunt/state.yue:331
-          _with_0[#_with_0 + 1] = '`' -- shunt/state.yue:332
-          _with_0[#_with_0 + 1] = tostring(value) -- shunt/state.yue:333
-          _with_0[#_with_0 + 1] = '\'' -- shunt/state.yue:334
-        else -- shunt/state.yue:336
+}]]) -- shunt/state.yue:285
+valid_ident = F('(string) -> boolean', function(name) -- shunt/state.yue:290
+  return ((name:match('^[a-z][a-z0-9_]+[a-z0-9]$')) ~= nil) -- shunt/state.yue:291
+end) -- shunt/state.yue:290
+declare_type('StateResponses', '{string->()-><>}') -- shunt/state.yue:293
+local StateResponsesBuilder -- shunt/state.yue:294
+do -- shunt/state.yue:294
+  local _class_0 -- shunt/state.yue:294
+  local _base_0 = { -- shunt/state.yue:294
+    add = F('(string, () -> <>) => Self', function(self, state, response) -- shunt/state.yue:298
+      if not ((rawget(getmetatable(self.sm.states).__index, state)) ~= nil) then -- shunt/state.yue:299
+        error("cannot add response to " .. tostring(self.sm.name) .. ": no such state '" .. tostring(state) .. "'") -- shunt/state.yue:300
+      end -- shunt/state.yue:299
+      if (self.responses[state] ~= nil) then -- shunt/state.yue:301
+        error("cannot add response to " .. tostring(self.sm.name) .. ": response for '" .. tostring(state) .. "' already defined") -- shunt/state.yue:302
+      end -- shunt/state.yue:301
+      self.responses[state] = response -- shunt/state.yue:303
+      return self -- shunt/state.yue:304
+    end), -- shunt/state.yue:306
+    build = F('() => StateResponses', function(self) -- shunt/state.yue:306
+      local uncovered_states -- shunt/state.yue:307
+      do -- shunt/state.yue:307
+        local _with_0 = { } -- shunt/state.yue:307
+        for state_name in pairs(getmetatable(self.sm.states).__index) do -- shunt/state.yue:308
+          if not (self.responses[state_name] ~= nil) then -- shunt/state.yue:309
+            _with_0[#_with_0 + 1] = state_name -- shunt/state.yue:310
+          end -- shunt/state.yue:309
+        end -- shunt/state.yue:310
+        uncovered_states = _with_0 -- shunt/state.yue:307
+      end -- shunt/state.yue:307
+      if #uncovered_states > 0 then -- shunt/state.yue:311
+        table.sort(uncovered_states) -- shunt/state.yue:312
+        error("cannot build state responses: the following states have no response: " .. tostring(table.concat(uncovered_states, ', '))) -- shunt/state.yue:313
+      end -- shunt/state.yue:311
+      return self.responses -- shunt/state.yue:315
+    end) -- shunt/state.yue:294
+  } -- shunt/state.yue:294
+  if _base_0.__index == nil then -- shunt/state.yue:294
+    _base_0.__index = _base_0 -- shunt/state.yue:294
+  end -- shunt/state.yue:315
+  _class_0 = setmetatable({ -- shunt/state.yue:294
+    __init = F('(StateMachine) => <>', function(self, sm) -- shunt/state.yue:295
+      self.sm = sm -- shunt/state.yue:295
+      self.responses = T('{string->()-><>}', { }) -- shunt/state.yue:296
+    end), -- shunt/state.yue:294
+    __base = _base_0, -- shunt/state.yue:294
+    __name = "StateResponsesBuilder" -- shunt/state.yue:294
+  }, { -- shunt/state.yue:294
+    __index = _base_0, -- shunt/state.yue:294
+    __call = function(cls, ...) -- shunt/state.yue:294
+      local _self_0 = setmetatable({ }, _base_0) -- shunt/state.yue:294
+      cls.__init(_self_0, ...) -- shunt/state.yue:294
+      return _self_0 -- shunt/state.yue:294
+    end -- shunt/state.yue:294
+  }) -- shunt/state.yue:294
+  _base_0.__class = _class_0 -- shunt/state.yue:294
+  StateResponsesBuilder = _class_0 -- shunt/state.yue:294
+end -- shunt/state.yue:315
+_module_0["StateResponsesBuilder"] = StateResponsesBuilder -- shunt/state.yue:294
+shallow_log_reporter = function(self, prev_state, state) -- shunt/state.yue:317
+  return log(function() -- shunt/state.yue:318
+    local fragments -- shunt/state.yue:319
+    do -- shunt/state.yue:319
+      local _with_0 = { } -- shunt/state.yue:319
+      _with_0[#_with_0 + 1] = '$ ' -- shunt/state.yue:320
+      _with_0[#_with_0 + 1] = self.name -- shunt/state.yue:321
+      _with_0[#_with_0 + 1] = ':' -- shunt/state.yue:322
+      _with_0[#_with_0 + 1] = prev_state.name -- shunt/state.yue:323
+      _with_0[#_with_0 + 1] = '->' -- shunt/state.yue:324
+      _with_0[#_with_0 + 1] = state.name -- shunt/state.yue:325
+      local level_1_fields -- shunt/state.yue:326
+      do -- shunt/state.yue:326
+        local _accum_0 = { } -- shunt/state.yue:326
+        local _len_0 = 1 -- shunt/state.yue:326
+        for key, value in pairs(getmetatable(state).__index) do -- shunt/state.yue:326
+          _accum_0[_len_0] = { -- shunt/state.yue:326
+            key = key, -- shunt/state.yue:326
+            value = value -- shunt/state.yue:326
+          } -- shunt/state.yue:326
+          _len_0 = _len_0 + 1 -- shunt/state.yue:326
+        end -- shunt/state.yue:326
+        level_1_fields = _accum_0 -- shunt/state.yue:326
+      end -- shunt/state.yue:326
+      table.sort(level_1_fields, function(a, b) -- shunt/state.yue:327
+        return a.key < b.key -- shunt/state.yue:327
+      end) -- shunt/state.yue:327
+      for _index_0 = 1, #level_1_fields do -- shunt/state.yue:328
+        local _des_0 = level_1_fields[_index_0] -- shunt/state.yue:328
+        local key, value = _des_0.key, _des_0.value -- shunt/state.yue:328
+        _with_0[#_with_0 + 1] = '\n    ' -- shunt/state.yue:329
+        _with_0[#_with_0 + 1] = key -- shunt/state.yue:330
+        _with_0[#_with_0 + 1] = ': ' -- shunt/state.yue:331
+        local value_type = type(value) -- shunt/state.yue:332
+        if 'function' == value_type or 'thread' == value_type or 'table' == value_type then -- shunt/state.yue:334
+          _with_0[#_with_0 + 1] = '(' -- shunt/state.yue:335
           _with_0[#_with_0 + 1] = tostring(value) -- shunt/state.yue:336
-        end -- shunt/state.yue:336
-        if value_type == 'table' then -- shunt/state.yue:337
-          local level_2_fields -- shunt/state.yue:338
-          do -- shunt/state.yue:338
-            local _accum_0 = { } -- shunt/state.yue:338
-            local _len_0 = 1 -- shunt/state.yue:338
-            for key2, value2 in pairs(value) do -- shunt/state.yue:338
-              _accum_0[_len_0] = { -- shunt/state.yue:338
-                key2 = key2, -- shunt/state.yue:338
-                value2 = value2 -- shunt/state.yue:338
-              } -- shunt/state.yue:338
-              _len_0 = _len_0 + 1 -- shunt/state.yue:338
-            end -- shunt/state.yue:338
-            level_2_fields = _accum_0 -- shunt/state.yue:338
-          end -- shunt/state.yue:338
-          table.sort(level_2_fields, function(a, b) -- shunt/state.yue:339
-            return a.key2 < b.key2 -- shunt/state.yue:339
-          end) -- shunt/state.yue:339
-          for _index_1 = 1, #level_2_fields do -- shunt/state.yue:340
-            local _des_1 = level_2_fields[_index_1] -- shunt/state.yue:340
-            local key2, value2 = _des_1.key2, _des_1.value2 -- shunt/state.yue:340
-            _with_0[#_with_0 + 1] = '\n      ' -- shunt/state.yue:341
-            _with_0[#_with_0 + 1] = key2 -- shunt/state.yue:342
-            _with_0[#_with_0 + 1] = ': ' -- shunt/state.yue:343
-            do -- shunt/state.yue:344
-              local _exp_0 = type(value2) -- shunt/state.yue:344
-              if 'function' == _exp_0 or 'thread' == _exp_0 or 'table' == _exp_0 then -- shunt/state.yue:345
-                _with_0[#_with_0 + 1] = '(' -- shunt/state.yue:346
-                _with_0[#_with_0 + 1] = tostring(value2) -- shunt/state.yue:347
-                _with_0[#_with_0 + 1] = ')' -- shunt/state.yue:348
-              elseif 'string' == _exp_0 then -- shunt/state.yue:349
-                _with_0[#_with_0 + 1] = '`' -- shunt/state.yue:350
-                _with_0[#_with_0 + 1] = tostring(value2) -- shunt/state.yue:351
-                _with_0[#_with_0 + 1] = '\'' -- shunt/state.yue:352
-              else -- shunt/state.yue:354
+          _with_0[#_with_0 + 1] = ')' -- shunt/state.yue:337
+        elseif 'string' == value_type then -- shunt/state.yue:338
+          _with_0[#_with_0 + 1] = '`' -- shunt/state.yue:339
+          _with_0[#_with_0 + 1] = tostring(value) -- shunt/state.yue:340
+          _with_0[#_with_0 + 1] = '\'' -- shunt/state.yue:341
+        else -- shunt/state.yue:343
+          _with_0[#_with_0 + 1] = tostring(value) -- shunt/state.yue:343
+        end -- shunt/state.yue:343
+        if value_type == 'table' then -- shunt/state.yue:344
+          local level_2_fields -- shunt/state.yue:345
+          do -- shunt/state.yue:345
+            local _accum_0 = { } -- shunt/state.yue:345
+            local _len_0 = 1 -- shunt/state.yue:345
+            for key2, value2 in pairs(value) do -- shunt/state.yue:345
+              _accum_0[_len_0] = { -- shunt/state.yue:345
+                key2 = key2, -- shunt/state.yue:345
+                value2 = value2 -- shunt/state.yue:345
+              } -- shunt/state.yue:345
+              _len_0 = _len_0 + 1 -- shunt/state.yue:345
+            end -- shunt/state.yue:345
+            level_2_fields = _accum_0 -- shunt/state.yue:345
+          end -- shunt/state.yue:345
+          table.sort(level_2_fields, function(a, b) -- shunt/state.yue:346
+            return a.key2 < b.key2 -- shunt/state.yue:346
+          end) -- shunt/state.yue:346
+          for _index_1 = 1, #level_2_fields do -- shunt/state.yue:347
+            local _des_1 = level_2_fields[_index_1] -- shunt/state.yue:347
+            local key2, value2 = _des_1.key2, _des_1.value2 -- shunt/state.yue:347
+            _with_0[#_with_0 + 1] = '\n      ' -- shunt/state.yue:348
+            _with_0[#_with_0 + 1] = key2 -- shunt/state.yue:349
+            _with_0[#_with_0 + 1] = ': ' -- shunt/state.yue:350
+            do -- shunt/state.yue:351
+              local _exp_0 = type(value2) -- shunt/state.yue:351
+              if 'function' == _exp_0 or 'thread' == _exp_0 or 'table' == _exp_0 then -- shunt/state.yue:352
+                _with_0[#_with_0 + 1] = '(' -- shunt/state.yue:353
                 _with_0[#_with_0 + 1] = tostring(value2) -- shunt/state.yue:354
-              end -- shunt/state.yue:354
-            end -- shunt/state.yue:354
-          end -- shunt/state.yue:354
-        end -- shunt/state.yue:337
-      end -- shunt/state.yue:354
-      fragments = _with_0 -- shunt/state.yue:312
-    end -- shunt/state.yue:312
-    return table.concat(fragments) -- shunt/state.yue:355
-  end) -- shunt/state.yue:355
-end -- shunt/state.yue:310
-_module_0["shallow_log_reporter"] = shallow_log_reporter -- shunt/state.yue:355
-spec(function() -- shunt/state.yue:357
+                _with_0[#_with_0 + 1] = ')' -- shunt/state.yue:355
+              elseif 'string' == _exp_0 then -- shunt/state.yue:356
+                _with_0[#_with_0 + 1] = '`' -- shunt/state.yue:357
+                _with_0[#_with_0 + 1] = tostring(value2) -- shunt/state.yue:358
+                _with_0[#_with_0 + 1] = '\'' -- shunt/state.yue:359
+              else -- shunt/state.yue:361
+                _with_0[#_with_0 + 1] = tostring(value2) -- shunt/state.yue:361
+              end -- shunt/state.yue:361
+            end -- shunt/state.yue:361
+          end -- shunt/state.yue:361
+        end -- shunt/state.yue:344
+      end -- shunt/state.yue:361
+      fragments = _with_0 -- shunt/state.yue:319
+    end -- shunt/state.yue:319
+    return table.concat(fragments) -- shunt/state.yue:362
+  end) -- shunt/state.yue:362
+end -- shunt/state.yue:317
+_module_0["shallow_log_reporter"] = shallow_log_reporter -- shunt/state.yue:362
+spec(function() -- shunt/state.yue:364
   local describe, it, matchers -- shunt/state.yue:0
   do -- shunt/state.yue:0
     local _obj_0 = require('spec') -- shunt/state.yue:0
     describe, it, matchers = _obj_0.describe, _obj_0.it, _obj_0.matchers -- shunt/state.yue:0
   end -- shunt/state.yue:0
-  local anything, deep_eq, eq, errors, has_fields, len, matches, no_errors = matchers.anything, matchers.deep_eq, matchers.eq, matchers.errors, matchers.has_fields, matchers.len, matchers.matches, matchers.no_errors -- shunt/state.yue:362
-  describe('StateMachineBuilder', function() -- shunt/state.yue:364
-    it('exposes its name', function() -- shunt/state.yue:365
-      local EXPECTED = 'some_name' -- shunt/state.yue:366
-      local sm = (StateMachineBuilder(EXPECTED)):set_initial_state('q_0'):add((State('q_0')):declare_end_state()):build(); -- shunt/state.yue:367
-      return require('spec')._expect_that([=[sm.name]=], sm.name, (eq(EXPECTED)), tostring("shunt/state.yue") .. ":" .. tostring(372)) -- shunt/state.yue:372
-    end) -- shunt/state.yue:365
-    it('rejects invalid state names', function() -- shunt/state.yue:374
-      return require('spec')._expect_that([=[(-> StateMachineBuilder 'invalid-ident')]=], (function() -- shunt/state.yue:375
-        return StateMachineBuilder('invalid-ident') -- shunt/state.yue:375
-      end), (errors(matches("cannot build state machine: name 'invalid%-ident' not a valid identifier"))), tostring("shunt/state.yue") .. ":" .. tostring(375)) -- shunt/state.yue:375
-    end) -- shunt/state.yue:374
-    it('requires initial state', function() -- shunt/state.yue:377
-      return require('spec')._expect_that([=[(-> (StateMachineBuilder 'test_sm')\build!)]=], (function() -- shunt/state.yue:378
-        return (StateMachineBuilder('test_sm')):build() -- shunt/state.yue:378
-      end), (errors(matches("cannot build state machine: initial state undefined"))), tostring("shunt/state.yue") .. ":" .. tostring(378)) -- shunt/state.yue:378
-    end) -- shunt/state.yue:377
-    it('rejects invalid initial state', function() -- shunt/state.yue:380
-      return require('spec')._expect_that([=[(-> (StateMachineBuilder 'test_sm')\set_initial_state('phantom')\build!)]=], (function() -- shunt/state.yue:381
-        return (StateMachineBuilder('test_sm')):set_initial_state('phantom'):build() -- shunt/state.yue:381
-      end), (errors(matches("cannot build state machine: initial state 'phantom' undefined"))), tostring("shunt/state.yue") .. ":" .. tostring(381)) -- shunt/state.yue:381
-    end) -- shunt/state.yue:380
-    it('rejects duplicate state names', function() -- shunt/state.yue:383
+  local anything, deep_eq, eq, errors, has_fields, len, matches, no_errors = matchers.anything, matchers.deep_eq, matchers.eq, matchers.errors, matchers.has_fields, matchers.len, matchers.matches, matchers.no_errors -- shunt/state.yue:369
+  describe('StateMachineBuilder', function() -- shunt/state.yue:371
+    it('exposes its name', function() -- shunt/state.yue:372
+      local EXPECTED = 'some_name' -- shunt/state.yue:373
+      local sm = (StateMachineBuilder(EXPECTED)):set_initial_state('q_0'):add((State('q_0')):declare_end_state()):build(); -- shunt/state.yue:374
+      return require('spec')._expect_that([=[sm.name]=], sm.name, (eq(EXPECTED)), tostring("shunt/state.yue") .. ":" .. tostring(379)) -- shunt/state.yue:379
+    end) -- shunt/state.yue:372
+    it('rejects invalid state names', function() -- shunt/state.yue:381
+      return require('spec')._expect_that([=[(-> StateMachineBuilder 'invalid-ident')]=], (function() -- shunt/state.yue:382
+        return StateMachineBuilder('invalid-ident') -- shunt/state.yue:382
+      end), (errors(matches("cannot build state machine: name 'invalid%-ident' not a valid identifier"))), tostring("shunt/state.yue") .. ":" .. tostring(382)) -- shunt/state.yue:382
+    end) -- shunt/state.yue:381
+    it('requires initial state', function() -- shunt/state.yue:384
+      return require('spec')._expect_that([=[(-> (StateMachineBuilder 'test_sm')\build!)]=], (function() -- shunt/state.yue:385
+        return (StateMachineBuilder('test_sm')):build() -- shunt/state.yue:385
+      end), (errors(matches("cannot build state machine: initial state undefined"))), tostring("shunt/state.yue") .. ":" .. tostring(385)) -- shunt/state.yue:385
+    end) -- shunt/state.yue:384
+    it('rejects invalid initial state', function() -- shunt/state.yue:387
+      return require('spec')._expect_that([=[(-> (StateMachineBuilder 'test_sm')\set_initial_state('phantom')\build!)]=], (function() -- shunt/state.yue:388
+        return (StateMachineBuilder('test_sm')):set_initial_state('phantom'):build() -- shunt/state.yue:388
+      end), (errors(matches("cannot build state machine: initial state 'phantom' undefined"))), tostring("shunt/state.yue") .. ":" .. tostring(388)) -- shunt/state.yue:388
+    end) -- shunt/state.yue:387
+    it('rejects duplicate state names', function() -- shunt/state.yue:390
       return require('spec')._expect_that([=[(-> (StateMachineBuilder 'test_sm')
         \set_initial_state 'waiting'
         \add State 'waiting'
         \add State 'waiting'
-        \build!)]=], (function() -- shunt/state.yue:384
-        return (StateMachineBuilder('test_sm')):set_initial_state('waiting'):add(State('waiting')):add(State('waiting')):build() -- shunt/state.yue:384
-      end), (errors(matches("cannot build state machine: state 'waiting' redefined"))), tostring("shunt/state.yue") .. ":" .. tostring(384)) -- shunt/state.yue:388
-    end) -- shunt/state.yue:383
-    it('rejects repeated \\set_data_type calls', function() -- shunt/state.yue:390
+        \build!)]=], (function() -- shunt/state.yue:391
+        return (StateMachineBuilder('test_sm')):set_initial_state('waiting'):add(State('waiting')):add(State('waiting')):build() -- shunt/state.yue:391
+      end), (errors(matches("cannot build state machine: state 'waiting' redefined"))), tostring("shunt/state.yue") .. ":" .. tostring(391)) -- shunt/state.yue:395
+    end) -- shunt/state.yue:390
+    it('rejects repeated \\set_data_type calls', function() -- shunt/state.yue:397
       return require('spec')._expect_that([=[(-> (StateMachineBuilder 'test_sm')
         \set_initial_state 'waiting'
         \add (State 'waiting')
           \set_data_type 'string'
           \set_data_type 'number'
-        \build!)]=], (function() -- shunt/state.yue:391
-        return (StateMachineBuilder('test_sm')):set_initial_state('waiting'):add((State('waiting')):set_data_type('string'):set_data_type('number')):build() -- shunt/state.yue:391
-      end), (errors(matches("cannot build state machine: data type for state waiting already set"))), tostring("shunt/state.yue") .. ":" .. tostring(391)) -- shunt/state.yue:396
-    end) -- shunt/state.yue:390
-    it('rejects invalid state names', function() -- shunt/state.yue:398
+        \build!)]=], (function() -- shunt/state.yue:398
+        return (StateMachineBuilder('test_sm')):set_initial_state('waiting'):add((State('waiting')):set_data_type('string'):set_data_type('number')):build() -- shunt/state.yue:398
+      end), (errors(matches("cannot build state machine: data type for state waiting already set"))), tostring("shunt/state.yue") .. ":" .. tostring(398)) -- shunt/state.yue:403
+    end) -- shunt/state.yue:397
+    it('rejects invalid state names', function() -- shunt/state.yue:405
       return require('spec')._expect_that([=[(-> (StateMachineBuilder 'test_sm')
         \set_initial_state '-invalid'
         \add State '-invalid'
-        \build!)]=], (function() -- shunt/state.yue:399
-        return (StateMachineBuilder('test_sm')):set_initial_state('-invalid'):add(State('-invalid')):build() -- shunt/state.yue:399
-      end), (errors(matches("cannot build state machine: state name '%-invalid' not a valid identifier"))), tostring("shunt/state.yue") .. ":" .. tostring(399)) -- shunt/state.yue:402
-    end) -- shunt/state.yue:398
-    it('formats itself as graphviz', function() -- shunt/state.yue:404
+        \build!)]=], (function() -- shunt/state.yue:406
+        return (StateMachineBuilder('test_sm')):set_initial_state('-invalid'):add(State('-invalid')):build() -- shunt/state.yue:406
+      end), (errors(matches("cannot build state machine: state name '%-invalid' not a valid identifier"))), tostring("shunt/state.yue") .. ":" .. tostring(406)) -- shunt/state.yue:409
+    end) -- shunt/state.yue:405
+    it('formats itself as graphviz', function() -- shunt/state.yue:411
       local graphviz_repr = (StateMachineBuilder('test_sm')):set_initial_state('state_1'):add((State('state_1')):declare_end_state():add_transition_to('state_2')):add((State('state_2')):add_transition_to('state_1'):set_data_type([[{
             hello: string,
             world: number,
-          }]])):build():to_graphviz() -- shunt/state.yue:405
-      local expected_lines = { -- shunt/state.yue:419
-        'digraph {', -- shunt/state.yue:419
-        '  bgcolor = black', -- shunt/state.yue:420
-        '  color = white', -- shunt/state.yue:421
-        '  label = "test_sm"', -- shunt/state.yue:422
-        '  graph [', -- shunt/state.yue:423
-        '    fontname = "NewCenturySchlbk-Roman"', -- shunt/state.yue:424
-        '  ]', -- shunt/state.yue:425
-        '  node [', -- shunt/state.yue:426
-        '    color = white', -- shunt/state.yue:427
-        '    fontcolor = white', -- shunt/state.yue:428
-        '    fillcolor = white', -- shunt/state.yue:429
-        '    shape = plaintext', -- shunt/state.yue:430
+          }]])):build():to_graphviz() -- shunt/state.yue:412
+      local expected_lines = { -- shunt/state.yue:426
+        'digraph {', -- shunt/state.yue:426
+        '  bgcolor = black', -- shunt/state.yue:427
+        '  color = white', -- shunt/state.yue:428
+        '  label = "test_sm"', -- shunt/state.yue:429
+        '  graph [', -- shunt/state.yue:430
         '    fontname = "NewCenturySchlbk-Roman"', -- shunt/state.yue:431
         '  ]', -- shunt/state.yue:432
-        '  edge [', -- shunt/state.yue:433
+        '  node [', -- shunt/state.yue:433
         '    color = white', -- shunt/state.yue:434
         '    fontcolor = white', -- shunt/state.yue:435
-        '    fontname = "NewCenturySchlbk-Roman"', -- shunt/state.yue:436
-        '  ]', -- shunt/state.yue:437
-        '  levels=1', -- shunt/state.yue:438
-        '  __init[shape=point]', -- shunt/state.yue:439
-        '  __init -> state_1', -- shunt/state.yue:440
-        '', -- shunt/state.yue:441
-        '  state_1[fontname="NewCenturySchlbk-Italic"]', -- shunt/state.yue:442
-        '  state_1 -> state_2[weight=1]', -- shunt/state.yue:443
-        '', -- shunt/state.yue:444
-        '  state_2[]', -- shunt/state.yue:445
-        '  state_2 -> state_1[weight=1]', -- shunt/state.yue:446
-        '}' -- shunt/state.yue:447
-      } -- shunt/state.yue:418
-      local expected_repr = table.concat(expected_lines, '\n'); -- shunt/state.yue:448
-      return require('spec')._expect_that([=[graphviz_repr]=], graphviz_repr, (eq(expected_repr)), tostring("shunt/state.yue") .. ":" .. tostring(449)) -- shunt/state.yue:449
-    end) -- shunt/state.yue:404
-    it('formats itself as mermaid', function() -- shunt/state.yue:451
+        '    fillcolor = white', -- shunt/state.yue:436
+        '    shape = plaintext', -- shunt/state.yue:437
+        '    fontname = "NewCenturySchlbk-Roman"', -- shunt/state.yue:438
+        '  ]', -- shunt/state.yue:439
+        '  edge [', -- shunt/state.yue:440
+        '    color = white', -- shunt/state.yue:441
+        '    fontcolor = white', -- shunt/state.yue:442
+        '    fontname = "NewCenturySchlbk-Roman"', -- shunt/state.yue:443
+        '  ]', -- shunt/state.yue:444
+        '  levels=1', -- shunt/state.yue:445
+        '  __init[shape=point]', -- shunt/state.yue:446
+        '  __init -> state_1', -- shunt/state.yue:447
+        '', -- shunt/state.yue:448
+        '  state_1[fontname="NewCenturySchlbk-Italic"]', -- shunt/state.yue:449
+        '  state_1 -> state_2[weight=1]', -- shunt/state.yue:450
+        '', -- shunt/state.yue:451
+        '  state_2[]', -- shunt/state.yue:452
+        '  state_2 -> state_1[weight=1]', -- shunt/state.yue:453
+        '}' -- shunt/state.yue:454
+      } -- shunt/state.yue:425
+      local expected_repr = table.concat(expected_lines, '\n'); -- shunt/state.yue:455
+      return require('spec')._expect_that([=[graphviz_repr]=], graphviz_repr, (eq(expected_repr)), tostring("shunt/state.yue") .. ":" .. tostring(456)) -- shunt/state.yue:456
+    end) -- shunt/state.yue:411
+    it('formats itself as mermaid', function() -- shunt/state.yue:458
       local mermaid_repr = (StateMachineBuilder('test_sm')):set_initial_state('state_1'):add((State('state_1')):declare_end_state():add_transition_to('state_2')):add((State('state_2')):add_transition_to('state_1'):set_data_type([[{
             hello: string,
             world: number,
-          }]])):build():to_mermaid() -- shunt/state.yue:452
-      local expected_lines = { -- shunt/state.yue:466
-        'stateDiagram', -- shunt/state.yue:466
-        '  [*] --> state_1', -- shunt/state.yue:467
-        '  state_1', -- shunt/state.yue:468
-        '  state_1 --> [*]', -- shunt/state.yue:469
-        '  state_1 --> state_2', -- shunt/state.yue:470
-        '  state_2', -- shunt/state.yue:471
-        '  state_2 --> state_1' -- shunt/state.yue:472
-      } -- shunt/state.yue:465
-      local expected_repr = table.concat(expected_lines, '\n'); -- shunt/state.yue:473
-      return require('spec')._expect_that([=[mermaid_repr]=], mermaid_repr, (eq(expected_repr)), tostring("shunt/state.yue") .. ":" .. tostring(474)) -- shunt/state.yue:474
-    end) -- shunt/state.yue:451
-    it('accepts endless state machines', function() -- shunt/state.yue:476
-      local builder = (StateMachineBuilder('test_sm')):set_initial_state('state_1'):declare_endless():add((State('state_1')):add_transition_to('state_1')); -- shunt/state.yue:477
-      return require('spec')._expect_that([=[builder\build]=], (function() -- shunt/state.yue:482
-        local _base_0 = builder -- shunt/state.yue:482
-        local _fn_0 = _base_0.build -- shunt/state.yue:482
-        return _fn_0 and function(...) -- shunt/state.yue:482
-          return _fn_0(_base_0, ...) -- shunt/state.yue:482
-        end -- shunt/state.yue:482
-      end)(), (no_errors()), tostring("shunt/state.yue") .. ":" .. tostring(482)) -- shunt/state.yue:482
-    end) -- shunt/state.yue:476
-    return it('rejects invalid transition graphs', function() -- shunt/state.yue:484
-      local builder = (StateMachineBuilder('test_sm')):set_initial_state('state_1'):add(State('state_1')); -- shunt/state.yue:485
-      require('spec')._expect_that([=[builder\build]=], (function() -- shunt/state.yue:488
-        local _base_0 = builder -- shunt/state.yue:488
-        local _fn_0 = _base_0.build -- shunt/state.yue:488
-        return _fn_0 and function(...) -- shunt/state.yue:488
-          return _fn_0(_base_0, ...) -- shunt/state.yue:488
-        end -- shunt/state.yue:488
-      end)(), (errors(matches('no end states declared'))), tostring("shunt/state.yue") .. ":" .. tostring(488)) -- shunt/state.yue:488
-      builder = (StateMachineBuilder('test_sm')):set_initial_state('state_1'):add((State('state_1')):declare_end_state():add_transition_to('state_2')):add((State('state_2')):add_transition_to('state_3')):add((State('state_3')):add_transition_to('state_1')); -- shunt/state.yue:490
-      require('spec')._expect_that([=[builder\build]=], (function() -- shunt/state.yue:499
-        local _base_0 = builder -- shunt/state.yue:499
-        local _fn_0 = _base_0.build -- shunt/state.yue:499
-        return _fn_0 and function(...) -- shunt/state.yue:499
-          return _fn_0(_base_0, ...) -- shunt/state.yue:499
-        end -- shunt/state.yue:499
-      end)(), (no_errors()), tostring("shunt/state.yue") .. ":" .. tostring(499)) -- shunt/state.yue:499
-      builder = (StateMachineBuilder('test_sm')):set_initial_state('state_1'):add((State('state_1')):declare_end_state()):add((State('unreachable_1')):add_transition_to('unreachable_2')):add((State('unreachable_2'))); -- shunt/state.yue:501
-      require('spec')._expect_that([=[builder\build]=], (function() -- shunt/state.yue:508
-        local _base_0 = builder -- shunt/state.yue:508
-        local _fn_0 = _base_0.build -- shunt/state.yue:508
-        return _fn_0 and function(...) -- shunt/state.yue:508
-          return _fn_0(_base_0, ...) -- shunt/state.yue:508
-        end -- shunt/state.yue:508
-      end)(), (errors(matches('the following states are not reachable from the start state: unreachable_1, unreachable_2'))), tostring("shunt/state.yue") .. ":" .. tostring(508)) -- shunt/state.yue:508
-      builder = (StateMachineBuilder('test_sm')):set_initial_state('state_1'):add((State('state_1')):add_transition_to('state_2')):add((State('state_2')):declare_end_state():add_transition_to('interminable_1')):add((State('interminable_1')):add_transition_to('interminable_2')):add((State('interminable_2'))); -- shunt/state.yue:510
-      require('spec')._expect_that([=[builder\build]=], (function() -- shunt/state.yue:520
-        local _base_0 = builder -- shunt/state.yue:520
-        local _fn_0 = _base_0.build -- shunt/state.yue:520
-        return _fn_0 and function(...) -- shunt/state.yue:520
-          return _fn_0(_base_0, ...) -- shunt/state.yue:520
-        end -- shunt/state.yue:520
-      end)(), (errors(matches('the following states are not reachable from any end state: interminable_1, interminable_2'))), tostring("shunt/state.yue") .. ":" .. tostring(520)) -- shunt/state.yue:520
-      builder = (StateMachineBuilder('test_sm')):set_initial_state('dead_end'):declare_endless():add(State('dead_end')); -- shunt/state.yue:522
-      require('spec')._expect_that([=[builder\build]=], (function() -- shunt/state.yue:526
-        local _base_0 = builder -- shunt/state.yue:526
-        local _fn_0 = _base_0.build -- shunt/state.yue:526
-        return _fn_0 and function(...) -- shunt/state.yue:526
-          return _fn_0(_base_0, ...) -- shunt/state.yue:526
-        end -- shunt/state.yue:526
-      end)(), (errors(matches('the following states are dead ends: dead_end'))), tostring("shunt/state.yue") .. ":" .. tostring(526)) -- shunt/state.yue:526
-      builder = (StateMachineBuilder('test_sm')):set_initial_state('hub'):declare_endless():add((State('hub')):add_transition_to('dead_end_2'):add_transition_to('dead_end_1')):add(State('dead_end_2')):add(State('dead_end_1')); -- shunt/state.yue:527
-      return require('spec')._expect_that([=[builder\build]=], (function() -- shunt/state.yue:535
-        local _base_0 = builder -- shunt/state.yue:535
-        local _fn_0 = _base_0.build -- shunt/state.yue:535
-        return _fn_0 and function(...) -- shunt/state.yue:535
-          return _fn_0(_base_0, ...) -- shunt/state.yue:535
-        end -- shunt/state.yue:535
-      end)(), (errors(matches('the following states are dead ends: dead_end_1, dead_end_2'))), tostring("shunt/state.yue") .. ":" .. tostring(535)) -- shunt/state.yue:535
-    end) -- shunt/state.yue:535
-  end) -- shunt/state.yue:364
-  describe('valid_ident', function() -- shunt/state.yue:537
-    local valid_idents = { -- shunt/state.yue:539
-      'hello', -- shunt/state.yue:539
-      'world_123' -- shunt/state.yue:540
-    } -- shunt/state.yue:538
-    for _index_0 = 1, #valid_idents do -- shunt/state.yue:541
-      local ident = valid_idents[_index_0] -- shunt/state.yue:541
-      it("accepts '" .. tostring(ident) .. "'", function() -- shunt/state.yue:542
-        return require('spec')._expect_that([=[(valid_ident ident)]=], (valid_ident(ident)), (eq(true)), tostring("shunt/state.yue") .. ":" .. tostring(543)) -- shunt/state.yue:543
-      end) -- shunt/state.yue:542
-    end -- shunt/state.yue:543
-    local invalid_idents = { -- shunt/state.yue:546
-      '', -- shunt/state.yue:546
-      '1234', -- shunt/state.yue:547
-      '-qwer', -- shunt/state.yue:548
-      '.asdf', -- shunt/state.yue:549
-      'a-b' -- shunt/state.yue:550
+          }]])):build():to_mermaid() -- shunt/state.yue:459
+      local expected_lines = { -- shunt/state.yue:473
+        'stateDiagram', -- shunt/state.yue:473
+        '  [*] --> state_1', -- shunt/state.yue:474
+        '  state_1', -- shunt/state.yue:475
+        '  state_1 --> [*]', -- shunt/state.yue:476
+        '  state_1 --> state_2', -- shunt/state.yue:477
+        '  state_2', -- shunt/state.yue:478
+        '  state_2 --> state_1' -- shunt/state.yue:479
+      } -- shunt/state.yue:472
+      local expected_repr = table.concat(expected_lines, '\n'); -- shunt/state.yue:480
+      return require('spec')._expect_that([=[mermaid_repr]=], mermaid_repr, (eq(expected_repr)), tostring("shunt/state.yue") .. ":" .. tostring(481)) -- shunt/state.yue:481
+    end) -- shunt/state.yue:458
+    it('accepts endless state machines', function() -- shunt/state.yue:483
+      local builder = (StateMachineBuilder('test_sm')):set_initial_state('state_1'):declare_endless():add((State('state_1')):add_transition_to('state_1')); -- shunt/state.yue:484
+      return require('spec')._expect_that([=[builder\build]=], (function() -- shunt/state.yue:489
+        local _base_0 = builder -- shunt/state.yue:489
+        local _fn_0 = _base_0.build -- shunt/state.yue:489
+        return _fn_0 and function(...) -- shunt/state.yue:489
+          return _fn_0(_base_0, ...) -- shunt/state.yue:489
+        end -- shunt/state.yue:489
+      end)(), (no_errors()), tostring("shunt/state.yue") .. ":" .. tostring(489)) -- shunt/state.yue:489
+    end) -- shunt/state.yue:483
+    return it('rejects invalid transition graphs', function() -- shunt/state.yue:491
+      local builder = (StateMachineBuilder('test_sm')):set_initial_state('state_1'):add(State('state_1')); -- shunt/state.yue:492
+      require('spec')._expect_that([=[builder\build]=], (function() -- shunt/state.yue:495
+        local _base_0 = builder -- shunt/state.yue:495
+        local _fn_0 = _base_0.build -- shunt/state.yue:495
+        return _fn_0 and function(...) -- shunt/state.yue:495
+          return _fn_0(_base_0, ...) -- shunt/state.yue:495
+        end -- shunt/state.yue:495
+      end)(), (errors(matches('no end states declared'))), tostring("shunt/state.yue") .. ":" .. tostring(495)) -- shunt/state.yue:495
+      builder = (StateMachineBuilder('test_sm')):set_initial_state('state_1'):add((State('state_1')):declare_end_state():add_transition_to('state_2')):add((State('state_2')):add_transition_to('state_3')):add((State('state_3')):add_transition_to('state_1')); -- shunt/state.yue:497
+      require('spec')._expect_that([=[builder\build]=], (function() -- shunt/state.yue:506
+        local _base_0 = builder -- shunt/state.yue:506
+        local _fn_0 = _base_0.build -- shunt/state.yue:506
+        return _fn_0 and function(...) -- shunt/state.yue:506
+          return _fn_0(_base_0, ...) -- shunt/state.yue:506
+        end -- shunt/state.yue:506
+      end)(), (no_errors()), tostring("shunt/state.yue") .. ":" .. tostring(506)) -- shunt/state.yue:506
+      builder = (StateMachineBuilder('test_sm')):set_initial_state('state_1'):add((State('state_1')):declare_end_state()):add((State('unreachable_1')):add_transition_to('unreachable_2')):add((State('unreachable_2'))); -- shunt/state.yue:508
+      require('spec')._expect_that([=[builder\build]=], (function() -- shunt/state.yue:515
+        local _base_0 = builder -- shunt/state.yue:515
+        local _fn_0 = _base_0.build -- shunt/state.yue:515
+        return _fn_0 and function(...) -- shunt/state.yue:515
+          return _fn_0(_base_0, ...) -- shunt/state.yue:515
+        end -- shunt/state.yue:515
+      end)(), (errors(matches('the following states are not reachable from the start state: unreachable_1, unreachable_2'))), tostring("shunt/state.yue") .. ":" .. tostring(515)) -- shunt/state.yue:515
+      builder = (StateMachineBuilder('test_sm')):set_initial_state('state_1'):add((State('state_1')):add_transition_to('state_2')):add((State('state_2')):declare_end_state():add_transition_to('interminable_1')):add((State('interminable_1')):add_transition_to('interminable_2')):add((State('interminable_2'))); -- shunt/state.yue:517
+      require('spec')._expect_that([=[builder\build]=], (function() -- shunt/state.yue:527
+        local _base_0 = builder -- shunt/state.yue:527
+        local _fn_0 = _base_0.build -- shunt/state.yue:527
+        return _fn_0 and function(...) -- shunt/state.yue:527
+          return _fn_0(_base_0, ...) -- shunt/state.yue:527
+        end -- shunt/state.yue:527
+      end)(), (errors(matches('the following states are not reachable from any end state: interminable_1, interminable_2'))), tostring("shunt/state.yue") .. ":" .. tostring(527)) -- shunt/state.yue:527
+      builder = (StateMachineBuilder('test_sm')):set_initial_state('dead_end'):declare_endless():add(State('dead_end')); -- shunt/state.yue:529
+      require('spec')._expect_that([=[builder\build]=], (function() -- shunt/state.yue:533
+        local _base_0 = builder -- shunt/state.yue:533
+        local _fn_0 = _base_0.build -- shunt/state.yue:533
+        return _fn_0 and function(...) -- shunt/state.yue:533
+          return _fn_0(_base_0, ...) -- shunt/state.yue:533
+        end -- shunt/state.yue:533
+      end)(), (errors(matches('the following states are dead ends: dead_end'))), tostring("shunt/state.yue") .. ":" .. tostring(533)) -- shunt/state.yue:533
+      builder = (StateMachineBuilder('test_sm')):set_initial_state('hub'):declare_endless():add((State('hub')):add_transition_to('dead_end_2'):add_transition_to('dead_end_1')):add(State('dead_end_2')):add(State('dead_end_1')); -- shunt/state.yue:534
+      return require('spec')._expect_that([=[builder\build]=], (function() -- shunt/state.yue:542
+        local _base_0 = builder -- shunt/state.yue:542
+        local _fn_0 = _base_0.build -- shunt/state.yue:542
+        return _fn_0 and function(...) -- shunt/state.yue:542
+          return _fn_0(_base_0, ...) -- shunt/state.yue:542
+        end -- shunt/state.yue:542
+      end)(), (errors(matches('the following states are dead ends: dead_end_1, dead_end_2'))), tostring("shunt/state.yue") .. ":" .. tostring(542)) -- shunt/state.yue:542
+    end) -- shunt/state.yue:542
+  end) -- shunt/state.yue:371
+  describe('valid_ident', function() -- shunt/state.yue:544
+    local valid_idents = { -- shunt/state.yue:546
+      'hello', -- shunt/state.yue:546
+      'world_123' -- shunt/state.yue:547
     } -- shunt/state.yue:545
-    for _index_0 = 1, #invalid_idents do -- shunt/state.yue:551
-      local ident = invalid_idents[_index_0] -- shunt/state.yue:551
-      it("rejects '" .. tostring(ident) .. "'", function() -- shunt/state.yue:552
-        return require('spec')._expect_that([=[(valid_ident ident)]=], (valid_ident(ident)), (eq(false)), tostring("shunt/state.yue") .. ":" .. tostring(553)) -- shunt/state.yue:553
-      end) -- shunt/state.yue:552
-    end -- shunt/state.yue:553
-  end) -- shunt/state.yue:537
-  local make_test_sm -- shunt/state.yue:555
-  make_test_sm = function() -- shunt/state.yue:555
+    for _index_0 = 1, #valid_idents do -- shunt/state.yue:548
+      local ident = valid_idents[_index_0] -- shunt/state.yue:548
+      it("accepts '" .. tostring(ident) .. "'", function() -- shunt/state.yue:549
+        return require('spec')._expect_that([=[(valid_ident ident)]=], (valid_ident(ident)), (eq(true)), tostring("shunt/state.yue") .. ":" .. tostring(550)) -- shunt/state.yue:550
+      end) -- shunt/state.yue:549
+    end -- shunt/state.yue:550
+    local invalid_idents = { -- shunt/state.yue:553
+      '', -- shunt/state.yue:553
+      '1234', -- shunt/state.yue:554
+      '-qwer', -- shunt/state.yue:555
+      '.asdf', -- shunt/state.yue:556
+      'a-b' -- shunt/state.yue:557
+    } -- shunt/state.yue:552
+    for _index_0 = 1, #invalid_idents do -- shunt/state.yue:558
+      local ident = invalid_idents[_index_0] -- shunt/state.yue:558
+      it("rejects '" .. tostring(ident) .. "'", function() -- shunt/state.yue:559
+        return require('spec')._expect_that([=[(valid_ident ident)]=], (valid_ident(ident)), (eq(false)), tostring("shunt/state.yue") .. ":" .. tostring(560)) -- shunt/state.yue:560
+      end) -- shunt/state.yue:559
+    end -- shunt/state.yue:560
+  end) -- shunt/state.yue:544
+  local make_test_sm -- shunt/state.yue:562
+  make_test_sm = function() -- shunt/state.yue:562
     return (StateMachineBuilder('test_sm')):set_initial_state('state_1'):add((State('state_1')):declare_end_state():add_transition_to('state_2'):add_transition_to('state_3')):add((State('state_2')):declare_end_state():set_data_type([[{
           hello: string,
           world: number,
           optional: ?string,
-        }]]):add_transition_to('state_1')):add((State('state_3')):declare_end_state():set_data_type('number')):build() -- shunt/state.yue:573
-  end -- shunt/state.yue:555
-  describe('StateMachine', function() -- shunt/state.yue:575
-    it('rejects new fields', function() -- shunt/state.yue:576
-      local test_sm = make_test_sm(); -- shunt/state.yue:577
-      return require('spec')._expect_that([==[(-> test_sm.foo = 'bar')]==], (function() -- shunt/state.yue:578
-        test_sm.foo = 'bar' -- shunt/state.yue:578
-      end), (errors(matches([[cannot add field 'foo' to state machine]]))), tostring("shunt/state.yue") .. ":" .. tostring(578)) -- shunt/state.yue:578
-    end) -- shunt/state.yue:576
-    describe('.state', function() -- shunt/state.yue:580
-      it('exposes table data at its toplevel', function() -- shunt/state.yue:581
-        local test_sm = make_test_sm() -- shunt/state.yue:582
-        test_sm["goto"](test_sm, 'state_2', { -- shunt/state.yue:584
-          hello = 'asdf', -- shunt/state.yue:584
-          world = 4321 -- shunt/state.yue:585
-        }); -- shunt/state.yue:583
-        require('spec')._expect_that([=[test_sm.state.hello]=], test_sm.state.hello, (eq('asdf')), tostring("shunt/state.yue") .. ":" .. tostring(586)); -- shunt/state.yue:586
-        return require('spec')._expect_that([=[test_sm.state.world]=], test_sm.state.world, (eq(4321)), tostring("shunt/state.yue") .. ":" .. tostring(587)) -- shunt/state.yue:587
-      end) -- shunt/state.yue:581
-      it('exposes non-table data in the .data field', function() -- shunt/state.yue:589
-        local test_sm = make_test_sm() -- shunt/state.yue:590
-        test_sm["goto"](test_sm, 'state_3', 123); -- shunt/state.yue:591
-        return require('spec')._expect_that([=[test_sm.state.value]=], test_sm.state.value, (eq(123)), tostring("shunt/state.yue") .. ":" .. tostring(592)) -- shunt/state.yue:592
-      end) -- shunt/state.yue:589
-      return it('rejects assignment', function() -- shunt/state.yue:594
-        local test_sm = make_test_sm() -- shunt/state.yue:595
-        test_sm["goto"](test_sm, 'state_2', { -- shunt/state.yue:597
-          hello = 'asdf', -- shunt/state.yue:597
-          world = 4321 -- shunt/state.yue:598
-        }); -- shunt/state.yue:596
-        require('spec')._expect_that([==[(-> test_sm.state.absent = 'foo')]==], (function() -- shunt/state.yue:599
-          test_sm.state.absent = 'foo' -- shunt/state.yue:599
-        end), (errors(matches('cannot directly assign state fields'))), tostring("shunt/state.yue") .. ":" .. tostring(599)); -- shunt/state.yue:599
-        require('spec')._expect_that([==[(-> test_sm.state.hello = nil)]==], (function() -- shunt/state.yue:600
-          test_sm.state.hello = nil -- shunt/state.yue:600
-        end), (errors(matches('cannot directly assign state fields'))), tostring("shunt/state.yue") .. ":" .. tostring(600)); -- shunt/state.yue:600
-        return require('spec')._expect_that([==[(-> test_sm.state.hello = 'bar')]==], (function() -- shunt/state.yue:601
-          test_sm.state.hello = 'bar' -- shunt/state.yue:601
-        end), (errors(matches('cannot directly assign state fields'))), tostring("shunt/state.yue") .. ":" .. tostring(601)) -- shunt/state.yue:601
-      end) -- shunt/state.yue:601
-    end) -- shunt/state.yue:580
-    describe('\\goto', function() -- shunt/state.yue:603
-      it('requires at least one argument', function() -- shunt/state.yue:604
-        local test_sm = make_test_sm(); -- shunt/state.yue:605
-        return require('spec')._expect_that([=[(-> test_sm\goto!)]=], (function() -- shunt/state.yue:606
-          return test_sm["goto"](test_sm) -- shunt/state.yue:606
-        end), (errors(anything())), tostring("shunt/state.yue") .. ":" .. tostring(606)) -- shunt/state.yue:606
-      end) -- shunt/state.yue:604
-      it('correctly transitions states', function() -- shunt/state.yue:608
-        local test_sm = make_test_sm(); -- shunt/state.yue:609
-        require('spec')._expect_that([=[test_sm.state.name]=], test_sm.state.name, (eq('state_1')), tostring("shunt/state.yue") .. ":" .. tostring(610)) -- shunt/state.yue:610
-        test_sm["goto"](test_sm, 'state_2', { -- shunt/state.yue:613
-          hello = 'asdf', -- shunt/state.yue:613
-          world = 4321 -- shunt/state.yue:614
-        }); -- shunt/state.yue:612
-        require('spec')._expect_that([=[test_sm.state.name]=], test_sm.state.name, (eq('state_2')), tostring("shunt/state.yue") .. ":" .. tostring(615)); -- shunt/state.yue:615
-        require('spec')._expect_that([=[test_sm.state.hello]=], test_sm.state.hello, (eq('asdf')), tostring("shunt/state.yue") .. ":" .. tostring(616)); -- shunt/state.yue:616
-        require('spec')._expect_that([=[test_sm.state.world]=], test_sm.state.world, (eq(4321)), tostring("shunt/state.yue") .. ":" .. tostring(617)); -- shunt/state.yue:617
-        require('spec')._expect_that([=[test_sm.state.optional]=], test_sm.state.optional, (eq(nil)), tostring("shunt/state.yue") .. ":" .. tostring(618)) -- shunt/state.yue:618
-        test_sm["goto"](test_sm, 'state_1'); -- shunt/state.yue:620
-        require('spec')._expect_that([=[test_sm.state.name]=], test_sm.state.name, (eq('state_1')), tostring("shunt/state.yue") .. ":" .. tostring(621)); -- shunt/state.yue:621
-        require('spec')._expect_that([=[test_sm.state.hello]=], test_sm.state.hello, (eq(nil)), tostring("shunt/state.yue") .. ":" .. tostring(622)); -- shunt/state.yue:622
-        require('spec')._expect_that([=[test_sm.state.world]=], test_sm.state.world, (eq(nil)), tostring("shunt/state.yue") .. ":" .. tostring(623)); -- shunt/state.yue:623
-        return require('spec')._expect_that([=[test_sm.state.optional]=], test_sm.state.optional, (eq(nil)), tostring("shunt/state.yue") .. ":" .. tostring(624)) -- shunt/state.yue:624
+        }]]):add_transition_to('state_1')):add((State('state_3')):declare_end_state():set_data_type('number')):build() -- shunt/state.yue:580
+  end -- shunt/state.yue:562
+  describe('StateMachine', function() -- shunt/state.yue:582
+    it('rejects new fields', function() -- shunt/state.yue:583
+      local test_sm = make_test_sm(); -- shunt/state.yue:584
+      return require('spec')._expect_that([==[(-> test_sm.foo = 'bar')]==], (function() -- shunt/state.yue:585
+        test_sm.foo = 'bar' -- shunt/state.yue:585
+      end), (errors(matches([[cannot add field 'foo' to state machine]]))), tostring("shunt/state.yue") .. ":" .. tostring(585)) -- shunt/state.yue:585
+    end) -- shunt/state.yue:583
+    describe('.state', function() -- shunt/state.yue:587
+      it('exposes table data at its toplevel', function() -- shunt/state.yue:588
+        local test_sm = make_test_sm() -- shunt/state.yue:589
+        test_sm["goto"](test_sm, 'state_2', { -- shunt/state.yue:591
+          hello = 'asdf', -- shunt/state.yue:591
+          world = 4321 -- shunt/state.yue:592
+        }); -- shunt/state.yue:590
+        require('spec')._expect_that([=[test_sm.state.hello]=], test_sm.state.hello, (eq('asdf')), tostring("shunt/state.yue") .. ":" .. tostring(593)); -- shunt/state.yue:593
+        return require('spec')._expect_that([=[test_sm.state.world]=], test_sm.state.world, (eq(4321)), tostring("shunt/state.yue") .. ":" .. tostring(594)) -- shunt/state.yue:594
+      end) -- shunt/state.yue:588
+      it('exposes non-table data in the .data field', function() -- shunt/state.yue:596
+        local test_sm = make_test_sm() -- shunt/state.yue:597
+        test_sm["goto"](test_sm, 'state_3', 123); -- shunt/state.yue:598
+        return require('spec')._expect_that([=[test_sm.state.value]=], test_sm.state.value, (eq(123)), tostring("shunt/state.yue") .. ":" .. tostring(599)) -- shunt/state.yue:599
+      end) -- shunt/state.yue:596
+      return it('rejects assignment', function() -- shunt/state.yue:601
+        local test_sm = make_test_sm() -- shunt/state.yue:602
+        test_sm["goto"](test_sm, 'state_2', { -- shunt/state.yue:604
+          hello = 'asdf', -- shunt/state.yue:604
+          world = 4321 -- shunt/state.yue:605
+        }); -- shunt/state.yue:603
+        require('spec')._expect_that([==[(-> test_sm.state.absent = 'foo')]==], (function() -- shunt/state.yue:606
+          test_sm.state.absent = 'foo' -- shunt/state.yue:606
+        end), (errors(matches('cannot directly assign state fields'))), tostring("shunt/state.yue") .. ":" .. tostring(606)); -- shunt/state.yue:606
+        require('spec')._expect_that([==[(-> test_sm.state.hello = nil)]==], (function() -- shunt/state.yue:607
+          test_sm.state.hello = nil -- shunt/state.yue:607
+        end), (errors(matches('cannot directly assign state fields'))), tostring("shunt/state.yue") .. ":" .. tostring(607)); -- shunt/state.yue:607
+        return require('spec')._expect_that([==[(-> test_sm.state.hello = 'bar')]==], (function() -- shunt/state.yue:608
+          test_sm.state.hello = 'bar' -- shunt/state.yue:608
+        end), (errors(matches('cannot directly assign state fields'))), tostring("shunt/state.yue") .. ":" .. tostring(608)) -- shunt/state.yue:608
       end) -- shunt/state.yue:608
-      it('rejects invalid transitions', function() -- shunt/state.yue:626
-        local test_sm = make_test_sm(); -- shunt/state.yue:627
-        require('spec')._expect_that([=[(-> test_sm\goto 'invalid')]=], (function() -- shunt/state.yue:628
-          return test_sm["goto"](test_sm, 'invalid') -- shunt/state.yue:628
-        end), (errors(matches('no such transition: state_1 %-> invalid'))), tostring("shunt/state.yue") .. ":" .. tostring(628)) -- shunt/state.yue:628
-        test_sm["goto"](test_sm, 'state_3', 123); -- shunt/state.yue:630
-        return require('spec')._expect_that([=[(-> test_sm\goto 'state_1')]=], (function() -- shunt/state.yue:631
-          return test_sm["goto"](test_sm, 'state_1') -- shunt/state.yue:631
-        end), (errors(matches('no such transition: state_3 %-> state_1'))), tostring("shunt/state.yue") .. ":" .. tostring(631)) -- shunt/state.yue:631
-      end) -- shunt/state.yue:626
-      it('rejects transitions with missing data', function() -- shunt/state.yue:633
+    end) -- shunt/state.yue:587
+    describe('\\goto', function() -- shunt/state.yue:610
+      it('requires at least one argument', function() -- shunt/state.yue:611
+        local test_sm = make_test_sm(); -- shunt/state.yue:612
+        return require('spec')._expect_that([=[(-> test_sm\goto!)]=], (function() -- shunt/state.yue:613
+          return test_sm["goto"](test_sm) -- shunt/state.yue:613
+        end), (errors(anything())), tostring("shunt/state.yue") .. ":" .. tostring(613)) -- shunt/state.yue:613
+      end) -- shunt/state.yue:611
+      it('correctly transitions states', function() -- shunt/state.yue:615
+        local test_sm = make_test_sm(); -- shunt/state.yue:616
+        require('spec')._expect_that([=[test_sm.state.name]=], test_sm.state.name, (eq('state_1')), tostring("shunt/state.yue") .. ":" .. tostring(617)) -- shunt/state.yue:617
+        test_sm["goto"](test_sm, 'state_2', { -- shunt/state.yue:620
+          hello = 'asdf', -- shunt/state.yue:620
+          world = 4321 -- shunt/state.yue:621
+        }); -- shunt/state.yue:619
+        require('spec')._expect_that([=[test_sm.state.name]=], test_sm.state.name, (eq('state_2')), tostring("shunt/state.yue") .. ":" .. tostring(622)); -- shunt/state.yue:622
+        require('spec')._expect_that([=[test_sm.state.hello]=], test_sm.state.hello, (eq('asdf')), tostring("shunt/state.yue") .. ":" .. tostring(623)); -- shunt/state.yue:623
+        require('spec')._expect_that([=[test_sm.state.world]=], test_sm.state.world, (eq(4321)), tostring("shunt/state.yue") .. ":" .. tostring(624)); -- shunt/state.yue:624
+        require('spec')._expect_that([=[test_sm.state.optional]=], test_sm.state.optional, (eq(nil)), tostring("shunt/state.yue") .. ":" .. tostring(625)) -- shunt/state.yue:625
+        test_sm["goto"](test_sm, 'state_1'); -- shunt/state.yue:627
+        require('spec')._expect_that([=[test_sm.state.name]=], test_sm.state.name, (eq('state_1')), tostring("shunt/state.yue") .. ":" .. tostring(628)); -- shunt/state.yue:628
+        require('spec')._expect_that([=[test_sm.state.hello]=], test_sm.state.hello, (eq(nil)), tostring("shunt/state.yue") .. ":" .. tostring(629)); -- shunt/state.yue:629
+        require('spec')._expect_that([=[test_sm.state.world]=], test_sm.state.world, (eq(nil)), tostring("shunt/state.yue") .. ":" .. tostring(630)); -- shunt/state.yue:630
+        return require('spec')._expect_that([=[test_sm.state.optional]=], test_sm.state.optional, (eq(nil)), tostring("shunt/state.yue") .. ":" .. tostring(631)) -- shunt/state.yue:631
+      end) -- shunt/state.yue:615
+      it('rejects invalid transitions', function() -- shunt/state.yue:633
         local test_sm = make_test_sm(); -- shunt/state.yue:634
-        require('spec')._expect_that([=[(-> test_sm\goto 'state_2')]=], (function() -- shunt/state.yue:635
-          return test_sm["goto"](test_sm, 'state_2') -- shunt/state.yue:635
-        end), (errors(matches('incorrect type: expected table but got nil'))), tostring("shunt/state.yue") .. ":" .. tostring(635)); -- shunt/state.yue:635
-        require('spec')._expect_that([=[(-> test_sm\goto 'state_2', hello: 'asdf')]=], (function() -- shunt/state.yue:636
-          return test_sm["goto"](test_sm, 'state_2', { -- shunt/state.yue:636
-            hello = 'asdf' -- shunt/state.yue:636
-          }) -- shunt/state.yue:636
-        end), (errors(matches('incorrect type: expected number but got nil'))), tostring("shunt/state.yue") .. ":" .. tostring(636)); -- shunt/state.yue:636
-        return require('spec')._expect_that([=[(-> test_sm\goto 'state_2', world: 123)]=], (function() -- shunt/state.yue:637
-          return test_sm["goto"](test_sm, 'state_2', { -- shunt/state.yue:637
-            world = 123 -- shunt/state.yue:637
-          }) -- shunt/state.yue:637
-        end), (errors(matches('incorrect type: expected string but got nil'))), tostring("shunt/state.yue") .. ":" .. tostring(637)) -- shunt/state.yue:637
+        require('spec')._expect_that([=[(-> test_sm\goto 'invalid')]=], (function() -- shunt/state.yue:635
+          return test_sm["goto"](test_sm, 'invalid') -- shunt/state.yue:635
+        end), (errors(matches('no such transition: state_1 %-> invalid'))), tostring("shunt/state.yue") .. ":" .. tostring(635)) -- shunt/state.yue:635
+        test_sm["goto"](test_sm, 'state_3', 123); -- shunt/state.yue:637
+        return require('spec')._expect_that([=[(-> test_sm\goto 'state_1')]=], (function() -- shunt/state.yue:638
+          return test_sm["goto"](test_sm, 'state_1') -- shunt/state.yue:638
+        end), (errors(matches('no such transition: state_3 %-> state_1'))), tostring("shunt/state.yue") .. ":" .. tostring(638)) -- shunt/state.yue:638
       end) -- shunt/state.yue:633
-      it('validates state fields', function() -- shunt/state.yue:639
-        local test_sm = make_test_sm(); -- shunt/state.yue:640
-        return require('spec')._expect_that([=[(-> test_sm\goto 'state_2', hello: 'asdf', world: 'fdsa')]=], (function() -- shunt/state.yue:641
-          return test_sm["goto"](test_sm, 'state_2', { -- shunt/state.yue:641
-            hello = 'asdf', -- shunt/state.yue:641
-            world = 'fdsa' -- shunt/state.yue:641
-          }) -- shunt/state.yue:641
-        end), (errors(matches('incorrect type: expected number but got string'))), tostring("shunt/state.yue") .. ":" .. tostring(641)) -- shunt/state.yue:641
-      end) -- shunt/state.yue:639
-      it('rejects extra state fields', function() -- shunt/state.yue:643
-        local test_sm = make_test_sm(); -- shunt/state.yue:644
-        return require('spec')._expect_that([=[(-> test_sm\goto 'state_3', spare: 'spare')]=], (function() -- shunt/state.yue:645
-          return test_sm["goto"](test_sm, 'state_3', { -- shunt/state.yue:645
-            spare = 'spare' -- shunt/state.yue:645
-          }) -- shunt/state.yue:645
-        end), (errors(matches('incorrect type'))), tostring("shunt/state.yue") .. ":" .. tostring(645)) -- shunt/state.yue:645
-      end) -- shunt/state.yue:643
-      return it('rejects transition of ended state machine', function() -- shunt/state.yue:647
-        local test_sm = make_test_sm() -- shunt/state.yue:648
-        test_sm["end"](test_sm); -- shunt/state.yue:649
-        return require('spec')._expect_that([=[(-> test_sm\goto 'state_2', hello: 'asdf', world: 123)]=], (function() -- shunt/state.yue:650
-          return test_sm["goto"](test_sm, 'state_2', { -- shunt/state.yue:650
-            hello = 'asdf', -- shunt/state.yue:650
-            world = 123 -- shunt/state.yue:650
-          }) -- shunt/state.yue:650
-        end), (errors(matches('cannot transition ended state machine'))), tostring("shunt/state.yue") .. ":" .. tostring(650)) -- shunt/state.yue:650
+      it('rejects transitions with missing data', function() -- shunt/state.yue:640
+        local test_sm = make_test_sm(); -- shunt/state.yue:641
+        require('spec')._expect_that([=[(-> test_sm\goto 'state_2')]=], (function() -- shunt/state.yue:642
+          return test_sm["goto"](test_sm, 'state_2') -- shunt/state.yue:642
+        end), (errors(matches('incorrect type: expected table but got nil'))), tostring("shunt/state.yue") .. ":" .. tostring(642)); -- shunt/state.yue:642
+        require('spec')._expect_that([=[(-> test_sm\goto 'state_2', hello: 'asdf')]=], (function() -- shunt/state.yue:643
+          return test_sm["goto"](test_sm, 'state_2', { -- shunt/state.yue:643
+            hello = 'asdf' -- shunt/state.yue:643
+          }) -- shunt/state.yue:643
+        end), (errors(matches('incorrect type: expected number but got nil'))), tostring("shunt/state.yue") .. ":" .. tostring(643)); -- shunt/state.yue:643
+        return require('spec')._expect_that([=[(-> test_sm\goto 'state_2', world: 123)]=], (function() -- shunt/state.yue:644
+          return test_sm["goto"](test_sm, 'state_2', { -- shunt/state.yue:644
+            world = 123 -- shunt/state.yue:644
+          }) -- shunt/state.yue:644
+        end), (errors(matches('incorrect type: expected string but got nil'))), tostring("shunt/state.yue") .. ":" .. tostring(644)) -- shunt/state.yue:644
+      end) -- shunt/state.yue:640
+      it('validates state fields', function() -- shunt/state.yue:646
+        local test_sm = make_test_sm(); -- shunt/state.yue:647
+        return require('spec')._expect_that([=[(-> test_sm\goto 'state_2', hello: 'asdf', world: 'fdsa')]=], (function() -- shunt/state.yue:648
+          return test_sm["goto"](test_sm, 'state_2', { -- shunt/state.yue:648
+            hello = 'asdf', -- shunt/state.yue:648
+            world = 'fdsa' -- shunt/state.yue:648
+          }) -- shunt/state.yue:648
+        end), (errors(matches('incorrect type: expected number but got string'))), tostring("shunt/state.yue") .. ":" .. tostring(648)) -- shunt/state.yue:648
+      end) -- shunt/state.yue:646
+      it('rejects extra state fields', function() -- shunt/state.yue:650
+        local test_sm = make_test_sm(); -- shunt/state.yue:651
+        return require('spec')._expect_that([=[(-> test_sm\goto 'state_3', spare: 'spare')]=], (function() -- shunt/state.yue:652
+          return test_sm["goto"](test_sm, 'state_3', { -- shunt/state.yue:652
+            spare = 'spare' -- shunt/state.yue:652
+          }) -- shunt/state.yue:652
+        end), (errors(matches('incorrect type'))), tostring("shunt/state.yue") .. ":" .. tostring(652)) -- shunt/state.yue:652
       end) -- shunt/state.yue:650
-    end) -- shunt/state.yue:603
-    describe('\\end', function() -- shunt/state.yue:652
-      it('accepts valid end state', function() -- shunt/state.yue:653
-        local state_machine = (StateMachineBuilder('test_sm')):set_initial_state('state_1'):add((State('state_1')):declare_end_state()) -- shunt/state.yue:654
-      end) -- shunt/state.yue:653
-      return it('rejects invalid end state', function() -- shunt/state.yue:659
-        local state_machine = (StateMachineBuilder('test_sm')):set_initial_state('state_1'):add((State('state_1')):add_transition_to('state_2')):add((State('state_2')):declare_end_state()):build(); -- shunt/state.yue:660
-        return require('spec')._expect_that([=[state_machine\end]=], (function() -- shunt/state.yue:667
-          local _base_0 = state_machine -- shunt/state.yue:667
-          local _fn_0 = _base_0["end"] -- shunt/state.yue:667
-          return _fn_0 and function(...) -- shunt/state.yue:667
-            return _fn_0(_base_0, ...) -- shunt/state.yue:667
-          end -- shunt/state.yue:667
-        end)(), (errors(matches('state_1 is not a valid end state'))), tostring("shunt/state.yue") .. ":" .. tostring(667)) -- shunt/state.yue:667
-      end) -- shunt/state.yue:667
-    end) -- shunt/state.yue:652
-    describe('set_reporter', function() -- shunt/state.yue:669
-      return it('is respected by state machines', function() -- shunt/state.yue:670
-        local states = { } -- shunt/state.yue:671
-        local test_sm = (StateMachineBuilder('test_sm')):set_initial_state('state_1'):set_reporter(function(self, prev_state, state) -- shunt/state.yue:674
-          states[#states + 1] = { -- shunt/state.yue:675
-            prev_state = prev_state, -- shunt/state.yue:675
-            state = state -- shunt/state.yue:675
-          } -- shunt/state.yue:675
+      return it('rejects transition of ended state machine', function() -- shunt/state.yue:654
+        local test_sm = make_test_sm() -- shunt/state.yue:655
+        test_sm["end"](test_sm); -- shunt/state.yue:656
+        return require('spec')._expect_that([=[(-> test_sm\goto 'state_2', hello: 'asdf', world: 123)]=], (function() -- shunt/state.yue:657
+          return test_sm["goto"](test_sm, 'state_2', { -- shunt/state.yue:657
+            hello = 'asdf', -- shunt/state.yue:657
+            world = 123 -- shunt/state.yue:657
+          }) -- shunt/state.yue:657
+        end), (errors(matches('cannot transition ended state machine'))), tostring("shunt/state.yue") .. ":" .. tostring(657)) -- shunt/state.yue:657
+      end) -- shunt/state.yue:657
+    end) -- shunt/state.yue:610
+    describe('\\end', function() -- shunt/state.yue:659
+      it('accepts valid end state', function() -- shunt/state.yue:660
+        local state_machine = (StateMachineBuilder('test_sm')):set_initial_state('state_1'):add((State('state_1')):declare_end_state()) -- shunt/state.yue:661
+      end) -- shunt/state.yue:660
+      return it('rejects invalid end state', function() -- shunt/state.yue:666
+        local state_machine = (StateMachineBuilder('test_sm')):set_initial_state('state_1'):add((State('state_1')):add_transition_to('state_2')):add((State('state_2')):declare_end_state()):build(); -- shunt/state.yue:667
+        return require('spec')._expect_that([=[state_machine\end]=], (function() -- shunt/state.yue:674
+          local _base_0 = state_machine -- shunt/state.yue:674
+          local _fn_0 = _base_0["end"] -- shunt/state.yue:674
+          return _fn_0 and function(...) -- shunt/state.yue:674
+            return _fn_0(_base_0, ...) -- shunt/state.yue:674
+          end -- shunt/state.yue:674
+        end)(), (errors(matches('state_1 is not a valid end state'))), tostring("shunt/state.yue") .. ":" .. tostring(674)) -- shunt/state.yue:674
+      end) -- shunt/state.yue:674
+    end) -- shunt/state.yue:659
+    describe('\\recover_to', function() -- shunt/state.yue:676
+      it('allows recovery from any state to any state', function() -- shunt/state.yue:677
+        local state_machine = (StateMachineBuilder('test_sm')):set_initial_state('state_1'):add((State('state_1')):add_transition_to('state_2')):add((State('state_2')):declare_end_state():set_data_type([[{
+              data: string,
+            }]])):build() -- shunt/state.yue:678
+        state_machine:recover_to('state_2', { -- shunt/state.yue:689
+          data = 'asdf' -- shunt/state.yue:689
+        }); -- shunt/state.yue:688
+        require('spec')._assert_that([=[state_machine.state.name]=], state_machine.state.name, (eq('state_2')), tostring("shunt/state.yue") .. ":" .. tostring(690)); -- shunt/state.yue:690
+        require('spec')._assert_that([=[state_machine.state.data]=], state_machine.state.data, (eq('asdf')), tostring("shunt/state.yue") .. ":" .. tostring(691)) -- shunt/state.yue:691
+        state_machine:recover_to('state_1'); -- shunt/state.yue:693
+        require('spec')._assert_that([=[state_machine.state.name]=], state_machine.state.name, (eq('state_1')), tostring("shunt/state.yue") .. ":" .. tostring(694)); -- shunt/state.yue:694
+        return require('spec')._assert_that([=[state_machine.state.data]=], state_machine.state.data, (eq(nil)), tostring("shunt/state.yue") .. ":" .. tostring(695)) -- shunt/state.yue:695
+      end) -- shunt/state.yue:677
+      return it('allows recovery after end', function() -- shunt/state.yue:697
+        local state_machine = (StateMachineBuilder('test_sm')):set_initial_state('state_1'):add((State('state_1')):declare_end_state():add_transition_to('state_1')):build() -- shunt/state.yue:698
+        state_machine["end"](state_machine) -- shunt/state.yue:704
+        state_machine:recover_to('state_1') -- shunt/state.yue:705
+        return state_machine["goto"](state_machine, 'state_1') -- shunt/state.yue:706
+      end) -- shunt/state.yue:706
+    end) -- shunt/state.yue:676
+    describe('set_reporter', function() -- shunt/state.yue:708
+      return it('is respected by state machines', function() -- shunt/state.yue:709
+        local states = { } -- shunt/state.yue:710
+        local test_sm = (StateMachineBuilder('test_sm')):set_initial_state('state_1'):set_reporter(function(self, prev_state, state) -- shunt/state.yue:713
+          states[#states + 1] = { -- shunt/state.yue:714
+            prev_state = prev_state, -- shunt/state.yue:714
+            state = state -- shunt/state.yue:714
+          } -- shunt/state.yue:714
         end):add((State('state_1')):add_transition_to('state_2')):add((State('state_2')):declare_end_state():add_transition_to('state_1'):set_data_type([[{
               hello: string,
               world: number
-            }]])):build() -- shunt/state.yue:672
-        local data = { -- shunt/state.yue:688
-          hello = 'asdf', -- shunt/state.yue:688
-          world = 123 -- shunt/state.yue:689
-        } -- shunt/state.yue:687
-        test_sm["goto"](test_sm, 'state_2', data); -- shunt/state.yue:691
-        require('spec')._expect_that([=[states]=], states, (deep_eq({ -- shunt/state.yue:693
-          { -- shunt/state.yue:693
-            prev_state = { -- shunt/state.yue:693
-              name = 'state_1' -- shunt/state.yue:693
-            }, -- shunt/state.yue:693
-            state = (function() -- shunt/state.yue:693
-              local _tab_0 = { -- shunt/state.yue:693
-                name = 'state_2' -- shunt/state.yue:693
-              } -- shunt/state.yue:693
-              local _idx_0 = 1 -- shunt/state.yue:693
-              for _key_0, _value_0 in pairs(data) do -- shunt/state.yue:693
-                if _idx_0 == _key_0 then -- shunt/state.yue:693
-                  _tab_0[#_tab_0 + 1] = _value_0 -- shunt/state.yue:693
-                  _idx_0 = _idx_0 + 1 -- shunt/state.yue:693
-                else -- shunt/state.yue:693
-                  _tab_0[_key_0] = _value_0 -- shunt/state.yue:693
-                end -- shunt/state.yue:693
-              end -- shunt/state.yue:693
-              return _tab_0 -- shunt/state.yue:693
-            end)() -- shunt/state.yue:693
-          } -- shunt/state.yue:693
-        })), tostring("shunt/state.yue") .. ":" .. tostring(693)) -- shunt/state.yue:693
-        test_sm["goto"](test_sm, 'state_1') -- shunt/state.yue:697
-        test_sm["goto"](test_sm, 'state_2', data) -- shunt/state.yue:698
-        test_sm["goto"](test_sm, 'state_1') -- shunt/state.yue:699
-        test_sm["goto"](test_sm, 'state_2', data); -- shunt/state.yue:700
-        return require('spec')._expect_that([=[[ state for state in *states ]]=], (function() -- shunt/state.yue:702
-          local _accum_0 = { } -- shunt/state.yue:702
-          local _len_0 = 1 -- shunt/state.yue:702
-          for _index_0 = 1, #states do -- shunt/state.yue:702
-            local state = states[_index_0] -- shunt/state.yue:702
-            _accum_0[_len_0] = state -- shunt/state.yue:702
-            _len_0 = _len_0 + 1 -- shunt/state.yue:702
-          end -- shunt/state.yue:702
-          return _accum_0 -- shunt/state.yue:702
-        end)(), (deep_eq({ -- shunt/state.yue:702
-          { -- shunt/state.yue:702
-            prev_state = { -- shunt/state.yue:702
-              name = 'state_1' -- shunt/state.yue:702
-            }, -- shunt/state.yue:702
-            state = (function() -- shunt/state.yue:702
-              local _tab_0 = { -- shunt/state.yue:702
-                name = 'state_2' -- shunt/state.yue:702
-              } -- shunt/state.yue:702
-              local _idx_0 = 1 -- shunt/state.yue:702
-              for _key_0, _value_0 in pairs(data) do -- shunt/state.yue:702
-                if _idx_0 == _key_0 then -- shunt/state.yue:702
-                  _tab_0[#_tab_0 + 1] = _value_0 -- shunt/state.yue:702
-                  _idx_0 = _idx_0 + 1 -- shunt/state.yue:702
-                else -- shunt/state.yue:702
-                  _tab_0[_key_0] = _value_0 -- shunt/state.yue:702
-                end -- shunt/state.yue:702
-              end -- shunt/state.yue:702
-              return _tab_0 -- shunt/state.yue:702
-            end)() -- shunt/state.yue:702
-          }, -- shunt/state.yue:702
-          { -- shunt/state.yue:702
-            prev_state = (function() -- shunt/state.yue:702
-              local _tab_0 = { -- shunt/state.yue:702
-                name = 'state_2' -- shunt/state.yue:702
-              } -- shunt/state.yue:702
-              local _idx_0 = 1 -- shunt/state.yue:702
-              for _key_0, _value_0 in pairs(data) do -- shunt/state.yue:702
-                if _idx_0 == _key_0 then -- shunt/state.yue:702
-                  _tab_0[#_tab_0 + 1] = _value_0 -- shunt/state.yue:702
-                  _idx_0 = _idx_0 + 1 -- shunt/state.yue:702
-                else -- shunt/state.yue:702
-                  _tab_0[_key_0] = _value_0 -- shunt/state.yue:702
-                end -- shunt/state.yue:702
-              end -- shunt/state.yue:702
-              return _tab_0 -- shunt/state.yue:702
-            end)(), -- shunt/state.yue:702
-            state = { -- shunt/state.yue:702
-              name = 'state_1' -- shunt/state.yue:702
-            } -- shunt/state.yue:702
-          }, -- shunt/state.yue:702
-          { -- shunt/state.yue:702
-            prev_state = { -- shunt/state.yue:702
-              name = 'state_1' -- shunt/state.yue:702
-            }, -- shunt/state.yue:702
-            state = (function() -- shunt/state.yue:702
-              local _tab_0 = { -- shunt/state.yue:702
-                name = 'state_2' -- shunt/state.yue:702
-              } -- shunt/state.yue:702
-              local _idx_0 = 1 -- shunt/state.yue:702
-              for _key_0, _value_0 in pairs(data) do -- shunt/state.yue:702
-                if _idx_0 == _key_0 then -- shunt/state.yue:702
-                  _tab_0[#_tab_0 + 1] = _value_0 -- shunt/state.yue:702
-                  _idx_0 = _idx_0 + 1 -- shunt/state.yue:702
-                else -- shunt/state.yue:702
-                  _tab_0[_key_0] = _value_0 -- shunt/state.yue:702
-                end -- shunt/state.yue:702
-              end -- shunt/state.yue:702
-              return _tab_0 -- shunt/state.yue:702
-            end)() -- shunt/state.yue:702
-          }, -- shunt/state.yue:702
-          { -- shunt/state.yue:702
-            prev_state = (function() -- shunt/state.yue:702
-              local _tab_0 = { -- shunt/state.yue:702
-                name = 'state_2' -- shunt/state.yue:702
-              } -- shunt/state.yue:702
-              local _idx_0 = 1 -- shunt/state.yue:702
-              for _key_0, _value_0 in pairs(data) do -- shunt/state.yue:702
-                if _idx_0 == _key_0 then -- shunt/state.yue:702
-                  _tab_0[#_tab_0 + 1] = _value_0 -- shunt/state.yue:702
-                  _idx_0 = _idx_0 + 1 -- shunt/state.yue:702
-                else -- shunt/state.yue:702
-                  _tab_0[_key_0] = _value_0 -- shunt/state.yue:702
-                end -- shunt/state.yue:702
-              end -- shunt/state.yue:702
-              return _tab_0 -- shunt/state.yue:702
-            end)(), -- shunt/state.yue:702
-            state = { -- shunt/state.yue:702
-              name = 'state_1' -- shunt/state.yue:702
-            } -- shunt/state.yue:702
-          }, -- shunt/state.yue:702
-          { -- shunt/state.yue:702
-            prev_state = { -- shunt/state.yue:702
-              name = 'state_1' -- shunt/state.yue:702
-            }, -- shunt/state.yue:702
-            state = (function() -- shunt/state.yue:702
-              local _tab_0 = { -- shunt/state.yue:702
-                name = 'state_2' -- shunt/state.yue:702
-              } -- shunt/state.yue:702
-              local _idx_0 = 1 -- shunt/state.yue:702
-              for _key_0, _value_0 in pairs(data) do -- shunt/state.yue:702
-                if _idx_0 == _key_0 then -- shunt/state.yue:702
-                  _tab_0[#_tab_0 + 1] = _value_0 -- shunt/state.yue:702
-                  _idx_0 = _idx_0 + 1 -- shunt/state.yue:702
-                else -- shunt/state.yue:702
-                  _tab_0[_key_0] = _value_0 -- shunt/state.yue:702
-                end -- shunt/state.yue:702
-              end -- shunt/state.yue:702
-              return _tab_0 -- shunt/state.yue:702
-            end)() -- shunt/state.yue:702
-          } -- shunt/state.yue:702
-        })), tostring("shunt/state.yue") .. ":" .. tostring(702)) -- shunt/state.yue:712
-      end) -- shunt/state.yue:712
-    end) -- shunt/state.yue:669
-    return describe('.states', function() -- shunt/state.yue:714
-      it('contains all states', function() -- shunt/state.yue:715
-        local test_sm = make_test_sm() -- shunt/state.yue:716
-        local expected_states = { -- shunt/state.yue:718
-          'state_1', -- shunt/state.yue:718
-          'state_2', -- shunt/state.yue:719
-          'state_3' -- shunt/state.yue:720
-        } -- shunt/state.yue:717
-        for _index_0 = 1, #expected_states do -- shunt/state.yue:721
-          local expected_state = expected_states[_index_0] -- shunt/state.yue:721
-          require('spec')._expect_that([=[test_sm.states[expected_state]]=], test_sm.states[expected_state], (eq(expected_state)), tostring("shunt/state.yue") .. ":" .. tostring(722)) -- shunt/state.yue:722
-        end -- shunt/state.yue:722
-      end) -- shunt/state.yue:715
-      it('rejects unknown states', function() -- shunt/state.yue:724
-        local test_sm = make_test_sm(); -- shunt/state.yue:725
-        return require('spec')._expect_that([=[(-> test_sm.states.unknown)]=], (function() -- shunt/state.yue:726
-          return test_sm.states.unknown -- shunt/state.yue:726
-        end), (errors(matches("cannot get state 'unknown': no such state"))), tostring("shunt/state.yue") .. ":" .. tostring(726)) -- shunt/state.yue:726
-      end) -- shunt/state.yue:724
-      return it('rejects modifications', function() -- shunt/state.yue:728
-        local test_sm = make_test_sm(); -- shunt/state.yue:729
-        return require('spec')._expect_that([==[(-> test_sm.states.state_1 = nil)]==], (function() -- shunt/state.yue:730
-          test_sm.states.state_1 = nil -- shunt/state.yue:730
-        end), (errors(matches('cannot set fields in states'))), tostring("shunt/state.yue") .. ":" .. tostring(730)) -- shunt/state.yue:730
-      end) -- shunt/state.yue:730
-    end) -- shunt/state.yue:730
-  end) -- shunt/state.yue:575
-  return describe('StateResponsesBuilder', function() -- shunt/state.yue:732
-    it('builds response', function() -- shunt/state.yue:733
-      local calls = { } -- shunt/state.yue:734
-      local builder -- shunt/state.yue:735
-      do -- shunt/state.yue:735
-        local _with_0 = StateResponsesBuilder(make_test_sm()) -- shunt/state.yue:735
-        local _list_0 = { -- shunt/state.yue:736
-          'state_1', -- shunt/state.yue:736
-          'state_2', -- shunt/state.yue:736
-          'state_3' -- shunt/state.yue:736
-        } -- shunt/state.yue:736
-        for _index_0 = 1, #_list_0 do -- shunt/state.yue:736
-          local name = _list_0[_index_0] -- shunt/state.yue:736
-          _with_0:add(name, F('() -> <>', function() -- shunt/state.yue:737
-            calls[#calls + 1] = { -- shunt/state.yue:738
-              name = name -- shunt/state.yue:738
-            } -- shunt/state.yue:738
-          end)) -- shunt/state.yue:737
-        end -- shunt/state.yue:738
-        builder = _with_0 -- shunt/state.yue:735
-      end -- shunt/state.yue:735
-      local responses = builder:build() -- shunt/state.yue:740
-      responses.state_1() -- shunt/state.yue:741
-      responses.state_2() -- shunt/state.yue:742
-      responses.state_3(); -- shunt/state.yue:743
-      require('spec')._expect_that([=[calls]=], calls, (len(eq(3))), tostring("shunt/state.yue") .. ":" .. tostring(744)); -- shunt/state.yue:744
-      require('spec')._expect_that([=[calls[1]]=], calls[1], (has_fields({ -- shunt/state.yue:745
-        name = eq('state_1') -- shunt/state.yue:745
-      })), tostring("shunt/state.yue") .. ":" .. tostring(745)); -- shunt/state.yue:745
-      require('spec')._expect_that([=[calls[2]]=], calls[2], (has_fields({ -- shunt/state.yue:747
-        name = eq('state_2') -- shunt/state.yue:747
-      })), tostring("shunt/state.yue") .. ":" .. tostring(747)); -- shunt/state.yue:747
-      return require('spec')._expect_that([=[calls[3]]=], calls[3], (has_fields({ -- shunt/state.yue:749
-        name = eq('state_3') -- shunt/state.yue:749
-      })), tostring("shunt/state.yue") .. ":" .. tostring(749)) -- shunt/state.yue:750
-    end) -- shunt/state.yue:733
-    it('rejects unknown states', function() -- shunt/state.yue:752
-      local _with_0 = StateResponsesBuilder(make_test_sm()) -- shunt/state.yue:753
-      require('spec')._expect_that([=[(-> \add 'fribib', ->)]=], (function() -- shunt/state.yue:754
-        return _with_0:add('fribib', function() end) -- shunt/state.yue:754
-      end), (errors(matches("no such state"))), tostring("shunt/state.yue") .. ":" .. tostring(754)) -- shunt/state.yue:754
-      return _with_0 -- shunt/state.yue:753
-    end) -- shunt/state.yue:752
-    it('rejects redefinition', function() -- shunt/state.yue:756
-      local _with_0 = StateResponsesBuilder(make_test_sm()) -- shunt/state.yue:757
-      _with_0:add('state_1', function() end); -- shunt/state.yue:758
-      require('spec')._expect_that([=[(-> \add 'state_1', ->)]=], (function() -- shunt/state.yue:759
-        return _with_0:add('state_1', function() end) -- shunt/state.yue:759
-      end), (errors(matches("response for 'state_1' already defined"))), tostring("shunt/state.yue") .. ":" .. tostring(759)) -- shunt/state.yue:759
-      return _with_0 -- shunt/state.yue:757
-    end) -- shunt/state.yue:756
-    return it('rejects incomplete coverage', function() -- shunt/state.yue:761
-      local _with_0 = StateResponsesBuilder(make_test_sm()) -- shunt/state.yue:762
-      require('spec')._expect_that([=[\build]=], (function() -- shunt/state.yue:763
-        local _base_0 = _with_0 -- shunt/state.yue:763
-        local _fn_0 = _base_0.build -- shunt/state.yue:763
-        return _fn_0 and function(...) -- shunt/state.yue:763
-          return _fn_0(_base_0, ...) -- shunt/state.yue:763
-        end -- shunt/state.yue:763
-      end)(), (errors(matches('no response: state_1, state_2, state_3'))), tostring("shunt/state.yue") .. ":" .. tostring(763)) -- shunt/state.yue:763
-      return _with_0 -- shunt/state.yue:762
-    end) -- shunt/state.yue:763
-  end) -- shunt/state.yue:763
-end) -- shunt/state.yue:357
-return _module_0 -- shunt/state.yue:763
+            }]])):build() -- shunt/state.yue:711
+        local data = { -- shunt/state.yue:727
+          hello = 'asdf', -- shunt/state.yue:727
+          world = 123 -- shunt/state.yue:728
+        } -- shunt/state.yue:726
+        test_sm["goto"](test_sm, 'state_2', data); -- shunt/state.yue:730
+        require('spec')._expect_that([=[states]=], states, (deep_eq({ -- shunt/state.yue:732
+          { -- shunt/state.yue:732
+            prev_state = { -- shunt/state.yue:732
+              name = 'state_1' -- shunt/state.yue:732
+            }, -- shunt/state.yue:732
+            state = (function() -- shunt/state.yue:732
+              local _tab_0 = { -- shunt/state.yue:732
+                name = 'state_2' -- shunt/state.yue:732
+              } -- shunt/state.yue:732
+              local _idx_0 = 1 -- shunt/state.yue:732
+              for _key_0, _value_0 in pairs(data) do -- shunt/state.yue:732
+                if _idx_0 == _key_0 then -- shunt/state.yue:732
+                  _tab_0[#_tab_0 + 1] = _value_0 -- shunt/state.yue:732
+                  _idx_0 = _idx_0 + 1 -- shunt/state.yue:732
+                else -- shunt/state.yue:732
+                  _tab_0[_key_0] = _value_0 -- shunt/state.yue:732
+                end -- shunt/state.yue:732
+              end -- shunt/state.yue:732
+              return _tab_0 -- shunt/state.yue:732
+            end)() -- shunt/state.yue:732
+          } -- shunt/state.yue:732
+        })), tostring("shunt/state.yue") .. ":" .. tostring(732)) -- shunt/state.yue:732
+        test_sm["goto"](test_sm, 'state_1') -- shunt/state.yue:736
+        test_sm["goto"](test_sm, 'state_2', data) -- shunt/state.yue:737
+        test_sm["goto"](test_sm, 'state_1') -- shunt/state.yue:738
+        test_sm["goto"](test_sm, 'state_2', data); -- shunt/state.yue:739
+        return require('spec')._expect_that([=[[ state for state in *states ]]=], (function() -- shunt/state.yue:741
+          local _accum_0 = { } -- shunt/state.yue:741
+          local _len_0 = 1 -- shunt/state.yue:741
+          for _index_0 = 1, #states do -- shunt/state.yue:741
+            local state = states[_index_0] -- shunt/state.yue:741
+            _accum_0[_len_0] = state -- shunt/state.yue:741
+            _len_0 = _len_0 + 1 -- shunt/state.yue:741
+          end -- shunt/state.yue:741
+          return _accum_0 -- shunt/state.yue:741
+        end)(), (deep_eq({ -- shunt/state.yue:741
+          { -- shunt/state.yue:741
+            prev_state = { -- shunt/state.yue:741
+              name = 'state_1' -- shunt/state.yue:741
+            }, -- shunt/state.yue:741
+            state = (function() -- shunt/state.yue:741
+              local _tab_0 = { -- shunt/state.yue:741
+                name = 'state_2' -- shunt/state.yue:741
+              } -- shunt/state.yue:741
+              local _idx_0 = 1 -- shunt/state.yue:741
+              for _key_0, _value_0 in pairs(data) do -- shunt/state.yue:741
+                if _idx_0 == _key_0 then -- shunt/state.yue:741
+                  _tab_0[#_tab_0 + 1] = _value_0 -- shunt/state.yue:741
+                  _idx_0 = _idx_0 + 1 -- shunt/state.yue:741
+                else -- shunt/state.yue:741
+                  _tab_0[_key_0] = _value_0 -- shunt/state.yue:741
+                end -- shunt/state.yue:741
+              end -- shunt/state.yue:741
+              return _tab_0 -- shunt/state.yue:741
+            end)() -- shunt/state.yue:741
+          }, -- shunt/state.yue:741
+          { -- shunt/state.yue:741
+            prev_state = (function() -- shunt/state.yue:741
+              local _tab_0 = { -- shunt/state.yue:741
+                name = 'state_2' -- shunt/state.yue:741
+              } -- shunt/state.yue:741
+              local _idx_0 = 1 -- shunt/state.yue:741
+              for _key_0, _value_0 in pairs(data) do -- shunt/state.yue:741
+                if _idx_0 == _key_0 then -- shunt/state.yue:741
+                  _tab_0[#_tab_0 + 1] = _value_0 -- shunt/state.yue:741
+                  _idx_0 = _idx_0 + 1 -- shunt/state.yue:741
+                else -- shunt/state.yue:741
+                  _tab_0[_key_0] = _value_0 -- shunt/state.yue:741
+                end -- shunt/state.yue:741
+              end -- shunt/state.yue:741
+              return _tab_0 -- shunt/state.yue:741
+            end)(), -- shunt/state.yue:741
+            state = { -- shunt/state.yue:741
+              name = 'state_1' -- shunt/state.yue:741
+            } -- shunt/state.yue:741
+          }, -- shunt/state.yue:741
+          { -- shunt/state.yue:741
+            prev_state = { -- shunt/state.yue:741
+              name = 'state_1' -- shunt/state.yue:741
+            }, -- shunt/state.yue:741
+            state = (function() -- shunt/state.yue:741
+              local _tab_0 = { -- shunt/state.yue:741
+                name = 'state_2' -- shunt/state.yue:741
+              } -- shunt/state.yue:741
+              local _idx_0 = 1 -- shunt/state.yue:741
+              for _key_0, _value_0 in pairs(data) do -- shunt/state.yue:741
+                if _idx_0 == _key_0 then -- shunt/state.yue:741
+                  _tab_0[#_tab_0 + 1] = _value_0 -- shunt/state.yue:741
+                  _idx_0 = _idx_0 + 1 -- shunt/state.yue:741
+                else -- shunt/state.yue:741
+                  _tab_0[_key_0] = _value_0 -- shunt/state.yue:741
+                end -- shunt/state.yue:741
+              end -- shunt/state.yue:741
+              return _tab_0 -- shunt/state.yue:741
+            end)() -- shunt/state.yue:741
+          }, -- shunt/state.yue:741
+          { -- shunt/state.yue:741
+            prev_state = (function() -- shunt/state.yue:741
+              local _tab_0 = { -- shunt/state.yue:741
+                name = 'state_2' -- shunt/state.yue:741
+              } -- shunt/state.yue:741
+              local _idx_0 = 1 -- shunt/state.yue:741
+              for _key_0, _value_0 in pairs(data) do -- shunt/state.yue:741
+                if _idx_0 == _key_0 then -- shunt/state.yue:741
+                  _tab_0[#_tab_0 + 1] = _value_0 -- shunt/state.yue:741
+                  _idx_0 = _idx_0 + 1 -- shunt/state.yue:741
+                else -- shunt/state.yue:741
+                  _tab_0[_key_0] = _value_0 -- shunt/state.yue:741
+                end -- shunt/state.yue:741
+              end -- shunt/state.yue:741
+              return _tab_0 -- shunt/state.yue:741
+            end)(), -- shunt/state.yue:741
+            state = { -- shunt/state.yue:741
+              name = 'state_1' -- shunt/state.yue:741
+            } -- shunt/state.yue:741
+          }, -- shunt/state.yue:741
+          { -- shunt/state.yue:741
+            prev_state = { -- shunt/state.yue:741
+              name = 'state_1' -- shunt/state.yue:741
+            }, -- shunt/state.yue:741
+            state = (function() -- shunt/state.yue:741
+              local _tab_0 = { -- shunt/state.yue:741
+                name = 'state_2' -- shunt/state.yue:741
+              } -- shunt/state.yue:741
+              local _idx_0 = 1 -- shunt/state.yue:741
+              for _key_0, _value_0 in pairs(data) do -- shunt/state.yue:741
+                if _idx_0 == _key_0 then -- shunt/state.yue:741
+                  _tab_0[#_tab_0 + 1] = _value_0 -- shunt/state.yue:741
+                  _idx_0 = _idx_0 + 1 -- shunt/state.yue:741
+                else -- shunt/state.yue:741
+                  _tab_0[_key_0] = _value_0 -- shunt/state.yue:741
+                end -- shunt/state.yue:741
+              end -- shunt/state.yue:741
+              return _tab_0 -- shunt/state.yue:741
+            end)() -- shunt/state.yue:741
+          } -- shunt/state.yue:741
+        })), tostring("shunt/state.yue") .. ":" .. tostring(741)) -- shunt/state.yue:751
+      end) -- shunt/state.yue:751
+    end) -- shunt/state.yue:708
+    return describe('.states', function() -- shunt/state.yue:753
+      it('contains all states', function() -- shunt/state.yue:754
+        local test_sm = make_test_sm() -- shunt/state.yue:755
+        local expected_states = { -- shunt/state.yue:757
+          'state_1', -- shunt/state.yue:757
+          'state_2', -- shunt/state.yue:758
+          'state_3' -- shunt/state.yue:759
+        } -- shunt/state.yue:756
+        for _index_0 = 1, #expected_states do -- shunt/state.yue:760
+          local expected_state = expected_states[_index_0] -- shunt/state.yue:760
+          require('spec')._expect_that([=[test_sm.states[expected_state]]=], test_sm.states[expected_state], (eq(expected_state)), tostring("shunt/state.yue") .. ":" .. tostring(761)) -- shunt/state.yue:761
+        end -- shunt/state.yue:761
+      end) -- shunt/state.yue:754
+      it('rejects unknown states', function() -- shunt/state.yue:763
+        local test_sm = make_test_sm(); -- shunt/state.yue:764
+        return require('spec')._expect_that([=[(-> test_sm.states.unknown)]=], (function() -- shunt/state.yue:765
+          return test_sm.states.unknown -- shunt/state.yue:765
+        end), (errors(matches("cannot get state 'unknown': no such state"))), tostring("shunt/state.yue") .. ":" .. tostring(765)) -- shunt/state.yue:765
+      end) -- shunt/state.yue:763
+      return it('rejects modifications', function() -- shunt/state.yue:767
+        local test_sm = make_test_sm(); -- shunt/state.yue:768
+        return require('spec')._expect_that([==[(-> test_sm.states.state_1 = nil)]==], (function() -- shunt/state.yue:769
+          test_sm.states.state_1 = nil -- shunt/state.yue:769
+        end), (errors(matches('cannot set fields in states'))), tostring("shunt/state.yue") .. ":" .. tostring(769)) -- shunt/state.yue:769
+      end) -- shunt/state.yue:769
+    end) -- shunt/state.yue:769
+  end) -- shunt/state.yue:582
+  return describe('StateResponsesBuilder', function() -- shunt/state.yue:771
+    it('builds response', function() -- shunt/state.yue:772
+      local calls = { } -- shunt/state.yue:773
+      local builder -- shunt/state.yue:774
+      do -- shunt/state.yue:774
+        local _with_0 = StateResponsesBuilder(make_test_sm()) -- shunt/state.yue:774
+        local _list_0 = { -- shunt/state.yue:775
+          'state_1', -- shunt/state.yue:775
+          'state_2', -- shunt/state.yue:775
+          'state_3' -- shunt/state.yue:775
+        } -- shunt/state.yue:775
+        for _index_0 = 1, #_list_0 do -- shunt/state.yue:775
+          local name = _list_0[_index_0] -- shunt/state.yue:775
+          _with_0:add(name, F('() -> <>', function() -- shunt/state.yue:776
+            calls[#calls + 1] = { -- shunt/state.yue:777
+              name = name -- shunt/state.yue:777
+            } -- shunt/state.yue:777
+          end)) -- shunt/state.yue:776
+        end -- shunt/state.yue:777
+        builder = _with_0 -- shunt/state.yue:774
+      end -- shunt/state.yue:774
+      local responses = builder:build() -- shunt/state.yue:779
+      responses.state_1() -- shunt/state.yue:780
+      responses.state_2() -- shunt/state.yue:781
+      responses.state_3(); -- shunt/state.yue:782
+      require('spec')._expect_that([=[calls]=], calls, (len(eq(3))), tostring("shunt/state.yue") .. ":" .. tostring(783)); -- shunt/state.yue:783
+      require('spec')._expect_that([=[calls[1]]=], calls[1], (has_fields({ -- shunt/state.yue:784
+        name = eq('state_1') -- shunt/state.yue:784
+      })), tostring("shunt/state.yue") .. ":" .. tostring(784)); -- shunt/state.yue:784
+      require('spec')._expect_that([=[calls[2]]=], calls[2], (has_fields({ -- shunt/state.yue:786
+        name = eq('state_2') -- shunt/state.yue:786
+      })), tostring("shunt/state.yue") .. ":" .. tostring(786)); -- shunt/state.yue:786
+      return require('spec')._expect_that([=[calls[3]]=], calls[3], (has_fields({ -- shunt/state.yue:788
+        name = eq('state_3') -- shunt/state.yue:788
+      })), tostring("shunt/state.yue") .. ":" .. tostring(788)) -- shunt/state.yue:789
+    end) -- shunt/state.yue:772
+    it('rejects unknown states', function() -- shunt/state.yue:791
+      local _with_0 = StateResponsesBuilder(make_test_sm()) -- shunt/state.yue:792
+      require('spec')._expect_that([=[(-> \add 'fribib', ->)]=], (function() -- shunt/state.yue:793
+        return _with_0:add('fribib', function() end) -- shunt/state.yue:793
+      end), (errors(matches("no such state"))), tostring("shunt/state.yue") .. ":" .. tostring(793)) -- shunt/state.yue:793
+      return _with_0 -- shunt/state.yue:792
+    end) -- shunt/state.yue:791
+    it('rejects redefinition', function() -- shunt/state.yue:795
+      local _with_0 = StateResponsesBuilder(make_test_sm()) -- shunt/state.yue:796
+      _with_0:add('state_1', function() end); -- shunt/state.yue:797
+      require('spec')._expect_that([=[(-> \add 'state_1', ->)]=], (function() -- shunt/state.yue:798
+        return _with_0:add('state_1', function() end) -- shunt/state.yue:798
+      end), (errors(matches("response for 'state_1' already defined"))), tostring("shunt/state.yue") .. ":" .. tostring(798)) -- shunt/state.yue:798
+      return _with_0 -- shunt/state.yue:796
+    end) -- shunt/state.yue:795
+    return it('rejects incomplete coverage', function() -- shunt/state.yue:800
+      local _with_0 = StateResponsesBuilder(make_test_sm()) -- shunt/state.yue:801
+      require('spec')._expect_that([=[\build]=], (function() -- shunt/state.yue:802
+        local _base_0 = _with_0 -- shunt/state.yue:802
+        local _fn_0 = _base_0.build -- shunt/state.yue:802
+        return _fn_0 and function(...) -- shunt/state.yue:802
+          return _fn_0(_base_0, ...) -- shunt/state.yue:802
+        end -- shunt/state.yue:802
+      end)(), (errors(matches('no response: state_1, state_2, state_3'))), tostring("shunt/state.yue") .. ":" .. tostring(802)) -- shunt/state.yue:802
+      return _with_0 -- shunt/state.yue:801
+    end) -- shunt/state.yue:802
+  end) -- shunt/state.yue:802
+end) -- shunt/state.yue:364
+return _module_0 -- shunt/state.yue:802
 end
 package.preload['shunt.nodes.marshal.main'] = function(...)
 -- [yue]: shunt/nodes/marshal/main.yue
