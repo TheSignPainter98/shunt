@@ -149,6 +149,13 @@ export class StateMachineBuilder
         if reporter?
           reporter @, prev_state, .state
 
+      .recover_to = F '(string, any) => <>', (name, data) =>
+        ended = false
+        new_state_spec = states[name]
+        if not new_state_spec?
+          error "internal error: no such state '#{name}'"
+        .state = make_state name, new_state_spec._data_type, data
+
       end_states = { state._name, true for _, state in pairs @_states when state._is_end }
       .end = F '() => <>', =>
         if ended
@@ -665,6 +672,38 @@ spec ->
             \declare_end_state!
           \build!
         $expect_that state_machine\end, errors matches 'state_1 is not a valid end state'
+
+    describe '\\recover_to', ->
+      it 'allows recovery from any state to any state', ->
+        state_machine = (StateMachineBuilder 'test_sm')
+          \set_initial_state 'state_1'
+          \add (State 'state_1')
+            \add_transition_to 'state_2'
+          \add (State 'state_2')
+            \declare_end_state!
+            \set_data_type [[{
+              data: string,
+            }]]
+          \build!
+        state_machine\recover_to 'state_2',
+          data: 'asdf'
+        $assert_that state_machine.state.name, eq 'state_2'
+        $assert_that state_machine.state.data, eq 'asdf'
+
+        state_machine\recover_to 'state_1'
+        $assert_that state_machine.state.name, eq 'state_1'
+        $assert_that state_machine.state.data, eq nil
+
+      it 'allows recovery after end', ->
+        state_machine = (StateMachineBuilder 'test_sm')
+          \set_initial_state 'state_1'
+          \add (State 'state_1')
+            \declare_end_state!
+            \add_transition_to 'state_1'
+          \build!
+        state_machine\end!
+        state_machine\recover_to 'state_1'
+        state_machine\goto 'state_1'
 
     describe 'set_reporter', ->
       it 'is respected by state machines', ->
