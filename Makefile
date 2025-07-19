@@ -54,7 +54,7 @@ bin/%.lua.packed: %.lua $(OBJECTS) moonpack.lua
 shunt.yue: shunt/compat.lua
 
 clean:
-	$(RM) $(OBJECTS) startup.lua packed/shunt shunt.goo $(BINARIES) bin/*
+	$(RM) $(OBJECTS) startup.lua packed/shunt packed/libshunt.lua shunt.goo $(BINARIES) bin/*
 	cargo clean --manifest-path docs/mdbook-shunt/Cargo.toml
 	mdbook clean docs/
 .PHONY: clean
