@@ -1,7 +1,7 @@
 local *
 
-import 'clap' as :Param, :Subcommand
-import 'quicktype' as :declare_type, :F
+import 'shunt.clap' as :Param, :Subcommand
+import 'shunt.quicktype' as :declare_type, :F
 
 export subcommand = with Subcommand 'display'
   \description 'display system status'

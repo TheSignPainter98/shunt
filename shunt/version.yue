@@ -1,6 +1,6 @@
 local *
 
-import 'spec' as :spec
+import 'shunt.spec' as :spec
 
 macro version = ->
   local version_string
@@ -13,9 +13,9 @@ macro version = ->
 export VERSION = $version!
 
 spec ->
-  import 'spec_macros' as $
+  import 'shunt.spec_macros' as $
 
-  import 'spec' as :describe, :expect_that, :it, :matchers
+  import 'shunt.spec' as :describe, :expect_that, :it, :matchers
 
   import lt from matchers
 

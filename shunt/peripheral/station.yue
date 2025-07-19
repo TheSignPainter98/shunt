@@ -1,7 +1,7 @@
 local *
 
-import 'quicktype' as :declare_type, :F
-import 'spec' as :spec
+import 'shunt.quicktype' as :declare_type, :F
+import 'shunt.spec' as :spec
 
 declare_type 'StationBackend', [[{
   name: () => StationName,
@@ -175,10 +175,10 @@ export class TestStationBackend
     @train_name = F '() => ?string', train_name
 
 spec ->
-  import 'spec_macros' as $
+  import 'shunt.spec_macros' as $
 
-  import 'quicktype' as :T
-  import 'spec' as :describe, :it, :matchers
+  import 'shunt.quicktype' as :T
+  import 'shunt.spec' as :describe, :it, :matchers
 
   import anything, errors, no_errors from matchers
 

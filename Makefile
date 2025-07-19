@@ -48,7 +48,7 @@ bin/%.lua.packed: %.lua $(OBJECTS) moonpack.lua
 	@touch $@
 .PRECIOUS: %.lua
 
-shunt.yue: compat.lua
+shunt.yue: shunt/compat.lua
 
 clean:
 	$(RM) $(OBJECTS) startup.lua packed/shunt shunt.goo $(BINARIES) bin/*

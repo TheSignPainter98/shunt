@@ -1,11 +1,11 @@
 local *
 
-import 'quicktype' as :declare_type, :F, :T
 import 'shunt.data.queue' as :Queue
 import 'shunt.firewall' as :Firewall
 import 'shunt.logger' as :log
 import 'shunt.nodes.factory.main' as :FactoryHeartbeat, :ScheduleRequest, :ScheduleResponse
 import 'shunt.peripheral.uplink' as :IdempotenceToken
+import 'shunt.quicktype' as :declare_type, :F, :T
 import 'shunt.state' as :shallow_log_reporter, :State, :StateMachineBuilder, :StateResponsesBuilder
 
 declare_type 'ResourceOrchestrator', [[

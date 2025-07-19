@@ -1,9 +1,9 @@
 local *
 
-import 'quicktype' as :declare_type, :F, :T
 import 'shunt.data.queue' as :Queue
 import 'shunt.firewall' as :Firewall
 import 'shunt.logger' as :log, :trace
+import 'shunt.quicktype' as :declare_type, :F, :T
 import 'shunt.state' as :shallow_log_reporter, :State, :StateMachineBuilder, :StateResponsesBuilder
 import 'shunt.upgrade.instigator' as :MarshalBumpRelease
 import 'shunt.upgrade.monitor' as :CurrentReleaseRequest, :CurrentReleaseResponse

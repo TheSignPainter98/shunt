@@ -1,7 +1,7 @@
 local *
 
-import 'quicktype' as :declare_type, :F
-import 'spec' as :spec
+import 'shunt.quicktype' as :declare_type, :F
+import 'shunt.spec' as :spec
 
 declare_type 'Pc', [[{
   id: () => number,
@@ -48,9 +48,9 @@ export class TestPcBackend
     @set_name = F '(string) => <>', set_name
 
 spec ->
-  import 'spec_macros' as $
+  import 'shunt.spec_macros' as $
 
-  import 'spec' as :describe, :it, :matchers
+  import 'shunt.spec' as :describe, :it, :matchers
 
   import eq from matchers
 

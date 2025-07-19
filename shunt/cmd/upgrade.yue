@@ -1,9 +1,9 @@
 local *
 
-import 'clap' as :Flag, :Subcommand
-import 'quicktype' as :declare_type, :F
+import 'shunt.clap' as :Flag, :Subcommand
 import 'shunt.config' as :config
 import 'shunt.logger' as :log
+import 'shunt.quicktype' as :declare_type, :F
 import 'shunt.upgrade.instigator' as :Instigator
 import 'shunt.version' as :VERSION
 

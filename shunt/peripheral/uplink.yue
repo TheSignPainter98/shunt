@@ -1,8 +1,8 @@
 local *
 
-import 'quicktype' as :declare_singleton_type, :declare_type, :F, :T
 import 'shunt.logger' as :trace
-import 'spec' as :spec
+import 'shunt.quicktype' as :declare_singleton_type, :declare_type, :F, :T
+import 'shunt.spec' as :spec
 
 export TIMEOUT = <tostring>: => "TIMEOUT"
 declare_singleton_type TIMEOUT
@@ -61,7 +61,7 @@ export class Uplink
 
     packet.protocol = protocol
     if not packet_type::matches packet
-      import 'spec' as :repr
+      import 'shunt.spec' as :repr
       error "unexpected packet #{repr packet}, expected #{packet_type::protocol!} but got #{packet.protocol}"
     id, packet
 
@@ -222,9 +222,9 @@ export IdempotenceToken = F '() -> IdempotenceToken', ->
   math.random 1, IDEMP_TOK_MAX
 
 spec ->
-  import 'spec_macros' as $
+  import 'shunt.spec_macros' as $
 
-  import 'spec' as :describe, :it, :matchers
+  import 'shunt.spec' as :describe, :it, :matchers
 
   import deep_eq, eq, errors, matches, no_errors from matchers
 

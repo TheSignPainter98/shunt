@@ -1,7 +1,7 @@
 local *
 
-import 'clap' as :Flag, :Subcommand
-import 'quicktype' as :F
+import 'shunt.clap' as :Flag, :Subcommand
+import 'shunt.quicktype' as :F
 
 export subcommand = with Subcommand 'clean'
   \description 'remove all files associated with shunt'

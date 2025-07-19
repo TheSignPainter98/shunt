@@ -1,8 +1,8 @@
 local *
 
-import 'clap' as :Flag, :Param, :Subcommand
-import 'quicktype' as :declare_type, :F
+import 'shunt.clap' as :Flag, :Param, :Subcommand
 import 'shunt.configurator.main' as :Configurator
+import 'shunt.quicktype' as :declare_type, :F
 
 export subcommand = with Subcommand 'edit'
   \description 'remotely configure a shunt instance'
