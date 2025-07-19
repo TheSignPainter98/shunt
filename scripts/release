@@ -23,7 +23,7 @@ cp $1 release/
 pushd release/
 
 git add .
-git commit -S -m "release @$(date +%Y-%m-%d@%H:%M:%S)"
+git commit -S -m "$1 release @$(date +%Y-%m-%d@%H:%M:%S)"
 git push
 
 popd
