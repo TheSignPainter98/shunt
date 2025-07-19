@@ -3,6 +3,7 @@ re_exports =
   ['libshunt.logger']: -> require 'shunt.logger'
   ['libshunt.quicktype']: -> require 'shunt.quicktype'
   ['libshunt.state']: -> require 'shunt.state'
+  ['libshunt.spec']: -> require 'shunt.spec'
 for lib, src_fn in pairs re_exports
   package.preload[lib] = src_fn
 
