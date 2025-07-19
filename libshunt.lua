@@ -8606,24 +8606,27 @@ local re_exports = { -- libshunt.yue:2
   end, -- libshunt.yue:4
   ['libshunt.state'] = function() -- libshunt.yue:5
     return require('shunt.state') -- libshunt.yue:5
-  end -- libshunt.yue:5
+  end, -- libshunt.yue:5
+  ['libshunt.spec'] = function() -- libshunt.yue:6
+    return require('shunt.spec') -- libshunt.yue:6
+  end -- libshunt.yue:6
 } -- libshunt.yue:1
-for lib, src_fn in pairs(re_exports) do -- libshunt.yue:6
-  package.preload[lib] = src_fn -- libshunt.yue:7
-end -- libshunt.yue:7
-return setmetatable({ }, { -- libshunt.yue:9
-  __index = function(self) -- libshunt.yue:9
-    local lib_names -- libshunt.yue:10
-    do -- libshunt.yue:10
-      local _accum_0 = { } -- libshunt.yue:10
-      local _len_0 = 1 -- libshunt.yue:10
-      for lib_name, _ in pairs(re_exports) do -- libshunt.yue:10
-        _accum_0[_len_0] = lib_name -- libshunt.yue:10
-        _len_0 = _len_0 + 1 -- libshunt.yue:10
-      end -- libshunt.yue:10
-      lib_names = _accum_0 -- libshunt.yue:10
-    end -- libshunt.yue:10
-    table.sort(lib_names) -- libshunt.yue:11
-    return error("libshunt modules are accessed by calling `require'\navailable modules:\n  " .. tostring(table.concat(lib_names, '\n  '))) -- libshunt.yue:12
-  end -- libshunt.yue:9
-}) -- libshunt.yue:12
+for lib, src_fn in pairs(re_exports) do -- libshunt.yue:7
+  package.preload[lib] = src_fn -- libshunt.yue:8
+end -- libshunt.yue:8
+return setmetatable({ }, { -- libshunt.yue:10
+  __index = function(self) -- libshunt.yue:10
+    local lib_names -- libshunt.yue:11
+    do -- libshunt.yue:11
+      local _accum_0 = { } -- libshunt.yue:11
+      local _len_0 = 1 -- libshunt.yue:11
+      for lib_name, _ in pairs(re_exports) do -- libshunt.yue:11
+        _accum_0[_len_0] = lib_name -- libshunt.yue:11
+        _len_0 = _len_0 + 1 -- libshunt.yue:11
+      end -- libshunt.yue:11
+      lib_names = _accum_0 -- libshunt.yue:11
+    end -- libshunt.yue:11
+    table.sort(lib_names) -- libshunt.yue:12
+    return error("libshunt modules are accessed by calling `require'\navailable modules:\n  " .. tostring(table.concat(lib_names, '\n  '))) -- libshunt.yue:13
+  end -- libshunt.yue:10
+}) -- libshunt.yue:13
