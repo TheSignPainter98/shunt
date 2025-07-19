@@ -1,12 +1,12 @@
-re_exports =
+to_preload =
   ['libshunt.clap']: -> require 'clap'
   ['libshunt.logger']: -> require 'shunt.logger'
   ['libshunt.quicktype']: -> require 'quicktype'
   ['libshunt.state']: -> require 'shunt.state'
-for lib, src_fn in pairs re_exports
+for lib, src_fn in pairs to_preload
   package.preload[lib] = src_fn
 
 <index>: =>
-  lib_names = [ lib_name for lib_name, _ in pairs re_exports]
+  lib_names = [ lib_name for lib_name, _ in pairs to_preload]
   table.sort lib_names
   error "libshunt modules are accessed by calling `require'\navailable modules:\n  #{table.concat lib_names, '\n  '}"
