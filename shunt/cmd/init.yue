@@ -1,11 +1,11 @@
 local *
 
-import 'clap' as :Flag, :Param, :Subcommand
-import 'quicktype' as :F, :T
+import 'shunt.clap' as :Flag, :Param, :Subcommand
 import 'shunt.config' as :CONFIG_FILE
 import 'shunt.configurator.editor' as :ABORT, :Editor
 import 'shunt.configurator.main' as :Configurator
-import 'spec' as :spec
+import 'shunt.quicktype' as :F, :T
+import 'shunt.spec' as :spec
 
 import 'shunt.toml'
 
@@ -69,9 +69,9 @@ export main = F '({}) -> <>', (args) ->
   return
 
 spec ->
-  import 'spec_macros' as $
+  import 'shunt.spec_macros' as $
 
-  import 'spec' as :describe, :it, :matchers
+  import 'shunt.spec' as :describe, :it, :matchers
 
   import eq, has_fields, has_type, no_errors from matchers
 

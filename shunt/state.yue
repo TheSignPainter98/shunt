@@ -1,8 +1,8 @@
 local *
 
-import 'quicktype' as :declare_type, :F, :T
 import 'shunt.logger' as :log
-import 'spec' as :spec
+import 'shunt.quicktype' as :declare_type, :F, :T
+import 'shunt.spec' as :spec
 
 UNIMPLEMENTED = <call>: (...) ->
 
@@ -362,9 +362,9 @@ export shallow_log_reporter = (prev_state, state) =>
     table.concat fragments
 
 spec ->
-  import 'spec_macros' as $
+  import 'shunt.spec_macros' as $
 
-  import 'spec' as :describe, :it, :matchers
+  import 'shunt.spec' as :describe, :it, :matchers
 
   import anything, deep_eq, eq, errors, has_fields, len, matches, no_errors from matchers
 

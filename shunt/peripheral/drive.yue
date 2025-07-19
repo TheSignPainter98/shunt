@@ -1,7 +1,7 @@
 local *
 local MinecraftBackend
 
-import 'quicktype' as :declare_type, :F
+import 'shunt.quicktype' as :declare_type, :F
 
 declare_type 'Drive', [[{
   is_disk_present: () => boolean,

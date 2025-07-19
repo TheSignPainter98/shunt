@@ -1,9 +1,9 @@
 local *
 
-import 'quicktype' as :declare_type, :F, :T
 import 'shunt.clock' as :MinecraftClock
 import 'shunt.logger' as :log, :trace
-import 'spec' as :spec
+import 'shunt.quicktype' as :declare_type, :F, :T
+import 'shunt.spec' as :spec
 
 declare_type 'PromiseTracker', [[{
   promise: (string, [PromiseStation], ?number, ?number) => Promise,
@@ -246,12 +246,12 @@ export class PromiseTracker
     return
 
 spec ->
-  import 'spec_macros' as $
+  import 'shunt.spec_macros' as $
 
-  import 'compat' as :HOST
   import 'shunt.clock' as :TestClock
+  import 'shunt.compat' as :HOST
   import 'shunt.nodes.marshal.util.pseudo_random' as :PseudoRandom
-  import 'spec' as :describe, :it, :matchers
+  import 'shunt.spec' as :describe, :it, :matchers
 
   import deep_eq, eq from matchers
 

@@ -1,7 +1,7 @@
 local *
 
-import 'clap' as :ArgParser, :Flag, :Param
-import 'spec' as :run_tests, :spec
+import 'shunt.clap' as :ArgParser, :Flag, :Param
+import 'shunt.spec' as :run_tests, :spec
 
 main = (args) ->
   args, ok = parse_args args
@@ -155,7 +155,7 @@ _G.fs ??= {
 }
 
 spec ->
-  import 'spec' as :describe, :it
+  import 'shunt.spec' as :describe, :it
 
   describe 'module_name', ->
     it 'rejects non-lua files', ->

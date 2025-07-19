@@ -1,6 +1,6 @@
 local *
 
-import 'quicktype' as :declare_type
+import 'shunt.quicktype' as :declare_type
 
 declare_type 'Component', [[{
   events: Queue,

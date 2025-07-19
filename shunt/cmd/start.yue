@@ -1,11 +1,11 @@
 local *
 
-import 'clap' as :Flag, :Subcommand
-import 'quicktype' as :F
+import 'shunt.clap' as :Flag, :Subcommand
 import 'shunt.config' as :config
 import 'shunt.logger' as :log
 import 'shunt.pc' as :Pc
 import 'shunt.peripheral.uplink' as :Uplink
+import 'shunt.quicktype' as :F
 import 'shunt.upgrade.monitor' as :UpgradeMonitor
 
 display = require 'shunt.nodes.display.main'

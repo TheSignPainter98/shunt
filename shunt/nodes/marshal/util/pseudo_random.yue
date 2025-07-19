@@ -1,7 +1,7 @@
 local *
 
-import 'quicktype' as :declare_type, :F
-import 'spec' as :spec
+import 'shunt.quicktype' as :declare_type, :F
+import 'shunt.spec' as :spec
 
 declare_type 'Random', [[{
   random: (number) => number,
@@ -27,9 +27,9 @@ export class PseudoRandom
       list[i], list[new_index] = list[new_index], list[i]
 
 spec ->
-  import 'spec_macros' as $
+  import 'shunt.spec_macros' as $
 
-  import 'spec' as :describe, :it, :matchers
+  import 'shunt.spec' as :describe, :it, :matchers
 
   import contains_value, deep_eq, eq, ge, gt, le from matchers
 

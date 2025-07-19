@@ -1,4 +1,4 @@
-import 'spec' as :repr
+import 'shunt.spec' as :repr
 
 peripheral.find 'modem', rednet.open
 if not rednet.isOpen!

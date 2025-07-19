@@ -1,8 +1,8 @@
 local *
 
-import 'quicktype' as :declare_type, :F
 import 'shunt.logger' as :log
 import 'shunt.peripheral.uplink' as :Packet
+import 'shunt.quicktype' as :declare_type, :F
 
 declare_type 'Rebooter', [[{
   reboot: () => !,

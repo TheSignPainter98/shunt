@@ -1,7 +1,7 @@
 local *
 
-import 'clap' as :Param, :Subcommand
-import 'quicktype' as :F, :T
+import 'shunt.clap' as :Param, :Subcommand
+import 'shunt.quicktype' as :F, :T
 
 state_machines = T '{string->()->string}'
   ['config_listener']: ->

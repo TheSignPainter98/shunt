@@ -1,8 +1,8 @@
 local *
 
-import 'clap' as :ArgParser, :Param, :Subcommand
-import 'quicktype' as :declare_type, :F, :T
-import 'spec' as :run_tests, :spec
+import 'shunt.clap' as :ArgParser, :Param, :Subcommand
+import 'shunt.quicktype' as :declare_type, :F, :T
+import 'shunt.spec' as :run_tests, :spec
 
 main = (args) ->
   args, ok = parse_args args
@@ -382,8 +382,8 @@ line_is_empty = F '(Line) -> boolean', (line) ->
   not (content\match '^%s*$')? and not (content\match '^%s*--.*$')?
 
 spec ->
-  import 'spec_macros' as $
-  import 'spec' as :describe, :it, :matchers
+  import 'shunt.spec_macros' as $
+  import 'shunt.spec' as :describe, :it, :matchers
   import deep_eq, each_value, eq, has_fields, len from matchers
 
   run_check = F '(Check, string, string) -> [Error]', (check, file, content) ->
@@ -438,39 +438,39 @@ spec ->
   describe 'ImportBlockKindsSorted', ->
     it 'accepts sorted blocks', ->
       errs = run_check ImportBlockKindsSorted!, 'test.yue', [[
-        import 'spec_macros' as $
-        import 'spec_macros' as $
+        import 'shunt.spec_macros' as $
+        import 'shunt.spec_macros' as $
 
-        import 'spec' as :repr
-        import 'spec' as :repr
+        import 'shunt.spec' as :repr
+        import 'shunt.spec' as :repr
 
-        import spec from require 'spec'
-        import 'spec' as :repr
+        import spec from require 'shunt.spec'
+        import 'shunt.spec' as :repr
 
         import 'shunt.toml'
-        import 'spec' as :repr
+        import 'shunt.spec' as :repr
 
         import concat from table
-        import 'spec' as :repr
+        import 'shunt.spec' as :repr
       ]]
       $expect_that errs, len eq 0
 
     it 'accepts unsorted other-purpose blocks', ->
       errs = run_check ImportBlockKindsSorted!, 'test.yue', [[
-        import 'compat'
+        import 'shunt.compat'
         compat.apply_compat!
 
-        import 'spec' as :repr
+        import 'shunt.spec' as :repr
       ]]
       $expect_that errs, len eq 0
 
     it 'accepts blocks with intermediate lines', ->
       errs = run_check ImportBlockKindsSorted!, 'test.yue', [[
-        import 'compat'
+        import 'shunt.compat'
 
         -- do things
 
-        import 'spec' as :spec
+        import 'shunt.spec' as :spec
       ]]
       $expect_that errs, len eq 0
 
@@ -480,11 +480,11 @@ spec ->
 
         import 'shunt.toml'
 
-        import spec from require 'spec'
+        import spec from require 'shunt.spec'
 
-        import 'spec' as :repr
+        import 'shunt.spec' as :repr
 
-        import 'spec' as $
+        import 'shunt.spec' as $
       ]]
       $expect_that errs, len eq 4
       $expect_that errs, each_value has_fields
