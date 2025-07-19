@@ -37,7 +37,7 @@ docs/src/libshunt.lua: bin/libshunt.lua
 docs/src/shunt: bin/shunt
 	cp $< $@
 
-bin/% bin/%.lua: bin/%.lua.packed nitro.lua clap.lua spec.lua
+bin/% bin/%.lua: bin/%.lua.packed nitro.lua shunt/clap.lua shunt/spec.lua
 # $(LUA) ./nitro.lua $< -o $@
 	cp $< $@
 
