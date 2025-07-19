@@ -3,7 +3,7 @@ LUA = luajit
 DIAGRAM_NAMES = marshal-main marshal-resource_orchestrator marshal-scheduler marshal-schedule_generator marshal-schedule_generator_impl upgrade_listener config_listener
 DIAGRAMS = $(patsubst %,docs/src/reference-materials/state-machine-diagrams/%.mmd,$(DIAGRAM_NAMES))
 DOCS_HELPERS = docs/mdbook-shunt/target/release/mdbook-shunt
-SITE_SRCS = $(DIAGRAMS) $(DOCS_HELPERS) .version.txt docs/src/shunt
+SITE_SRCS = $(DIAGRAMS) $(DOCS_HELPERS) .version.txt docs/src/shunt docs/src/libshunt.lua
 RUST_SOURCES = $(shell find docs/mdbook-shunt/src/ -name '*.rs')
 SOURCES = $(shell find -name '*.yue')
 OBJECTS = $(patsubst %.yue,%.lua,$(SOURCES))
@@ -31,10 +31,13 @@ serve-site: $(SITE_SRCS)
 docs/mdbook-shunt/target/release/mdbook-shunt: docs/mdbook-shunt/Cargo.toml $(RUST_SOURCES)
 	cargo build --release --manifest-path $<
 
+docs/src/libshunt.lua: bin/libshunt.lua
+	cp $< $@
+
 docs/src/shunt: bin/shunt
 	cp $< $@
 
-bin/%: bin/%.lua.packed nitro.lua clap.lua spec.lua
+bin/% bin/%.lua: bin/%.lua.packed nitro.lua clap.lua spec.lua
 # $(LUA) ./nitro.lua $< -o $@
 	cp $< $@
 
