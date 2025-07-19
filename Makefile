@@ -7,7 +7,7 @@ SITE_SRCS = $(DIAGRAMS) $(DOCS_HELPERS) .version.txt docs/src/shunt docs/src/lib
 RUST_SOURCES = $(shell find docs/mdbook-shunt/src/ -name '*.rs')
 SOURCES = $(shell find -name '*.yue')
 OBJECTS = $(patsubst %.yue,%.lua,$(SOURCES))
-BINARIES = bin/shunt bin/goo bin/snoop
+BINARIES = bin/shunt bin/goo bin/snoop bin/libshunt.lua
 
 NODE_FONTNAME = C059
 EDGE_FONTNAME = $(NODE_FONTNAME)
