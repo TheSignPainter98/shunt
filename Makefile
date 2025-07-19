@@ -86,7 +86,8 @@ shunt/version.lua: .version.txt
 .FORCE:
 .PHONY: .FORCE
 
-release: bin/shunt ./scripts/release bin/snoop
+release: bin/shunt bin/libshunt.lua ./scripts/release bin/snoop
 	./scripts/release bin/shunt
 	./scripts/release bin/snoop
+	./scripts/release bin/libshunt.lua
 .PHONY: release
