@@ -12,7 +12,7 @@ use mdbook::BookItem;
 use mdbook::book::{Book, Chapter};
 use mdbook::errors::Result as MdbookResult;
 use mdbook::preprocess::{Preprocessor, PreprocessorContext};
-use pulldown_cmark::{Event, Parser};
+use pulldown_cmark::{Event, Options, Parser};
 
 use crate::directives::{StateSpecDirective, TypesDirective, VersionDirective};
 
@@ -32,7 +32,7 @@ impl OxPreprocessor {
     }
 
     fn preprocess_chapter(&self, chapter: &mut Chapter, ctx: &PreprocessorContext) -> Result<()> {
-        let parser = Parser::new(&chapter.content).map(|event| match event {
+        let parser = Parser::new_ext(&chapter.content, Options::all()).map(|event| match event {
             Event::Text(text) => Event::Text(self.preprocess_text(&text, chapter, ctx).into()),
             _ => event,
         });
