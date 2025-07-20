@@ -13,6 +13,7 @@ This section covers all quicktype types which cannot be broken down:
 All values returned from Lua’s `type` function are valid quicktype types.
 All Lua 5.1 types are supported:
 
+- `nil`
 - `number`
 - `string`
 - `table`
