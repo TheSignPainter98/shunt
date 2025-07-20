@@ -7569,7 +7569,7 @@ package.preload['shunt.version'] = function(...)
 local _module_0 = { } -- shunt/version.yue:1
 local VERSION -- shunt/version.yue:1
 local spec = require('shunt.spec').spec -- shunt/version.yue:0
-VERSION = ' (2025-07-19@18:55:46)' -- shunt/version.yue:13
+VERSION = ' (2025-07-20@01:28:49)' -- shunt/version.yue:13
 _module_0["VERSION"] = VERSION -- shunt/version.yue:13
 spec(function() -- shunt/version.yue:15
   local describe, expect_that, it, matchers -- shunt/version.yue:0
