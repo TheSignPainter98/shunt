@@ -2,7 +2,8 @@ export macro invariant = (expr, label) ->
   lines = with {}
     [] = "if not (#{expr})"
     if label?
-      [] = "    error 'invariant invalidated: #{expr} (#{label})'"
+      [] = "    label = #{label}"
+      [] = "    error \"invariant invalidated: #{expr}" .. ' (#{label})"'
     else
       [] = "    error 'invariant invalidated: #{expr}'"
   table.concat lines, '\n'

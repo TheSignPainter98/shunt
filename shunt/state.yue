@@ -826,7 +826,7 @@ spec ->
             prev_counter = prev_state.counter
             counter = state.counter
             if prev_counter? and counter?
-              $invariant prev_counter <= counter
+              $invariant prev_counter <= counter, 'label'
           \add (State 'state_1')
             \add_transition_to 'state_2'
           \add (State 'state_2')
@@ -843,7 +843,7 @@ spec ->
         test_sm\goto 'state_2',
           counter: 1
         $expect_that (-> test_sm\goto 'state_3', counter: -1),
-          errors matches 'invariant invalidated: prev_counter <= counter'
+          errors matches 'invariant invalidated: prev_counter <= counter %(label%)'
 
     describe '.states', ->
       it 'contains all states', ->
