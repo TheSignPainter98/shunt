@@ -1,5 +1,7 @@
 local *
 
+import 'shunt.state_macros' as $
+
 import 'shunt.logger' as :log
 import 'shunt.quicktype' as :declare_type, :F, :T
 import 'shunt.spec' as :spec
@@ -14,8 +16,14 @@ export class StateMachineBuilder
     @_initial_state_name = T '?string', nil
     @_reporter = T '?(State, State) => <>', nil
     @_endless = T 'boolean', false
+    @_check_state_invariant = T '?({name: string}) -> <>', nil
+    @_check_transition_invariant = T '?({name: string}, {name: string}) -> <>', nil
 
   set_initial_state: F '(string) => Self', (@_initial_state_name) => @
+
+  set_state_invariant: F '(({name: string}) -> <>) => Self', (@_check_state_invariant) => @
+
+  set_transition_invariant: F '(({name: string}, {name: string}) -> <>) => Self', (@_check_transition_invariant) => @
 
   declare_endless: F '() => Self', =>
     @_endless = true
@@ -132,10 +140,14 @@ export class StateMachineBuilder
           error "cannot set fields in states"
 
       .state = make_state @_initial_state_name, 'nil', nil
+      check_state_invariant = @_check_state_invariant
+      if check_state_invariant?
+        check_state_invariant .state
 
       states = @_states
 
       reporter = @_reporter
+      check_transition_invariant = @_check_transition_invariant
       .goto = F '(string, any) => <>', (name, data) =>
         if ended
           error "internal error: cannot transition ended state machine"
@@ -148,6 +160,10 @@ export class StateMachineBuilder
         .state = make_state name, new_state_spec._data_type, data
         if reporter?
           reporter @, prev_state, .state
+        if check_state_invariant?
+          check_state_invariant .state
+        if check_transition_invariant?
+          check_transition_invariant prev_state, .state
 
       .recover_to = F '(string, any) => <>', (name, data) =>
         ended = false
@@ -155,6 +171,8 @@ export class StateMachineBuilder
         if not new_state_spec?
           error "internal error: no such state '#{name}'"
         .state = make_state name, new_state_spec._data_type, data
+        if check_state_invariant?
+          check_state_invariant .state
 
       end_states = { state._name, true for _, state in pairs @_states when state._is_end }
       .end = F '() => <>', =>
@@ -162,6 +180,8 @@ export class StateMachineBuilder
           error "internal error: cannot end state machine twice"
         if not end_states[@state.name]
           error "internal error: state #{@state.name} is not a valid end state"
+        if check_state_invariant?
+          check_state_invariant .state
         ended = true
 
       initial_state_name = @_initial_state_name
@@ -705,7 +725,7 @@ spec ->
         state_machine\recover_to 'state_1'
         state_machine\goto 'state_1'
 
-    describe 'set_reporter', ->
+    describe '\\set_reporter', ->
       it 'is respected by state machines', ->
         states = {}
         test_sm = (StateMachineBuilder 'test_sm')
@@ -749,6 +769,81 @@ spec ->
             state: { name: 'state_1' }
           * prev_state: { name: 'state_1' }
             state: { name: 'state_2', ...data }
+
+    describe '\\set_state_invariant', ->
+      it 'accepts valid states', ->
+        invariant_called_with = {}
+        test_sm = (StateMachineBuilder 'test_sm')
+          \set_initial_state 'state_1'
+          \set_state_invariant (state) ->
+            $assert_that state.name, matches '^state_%d$'
+            invariant_called_with[] = state.name
+          \add (State 'state_1')
+            \add_transition_to 'state_2'
+          \add (State 'state_2')
+            \declare_end_state!
+          \build!
+        test_sm\goto 'state_2'
+        test_sm\end!
+        $expect_that invariant_called_with, deep_eq
+          * 'state_1'
+          * 'state_2'
+          * 'state_2'
+
+      it 'rejects invalid states', ->
+        invariant_called_with = {}
+        test_sm_builder = (StateMachineBuilder 'test_sm')
+          \set_initial_state 'state_1'
+          \set_state_invariant (state) ->
+            error 'canary'
+          \add (State 'state_1')
+            \add_transition_to 'state_2'
+          \add (State 'state_2')
+            \declare_end_state!
+        $expect_that test_sm_builder\build, errors matches 'canary'
+
+    describe '\\set_transition_invariant', ->
+      it 'accepts valid transitions', ->
+        test_sm = (StateMachineBuilder 'test_sm')
+          \set_initial_state 'state_1'
+          \set_transition_invariant (prev_state, state) ->
+            $expect_that prev_state, has_fields
+              name: eq 'state_1'
+            $expect_that state, has_fields
+              name: eq 'state_2'
+          \add (State 'state_1')
+            \add_transition_to 'state_2'
+          \add (State 'state_2')
+            \declare_end_state!
+          \build!
+        test_sm\goto 'state_2'
+        $expect_that test_sm.state.name, eq 'state_2'
+
+      it 'rejects invalid transitions', ->
+        test_sm = (StateMachineBuilder 'test_sm')
+          \set_initial_state 'state_1'
+          \set_transition_invariant (prev_state, state) ->
+            prev_counter = prev_state.counter
+            counter = state.counter
+            if prev_counter? and counter?
+              $invariant prev_counter <= counter
+          \add (State 'state_1')
+            \add_transition_to 'state_2'
+          \add (State 'state_2')
+            \set_data_type [[{
+              counter: number,
+            }]]
+            \add_transition_to 'state_3'
+          \add (State 'state_3')
+            \declare_end_state!
+            \set_data_type [[{
+              counter: number,
+            }]]
+          \build!
+        test_sm\goto 'state_2',
+          counter: 1
+        $expect_that (-> test_sm\goto 'state_3', counter: -1),
+          errors matches 'invariant invalidated: prev_counter <= counter'
 
     describe '.states', ->
       it 'contains all states', ->
