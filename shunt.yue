@@ -4,7 +4,6 @@ import 'shunt.compat' as :apply_compat, :HOST, :test_compat
 apply_compat!
 
 import 'shunt.quicktype' as :declare_type
-declare_type 'Self', 'some'
 
 import 'shunt.args' as :Args
 import 'shunt.instrument' as :instrument
