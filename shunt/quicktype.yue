@@ -1289,6 +1289,8 @@ export declare_type = (name, type_spec) ->
   user_types[name] = parsed_type
   type_checkers[name] = parsed_type\checker!\build!
 
+declare_type 'Self', 'some'
+
 export declare_singleton_type = (value) ->
   if not value?
     error "declare_singleton_type requires a value"
