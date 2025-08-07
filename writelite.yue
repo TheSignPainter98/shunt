@@ -4,8 +4,8 @@ import 'quicktype' as :declare_singleton_type, :declare_type, :F
 import 'spec' as :spec
 
 declare_type 'writelite.Writelite', [[{
-  transaction: ((Transaction) -> <>) => <>,
-  close: () => ?BUSY,
+  transaction: ((writelite.Transaction) -> <>) => <>,
+  close: () => <>,
 }]]
 export class Writelite
   new: F '(string, writelite.File) => <>', (@_path) =>
@@ -22,7 +22,7 @@ export class Writelite
     -- TODO(kcza): Only if valid!
     error 'todo'
 
-  transaction: F '((Transaction) -> <>) => ?BUSY', (f) =>
+  transaction: F '((writelite.Transaction) -> <>) => <>', (f) =>
     @_transaction_open = true
 
     txn = Transaction @_main_file, @_journal_path
@@ -48,8 +48,6 @@ export class Writelite
 
     @_writelite_open = false
 
-export BUSY = <tostring>: => 'BUSY'
-declare_singleton_type BUSY
 
 declare_type 'writelite.Transaction', [[{
   write: (string) => <>,
