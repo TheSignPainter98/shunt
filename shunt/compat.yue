@@ -239,8 +239,6 @@ export test_compat = ->
           assert v['hell\\o'] == 123, "v.hello incorrect: #{v['hell\\o']}"
           assert v.are == true, "v.are incorrect: #{v.are}"
           assert v.you == false, "v.you incorrect: #{v.you}"
-    * name: 'textutils.deserialise deserialises'
-      check: ->
   failed = false
   for test in *tests
     try
