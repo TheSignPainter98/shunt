@@ -48,6 +48,7 @@ export class Writelite
 
     @_writelite_open = false
 
+PAGE_SIZE = 4096
 
 declare_type 'writelite.Transaction', [[{
   write: (string) => <>,
@@ -75,9 +76,9 @@ class Transaction
       error 'cannot write to aborted transaction'
 
     @_len += #bytes
-    for bytes_offset = 0, #bytes, 4096
-      @_pages[] = Page @_cursor, bytes\sub 1 + bytes_offset, 1 + bytes_offset + 4096
-      @_cursor += 4096
+    for bytes_offset = 0, #bytes, Page.SIZE
+      @_pages[] = Page @_cursor, bytes\sub 1 + bytes_offset, 1 + bytes_offset + PAGE_SIZE
+      @_cursor += PAGE_SIZE
     error 'todo'
 
   seek: F '(Whence, ?number) => <>', (whence, offset) =>
