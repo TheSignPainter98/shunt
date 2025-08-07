@@ -143,73 +143,294 @@ apply_compat = function() -- shunt/compat.yue:12
   if _obj_11.lshift == nil then -- shunt/compat.yue:74
     _obj_11.lshift = bit.blshift -- shunt/compat.yue:74
   end -- shunt/compat.yue:74
-end -- shunt/compat.yue:12
-_module_0["apply_compat"] = apply_compat -- shunt/compat.yue:74
-test_compat = function() -- shunt/compat.yue:76
-  if not compat_applied then -- shunt/compat.yue:77
-    error('call apply_compat before testing compat') -- shunt/compat.yue:78
-  end -- shunt/compat.yue:77
-  local tests = { -- shunt/compat.yue:80
-    { -- shunt/compat.yue:80
-      name = 'os.tmpname returns a string', -- shunt/compat.yue:80
-      check = function() -- shunt/compat.yue:81
-        return assert('string' == type(os.tmpname())) -- shunt/compat.yue:82
-      end -- shunt/compat.yue:81
-    }, -- shunt/compat.yue:80
-    { -- shunt/compat.yue:83
-      name = 'os.remove removes files', -- shunt/compat.yue:83
-      check = function() -- shunt/compat.yue:84
-        local TEST_FILE = '.test_file_hj4k3h5jio' -- shunt/compat.yue:85
-        do -- shunt/compat.yue:86
-          local _with_0 = io.open(TEST_FILE, 'r') -- shunt/compat.yue:86
-          if _with_0 ~= nil then -- shunt/compat.yue:86
-            _with_0:close() -- shunt/compat.yue:87
-            error("test file '" .. tostring(TEST_FILE) .. "' already exists, please remove it") -- shunt/compat.yue:88
-          end -- shunt/compat.yue:86
-        end -- shunt/compat.yue:86
-        do -- shunt/compat.yue:89
-          local _with_0 = assert(io.open(TEST_FILE, 'w+')) -- shunt/compat.yue:89
-          _with_0:close() -- shunt/compat.yue:90
-        end -- shunt/compat.yue:89
-        do -- shunt/compat.yue:91
-          local _with_0 = assert(io.open(TEST_FILE, 'r')) -- shunt/compat.yue:91
-          _with_0:close() -- shunt/compat.yue:92
-        end -- shunt/compat.yue:91
-        os.remove(TEST_FILE) -- shunt/compat.yue:93
-        local _with_0 = io.open(TEST_FILE, 'r') -- shunt/compat.yue:94
-        if _with_0 ~= nil then -- shunt/compat.yue:94
-          _with_0:close() -- shunt/compat.yue:95
-          error("expected test file '" .. tostring(TEST_FILE) .. "' to have been removed after calling os.remove") -- shunt/compat.yue:96
-        end -- shunt/compat.yue:94
-        return _with_0 -- shunt/compat.yue:94
+  if not (textutils ~= nil) then -- shunt/compat.yue:76
+    textutils = { } -- shunt/compat.yue:77
+  end -- shunt/compat.yue:76
+  local is_list -- shunt/compat.yue:79
+  is_list = function(t) -- shunt/compat.yue:79
+    local max_key = -1 -- shunt/compat.yue:80
+    for k, _ in pairs(t) do -- shunt/compat.yue:81
+      if 'number' ~= type(k) then -- shunt/compat.yue:82
+        return false -- shunt/compat.yue:83
+      end -- shunt/compat.yue:82
+      if k % 1 ~= 0 then -- shunt/compat.yue:84
+        return false -- shunt/compat.yue:85
       end -- shunt/compat.yue:84
-    }, -- shunt/compat.yue:83
-    { -- shunt/compat.yue:97
-      name = 'HOST is unchanged', -- shunt/compat.yue:97
-      check = function() -- shunt/compat.yue:98
-        local host = detect_host() -- shunt/compat.yue:99
-        if HOST ~= host then -- shunt/compat.yue:100
-          return error("host detection heuristic changed") -- shunt/compat.yue:101
-        end -- shunt/compat.yue:100
-      end -- shunt/compat.yue:98
-    } -- shunt/compat.yue:97
-  } -- shunt/compat.yue:79
-  local failed = false -- shunt/compat.yue:102
-  for _index_0 = 1, #tests do -- shunt/compat.yue:103
-    local test = tests[_index_0] -- shunt/compat.yue:103
-xpcall(function() -- shunt/compat.yue:104
-      return test.check() -- shunt/compat.yue:105
-    end, function(err) -- shunt/compat.yue:105
-      print("* test '" .. tostring(test.name) .. "' failed:\n  " .. tostring(err)) -- shunt/compat.yue:107
-      failed = true -- shunt/compat.yue:108
-    end) -- shunt/compat.yue:108
-  end -- shunt/compat.yue:108
-  if failed then -- shunt/compat.yue:109
-    return error('some compatibility checks failed') -- shunt/compat.yue:110
-  end -- shunt/compat.yue:109
-end -- shunt/compat.yue:76
-_module_0["test_compat"] = test_compat -- shunt/compat.yue:110
-return _module_0 -- shunt/compat.yue:110
+      if k > max_key then -- shunt/compat.yue:86
+        max_key = k -- shunt/compat.yue:87
+      end -- shunt/compat.yue:86
+    end -- shunt/compat.yue:87
+    return #t == max_key -- shunt/compat.yue:88
+  end -- shunt/compat.yue:79
+  local _obj_12 = textutils -- shunt/compat.yue:90
+  if _obj_12.serialise == nil then -- shunt/compat.yue:90
+    _obj_12.serialise = function(value, opts) -- shunt/compat.yue:90
+      if not (opts ~= nil) then -- shunt/compat.yue:91
+        error('textutils.serialise must be called with compact:true') -- shunt/compat.yue:92
+      end -- shunt/compat.yue:91
+      if opts.compact ~= true then -- shunt/compat.yue:93
+        error('textutils.serialise must be called with compact:true') -- shunt/compat.yue:94
+      end -- shunt/compat.yue:93
+      if (opts.allow_repetitions ~= nil) then -- shunt/compat.yue:95
+        error('textutils.serialise must not be called with allow_repetitions') -- shunt/compat.yue:96
+      end -- shunt/compat.yue:95
+      return table.concat((function() -- shunt/compat.yue:98
+        local _with_0 = { } -- shunt/compat.yue:98
+        local serialise -- shunt/compat.yue:99
+        serialise = function(value) -- shunt/compat.yue:99
+          local _exp_0 = type(value) -- shunt/compat.yue:100
+          if 'nil' == _exp_0 then -- shunt/compat.yue:101
+            _with_0[#_with_0 + 1] = 'null' -- shunt/compat.yue:102
+          elseif 'boolean' == _exp_0 or 'number' == _exp_0 then -- shunt/compat.yue:103
+            _with_0[#_with_0 + 1] = tostring(value) -- shunt/compat.yue:104
+          elseif 'string' == _exp_0 then -- shunt/compat.yue:105
+            _with_0[#_with_0 + 1] = '"' -- shunt/compat.yue:106
+            _with_0[#_with_0 + 1] = value:gsub('"', '\\"') -- shunt/compat.yue:107
+            _with_0[#_with_0 + 1] = '"' -- shunt/compat.yue:108
+          elseif 'table' == _exp_0 then -- shunt/compat.yue:109
+            if is_list(value) then -- shunt/compat.yue:110
+              _with_0[#_with_0 + 1] = '[' -- shunt/compat.yue:111
+              local first = true -- shunt/compat.yue:112
+              for _index_0 = 1, #value do -- shunt/compat.yue:113
+                local e = value[_index_0] -- shunt/compat.yue:113
+                if first then -- shunt/compat.yue:114
+                  first = false -- shunt/compat.yue:115
+                else -- shunt/compat.yue:117
+                  _with_0[#_with_0 + 1] = ',' -- shunt/compat.yue:117
+                end -- shunt/compat.yue:114
+                serialise(e) -- shunt/compat.yue:118
+              end -- shunt/compat.yue:118
+              _with_0[#_with_0 + 1] = ']' -- shunt/compat.yue:119
+            else -- shunt/compat.yue:121
+              _with_0[#_with_0 + 1] = '{' -- shunt/compat.yue:121
+              local first = true -- shunt/compat.yue:122
+              for k, v in pairs(value) do -- shunt/compat.yue:123
+                if first then -- shunt/compat.yue:124
+                  first = false -- shunt/compat.yue:125
+                else -- shunt/compat.yue:127
+                  _with_0[#_with_0 + 1] = ',' -- shunt/compat.yue:127
+                end -- shunt/compat.yue:124
+                serialise(k) -- shunt/compat.yue:128
+                _with_0[#_with_0 + 1] = ':' -- shunt/compat.yue:129
+                serialise(v) -- shunt/compat.yue:130
+              end -- shunt/compat.yue:130
+              _with_0[#_with_0 + 1] = '}' -- shunt/compat.yue:131
+            end -- shunt/compat.yue:110
+          else -- shunt/compat.yue:133
+            return error("cannot serialise a " .. tostring(type(value)) .. " as json") -- shunt/compat.yue:133
+          end -- shunt/compat.yue:133
+        end -- shunt/compat.yue:99
+        serialise(value) -- shunt/compat.yue:134
+        return _with_0 -- shunt/compat.yue:98
+      end)()) -- shunt/compat.yue:134
+    end -- shunt/compat.yue:90
+  end -- shunt/compat.yue:134
+  local _obj_13 = textutils -- shunt/compat.yue:136
+  if _obj_13.deserialise == nil then -- shunt/compat.yue:136
+    _obj_13.deserialise = function(raw) -- shunt/compat.yue:136
+      local index = 1 -- shunt/compat.yue:137
+      local deserialise -- shunt/compat.yue:138
+      deserialise = function() -- shunt/compat.yue:138
+        do -- shunt/compat.yue:139
+          local token = raw:match('^null', index) -- shunt/compat.yue:139
+          if token then -- shunt/compat.yue:139
+            index = index + (#token) -- shunt/compat.yue:140
+            return nil -- shunt/compat.yue:141
+          else -- shunt/compat.yue:142
+            token = raw:match('^true', index) -- shunt/compat.yue:142
+            if token then -- shunt/compat.yue:142
+              index = index + (#token) -- shunt/compat.yue:143
+              return true -- shunt/compat.yue:144
+            else -- shunt/compat.yue:145
+              token = raw:match('^false', index) -- shunt/compat.yue:145
+              if token then -- shunt/compat.yue:145
+                index = index + (#token) -- shunt/compat.yue:146
+                return false -- shunt/compat.yue:147
+              else -- shunt/compat.yue:148
+                do -- shunt/compat.yue:148
+                  local number = raw:match('^[0-9]+%.[0-9]+', index) -- shunt/compat.yue:148
+                  if number then -- shunt/compat.yue:148
+                    index = index + (#number) -- shunt/compat.yue:149
+                    return tonumber(number) -- shunt/compat.yue:150
+                  else -- shunt/compat.yue:151
+                    number = raw:match('^[0-9]+', index) -- shunt/compat.yue:151
+                    if number then -- shunt/compat.yue:151
+                      index = index + (#number) -- shunt/compat.yue:152
+                      return tonumber(number) -- shunt/compat.yue:153
+                    else -- shunt/compat.yue:154
+                      do -- shunt/compat.yue:154
+                        local string = raw:match('^"([^"]*)"', index) -- shunt/compat.yue:154
+                        if string then -- shunt/compat.yue:154
+                          index = index + (2 + #string) -- shunt/compat.yue:155
+                          return string -- shunt/compat.yue:156
+                        else -- shunt/compat.yue:157
+                          token = raw:match('^%[', index) -- shunt/compat.yue:157
+                          if token then -- shunt/compat.yue:157
+                            index = index + 1 -- shunt/compat.yue:158
+                            local _with_0 = { } -- shunt/compat.yue:159
+                            local first = true -- shunt/compat.yue:160
+                            while not raw:match('^]', index) do -- shunt/compat.yue:161
+                              if first then -- shunt/compat.yue:162
+                                first = false -- shunt/compat.yue:163
+                              else -- shunt/compat.yue:164
+                                if raw:match('^,', index) then -- shunt/compat.yue:164
+                                  index = index + 1 -- shunt/compat.yue:165
+                                else -- shunt/compat.yue:167
+                                  error("expected `,` at position " .. tostring(index)) -- shunt/compat.yue:167
+                                end -- shunt/compat.yue:164
+                              end -- shunt/compat.yue:162
+                              _with_0[#_with_0 + 1] = deserialise() -- shunt/compat.yue:168
+                            end -- shunt/compat.yue:168
+                            index = index + 1 -- shunt/compat.yue:169
+                            return _with_0 -- shunt/compat.yue:159
+                          else -- shunt/compat.yue:170
+                            if raw:match('^{', index) then -- shunt/compat.yue:170
+                              local _with_0 = { } -- shunt/compat.yue:171
+                              index = index + 1 -- shunt/compat.yue:172
+                              local first = true -- shunt/compat.yue:173
+                              while not raw:match('^}', index) do -- shunt/compat.yue:174
+                                if first then -- shunt/compat.yue:175
+                                  first = false -- shunt/compat.yue:176
+                                else -- shunt/compat.yue:177
+                                  if raw:match('^,', index) then -- shunt/compat.yue:177
+                                    index = index + 1 -- shunt/compat.yue:178
+                                  else -- shunt/compat.yue:180
+                                    error("expected `,` at position " .. tostring(index)) -- shunt/compat.yue:180
+                                  end -- shunt/compat.yue:177
+                                end -- shunt/compat.yue:175
+                                local key = deserialise() -- shunt/compat.yue:182
+                                if raw:match('^:', index) then -- shunt/compat.yue:183
+                                  index = index + 1 -- shunt/compat.yue:184
+                                else -- shunt/compat.yue:186
+                                  error("expected `:` at position " .. tostring(index)) -- shunt/compat.yue:186
+                                end -- shunt/compat.yue:183
+                                _with_0[key] = deserialise() -- shunt/compat.yue:187
+                              end -- shunt/compat.yue:187
+                              index = index + 1 -- shunt/compat.yue:188
+                              return _with_0 -- shunt/compat.yue:171
+                            else -- shunt/compat.yue:190
+                              return error("unexpected character " .. tostring(raw:sub(index, index)) .. " at " .. tostring(index)) -- shunt/compat.yue:190
+                            end -- shunt/compat.yue:170
+                          end -- shunt/compat.yue:157
+                        end -- shunt/compat.yue:154
+                      end -- shunt/compat.yue:154
+                    end -- shunt/compat.yue:151
+                  end -- shunt/compat.yue:148
+                end -- shunt/compat.yue:148
+              end -- shunt/compat.yue:145
+            end -- shunt/compat.yue:142
+          end -- shunt/compat.yue:139
+        end -- shunt/compat.yue:139
+      end -- shunt/compat.yue:138
+      local ret = deserialise() -- shunt/compat.yue:191
+      if #raw ~= index - 1 then -- shunt/compat.yue:192
+        error("deserialisation ended early (parsed " .. tostring(index) .. " of " .. tostring(#raw) .. ")") -- shunt/compat.yue:193
+      end -- shunt/compat.yue:192
+      return ret -- shunt/compat.yue:194
+    end -- shunt/compat.yue:136
+  end -- shunt/compat.yue:194
+end -- shunt/compat.yue:12
+_module_0["apply_compat"] = apply_compat -- shunt/compat.yue:194
+test_compat = function() -- shunt/compat.yue:196
+  if not compat_applied then -- shunt/compat.yue:197
+    error('call apply_compat before testing compat') -- shunt/compat.yue:198
+  end -- shunt/compat.yue:197
+  local tests = { -- shunt/compat.yue:200
+    { -- shunt/compat.yue:200
+      name = 'os.tmpname returns a string', -- shunt/compat.yue:200
+      check = function() -- shunt/compat.yue:201
+        return assert('string' == type(os.tmpname())) -- shunt/compat.yue:202
+      end -- shunt/compat.yue:201
+    }, -- shunt/compat.yue:200
+    { -- shunt/compat.yue:203
+      name = 'os.remove removes files', -- shunt/compat.yue:203
+      check = function() -- shunt/compat.yue:204
+        local TEST_FILE = '.test_file_hj4k3h5jio' -- shunt/compat.yue:205
+        do -- shunt/compat.yue:206
+          local _with_0 = io.open(TEST_FILE, 'r') -- shunt/compat.yue:206
+          if _with_0 ~= nil then -- shunt/compat.yue:206
+            _with_0:close() -- shunt/compat.yue:207
+            error("test file '" .. tostring(TEST_FILE) .. "' already exists, please remove it") -- shunt/compat.yue:208
+          end -- shunt/compat.yue:206
+        end -- shunt/compat.yue:206
+        do -- shunt/compat.yue:209
+          local _with_0 = assert(io.open(TEST_FILE, 'w+')) -- shunt/compat.yue:209
+          _with_0:close() -- shunt/compat.yue:210
+        end -- shunt/compat.yue:209
+        do -- shunt/compat.yue:211
+          local _with_0 = assert(io.open(TEST_FILE, 'r')) -- shunt/compat.yue:211
+          _with_0:close() -- shunt/compat.yue:212
+        end -- shunt/compat.yue:211
+        os.remove(TEST_FILE) -- shunt/compat.yue:213
+        local _with_0 = io.open(TEST_FILE, 'r') -- shunt/compat.yue:214
+        if _with_0 ~= nil then -- shunt/compat.yue:214
+          _with_0:close() -- shunt/compat.yue:215
+          error("expected test file '" .. tostring(TEST_FILE) .. "' to have been removed after calling os.remove") -- shunt/compat.yue:216
+        end -- shunt/compat.yue:214
+        return _with_0 -- shunt/compat.yue:214
+      end -- shunt/compat.yue:204
+    }, -- shunt/compat.yue:203
+    { -- shunt/compat.yue:217
+      name = 'HOST is unchanged', -- shunt/compat.yue:217
+      check = function() -- shunt/compat.yue:218
+        local host = detect_host() -- shunt/compat.yue:219
+        if HOST ~= host then -- shunt/compat.yue:220
+          return error("host detection heuristic changed") -- shunt/compat.yue:221
+        end -- shunt/compat.yue:220
+      end -- shunt/compat.yue:218
+    }, -- shunt/compat.yue:217
+    { -- shunt/compat.yue:222
+      name = 'json roundtrip', -- shunt/compat.yue:222
+      check = function() -- shunt/compat.yue:223
+        local case -- shunt/compat.yue:224
+        case = function(value, check) -- shunt/compat.yue:224
+          if check == nil then -- shunt/compat.yue:225
+            check = function(v) -- shunt/compat.yue:225
+              return assert(v == value, "expected " .. tostring(value) .. " but got " .. tostring(v)) -- shunt/compat.yue:226
+            end -- shunt/compat.yue:225
+          end -- shunt/compat.yue:226
+          return check(textutils.deserialise(textutils.serialise(value, { -- shunt/compat.yue:227
+            compact = true -- shunt/compat.yue:227
+          }))) -- shunt/compat.yue:227
+        end -- shunt/compat.yue:224
+        case(nil) -- shunt/compat.yue:228
+        case({ -- shunt/compat.yue:229
+          '123', -- shunt/compat.yue:229
+          '321' -- shunt/compat.yue:229
+        }, function(v) -- shunt/compat.yue:229
+          assert(v[1] == '123', "v[1] incorrect: " .. tostring(v[1])) -- shunt/compat.yue:230
+          return assert(v[2] == '321', "v[2] incorrect: " .. tostring(v[2])) -- shunt/compat.yue:231
+        end) -- shunt/compat.yue:229
+        return case({ -- shunt/compat.yue:233
+          world = 'how', -- shunt/compat.yue:233
+          ['hell\\o'] = 123, -- shunt/compat.yue:234
+          are = true, -- shunt/compat.yue:235
+          you = false -- shunt/compat.yue:236
+        }, function(v) -- shunt/compat.yue:237
+          assert(v.world == 'how', "v.world incorrect: " .. tostring(v.world)) -- shunt/compat.yue:238
+          assert(v['hell\\o'] == 123, "v.hello incorrect: " .. tostring(v['hell\\o'])) -- shunt/compat.yue:239
+          assert(v.are == true, "v.are incorrect: " .. tostring(v.are)) -- shunt/compat.yue:240
+          return assert(v.you == false, "v.you incorrect: " .. tostring(v.you)) -- shunt/compat.yue:241
+        end) -- shunt/compat.yue:241
+      end -- shunt/compat.yue:223
+    } -- shunt/compat.yue:222
+  } -- shunt/compat.yue:199
+  local failed = false -- shunt/compat.yue:242
+  for _index_0 = 1, #tests do -- shunt/compat.yue:243
+    local test = tests[_index_0] -- shunt/compat.yue:243
+xpcall(function() -- shunt/compat.yue:244
+      return test.check() -- shunt/compat.yue:245
+    end, function(err) -- shunt/compat.yue:245
+      print("* test '" .. tostring(test.name) .. "' failed:\n  " .. tostring(err)) -- shunt/compat.yue:247
+      failed = true -- shunt/compat.yue:248
+    end) -- shunt/compat.yue:248
+  end -- shunt/compat.yue:248
+  if failed then -- shunt/compat.yue:249
+    return error('some compatibility checks failed') -- shunt/compat.yue:250
+  end -- shunt/compat.yue:249
+end -- shunt/compat.yue:196
+_module_0["test_compat"] = test_compat -- shunt/compat.yue:250
+return _module_0 -- shunt/compat.yue:250
 end
 package.preload['shunt.quicktype'] = function(...)
 -- [yue]: shunt/quicktype.yue
@@ -7570,7 +7791,7 @@ package.preload['shunt.version'] = function(...)
 local _module_0 = { } -- shunt/version.yue:1
 local VERSION -- shunt/version.yue:1
 local spec = require('shunt.spec').spec -- shunt/version.yue:0
-VERSION = ' (2025-07-31@21:09:06)' -- shunt/version.yue:13
+VERSION = ' (2025-08-07@21:12:26)' -- shunt/version.yue:13
 _module_0["VERSION"] = VERSION -- shunt/version.yue:13
 spec(function() -- shunt/version.yue:15
   local describe, expect_that, it, matchers -- shunt/version.yue:0
