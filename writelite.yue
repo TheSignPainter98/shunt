@@ -50,6 +50,44 @@ export class Writelite
 
 PAGE_SIZE = 4096
 
+WRITELITE_PRELUDE = do
+  prelude_fragments =
+    * '\n'
+    * '\n'
+    * '\n'
+    * '\n'
+    * 'STOP!\n'
+    * '\n'
+    * 'DO NOT EDIT!\n'
+    * '\n'
+    * 'Editing this file will corrupt the database.\n'
+    * '\n'
+    * 'Close this file and DO NOT SAVE any changes.\n'
+    * '\n'
+    * 'EXIT the editor NOW.\n'
+    * '\n'
+    * '\n'
+    * '\n'
+    * '\n'
+  prelude_len = 0
+  for line in *prelude_fragments
+    prelude_len += #line
+
+  spacer_line = ('.'\rep 49) .. '\n'
+  while prelude_len < PAGE_SIZE - #spacer_line
+    prelude_fragments[] = spacer_line
+    prelude_len += #spacer_line
+
+  while prelude_len < PAGE_SIZE - 2
+    prelude_fragments[] = '.'
+    prelude_len += #'\n'
+  prelude_fragments[] = '@'
+  prelude_fragments[] = '\n'
+
+  prelude = table.concat prelude_fragments
+  assert #prelude == PAGE_SIZE
+  prelude
+
 declare_type 'writelite.Transaction', [[{
   write: (string) => <>,
   seek: (Whence, ?number) => <>,
