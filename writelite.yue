@@ -298,6 +298,10 @@ class Serialiser
         assert len <= INT_LEN_MASK
         @fragments[tag_index] = string.char bit.bor INT_TYPE,
           bit.blshift len, INT_LEN_SHIFT
+      when 'string'
+        @fragments[] = STRING_TAG_CHAR
+        @write #to_write
+        @fragments[] = to_write
       when 'table'
         error 'todo'
         -- @fragments[] = TABLE_TAG
@@ -369,6 +373,11 @@ class Deserialiser
               i * 8
           @index += 1
         return ret
+      when STRING_TAG
+        len = @parse!
+        if 'number' != type len
+          error "internal error: cannot use a #{type len} as a string length"
+        return @raw\sub @index, @index + len - 1
       when TABLE_TAG
         error 'todo'
       else
@@ -489,6 +498,12 @@ spec ->
         --   value: 9999999999999 * 9999999 * 0.3
         -- * name: 'float (large negative)'
         --   value: -9999999999999 * 9999999 * 0.3
+        * name: 'empty string'
+          value: ''
+        * name: 'short string'
+          value: 'asdf'
+        * name: 'long string'
+          value: 'x'\rep 1000
 
       for test in *tests
         { :name, :value } = test
