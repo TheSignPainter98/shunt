@@ -373,6 +373,8 @@ class Deserialiser
               i * 8
           @index += 1
         return ret
+      when FLOAT_TYPE
+        error 'todo'
       when STRING_TAG
         len = @parse!
         if 'number' != type len
