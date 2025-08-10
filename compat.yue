@@ -71,7 +71,8 @@ export apply_compat = ->
     rc = os.execute table.concat args, ' '
     rc == 0
 
-  bit.lshift ??= bit.blshift
+  bit.blshift ??= bit.lshift
+  bit.brshift ??= bit.rshift
 
 export test_compat = ->
   if not compat_applied

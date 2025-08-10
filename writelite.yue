@@ -1,6 +1,7 @@
 local *
 
-import 'quicktype' as :declare_singleton_type, :declare_type, :F
+import 'compat' as :HOST
+import 'quicktype' as :declare_singleton_type, :declare_type, :F, :T
 import 'spec' as :spec
 
 declare_type 'writelite.Writelite', [[{
@@ -8,22 +9,37 @@ declare_type 'writelite.Writelite', [[{
   close: () => <>,
 }]]
 export class Writelite
+  @_open_transactions: T '{string}', {}
+
   new: F '(string, writelite.File) => <>', (@_path) =>
     @_journal_path = @_path .. '~'
     @_main_file = with assert io.open @_path, 'w+'
       \setvbuf 'full' -- Minimise writes.
-    @_writelite_open = true
-    @_transaction_open = false
 
     if journal = io.open @_journal_path, 'r'
-      @_recover_journal @_main_file, journal
+      journal_content = journal\read '*a'
+      journal\close!
+
+      if @_journal_valid
+        @_recover_journal @_main_file, journal_content
+      else
+        os.remove @_journal_path
+
+  _journal_valid: F '(string) => <>', (journal_content) =>
+    -- TODO(kcza): read the prelude (must be the unedited prefix)
+    -- TODO(kcza): read the header
+    -- TODO(kcza): read the content, compute the hash, compare the hash
+    error 'todo'
 
   _recover_journal: F '() => <>', =>
-    -- TODO(kcza): Only if valid!
+    -- TODO(kcza): Read the page map
+    -- TODO(kcza): Read the pages
+    -- TODO(kcza): Write the pages once mapped
+    -- TODO(kcza): DO NOT DELETE THE JOURNAL! THIS NEEDS TO BE DONE AFTER THE DB IS READ TO ALLOW APPROPRIATE CRASHES!
     error 'todo'
 
   transaction: F '((writelite.Transaction) -> <>) => <>', (f) =>
-    @_transaction_open = true
+    open_transactions[@_path] = true
 
     txn = Transaction @_main_file, @_journal_path
     err = nil
@@ -34,14 +50,14 @@ export class Writelite
       txn\abort!
     txn\_close!
 
-    @_transaction_open = false
+    open_transactions[@_path] = nil
 
     if err?
       error err
     return
 
   close: F '() => <>', =>
-    assert not @_transaction_open, 'cannot close Writelite whilst transaction is open'
+    assert not open_transactions[@_path], 'cannot close Writelite whilst transaction is open'
     assert @_writelite_open, 'cannot close Writelite twice'
 
     @_main_file\close!
@@ -77,7 +93,6 @@ WRITELITE_PRELUDE = do
   while prelude_len < PAGE_SIZE - #spacer_line
     prelude_fragments[] = spacer_line
     prelude_len += #spacer_line
-
   while prelude_len < PAGE_SIZE - 2
     prelude_fragments[] = '.'
     prelude_len += #'\n'
@@ -87,6 +102,45 @@ WRITELITE_PRELUDE = do
   prelude = table.concat prelude_fragments
   assert #prelude == PAGE_SIZE
   prelude
+
+JOURNAL_PRELUDE = do
+  prelude_fragments =
+    * '\n'
+    * '\n'
+    * '\n'
+    * '\n'
+    * 'STOP!\n'
+    * '\n'
+    * 'DO NOT EDIT!\n'
+    * '\n'
+    * 'Editing this file will cause data-loss.\n'
+    * '\n'
+    * 'Close this file and DO NOT SAVE any changes.\n'
+    * '\n'
+    * 'EXIT the editor NOW.\n'
+    * '\n'
+    * '\n'
+    * '\n'
+    * '\n'
+  prelude_len = 0
+  for line in *prelude_fragments
+    prelude_len += #line
+
+  spacer_line = ('.'\rep 49) .. '\n'
+  while prelude_len < PAGE_SIZE - #spacer_line
+    prelude_fragments[] = spacer_line
+    prelude_len += #spacer_line
+  while prelude_len < PAGE_SIZE - 2
+    prelude_fragments[] = '.'
+    prelude_len += #'\n'
+  prelude_fragments[] = '@'
+  prelude_fragments[] = '\n'
+
+  prelude = table.concat prelude_fragments
+  assert #prelude == PAGE_SIZE
+  prelude
+
+ZERO_PAGE = '\0'\rep PAGE_SIZE
 
 declare_type 'writelite.Transaction', [[{
   write: (string) => <>,
@@ -106,34 +160,42 @@ class Transaction
     @_cursor = T 'number', 0
     @_aborted = T 'boolean', false
 
-    @_journal_file = T 'writelite.File', with assert io.open @_journal_path, 'w+'
-      \setvbuf 'full' -- Minimise writes.
-
   write: F '(string) => <>', (bytes) =>
     if @_aborted
       error 'cannot write to aborted transaction'
 
     @_len += #bytes
-    for bytes_offset = 0, #bytes, Page.SIZE
-      @_pages[] = Page @_cursor, bytes\sub 1 + bytes_offset, 1 + bytes_offset + PAGE_SIZE
+    new_pages = {}
+    if #bytes == PAGE_SIZE
+      @_pages[] = bytes
       @_cursor += PAGE_SIZE
-    error 'todo'
+    else
+      for bytes_offset = 0, #bytes, PAGE_SIZE
+        new_page = Page @_cursor, bytes\sub 1 + bytes_offset, 1 + bytes_offset + PAGE_SIZE
+        new_pages[] = new_page
+        @_pages[] = new_page
+        @_cursor += PAGE_SIZE
 
   seek: F '(Whence, ?number) => <>', (whence, offset) =>
     if @_aborted
       error 'cannot seek in aborted transaction'
 
+    local new_cursor
     switch whence
       when 'set'
-        @_cursor = offset ?? 0
+        new_cursor = offset ?? 0
+        if new_cursor < 0
+          error "cannot seek to negative position"
       when 'cur'
         assert offset?, 'internal error: "cur"-whence requires offset'
-        @_cursor += offset
+        new_cursor += offset
       when 'end'
         assert not offset?, 'internal error: "end"-whence cannot have no offset'
-        @_cursor = @_len
+        new_cursor = @_len
       else
         error 'internal error: unreachable'
+    new_cursor += PAGE_SIZE -- Account for header
+    @_cursor = new_cursor
 
   abort: F '() => <>', =>
     @_aborted = true
@@ -143,21 +205,178 @@ class Transaction
       -- TODO(kcza): figure out how to NOT write the journal if a power
       -- failure occurs after an abort but before the journal is removed.
       os.remove @_journal_path
+      return
 
-    -- Write to journal
-    for page in *@_pages
-      @_journal_file\write page\encode!
-    @_journal_file\close!
+    -- Create and write to journal.
+    with assert io.open @_journal_path, 'w+'
+      assert \setvbuf 'full' -- Minimise writes.
+      assert \seek 'set', 0
+      assert \write ZERO_PAGE
 
-    -- Write to main file
+      -- Write pages.
+      for page in *@_pages
+        assert \seek 'set', page._offset
+        assert \write page._content
+
+      -- Write header.
+      assert \seek 'set', 0
+      assert \write @_journal_header!
+
+      assert \close!
+
+    -- Write to main file.
     for page in *@_pages
       @_main_file\seek 'set', page._offset
       @_main_file\write page._content
     @_main_file\flush!
 
-    -- Delete journal
+    -- Delete journal.
     os.remove @_journal_path
-    error 'todo'
+
+  _journal_header: F '() => string', =>
+    content_hasher = Hasher!
+    for page in *@_pages
+      content_hasher\write page._content
+    content_hash = content_hasher\finish!
+
+    payload = Deserialiser
+      :content_hash
+    journal_hash = Hasher!
+      \write JOURNAL_PRELUDE
+      \write payload
+      \finish!
+
+    table.concat
+      * JOURNAL_PRELUDE
+      * encode_number journal_hash
+      * encode_number #payload
+      * payload
+
+NIL_TAG = 0
+NIL_TAG_CHAR = string.char NIL_TAG
+TRUE_TAG = 1
+TRUE_TAG_CHAR = string.char TRUE_TAG
+FALSE_TAG = 2
+FALSE_TAG_CHAR = string.char FALSE_TAG
+INT_TYPE = 3
+FLOAT_TYPE = 4
+STRING_TAG = 5
+STRING_TAG_CHAR = string.char STRING_TAG
+TABLE_TAG = 6
+TAG_MASK = 0x7
+
+INT_LEN_SHIFT = 3
+INT_LEN_MASK = 0x7
+
+class Serialiser
+  new: F '() => <>', =>
+    @fragments = T '[string]', {}
+    -- @table_fragments = F '{table->[string]}', {}
+
+  write: F '(any) => Self', (to_write) =>
+    switch type to_write
+      when 'nil'
+        @fragments[] = NIL_TAG_CHAR
+      when 'boolean'
+        if to_write
+          @fragments[] = TRUE_TAG_CHAR
+        else
+          @fragments[] = FALSE_TAG_CHAR
+      when 'number'
+        ok, err = is_integer to_write
+        if not ok
+          error "cannot encode #{to_write}: #{err}"
+
+        @fragments[] = '\7' -- Placeholder
+        tag_index = #@fragments
+        while to_write != 0
+          @fragments[] = string.char bit.band to_write, 0xff
+          to_write = bit.brshift to_write, 8
+
+        len = #@fragments - tag_index
+        assert len <= INT_LEN_MASK
+        @fragments[tag_index] = string.char bit.bor INT_TYPE,
+          bit.blshift len, INT_LEN_SHIFT
+      when 'table'
+        error 'todo'
+        -- @fragments[] = TABLE_TAG
+        -- local raw_table_string
+        -- if to_write.<>? and to_write.<tostring>?
+        --   custom_tostring = to_write.<tostring>
+        --   to_write.<tostring> = nil
+        --   raw_table_string = tostring to_write
+        --   to_write.<tostring> = custom_tostring
+        -- else
+        --   raw_table_string = tostring to_write
+        -- assert (raw_table_string\match '^table: 0x'), "cannot get table ID: tostring returned #{raw_table_string}"
+        -- table_id = tonumber (raw_table_string\sub 1 + 'table: 0x'\len!), 16
+        -- error raw_table_string .. ' ' .. tostring table_id
+        --
+        -- table_fragments = {}
+      else
+        error "cannot encode #{type to_write}"
+    @
+
+  finish: F '() => string', =>
+    table.concat T '[string]', @fragments
+
+MAX_INT = switch HOST
+  when 'native'
+    0x7fffffff
+  when 'minecraft'
+    0xffffffff
+  else
+    error "unknown host #{HOST}"
+MIN_INT = -MAX_INT - 1
+
+is_integer = F '(number) -> <boolean, ?string>', (num) ->
+  if num > MAX_INT
+    return false, 'too large'
+  if num < MIN_INT
+    return false, 'too small'
+
+  _, frac = math.modf num
+  if frac != 0
+    return false, 'not an integer'
+
+  true, nil
+
+class Deserialiser
+  new: F '() => <>', =>
+
+  parse: F '(string) => any', (raw) =>
+    index = 1
+    head = string.byte raw, index
+    switch bit.band head, TAG_MASK
+      when NIL_TAG
+        index += 1
+        return nil
+      when TRUE_TAG
+        index += 1
+        return true
+      when FALSE_TAG
+        index += 1
+        return false
+      when INT_TYPE
+        index += 1
+
+        len = bit.band INT_LEN_MASK,
+          bit.brshift head,
+            INT_LEN_SHIFT
+
+        ret = 0
+        for i = 0, len - 1
+          ret = bit.bor ret,
+            bit.blshift (string.byte raw, index),
+              i * 8
+          index += 1
+        return ret
+      when TABLE_TAG
+        error 'todo'
+      else
+        error "unrecognised tag #{bit.band head, TAG_MASK}"
+
+    error 'unreachable'
 
 class Page
   new: F '(number, string) => <>', (@_offset, @_content) =>
@@ -171,30 +390,112 @@ class Page
       buf[] = byte
     string.char unpack buf
 
-  encode_number: F '(number, [number]) => <>', (number, buf) =>
-    for i = 1, 8
-      [] = number % 256
-      number /= 256
+MAX_HASH = 99999999 -- 18446744073709551557
+assert MAX_INT >= MAX_HASH
 
-  decode: F '(string) => <>', (raw) =>
-    error 'todo'
+declare_type 'writelite.Hasher', [[{
+  write: (string) => <>,
+  finish: () => number,
+}]]
+class Hasher
+  new: F '() => <>', =>
+    @_current = 7
 
-  decode_number: F '(string, number) => number', (buf, index) =>
-    bytes = { string.char buf\sub index, index + 8 }
-    ret = 0
-    base = 1
-    for byte in *bytes
-      ret += base * byte
-      base *= 256
-    ret
+  write: F '(any) => Self', (to_add) =>
+    switch type to_add
+      when 'boolean'
+        if to_add
+          @_current *= 997 * 127
+        else
+          @_current *= 997 * 13
+      when 'number'
+        @_current *= 997 * (8302197 + to_add)
+      when 'string'
+        @write 1 + #to_add
+
+        CHUNK_SIZE = 100 -- Limit stack usage
+        for i = 1, to_add\len!, CHUNK_SIZE
+          start_idx = 1 + (i - 1) * CHUNK_SIZE
+          end_idx = i * CHUNK_SIZE
+          for byte in *{ to_add\byte start_idx, end_idx }
+            @_current *= 997 * byte
+            @_current %= MAX_HASH
+      when 'table'
+        num_entries = 0
+        for k, v in pairs to_add
+          @write k
+          @write v
+        @write 1 + num_entries
+      else
+        error "cannot hash a #{type to_add}"
+    @
+
+  finish: F '() => number', =>
+    @_current
 
 spec ->
   import 'spec_macros' as $
 
   import 'spec' as :describe, :it, :matchers
 
-  import eq from matchers
+  import deep_eq, lt from matchers
 
-  describe 'Writelite', ->
-    it 'does things', ->
-      $expect_that true, eq false
+  describe 'writelite.Hasher', ->
+    it 'avoids collisions', ->
+      collisions = {}
+      NUM_STRINGS = 10000
+      for i = 1, NUM_STRINGS
+        hash = Hasher!
+          \write "some_string_#{i}_which_is_similar"
+          \finish!
+        collisions[hash] ??= 0
+        collisions[hash] += 1
+
+      max_collisions = -1
+      for h, c in pairs collisions
+        if max_collisions < c
+          max_collisions = c
+      $expect_that max_collisions, lt NUM_STRINGS * 0.01
+
+  describe 'writelite.Serialiser', ->
+    describe 'roundtrip with writelite.Deserialiser', ->
+      roundtrip = (value) ->
+        serialised = Serialiser!
+          \write value
+          \finish!
+        Deserialiser!
+          \parse serialised
+
+      tests =
+        * name: 'nil'
+          value: nil
+        * name: 'true'
+          value: true
+        * name: 'false'
+          value: false
+        * name: 'int (zero)'
+          value: 0
+        * name: 'int (small, positive)'
+          value: 10
+        -- * name: 'int (small, negative)'
+        --   value: -10
+        * name: 'int (max int)'
+          value: MAX_INT
+        -- * name: 'int (min int)'
+        --   value: MIN_INT
+        -- * name: 'float (small positive)'
+        --   value: 1.1
+        -- * name: 'float (small negative)'
+        --   value: -1.1
+        -- * name: 'float (large positive)'
+        --   value: 9999999999999 * 9999999 * 0.3
+        -- * name: 'float (large negative)'
+        --   value: -9999999999999 * 9999999 * 0.3
+
+      for test in *tests
+        { :name, :value } = test
+        it "works for #{name}", ->
+          $expect_that (roundtrip value), deep_eq value
+
+      it 'works for strings', ->
+      it 'works for tables', ->
