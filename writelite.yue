@@ -323,6 +323,7 @@ class Serialiser
 
 MAX_INT = switch HOST
   when 'native'
+    -- For consistency with Cobalt's small integer width, assume 32-bit max int.
     0x7fffffff
   when 'minecraft'
     0xffffffff
