@@ -343,24 +343,20 @@ is_integer = F '(number) -> <boolean, ?string>', (num) ->
   true, nil
 
 class Deserialiser
-  new: F '() => <>', =>
+  new: F '(string) => <>', (@raw) =>
+    @index = 1
 
-  parse: F '(string) => any', (raw) =>
-    index = 1
-    head = string.byte raw, index
+  parse: F '() => any', =>
+    head = string.byte @raw, @index
+    @index += 1
     switch bit.band head, TAG_MASK
       when NIL_TAG
-        index += 1
         return nil
       when TRUE_TAG
-        index += 1
         return true
       when FALSE_TAG
-        index += 1
         return false
       when INT_TYPE
-        index += 1
-
         len = bit.band INT_LEN_MASK,
           bit.brshift head,
             INT_LEN_SHIFT
@@ -368,9 +364,9 @@ class Deserialiser
         ret = 0
         for i = 0, len - 1
           ret = bit.bor ret,
-            bit.blshift (string.byte raw, index),
+            bit.blshift (string.byte @raw, @index),
               i * 8
-          index += 1
+          @index += 1
         return ret
       when TABLE_TAG
         error 'todo'
@@ -464,8 +460,8 @@ spec ->
         serialised = Serialiser!
           \write value
           \finish!
-        Deserialiser!
-          \parse serialised
+        (Deserialiser serialised)
+          \parse!
 
       tests =
         * name: 'nil'
