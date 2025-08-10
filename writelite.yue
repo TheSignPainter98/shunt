@@ -475,12 +475,12 @@ spec ->
           value: 0
         * name: 'int (small, positive)'
           value: 10
-        -- * name: 'int (small, negative)'
-        --   value: -10
+        * name: 'int (small, negative)'
+          value: -10
         * name: 'int (max int)'
           value: MAX_INT
-        -- * name: 'int (min int)'
-        --   value: MIN_INT
+        * name: 'int (min int)'
+          value: MIN_INT
         -- * name: 'float (small positive)'
         --   value: 1.1
         -- * name: 'float (small negative)'
