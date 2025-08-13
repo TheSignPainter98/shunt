@@ -264,6 +264,7 @@ FLOAT_TYPE_CHAR = string.char FLOAT_TYPE
 STRING_TAG = 5
 STRING_TAG_CHAR = string.char STRING_TAG
 TABLE_REF_TAG = 6
+TABLE_REF_TAG_CHAR = string.char TABLE_REF_TAG
 TABLE_PAYLOAD_TAG = 7
 TAG_MASK = 0x7
 
@@ -312,21 +313,27 @@ class Serialiser
         @write_impl #to_write, fragments
         fragments[] = to_write
       when 'table'
-        error 'todo'
-        -- @fragments[] = TABLE_TAG
-        -- local raw_table_string
-        -- if to_write.<>? and to_write.<tostring>?
-        --   custom_tostring = to_write.<tostring>
-        --   to_write.<tostring> = nil
-        --   raw_table_string = tostring to_write
-        --   to_write.<tostring> = custom_tostring
-        -- else
-        --   raw_table_string = tostring to_write
-        -- assert (raw_table_string\match '^table: 0x'), "cannot get table ID: tostring returned #{raw_table_string}"
-        -- table_id = tonumber (raw_table_string\sub 1 + 'table: 0x'\len!), 16
-        -- error raw_table_string .. ' ' .. tostring table_id
-        --
-        -- table_fragments = {}
+        fragments[] = TABLE_REF_TAG_CHAR
+
+        if ref = @refs[to_write]
+          fragments[] = ref -- Cycle.
+          return
+
+        ref = @next_ref
+        @write_impl ref, fragments
+        @refs[to_write] = ref
+        @next_ref += 1
+
+        content_fragments = {}
+        num_pairs = 0
+        for k, v in pairs to_write
+          num_pairs += 1
+          @write_impl k, content_fragments
+          @write_impl v, content_fragments
+        print "#{ref} |-> #{#content_fragments}"
+        @table_fragments[] =
+          :num_pairs
+          :content_fragments
       else
         error "cannot encode #{type to_write}"
 
@@ -448,6 +455,14 @@ class Deserialiser
         ret = @raw\sub @index, @index + len - 1
         @index += len
         return ret
+      when TABLE_REF_TAG
+        ref = @parse_value!
+        if 'number' != type ref
+          error 'internal error: ref is not a number'
+        table = @tables_by_ref[ref]
+        if not table?
+          error "internal error: ref #{ref} invalid"
+        return table
       else
         error "unrecognised tag #{bit.band head, TAG_MASK} at index #{@index - 1}"
 
@@ -588,6 +603,18 @@ spec ->
           value: 'asdf'
         * name: 'long string'
           value: 'x'\rep 1000
+        * name: 'simple leaf table'
+          value:
+            [false]: true
+        * name: 'simple leaf table'
+          value:
+            hello: true
+        * name: 'simple leaf table'
+          value:
+            [false]: 'world'
+        * name: 'complex leaf table'
+          value:
+            hello: 'world'
 
       for test in *tests
         {
