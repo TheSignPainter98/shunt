@@ -20,7 +20,7 @@ export class Writelite
       journal_content = journal\read '*a'
       journal\close!
 
-      if @_journal_valid
+      if @_journal_valid journal_content
         @_recover_journal @_main_file, journal_content
       else
         os.remove @_journal_path
