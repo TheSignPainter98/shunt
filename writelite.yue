@@ -260,6 +260,7 @@ FALSE_TAG = 2
 FALSE_TAG_CHAR = string.char FALSE_TAG
 INT_TYPE = 3
 FLOAT_TYPE = 4
+FLOAT_TYPE_CHAR = string.char FLOAT_TYPE
 STRING_TAG = 5
 STRING_TAG_CHAR = string.char STRING_TAG
 TABLE_REF_TAG = 6
@@ -271,37 +272,45 @@ INT_LEN_MASK = 0x7
 
 class Serialiser
   new: F '() => <>', =>
-    @fragments = T '[string]', {}
-    -- @table_fragments = F '{table->[string]}', {}
+    @root_fragments = T '[string]', {}
+    @next_ref = T 'number', 0
+    @table_fragments = T '[{num_pairs: number, content_fragments: [string]}]', {}
+    @refs = T '{table->number}', {}
 
   write: F '(any) => Self', (to_write) =>
+    @write_impl to_write, @root_fragments
+    @
+
+  write_impl: F '(any, table) => <>', (to_write, fragments) =>
     switch type to_write
       when 'nil'
-        @fragments[] = NIL_TAG_CHAR
+        fragments[] = NIL_TAG_CHAR
       when 'boolean'
         if to_write
-          @fragments[] = TRUE_TAG_CHAR
+          fragments[] = TRUE_TAG_CHAR
         else
-          @fragments[] = FALSE_TAG_CHAR
+          fragments[] = FALSE_TAG_CHAR
       when 'number'
-        ok, err = is_integer to_write
-        if not ok
-          error "cannot encode #{to_write}: #{err}"
+        if is_float to_write
+          fragments[] = FLOAT_TYPE_CHAR
+          -- Float support is rudamentary.
+          @write_impl (tostring to_write), fragments
+          return
 
-        @fragments[] = '\7' -- Placeholder
-        tag_index = #@fragments
+        fragments[] = 0 -- Placeholder
+        tag_index = #fragments
         while to_write != 0
-          @fragments[] = string.char bit.band to_write, 0xff
+          fragments[] = string.char bit.band to_write, 0xff
           to_write = bit.brshift to_write, 8
 
-        len = #@fragments - tag_index
+        len = #fragments - tag_index
         assert len <= INT_LEN_MASK
-        @fragments[tag_index] = string.char bit.bor INT_TYPE,
+        fragments[tag_index] = string.char bit.bor INT_TYPE,
           bit.blshift len, INT_LEN_SHIFT
       when 'string'
-        @fragments[] = STRING_TAG_CHAR
-        @write #to_write
-        @fragments[] = to_write
+        fragments[] = STRING_TAG_CHAR
+        @write_impl #to_write, fragments
+        fragments[] = to_write
       when 'table'
         error 'todo'
         -- @fragments[] = TABLE_TAG
@@ -320,10 +329,32 @@ class Serialiser
         -- table_fragments = {}
       else
         error "cannot encode #{type to_write}"
-    @
 
   finish: F '() => string', =>
-    table.concat T '[string]', @fragments
+    fragments = {}
+
+    total_len = #@root_fragments
+    for table_fragment in *@table_fragments
+      total_len += #table_fragment.content_fragments
+    @write_impl total_len, fragments
+    print "#f: #{#fragments}"
+
+    @write_impl #@table_fragments, fragments
+    for i = #@table_fragments, 1, -1
+      table_fragment = @table_fragments[i]
+      { :num_pairs, :content_fragments } = table_fragment
+      @write_impl num_pairs, fragments
+      print "#f: #{#fragments}"
+      for fragment in *content_fragments
+        fragments[] = fragment
+      print "#{i}: #f:#{#fragments}, #cf:#{#content_fragments}"
+
+    print "#rf: #{#@root_fragments}"
+    for fragment in *@root_fragments
+      fragments[] = fragment
+
+    print "#f: #{#fragments}"
+    table.concat T '[string]', fragments
 
 MAX_INT = switch HOST
   when 'native'
@@ -335,23 +366,55 @@ MAX_INT = switch HOST
     error "unknown host #{HOST}"
 MIN_INT = -MAX_INT - 1
 
-is_integer = F '(number) -> <boolean, ?string>', (num) ->
+is_float = F '(number) -> boolean', (num) ->
   if num > MAX_INT
-    return false, 'too large'
+    return true
   if num < MIN_INT
-    return false, 'too small'
+    return true
 
   _, frac = math.modf num
   if frac != 0
-    return false, 'not an integer'
+    return true
 
-  true, nil
+  false
 
 class Deserialiser
+  -- TODO(kcza): accept a file-like here, not a string.
   new: F '(string) => <>', (@raw) =>
-    @index = 1
+    @index = T 'number', 1
+    @tables_by_ref = T '{number->table}', {}
 
   parse: F '() => any', =>
+    len = @parse_value!
+    print "parsed len: #{len}"
+    if 'number' != type len
+      error 'internal error: len field is not a number'
+
+    num_tables = @parse_value!
+    if 'number' != type num_tables
+      error 'internal error: num_tables field is not a number'
+    print "parsed num_tables: #{num_tables}"
+    for ref = num_tables - 1, 0, -1
+      print ">> parsing table def!"
+      @tables_by_ref[ref] = @parse_table_def @tables_by_ref
+    print "parsing value..."
+    -- TODO(kcza): index handling?
+    @parse_value!
+
+  parse_table_def: F '(table) => {}', =>
+    num_pairs = @parse_value!
+    print "parsed num_pairs: #{num_pairs}"
+    if 'number' != type num_pairs
+      error 'internal error: num_pairs field is not a number'
+    with {}
+      for _ = 1, num_pairs
+        key = @parse_value!
+        print "parsed key #{key}"
+        value = @parse_value!
+        print "parsed value #{value}"
+        [key] = value
+
+  parse_value: F '() => any', =>
     head = string.byte @raw, @index
     @index += 1
     switch bit.band head, TAG_MASK
@@ -374,16 +437,19 @@ class Deserialiser
           @index += 1
         return ret
       when FLOAT_TYPE
-        error 'todo'
+        raw = @parse_value!
+        if 'string' != type raw
+          error "internal error: cannot parse a #{type raw} into float[]"
+        return tonumber raw
       when STRING_TAG
-        len = @parse!
+        len = @parse_value!
         if 'number' != type len
           error "internal error: cannot use a #{type len} as a string length"
-        return @raw\sub @index, @index + len - 1
-      when TABLE_TAG
-        error 'todo'
+        ret = @raw\sub @index, @index + len - 1
+        @index += len
+        return ret
       else
-        error "unrecognised tag #{bit.band head, TAG_MASK}"
+        error "unrecognised tag #{bit.band head, TAG_MASK} at index #{@index - 1}"
 
     error 'unreachable'
 
@@ -447,7 +513,7 @@ spec ->
 
   import 'spec' as :describe, :it, :matchers
 
-  import deep_eq, lt from matchers
+  import deep_eq, lt, near from matchers
 
   describe 'writelite.Hasher', ->
     it 'avoids collisions', ->
@@ -472,6 +538,20 @@ spec ->
         serialised = Serialiser!
           \write value
           \finish!
+        indices = [ '%02d'\format i for i = 1, #serialised]
+        print table.concat indices, ' '
+        bytes = with {}
+          for i = 1, #serialised
+            [] = '%02x'\format serialised\byte i
+        print table.concat bytes, ' '
+        chars = with {}
+          for i = 1, #serialised
+            byte = serialised\byte i
+            if '0'\byte! <= byte and byte <= '9'\byte! or 'a'\byte! <= byte and byte <= 'z'\byte!
+              [] = '% 2s'\format serialised\sub i, i
+            else
+              [] = '%02x'\format byte
+        print table.concat chars, ' '
         (Deserialiser serialised)
           \parse!
 
@@ -492,14 +572,16 @@ spec ->
           value: MAX_INT
         * name: 'int (min int)'
           value: MIN_INT
-        -- * name: 'float (small positive)'
-        --   value: 1.1
-        -- * name: 'float (small negative)'
-        --   value: -1.1
-        -- * name: 'float (large positive)'
-        --   value: 9999999999999 * 9999999 * 0.3
-        -- * name: 'float (large negative)'
-        --   value: -9999999999999 * 9999999 * 0.3
+        * name: 'float (small positive)'
+          value: 1.1
+        * name: 'float (small negative)'
+          value: -1.1
+        * name: 'float (large positive)'
+          value: 9999999999999 * 9999999 * 0.3
+          matcher: near
+        * name: 'float (large negative)'
+          value: -9999999999999 * 9999999 * 0.3
+          matcher: near
         * name: 'empty string'
           value: ''
         * name: 'short string'
@@ -508,9 +590,10 @@ spec ->
           value: 'x'\rep 1000
 
       for test in *tests
-        { :name, :value } = test
+        {
+          :name
+          :value
+          :matcher=deep_eq
+        } = test
         it "works for #{name}", ->
-          $expect_that (roundtrip value), deep_eq value
-
-      it 'works for strings', ->
-      it 'works for tables', ->
+          $expect_that (roundtrip value), matcher value

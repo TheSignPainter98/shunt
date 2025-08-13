@@ -276,6 +276,22 @@ class Compare
     else
       "isn't #{comparison_name} #{repr @value}"
 
+class Near
+  new: (@expected, @delta=0.00001) =>
+
+  matches: (actual) =>
+    if 'number' != type actual
+      return false
+    (math.abs actual - @expected) <= math.abs @delta * @expected
+
+  explain_match: (actual) =>
+    "which #{@describe @matches actual}"
+
+  describe: (is_match=true) =>
+    if is_match
+      "is near #{@expected} (Δ#{@delta}x)"
+    else
+      "isn't near #{@expected} (Δ#{@delta}x)"
 
 class DeepEq
   new: (@expected) =>
@@ -665,6 +681,7 @@ export matchers =
   ge: (value) -> Compare '>=', value
   len: (matcher) -> Len matcher
   matches: (pattern) -> Matches pattern
+  near: (value, delta) -> Near value, delta
   tostrings_as: (matcher) -> ToStringsAs matcher
   contains_key: (matcher) -> Contains 'key', matcher
   contains_value: (matcher) -> Contains 'value', matcher
