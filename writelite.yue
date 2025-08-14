@@ -315,8 +315,9 @@ class Serialiser
       when 'table'
         fragments[] = TABLE_REF_TAG_CHAR
 
+        -- Check for cycles
         if ref = @refs[to_write]
-          fragments[] = ref -- Cycle.
+          @write_impl ref, fragments
           return
 
         ref = @next_ref
@@ -402,23 +403,23 @@ class Deserialiser
       error 'internal error: num_tables field is not a number'
     print "parsed num_tables: #{num_tables}"
     for ref = num_tables - 1, 0, -1
-      print ">> parsing table def!"
-      @tables_by_ref[ref] = @parse_table_def @tables_by_ref
+      @parse_table_def ref
     print "parsing value..."
     -- TODO(kcza): index handling?
     @parse_value!
 
-  parse_table_def: F '(table) => {}', =>
+  parse_table_def: F '(number) => {}', (ref) =>
+    table = {}
+    @tables_by_ref[ref] = table
+
     num_pairs = @parse_value!
     print "parsed num_pairs: #{num_pairs}"
     if 'number' != type num_pairs
       error 'internal error: num_pairs field is not a number'
-    with {}
+    with table
       for _ = 1, num_pairs
         key = @parse_value!
-        print "parsed key #{key}"
         value = @parse_value!
-        print "parsed value #{value}"
         [key] = value
 
   parse_value: F '() => any', =>
@@ -615,6 +616,11 @@ spec ->
         * name: 'complex leaf table'
           value:
             hello: 'world'
+        * name: 'cyclic table'
+          value: do
+            ret = {}
+            ret.self = ret
+            ret
 
       for test in *tests
         {
