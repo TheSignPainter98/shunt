@@ -299,7 +299,7 @@ class DeepEq
   matches: (actual) =>
     @deep_equal @expected, actual
 
-  deep_equal: (a, b) =>
+  deep_equal: (a, b, a_stack_set={}, b_stack_set={}) =>
     if a == b
       return true
 
@@ -312,8 +312,15 @@ class DeepEq
       return false
     for ka, va in pairs a
       vb = b[ka]
-      if not @deep_equal va, vb
+
+      if a_stack_set[va] and b_stack_set[vb]
+        return true
+      a_stack_set[va] = true
+      b_stack_set[vb] = true
+      if not @deep_equal va, vb, a_stack_set, b_stack_set
         return false
+      a_stack_set[va] = nil
+      b_stack_set[vb] = nil
     for kb, _ in pairs b
       if not a[kb]?
         return false
