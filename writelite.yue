@@ -660,7 +660,7 @@ spec ->
           max_collisions = c
       $expect_that max_collisions, lt NUM_STRINGS * 0.01
 
-  describe 'serialiser roundtrip', ->
+  describe 'writelite.Serialiser roundtrip', ->
     roundtrip = (value) ->
       serialised = Serialiser!
         \write value
