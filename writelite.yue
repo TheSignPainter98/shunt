@@ -406,14 +406,30 @@ is_float = F '(number) -> boolean', (num) ->
 
   false
 
+declare_type 'writelite.DeserialiserSource', 'string|writelite.File'
 class Deserialiser
-  -- TODO(kcza): accept a file-like here, not a string.
-  new: F '(string) => <>', (@raw) =>
+  new: F '(writelite.DeserialiserSource) => <>', (@source) =>
     @index = T 'number', 1
     @tables_by_ref = T '{number->table}', {}
     @unresolved_table_refs = T '[{table: table, key: some, ref: number}]', {}
 
   parse: F '() => any', =>
+    @raw = switch type @source
+      when 'string'
+        @source
+      else
+        raw_len, err = @source\read 5 -- Max supported size is 1<<32 - 1
+        if err?
+          error "cannot read length from parse source: #{err}"
+        len = assert tonumber raw_len
+        err = @source\seek 'set', 0
+        if err?
+          error "cannot seek parse source: #{err}"
+        raw, err = @source\read len
+        if err?
+          error "cannot read parse source: #{err}"
+        raw
+
     total_len = @parse_value!
     if 'number' != type total_len
       error 'internal error: len field is not a number'
@@ -661,37 +677,6 @@ spec ->
       $expect_that max_collisions, lt NUM_STRINGS * 0.01
 
   describe 'writelite.Serialiser roundtrip', ->
-    roundtrip = (value) ->
-      serialised = Serialiser!
-        \write value
-        \finish!
-      indices = [ '%02d'\format i for i = 1, #serialised]
-      bytes = with {}
-        for i = 1, #serialised
-          [] = '%02x'\format serialised\byte i
-      chars = with {}
-        for i = 1, #serialised
-          byte = serialised\byte i
-          if '0'\byte! <= byte and byte <= '9'\byte! or 'a'\byte! <= byte and byte <= 'z'\byte!
-            [] = '% 2s'\format serialised\sub i, i
-          else
-            [] = '%02x'\format byte
-      assert #indices == #bytes
-      assert #indices == #chars
-      PER_LINE = 25
-      first = true
-      for i = 1, #indices, PER_LINE
-        if first
-          first = false
-        else
-          print!
-        print table.concat [ i for i in *indices[i, i+PER_LINE] ], ' '
-        print '-'\rep 3 * (PER_LINE + 1) - 1
-        print table.concat [ i for i in *bytes[i, i+PER_LINE] ], ' '
-        print table.concat [ i for i in *chars[i, i+PER_LINE] ], ' '
-      (Deserialiser serialised)
-        \parse!
-
     tests =
       * name: 'nil'
         value: nil
@@ -761,4 +746,43 @@ spec ->
         :matcher=deep_eq
       } = test
       it "works for #{name}", ->
-        $expect_that (roundtrip value), matcher value
+        serialised = Serialiser!
+          \write value
+          \finish!
+        indices = [ '%02d'\format i for i = 1, #serialised]
+        bytes = with {}
+          for i = 1, #serialised
+            [] = '%02x'\format serialised\byte i
+        chars = with {}
+          for i = 1, #serialised
+            byte = serialised\byte i
+            if '0'\byte! <= byte and byte <= '9'\byte! or 'a'\byte! <= byte and byte <= 'z'\byte! or byte == '-'\byte! or byte == '+'\byte!
+              [] = '% 2s'\format serialised\sub i, i
+            else
+              [] = '%02x'\format byte
+        assert #indices == #bytes
+        assert #indices == #chars
+        PER_LINE = 25
+        first = true
+        for i = 1, #indices, PER_LINE
+          if first
+            first = false
+          else
+            print!
+          print table.concat [ i for i in *indices[i, i+PER_LINE] ], ' '
+          print '-'\rep 3 * (PER_LINE + 1) - 1
+          print table.concat [ i for i in *bytes[i, i+PER_LINE] ], ' '
+          print table.concat [ i for i in *chars[i, i+PER_LINE] ], ' '
+        deserialised_from_string = (Deserialiser serialised)
+          \parse!
+        $expect_that deserialised_from_string, matcher value
+
+        file = assert io.open os.tmpname!, 'w+'
+        with file
+          assert \write serialised
+          assert \flush!
+          assert \seek 'set', 0
+          deserialised_from_file = (Deserialiser serialised)
+            \parse!
+          $expect_that deserialised_from_file, matcher value
+          assert \close!
