@@ -316,7 +316,8 @@ class DeepEq
       if a_stack_set[va] and b_stack_set[vb]
         return true
       a_stack_set[va] = true
-      b_stack_set[vb] = true
+      if vb?
+        b_stack_set[vb] = true
       if not @deep_equal va, vb, a_stack_set, b_stack_set
         return false
       a_stack_set[va] = nil
