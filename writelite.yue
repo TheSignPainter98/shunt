@@ -768,6 +768,7 @@ spec ->
 
           { { :key } } = keys
           $expect_that key[key], eq true
+      -- TODO(kcza): support indirectly key-cyclic tables
 
     for test in *tests
       {
