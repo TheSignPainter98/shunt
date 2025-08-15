@@ -8,21 +8,27 @@ declare_type 'writelite.Writelite', [[{
   transaction: ((writelite.Transaction) -> <>) => <>,
   close: () => <>,
 }]]
+declare_type 'writelite.Mode', '"plain"|"key-value"'
 export class Writelite
   @_open_transactions: T '{string}', {}
 
-  new: F '(string) => <>', (@_path) =>
+  new: F '(string, ?writelite.Fs) => <>', (@_path, @_fs=OsFs!) =>
     @_journal_path = @_path .. '~'
-    @_main_file = with assert io.open @_path, 'w+'
-      \setvbuf 'full' -- Minimise writes.
 
-    if journal = io.open @_journal_path, 'r'
+    main_file, err = @_fs\open @_path, 'w+'
+    if err?
+      error "cannot open main file: #{err}"
+    main_file\setvbuf 'full' -- Minimise writes.
+    @_main_file = main_file
+
+    if journal, _ = @_fs\open @_journal_path, 'r'
       journal_content = journal\read '*a'
       journal\close!
 
       if @_journal_valid journal_content
         @_recover_journal @_main_file, journal_content
       else
+        -- Discard incomplete transaction.
         os.remove @_journal_path
 
     -- TODO(kcza): read header to determine mode
@@ -32,6 +38,7 @@ export class Writelite
     if @_mode? and mode != @_mode
       error "cannot change mode once set"
     @_mode = mode
+    @
 
   _journal_valid: F '(string) => <>', (journal_content) =>
     -- TODO(kcza): read the prelude (must be the unedited prefix)
@@ -150,15 +157,27 @@ JOURNAL_PRELUDE = do
 
 ZERO_PAGE = '\0'\rep PAGE_SIZE
 
+declare_type 'writelite.Fs', [[{
+  open: (string, writelite.FileMode) => <?writelite.File, ?string>
+}]]
+declare_type 'writelite.FileMode', '"r"|"w"|"a"|"r+"|"w+"|"a+"'
+declare_type 'writelite.File', [[{
+  read: ("*a") => <?string, ?string>,
+  write: (string) => ?string,
+  seek: (Whence, ?number) => <?number, ?string>,
+  setvbuf: ("full") => <>,
+  close: () => ?string,
+}]]
+class OsFs
+  new: F '(?string) => <>', (@dir='.') =>
+
+  open: F '(string, writelite.FileMode) => <?writelite.File, ?string>', (path, mode) =>
+    io.open path, mode
+
 declare_type 'writelite.Transaction', [[{
   write: (string) => <>,
-  seek: (Whence, ?number) => <>,
+  seek: (Whence, ?number) => <?number, ?string>,
   abort: () => <>,
-}]]
-declare_type 'writelite.File', [[{
-  write: (string) => <>,
-  seek: (Whence, ?number) => <>,
-  close: () => <>,
 }]]
 declare_type 'Whence', '"set"|"cur"|"end"'
 class Transaction
@@ -536,11 +555,93 @@ class Hasher
     @_current
 
 spec ->
+  local *
+
   import 'spec_macros' as $
 
   import 'spec' as :describe, :it, :matchers
 
-  import deep_eq, lt, near from matchers
+  import deep_eq, errors, lt, matches, near, no_errors from matchers
+
+  declare_type 'writelite.FileSpec', [[{
+    content: string,
+  }]]
+  class TestFs
+    new: F '(?{string->writelite.FileSpec}) => <>', (files={}) =>
+      @files = { file, TestFile content for file, { :content } in pairs files }
+
+    open: F '(string, writelite.FileMode) => <?writelite.File, ?string>', (path, mode) =>
+      file = @files[path]
+      if file?
+        file, nil
+      else if mode\match '^w'
+        (TestFile ''), nil
+      else
+        nil, "#{path}: No such file or directory 2"
+
+  class TestFile
+    new: F '(string) => <>', (content) =>
+      @cursor = 1
+      @content_bytes = with {}
+        for i = 1, #content
+          [] = string.byte content, i
+
+    read: F '("*a") => <?string, ?string>', (_mode) =>
+      if @closed
+        return 'closed'
+      table.concat [ string.char b for b in *@content_bytes[@cursor,] ]
+
+    write: F '(string) => ?string', (to_write) =>
+      if @closed
+        return 'closed'
+      for i = 1, #to_write
+        @content_bytes[@cursor] = string.byte to_write, i
+        @cursor += 1
+      nil
+
+    seek: F '(Whence, ?number) => <?number, ?string>', (whence, num) =>
+      if @closed
+        return nil, 'closed'
+      switch whence
+        when 'set'
+          @cursor = num
+        when 'cur'
+          @cursor += num
+        when 'end'
+          @cursor = #@content_bytes + num
+        else
+          error "internal error: unexpected whence #{whence}"
+      @cursor, nil
+
+    setvbuf: F '("full") => <>', (_mode) =>
+      if @closed
+        error 'closed'
+
+    close: F '() => ?string', =>
+      if @closed
+        return 'closed'
+      @closed = true
+      nil
+
+  describe 'writelite.Writelite', ->
+    describe '\\mode', ->
+      modes = T '[writelite.Mode]'
+        * 'plain'
+        * 'key-value'
+
+      it 'prevents explicit reassignment', ->
+        for mode_a in *modes
+          for mode_b in *modes
+            print "mode_a=#{mode_a}, mode_b=#{mode_b}"
+            writelite = Writelite 'database.db', TestFs!
+            writelite\mode mode_a
+            if mode_a == mode_b
+              $assert_that (-> writelite\mode mode_b), no_errors!
+            else
+              $assert_that (-> writelite\mode mode_b), errors matches 'cannot change mode once set'
+
+      it 'prevents implicit reassignment', ->
+        -- TODO(kcza): write a database to an FS with mode A, open, try to change mode to B
 
   describe 'writelite.Hasher', ->
     it 'avoids collisions', ->

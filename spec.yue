@@ -177,7 +177,7 @@ export _assert_that = (value_label, actual, matcher, location) ->
     :value_label
     :location
     expected: matcher\describe!
-    actual_repr: matcher.actual_repr?! ?? repr actual
+    actual_repr: matcher\actual_repr?! ?? repr actual
     explanation: matcher\explain_match actual
 
 --- Get location of the caller of the function which called this function.
