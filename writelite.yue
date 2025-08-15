@@ -5,15 +5,41 @@ import 'quicktype' as :declare_singleton_type, :declare_type, :F, :T
 import 'spec' as :spec
 
 declare_type 'writelite.Writelite', [[{
+  open: () => ?string,
   transaction: ((writelite.Transaction) -> <>) => <>,
-  close: () => <>,
+  close: () => ?string,
 }]]
-declare_type 'writelite.Mode', '"plain"|"key-value"'
+declare_type 'writelite.Mode', '"plain"'
+declare_type 'writelite.MainHeader', [[{
+  format_version: number,
+}]]
 export class Writelite
   @_open_transactions: T '{string}', {}
 
   new: F '(string, ?writelite.Fs) => <>', (@_path, @_fs=OsFs!) =>
-    @_journal_path = @_path .. '~'
+    @_journal_path = T 'string', @_path .. '~'
+    @_main_file = T '?writelite.File', nil
+    @_open = T 'boolean', false
+    @_page_size = 4096
+    @_page_size_set = T 'boolean', false
+
+  mode: F '(writelite.Mode) => Self', (mode) =>
+    if @_mode?
+      error "cannot change mode once set"
+    @_mode = mode
+    @
+
+  page_size: F '(number) => Self', (page_size) =>
+    if @_page_size_set
+      error "cannot change page size once set"
+    @_page_size_set = true
+    @_page_size = page_size
+    @
+
+  open: F '() => ?string', =>
+    if @_open
+      return 'cannot open writelite file twice'
+    @_open = true
 
     main_file, err = @_fs\open @_path, 'w+'
     if err?
@@ -31,14 +57,28 @@ export class Writelite
         -- Discard incomplete transaction.
         os.remove @_journal_path
 
-    -- TODO(kcza): read header to determine mode
-    @_mode = nil
-
-  mode: F '(writelite.Mode) => Self', (mode) =>
-    if @_mode? and mode != @_mode
-      error "cannot change mode once set"
-    @_mode = mode
-    @
+  --   main_header, err = @_read_main_header!
+  --   if err?
+  --     return "cannot open writelite file: #{err}"
+  --   @_main_header = main_header
+  --
+  -- _read_main_header: F '() => <writelite.MainHeader, ?string>', =>
+  --   header = @_main_file
+  --
+  --   checkers =
+  --     format_version: (fv) -> if fv != FORMAT_VERSION
+  --       "format version mismatch"
+  --     mode: (m) -> if m != @_mode
+  --       "mode mismatch"
+  --   for key, value in pairs @_main_header
+  --     checker = checkers[key]
+  --     if not checker?
+  --       return "no such checker"
+  --     err = checker value
+  --     if err?
+  --       return "cannot open #{@_path}: #{err}"
+  --
+  --   header
 
   _journal_valid: F '(string) => <>', (journal_content) =>
     -- TODO(kcza): read the prelude (must be the unedited prefix)
@@ -54,7 +94,7 @@ export class Writelite
     error 'todo'
 
   transaction: F '((writelite.Transaction) -> <>) => <>', (f) =>
-    open_transactions[@_path] = true
+    @@_open_transactions[@_path] = true
 
     txn = Transaction @_main_file, @_journal_path
     err = nil
@@ -65,97 +105,101 @@ export class Writelite
       txn\abort!
     txn\_close!
 
-    open_transactions[@_path] = nil
+    @@_open_transactions[@_path] = nil
 
     if err?
       error err
     return
 
-  close: F '() => <>', =>
-    assert not open_transactions[@_path], 'cannot close Writelite whilst transaction is open'
-    assert @_writelite_open, 'cannot close Writelite twice'
+  close: F '() => ?string', =>
+    assert not @@_open_transactions[@_path], 'cannot close Writelite whilst transaction is open'
+
+    assert @_open, 'cannot close Writelite: not open'
+    @_open = false
 
     @_main_file\close!
 
-    @_writelite_open = false
+  @_main_prelude: F '() => string', =>
+    @_cached_main_prelude ??= do
+      prelude_fragments =
+        * '\n'
+        * '\n'
+        * '\n'
+        * '\n'
+        * 'STOP!\n'
+        * '\n'
+        * 'DO NOT EDIT!\n'
+        * '\n'
+        * 'Editing this file will corrupt the database.\n'
+        * '\n'
+        * 'Close this file and DO NOT SAVE any changes.\n'
+        * '\n'
+        * 'EXIT the editor NOW.\n'
+        * '\n'
+        * '\n'
+        * '\n'
+        * '\n'
+      prelude_len = 0
+      for line in *prelude_fragments
+        prelude_len += #line
 
-PAGE_SIZE = 4096
+      spacer_line = ('.'\rep 49) .. '\n'
+      while prelude_len < @_page_size - #spacer_line
+        prelude_fragments[] = spacer_line
+        prelude_len += #spacer_line
+      while prelude_len < @_page_size - 2
+        prelude_fragments[] = '.'
+        prelude_len += #'\n'
+      prelude_fragments[] = '@'
+      prelude_fragments[] = '\n'
 
-WRITELITE_PRELUDE = do
-  prelude_fragments =
-    * '\n'
-    * '\n'
-    * '\n'
-    * '\n'
-    * 'STOP!\n'
-    * '\n'
-    * 'DO NOT EDIT!\n'
-    * '\n'
-    * 'Editing this file will corrupt the database.\n'
-    * '\n'
-    * 'Close this file and DO NOT SAVE any changes.\n'
-    * '\n'
-    * 'EXIT the editor NOW.\n'
-    * '\n'
-    * '\n'
-    * '\n'
-    * '\n'
-  prelude_len = 0
-  for line in *prelude_fragments
-    prelude_len += #line
+      prelude = table.concat prelude_fragments
+      assert #prelude == @_page_size
+      prelude
+    @_cached_main_prelude
 
-  spacer_line = ('.'\rep 49) .. '\n'
-  while prelude_len < PAGE_SIZE - #spacer_line
-    prelude_fragments[] = spacer_line
-    prelude_len += #spacer_line
-  while prelude_len < PAGE_SIZE - 2
-    prelude_fragments[] = '.'
-    prelude_len += #'\n'
-  prelude_fragments[] = '@'
-  prelude_fragments[] = '\n'
+  _journal_prelude: F '() => string', =>
+    @_cached_journal_prelude ??= do
+      prelude_fragments =
+        * '\n'
+        * '\n'
+        * '\n'
+        * '\n'
+        * 'STOP!\n'
+        * '\n'
+        * 'DO NOT EDIT!\n'
+        * '\n'
+        * 'Editing this file will cause data-loss.\n'
+        * '\n'
+        * 'Close this file and DO NOT SAVE any changes.\n'
+        * '\n'
+        * 'EXIT the editor NOW.\n'
+        * '\n'
+        * '\n'
+        * '\n'
+        * '\n'
+      prelude_len = 0
+      for line in *prelude_fragments
+        prelude_len += #line
 
-  prelude = table.concat prelude_fragments
-  assert #prelude == PAGE_SIZE
-  prelude
+      spacer_line = ('.'\rep 49) .. '\n'
+      while prelude_len < PAGE_SIZE - #spacer_line
+        prelude_fragments[] = spacer_line
+        prelude_len += #spacer_line
+      while prelude_len < PAGE_SIZE - 2
+        prelude_fragments[] = '.'
+        prelude_len += #'\n'
+      prelude_fragments[] = '@'
+      prelude_fragments[] = '\n'
 
-JOURNAL_PRELUDE = do
-  prelude_fragments =
-    * '\n'
-    * '\n'
-    * '\n'
-    * '\n'
-    * 'STOP!\n'
-    * '\n'
-    * 'DO NOT EDIT!\n'
-    * '\n'
-    * 'Editing this file will cause data-loss.\n'
-    * '\n'
-    * 'Close this file and DO NOT SAVE any changes.\n'
-    * '\n'
-    * 'EXIT the editor NOW.\n'
-    * '\n'
-    * '\n'
-    * '\n'
-    * '\n'
-  prelude_len = 0
-  for line in *prelude_fragments
-    prelude_len += #line
+      prelude = table.concat prelude_fragments
+      assert #prelude == PAGE_SIZE
+      prelude
+    @_cached_journal_prelude
 
-  spacer_line = ('.'\rep 49) .. '\n'
-  while prelude_len < PAGE_SIZE - #spacer_line
-    prelude_fragments[] = spacer_line
-    prelude_len += #spacer_line
-  while prelude_len < PAGE_SIZE - 2
-    prelude_fragments[] = '.'
-    prelude_len += #'\n'
-  prelude_fragments[] = '@'
-  prelude_fragments[] = '\n'
-
-  prelude = table.concat prelude_fragments
-  assert #prelude == PAGE_SIZE
-  prelude
-
-ZERO_PAGE = '\0'\rep PAGE_SIZE
+  @_zero_page: F '() => string', =>
+    @_cached_zero_page ??= '\0'\rep @_page_size
+    @_cached_zero_page
 
 declare_type 'writelite.Fs', [[{
   open: (string, writelite.FileMode) => <?writelite.File, ?string>
@@ -181,11 +225,12 @@ declare_type 'writelite.Transaction', [[{
 }]]
 declare_type 'Whence', '"set"|"cur"|"end"'
 class Transaction
-  new: F '(writelite.File, string) => <>', (@_main_file, @_journal_path) =>
+  new: F '(writelite.Writelite) => <>', (@_parent) =>
     @_pages = T '[writelite.Page]', {}
     @_len = T 'number', 0
     @_cursor = T 'number', 0
     @_aborted = T 'boolean', false
+    @_page_size = @_parent._page_size
 
   write: F '(string) => <>', (bytes) =>
     if @_aborted
@@ -193,15 +238,15 @@ class Transaction
 
     @_len += #bytes
     new_pages = {}
-    if #bytes == PAGE_SIZE
+    if #bytes == @_page_size
       @_pages[] = bytes
-      @_cursor += PAGE_SIZE
+      @_cursor += @_page_size
     else
-      for bytes_offset = 0, #bytes, PAGE_SIZE
-        new_page = Page @_cursor, bytes\sub 1 + bytes_offset, 1 + bytes_offset + PAGE_SIZE
+      for bytes_offset = 0, #bytes, @_page_size
+        new_page = Page @_cursor, bytes\sub 1 + bytes_offset, 1 + bytes_offset + @_page_size
         new_pages[] = new_page
         @_pages[] = new_page
-        @_cursor += PAGE_SIZE
+        @_cursor += @_page_size
 
   seek: F '(Whence, ?number) => <>', (whence, offset) =>
     if @_aborted
@@ -221,7 +266,7 @@ class Transaction
         new_cursor = @_len
       else
         error 'internal error: unreachable'
-    new_cursor += PAGE_SIZE -- Account for header
+    new_cursor += @_page_size -- Account for header
     @_cursor = new_cursor
 
   abort: F '() => <>', =>
@@ -577,7 +622,7 @@ spec ->
 
   import 'spec' as :describe, :it, :matchers
 
-  import deep_eq, errors, lt, matches, near, no_errors from matchers
+  import deep_eq, eq, errors, len, lt, matches, near, no_errors from matchers
 
   declare_type 'writelite.FileSpec', [[{
     content: string,
@@ -643,21 +688,51 @@ spec ->
     describe '\\mode', ->
       modes = T '[writelite.Mode]'
         * 'plain'
-        * 'key-value'
 
-      it 'prevents explicit reassignment', ->
+      it 'forbids explicit reassignment', ->
         for mode_a in *modes
           for mode_b in *modes
             print "mode_a=#{mode_a}, mode_b=#{mode_b}"
             writelite = Writelite 'database.db', TestFs!
             writelite\mode mode_a
-            if mode_a == mode_b
-              $assert_that (-> writelite\mode mode_b), no_errors!
-            else
-              $assert_that (-> writelite\mode mode_b), errors matches 'cannot change mode once set'
+            $assert_that (-> writelite\mode mode_b), errors matches 'cannot change mode once set'
 
-      it 'prevents implicit reassignment', ->
-        -- TODO(kcza): write a database to an FS with mode A, open, try to change mode to B
+      it 'forbids implicit reassignment', ->
+        -- TODO(kcza): write a database to an FS with mode A, close, open again with mode B, where A != B
+
+    describe '\\page_size', ->
+      it 'forbids explicit reassignment', ->
+        writelite = Writelite 'database.db', TestFs!
+        writelite\page_size 128
+        $assert_that (-> writelite\page_size 128), errors matches 'cannot change page size once set'
+
+      it 'forbids implicit reassignment', ->
+        -- TODO(kcza): write a database to an FS with page size A, close, open again with page size B, where A != B
+
+    describe '\\open', ->
+      it 'requires mandatory metadata', ->
+        metadata =
+          * name: 'mode'
+            action: (wl) -> wl\mode 'plain'
+          * name: 'page size'
+            action: (wl) -> wl\page_size 128
+            mandatory: false
+        for index_to_omit = 1, #metadata
+          { :name, :mandatory } = metadata[index_to_omit]
+          print "testing omission of #{name}..."
+
+          writelite = Writelite 'database.db', TestFs!
+
+          for i = 1, #metadata
+            if i == index_to_omit
+              continue
+            metadata[i].action writelite
+
+          if mandatory
+            $expect_that writelite\open, errors matches 'asdf'
+          else
+            writelite\open!
+            writelite\close!
 
   describe 'writelite.Hasher', ->
     it 'avoids collisions', ->
