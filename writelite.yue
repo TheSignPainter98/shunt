@@ -737,6 +737,17 @@ spec ->
             $assert_that writelite\open!, eq nil
             $expect_that writelite\close!, eq nil
 
+      it 'cannot be whilst open', ->
+        with Writelite 'database.db', TestFs!
+          \mode 'plain'
+          $assert_that \open!, eq nil
+          $expect_that \open!, matches 'cannot open writelite file twice'
+
+          $assert_that \close!, eq nil
+
+          $assert_that \open!, eq nil
+          $expect_that \open!, matches 'cannot open writelite file twice'
+
   describe 'writelite.Hasher', ->
     it 'avoids collisions', ->
       collisions = {}
