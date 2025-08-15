@@ -11,7 +11,7 @@ declare_type 'writelite.Writelite', [[{
 export class Writelite
   @_open_transactions: T '{string}', {}
 
-  new: F '(string, writelite.File) => <>', (@_path) =>
+  new: F '(string) => <>', (@_path) =>
     @_journal_path = @_path .. '~'
     @_main_file = with assert io.open @_path, 'w+'
       \setvbuf 'full' -- Minimise writes.
