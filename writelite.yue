@@ -696,14 +696,20 @@ spec ->
         value: MIN_INT
       * name: 'float (small positive)'
         value: 1.1
+        check: (actual, value) ->
+          $expect_that actual, near value
       * name: 'float (small negative)'
         value: -1.1
+        check: (actual, value) ->
+          $expect_that actual, near value
       * name: 'float (large positive)'
         value: 9999999999999 * 9999999 * 0.3
-        matcher: near
+        check: (actual, value) ->
+          $expect_that actual, near value
       * name: 'float (large negative)'
         value: -9999999999999 * 9999999 * 0.3
-        matcher: near
+        check: (actual, value) ->
+          $expect_that actual, near value
       * name: 'empty string'
         value: ''
       * name: 'short string'
@@ -738,12 +744,27 @@ spec ->
           ret = child: {}
           ret.child.parent = ret
           ret
+      * name: 'key-tree-table'
+        value:
+          [hello: 'there']: 'world'
+        check: (actual, value) ->
+          actual_structure = [ :key, :value for key, value in pairs actual ]
+          for kv in *actual_structure
+            kv.key = [ :key, :value for key, value in pairs kv.key ]
+          $expect_that actual_structure, deep_eq {{
+            key:
+              * key: 'hello'
+                value: 'there'
+            value: 'world'
+          }}
 
     for test in *tests
       {
         :name
         :value
         :matcher=deep_eq
+        :check=(actual, value) ->
+          $expect_that actual, deep_eq value
       } = test
       it "works for #{name}", ->
         serialised = Serialiser!
@@ -775,7 +796,7 @@ spec ->
           print table.concat [ i for i in *chars[i, i+PER_LINE] ], ' '
         deserialised_from_string = (Deserialiser serialised)
           \parse!
-        $expect_that deserialised_from_string, matcher value
+        check deserialised_from_string, value
 
         file = assert io.open os.tmpname!, 'w+'
         with file
@@ -784,5 +805,5 @@ spec ->
           assert \seek 'set', 0
           deserialised_from_file = (Deserialiser serialised)
             \parse!
-          $expect_that deserialised_from_file, matcher value
+          check deserialised_from_file, value
           assert \close!
