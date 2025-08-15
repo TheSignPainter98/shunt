@@ -757,6 +757,17 @@ spec ->
                 value: 'there'
             value: 'world'
           }}
+      * name: 'key-cyclic table'
+        value: do
+          ret = {}
+          ret[ret] = true
+          ret
+        check: (actual, value) ->
+          keys = [ :key for key, _ in pairs actual ]
+          $assert_that keys, len eq 1
+
+          { { :key } } = keys
+          $expect_that key[key], eq true
 
     for test in *tests
       {
