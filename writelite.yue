@@ -25,6 +25,14 @@ export class Writelite
       else
         os.remove @_journal_path
 
+    -- TODO(kcza): read header to determine mode
+    @_mode = nil
+
+  mode: F '(writelite.Mode) => Self', (mode) =>
+    if @_mode? and mode != @_mode
+      error "cannot change mode once set"
+    @_mode = mode
+
   _journal_valid: F '(string) => <>', (journal_content) =>
     -- TODO(kcza): read the prelude (must be the unedited prefix)
     -- TODO(kcza): read the header
