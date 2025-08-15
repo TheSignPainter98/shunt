@@ -559,106 +559,105 @@ spec ->
           max_collisions = c
       $expect_that max_collisions, lt NUM_STRINGS * 0.01
 
-  describe 'writelite.Serialiser', ->
-    describe 'roundtrip with writelite.Deserialiser', ->
-      roundtrip = (value) ->
-        serialised = Serialiser!
-          \write value
-          \finish!
-        indices = [ '%02d'\format i for i = 1, #serialised]
-        bytes = with {}
-          for i = 1, #serialised
-            [] = '%02x'\format serialised\byte i
-        chars = with {}
-          for i = 1, #serialised
-            byte = serialised\byte i
-            if '0'\byte! <= byte and byte <= '9'\byte! or 'a'\byte! <= byte and byte <= 'z'\byte!
-              [] = '% 2s'\format serialised\sub i, i
-            else
-              [] = '%02x'\format byte
-        assert #indices == #bytes
-        assert #indices == #chars
-        PER_LINE = 25
-        first = true
-        for i = 1, #indices, PER_LINE
-          if first
-            first = false
+  describe 'serialiser roundtrip', ->
+    roundtrip = (value) ->
+      serialised = Serialiser!
+        \write value
+        \finish!
+      indices = [ '%02d'\format i for i = 1, #serialised]
+      bytes = with {}
+        for i = 1, #serialised
+          [] = '%02x'\format serialised\byte i
+      chars = with {}
+        for i = 1, #serialised
+          byte = serialised\byte i
+          if '0'\byte! <= byte and byte <= '9'\byte! or 'a'\byte! <= byte and byte <= 'z'\byte!
+            [] = '% 2s'\format serialised\sub i, i
           else
-            print!
-          print table.concat [ i for i in *indices[i, i+PER_LINE] ], ' '
-          print '-'\rep 3 * (PER_LINE + 1) - 1
-          print table.concat [ i for i in *bytes[i, i+PER_LINE] ], ' '
-          print table.concat [ i for i in *chars[i, i+PER_LINE] ], ' '
-        (Deserialiser serialised)
-          \parse!
+            [] = '%02x'\format byte
+      assert #indices == #bytes
+      assert #indices == #chars
+      PER_LINE = 25
+      first = true
+      for i = 1, #indices, PER_LINE
+        if first
+          first = false
+        else
+          print!
+        print table.concat [ i for i in *indices[i, i+PER_LINE] ], ' '
+        print '-'\rep 3 * (PER_LINE + 1) - 1
+        print table.concat [ i for i in *bytes[i, i+PER_LINE] ], ' '
+        print table.concat [ i for i in *chars[i, i+PER_LINE] ], ' '
+      (Deserialiser serialised)
+        \parse!
 
-      tests =
-        * name: 'nil'
-          value: nil
-        * name: 'true'
-          value: true
-        * name: 'false'
-          value: false
-        * name: 'int (zero)'
-          value: 0
-        * name: 'int (small, positive)'
-          value: 10
-        * name: 'int (small, negative)'
-          value: -10
-        * name: 'int (max int)'
-          value: MAX_INT
-        * name: 'int (min int)'
-          value: MIN_INT
-        * name: 'float (small positive)'
-          value: 1.1
-        * name: 'float (small negative)'
-          value: -1.1
-        * name: 'float (large positive)'
-          value: 9999999999999 * 9999999 * 0.3
-          matcher: near
-        * name: 'float (large negative)'
-          value: -9999999999999 * 9999999 * 0.3
-          matcher: near
-        * name: 'empty string'
-          value: ''
-        * name: 'short string'
-          value: 'asdf'
-        * name: 'long string'
-          value: 'x'\rep 1000
-        * name: 'simple leaf table'
-          value:
-            [false]: true
-        * name: 'simple leaf table'
-          value:
-            hello: true
-        * name: 'simple leaf table'
-          value:
-            [false]: 'world'
-        * name: 'complex leaf table'
-          value:
-            hello: 'world'
-        * name: 'tree table'
-          value:
-            hello:
-              world:
-                how:
-                  are: 'you'
-        * name: 'cyclic table'
-          value: do
-            ret = {}
-            ret.self = ret
-            ret
-        * name: 'indirectly cyclic table'
-          value: do
-            ret = child: {}
-            ret.child.parent = ret
-            ret
+    tests =
+      * name: 'nil'
+        value: nil
+      * name: 'true'
+        value: true
+      * name: 'false'
+        value: false
+      * name: 'int (zero)'
+        value: 0
+      * name: 'int (small, positive)'
+        value: 10
+      * name: 'int (small, negative)'
+        value: -10
+      * name: 'int (max int)'
+        value: MAX_INT
+      * name: 'int (min int)'
+        value: MIN_INT
+      * name: 'float (small positive)'
+        value: 1.1
+      * name: 'float (small negative)'
+        value: -1.1
+      * name: 'float (large positive)'
+        value: 9999999999999 * 9999999 * 0.3
+        matcher: near
+      * name: 'float (large negative)'
+        value: -9999999999999 * 9999999 * 0.3
+        matcher: near
+      * name: 'empty string'
+        value: ''
+      * name: 'short string'
+        value: 'asdf'
+      * name: 'long string'
+        value: 'x'\rep 1000
+      * name: 'simple leaf table'
+        value:
+          [false]: true
+      * name: 'simple leaf table'
+        value:
+          hello: true
+      * name: 'simple leaf table'
+        value:
+          [false]: 'world'
+      * name: 'complex leaf table'
+        value:
+          hello: 'world'
+      * name: 'tree table'
+        value:
+          hello:
+            world:
+              how:
+                are: 'you'
+      * name: 'cyclic table'
+        value: do
+          ret = {}
+          ret.self = ret
+          ret
+      * name: 'indirectly cyclic table'
+        value: do
+          ret = child: {}
+          ret.child.parent = ret
+          ret
 
-      for test in *tests
-        {
-          :name
-          :value
-          :matcher=deep_eq
-        } = test
-        it "works for #{name}", ->
-          $expect_that (roundtrip value), matcher value
+    for test in *tests
+      {
+        :name
+        :value
+        :matcher=deep_eq
+      } = test
+      it "works for #{name}", ->
+        $expect_that (roundtrip value), matcher value
