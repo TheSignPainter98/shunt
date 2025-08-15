@@ -115,12 +115,16 @@ export class Writelite
     return
 
   close: F '() => ?string', =>
-    assert not @@_open_transactions[@_path], 'cannot close Writelite whilst transaction is open'
+    file_closure_error = @_main_file\close!
 
-    assert @_open, 'cannot close Writelite: not open'
+    if @@_open_transactions[@_path]
+      return 'cannot close writelite file whilst transaction is open'
+
+    if not @_open
+      return 'cannot close writelite file: not open'
     @_open = false
 
-    @_main_file\close!
+    file_closure_error
 
   @_main_prelude: F '() => string', =>
     @_cached_main_prelude ??= do
@@ -747,6 +751,14 @@ spec ->
 
           $assert_that \open!, eq nil
           $expect_that \open!, matches 'cannot open writelite file twice'
+
+    describe '\\close', ->
+      it 'cannot be called twice', ->
+        with Writelite 'database.db', TestFs!
+          \mode 'plain'
+          $assert_that \open!, eq nil
+          $assert_that \close!, eq nil
+          $expect_that \close!, eq 'cannot close writelite file: not open'
 
   describe 'writelite.Hasher', ->
     it 'avoids collisions', ->
