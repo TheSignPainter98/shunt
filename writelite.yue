@@ -41,6 +41,9 @@ export class Writelite
       return 'cannot open writelite file twice'
     @_open = true
 
+    if not @_mode?
+      return 'cannot open main file: mode unspecified'
+
     main_file, err = @_fs\open @_path, 'w+'
     if err?
       error "cannot open main file: #{err}"
@@ -714,11 +717,11 @@ spec ->
         metadata =
           * name: 'mode'
             action: (wl) -> wl\mode 'plain'
+            expect: 'cannot open main file: mode unspecified'
           * name: 'page size'
             action: (wl) -> wl\page_size 128
-            mandatory: false
         for index_to_omit = 1, #metadata
-          { :name, :mandatory } = metadata[index_to_omit]
+          { :name, :expect } = metadata[index_to_omit]
           print "testing omission of #{name}..."
 
           writelite = Writelite 'database.db', TestFs!
@@ -728,11 +731,11 @@ spec ->
               continue
             metadata[i].action writelite
 
-          if mandatory
-            $expect_that writelite\open, errors matches 'asdf'
+          if expect?
+            $expect_that writelite\open!, matches expect
           else
-            writelite\open!
-            writelite\close!
+            $assert_that writelite\open!, eq nil
+            $expect_that writelite\close!, eq nil
 
   describe 'writelite.Hasher', ->
     it 'avoids collisions', ->
