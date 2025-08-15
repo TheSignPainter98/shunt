@@ -275,7 +275,7 @@ class Serialiser
   new: F '() => <>', =>
     @root_fragments = T '[string]', {}
     @next_ref = T 'number', 0
-    @table_fragments = T '[{num_pairs: number, content_fragments: [string]}]', {}
+    @tables = T '[{num_pairs: number, content_fragments: [string]}]', {}
     @refs = T '{table->number}', {}
 
   write: F '(any) => Self', (to_write) =>
@@ -315,7 +315,7 @@ class Serialiser
       when 'table'
         fragments[] = TABLE_REF_TAG_CHAR
 
-        -- Check for cycles
+        -- Check for already-reached tables
         if ref = @refs[to_write]
           @write_impl ref, fragments
           return
@@ -331,8 +331,7 @@ class Serialiser
           num_pairs += 1
           @write_impl k, content_fragments
           @write_impl v, content_fragments
-        print "#{ref} |-> #{#content_fragments}"
-        @table_fragments[] =
+        @tables[] =
           :num_pairs
           :content_fragments
       else
@@ -342,26 +341,20 @@ class Serialiser
     fragments = {}
 
     total_len = #@root_fragments
-    for table_fragment in *@table_fragments
-      total_len += #table_fragment.content_fragments
+    for table in *@tables
+      total_len += #table.content_fragments
     @write_impl total_len, fragments
-    print "#f: #{#fragments}"
 
-    @write_impl #@table_fragments, fragments
-    for i = #@table_fragments, 1, -1
-      table_fragment = @table_fragments[i]
-      { :num_pairs, :content_fragments } = table_fragment
+    @write_impl #@tables, fragments
+    for table in *@tables
+      { :num_pairs, :content_fragments } = table
       @write_impl num_pairs, fragments
-      print "#f: #{#fragments}"
       for fragment in *content_fragments
         fragments[] = fragment
-      print "#{i}: #f:#{#fragments}, #cf:#{#content_fragments}"
 
-    print "#rf: #{#@root_fragments}"
     for fragment in *@root_fragments
       fragments[] = fragment
 
-    print "#f: #{#fragments}"
     table.concat T '[string]', fragments
 
 MAX_INT = switch HOST
@@ -391,36 +384,45 @@ class Deserialiser
   new: F '(string) => <>', (@raw) =>
     @index = T 'number', 1
     @tables_by_ref = T '{number->table}', {}
+    @unresolved_table_refs = T '[{table: table, key: some, ref: number}]', {}
 
   parse: F '() => any', =>
-    len = @parse_value!
-    print "parsed len: #{len}"
-    if 'number' != type len
+    total_len = @parse_value!
+    if 'number' != type total_len
       error 'internal error: len field is not a number'
 
     num_tables = @parse_value!
     if 'number' != type num_tables
       error 'internal error: num_tables field is not a number'
-    print "parsed num_tables: #{num_tables}"
     for ref = num_tables - 1, 0, -1
       @parse_table_def ref
-    print "parsing value..."
-    -- TODO(kcza): index handling?
-    @parse_value!
+    with @parse_value!
+      for { :table, :key, :ref } in *@unresolved_table_refs
+        value = @tables_by_ref[ref]
+        if not value?
+          error "internal error: unresolved reference #{ref}"
+        table[key] = value
 
   parse_table_def: F '(number) => {}', (ref) =>
-    table = {}
-    @tables_by_ref[ref] = table
-
     num_pairs = @parse_value!
-    print "parsed num_pairs: #{num_pairs}"
     if 'number' != type num_pairs
       error 'internal error: num_pairs field is not a number'
+
+    table = {}
+    @tables_by_ref[ref] = table
     with table
       for _ = 1, num_pairs
         key = @parse_value!
-        value = @parse_value!
-        [key] = value
+
+        if TABLE_REF_TAG == string.byte @raw, @index
+          @index += 1
+          ref = @parse_value!
+          @unresolved_table_refs[] =
+            :table
+            :key
+            :ref
+        else
+          [key] = @parse_value!
 
   parse_value: F '() => any', =>
     head = string.byte @raw, @index
@@ -457,12 +459,13 @@ class Deserialiser
         @index += len
         return ret
       when TABLE_REF_TAG
+        index = @index
         ref = @parse_value!
         if 'number' != type ref
           error 'internal error: ref is not a number'
         table = @tables_by_ref[ref]
         if not table?
-          error "internal error: ref #{ref} invalid"
+          error "internal error: ref #{ref} invalid at #{index}"
         return table
       else
         error "unrecognised tag #{bit.band head, TAG_MASK} at index #{@index - 1}"
@@ -555,11 +558,9 @@ spec ->
           \write value
           \finish!
         indices = [ '%02d'\format i for i = 1, #serialised]
-        print table.concat indices, ' '
         bytes = with {}
           for i = 1, #serialised
             [] = '%02x'\format serialised\byte i
-        print table.concat bytes, ' '
         chars = with {}
           for i = 1, #serialised
             byte = serialised\byte i
@@ -567,7 +568,19 @@ spec ->
               [] = '% 2s'\format serialised\sub i, i
             else
               [] = '%02x'\format byte
-        print table.concat chars, ' '
+        assert #indices == #bytes
+        assert #indices == #chars
+        PER_LINE = 25
+        first = true
+        for i = 1, #indices, PER_LINE
+          if first
+            first = false
+          else
+            print!
+          print table.concat [ i for i in *indices[i, i+PER_LINE] ], ' '
+          print '-'\rep 3 * (PER_LINE + 1) - 1
+          print table.concat [ i for i in *bytes[i, i+PER_LINE] ], ' '
+          print table.concat [ i for i in *chars[i, i+PER_LINE] ], ' '
         (Deserialiser serialised)
           \parse!
 
@@ -616,10 +629,21 @@ spec ->
         * name: 'complex leaf table'
           value:
             hello: 'world'
+        * name: 'tree table'
+          value:
+            hello:
+              world:
+                how:
+                  are: 'you'
         * name: 'cyclic table'
           value: do
             ret = {}
             ret.self = ret
+            ret
+        * name: 'indirectly cyclic table'
+          value: do
+            ret = child: {}
+            ret.child.parent = ret
             ret
 
       for test in *tests
