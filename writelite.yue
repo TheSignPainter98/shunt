@@ -14,7 +14,7 @@ declare_type 'writelite.Writelite', [[{
   transaction: ((writelite.Transaction) -> <>) => <>,
   close: () => <boolean, ?string>,
 }]]
-declare_type 'writelite.Mode', '"plain"'
+declare_type 'writelite.Mode', '"blob"'
 declare_type 'writelite.MainHeader', [[{
   format_version: number,
   page_size: number,
@@ -826,7 +826,7 @@ spec ->
   describe 'writelite.Writelite', ->
     describe '\\mode', ->
       modes = T '[writelite.Mode]'
-        * 'plain'
+        * 'blob'
 
       it 'forbids explicit reassignment', ->
         for mode_a in *modes
@@ -839,7 +839,7 @@ spec ->
       -- it 'forbids implicit reassignment', ->
       --   fs = TestFs!
       --   writelite1 = with Writelite 'database.db', fs
-      --     \mode 'plain'
+      --     \mode 'blob'
       --   -- TODO(kcza): write a database to an FS with mode A, close, open again with mode B, where A != B
 
     describe '\\page_size', ->
@@ -868,14 +868,14 @@ spec ->
       it 'forbids implicit reassignment', ->
         fs = TestFs!
         with Writelite 'database.db', fs
-          \mode 'plain'
+          \mode 'blob'
           \page_size bit.blshift 1, 13
           _, err = \open!
           $assert_that err, eq nil
           _, err = \close!
           $assert_that err, eq nil
         with Writelite 'database.db', fs
-          \mode 'plain'
+          \mode 'blob'
           \page_size bit.blshift 1, 20
           ok, err = \open!
           $expect_that ok, eq false
@@ -885,7 +885,7 @@ spec ->
       it 'requires mandatory metadata', ->
         metadata =
           * name: 'mode'
-            action: (wl) -> wl\mode 'plain'
+            action: (wl) -> wl\mode 'blob'
             expect: 'cannot open main file: mode unspecified'
           * name: 'page size'
             action: (wl) -> wl\page_size bit.blshift 1, 13
@@ -915,7 +915,7 @@ spec ->
 
       it 'cannot be called whilst open', ->
         with Writelite 'database.db', TestFs!
-          \mode 'plain'
+          \mode 'blob'
           ok, err = \open!
           $expect_that ok, eq true
           $assert_that err, eq nil
@@ -939,7 +939,7 @@ spec ->
     describe '\\close', ->
       it 'cannot be called twice', ->
         with Writelite 'database.db', TestFs!
-          \mode 'plain'
+          \mode 'blob'
           ok, err = \open!
           $assert_that ok, eq true
           $expect_that err, eq nil
