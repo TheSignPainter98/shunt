@@ -263,6 +263,8 @@ class TypeSpecParser extends Parser
         action: @\parse_array
       * token: T_PAREN_OPEN
         action: @\parse_tuple_or_function
+      * token: T_TILDE
+        action: @\parse_table_like
       * token: T_BRACE_OPEN
         action: @\parse_table
 
@@ -281,14 +283,15 @@ class TypeSpecParser extends Parser
   parse_string_type: =>
     StringType @expect T_STRING
 
-  parse_array: =>
+  parse_array: (is_table_like=false) =>
     {_, elem_type, _} = @sequence
       * token: T_BRACKET_OPEN
       * action: @\parse_type
       * token: T_BRACKET_CLOSE
-    Array elem_type
+    (Array elem_type)
+      \table_like is_table_like
 
-  parse_tuple_or_function: =>
+  parse_tuple_or_function: (is_table_like=false) =>
     @expect T_PAREN_OPEN
     local types
     if @maybe T_PAREN_CLOSE
@@ -303,7 +306,16 @@ class TypeSpecParser extends Parser
       for ty in *types
         if ty\is Remainder
           error 'tuple type cannot contain varargs'
-      return Tuple types
+      return (Tuple types)
+        \table_like is_table_like
+
+    if is_table_like
+      local ty
+      if function_arrow == T_THIN_ARROW
+        ty = 'functions'
+      else
+        ty = 'methods'
+      error "#{ty} cannot be table-like"
 
     for ty in *types[,-1]
       if ty\is Remainder
@@ -356,16 +368,27 @@ class TypeSpecParser extends Parser
     else
       ty
 
-  parse_table: =>
+  parse_table_like: =>
+    @expect T_TILDE
+    @select
+      * token: T_BRACE_OPEN
+        action: -> @parse_table true
+      * token: T_BRACKET_OPEN
+        action: -> @parse_array true
+      * token: T_PAREN_OPEN
+        action: -> @parse_tuple_or_function true
+
+  parse_table: (is_table_like=false) =>
     {_, table, _} = @sequence
       * token: T_BRACE_OPEN
-      * action: @\parse_table_content
+      * action: -> @parse_table_content is_table_like
       * token: T_BRACE_CLOSE
     table
 
-  parse_table_content: =>
+  parse_table_content: (is_table_like=false) =>
     if (@lexer\peek! ?? {}).type == T_BRACE_CLOSE
-      return Struct nil, {}
+      return (Struct nil, {})
+        \table_like is_table_like
 
     local metatable_type
     if (@maybe T_ANGLE_OPEN)?
@@ -375,7 +398,8 @@ class TypeSpecParser extends Parser
       checkpoint = @lexer\checkpoint!
       @maybe T_COMMA
       if (@lexer\peek! ?? {}).type == T_BRACE_CLOSE
-        return Struct metatable_type, {}
+        return (Struct metatable_type, {})
+          \table_like is_table_like
       @lexer\restore checkpoint
       @expect T_COMMA
 
@@ -384,7 +408,8 @@ class TypeSpecParser extends Parser
     @lexer\restore checkpoint
 
     if is_struct
-      return Struct metatable_type, @parse_repeat_separated @\parse_field, T_COMMA, separator_trails_before: T_BRACE_CLOSE
+      return (Struct metatable_type, @parse_repeat_separated @\parse_field, T_COMMA, separator_trails_before: T_BRACE_CLOSE)
+        \table_like is_table_like
 
     first_type = @parse_type!
     table_content_type = @select
@@ -395,12 +420,14 @@ class TypeSpecParser extends Parser
 
     switch table_content_type
       when 'set'
-        Set metatable_type, first_type
+        (Set metatable_type, first_type)
+          \table_like is_table_like
       when 'mapping'
         { _, maps_to } = @sequence
           * token: T_THIN_ARROW
           * action: @\parse_type
-        Mapping metatable_type, first_type, maps_to
+        (Mapping metatable_type, first_type, maps_to)
+          \table_like is_table_like
       else
         error "internal error: illegal table contents type: #{repr table_content_type}"
 
@@ -420,6 +447,7 @@ T_BRACKET_OPEN = <tostring>: => "'['"
 T_BRACKET_CLOSE = <tostring>: => "']'"
 T_ANGLE_OPEN = <tostring>: => '"<"'
 T_ANGLE_CLOSE = <tostring>: => '">"'
+T_TILDE = <tostring>: => '~'
 T_COMMA = <tostring>: => "','"
 T_COLON = <tostring>: => "':'"
 T_BANG = <tostring>: => "'!'"
@@ -494,6 +522,8 @@ class Lexer
           T_NUMBER, (assert tonumber number), #number
         else if string = type_spec\match [[^"([^"]*)"]], @index
           T_STRING, string, #string + 2
+        else if match = type_spec\match '^~', @index
+          T_TILDE, nil, #match
         else
           error "unexpected character '#{type_spec\sub @index, @index}' in type spec '#{type_spec}'"
 
@@ -689,6 +719,12 @@ class Optional using Is
 
 class Array using Is
   new: (@elem_type) =>
+    @_table_like = false
+
+  table_like: (@_table_like) =>
+    if @_table_like
+      error "table-like arrays are not supported"
+    @
 
   __tostring: =>
     "[#{@elem_type}]"
@@ -714,6 +750,12 @@ class Array using Is
 
 class Tuple using Is
   new: (@elem_types) =>
+    @_table_like = false
+
+  table_like: (@_table_like) =>
+    if @_table_like
+      error "table-like arrays are not supported"
+    @
 
   __tostring: =>
     elem_type_reprs = [ tostring elem_type for elem_type in *@elem_types ]
@@ -722,6 +764,7 @@ class Tuple using Is
   checker: (checker_builder=CheckerBuilder!) =>
     with checker_builder
       \add C_ASSERT_PRIMITIVE, 'table'
+
       for i = 1, #@elem_types
         \add C_PUSH, i
         \add C_GET_FIELD
@@ -731,6 +774,10 @@ class Tuple using Is
 
 class Struct using Is
   new: (@metatable_type, @fields) =>
+    @_table_like = false
+
+  table_like: (@_table_like) =>
+    @
 
   __tostring: =>
     field_reprs = [ tostring field for field in *@fields ]
@@ -738,7 +785,11 @@ class Struct using Is
 
   checker: (checker_builder=CheckerBuilder!) =>
     with checker_builder
-      \add C_ASSERT_PRIMITIVE, 'table'
+      if @_table_like
+        \add C_ASSERT_TABLE_LIKE
+      else
+        \add C_ASSERT_PRIMITIVE, 'table'
+
       if @metatable_type?
         \add C_PUSH_METATABLE
         @metatable_type\checker checker_builder
@@ -761,6 +812,12 @@ class Field using Is
 
 class Set using Is
   new: (@metatable_type, @elem_type) =>
+    @_table_like = false
+
+  table_like: (@_table_like) =>
+    if @_table_like
+      error "table-like arrays are not supported"
+    @
 
   __tostring: =>
     "{#{@elem_type}}"
@@ -791,6 +848,12 @@ class Set using Is
 
 class Mapping using Is
   new: (@metatable_type, @in_type, @out_type) =>
+    @_table_like = false
+
+  table_like: (@_table_like) =>
+    if @_table_like
+      error "table-like arrays are not supported"
+    @
 
   __tostring: =>
     "{#{@in_type} -> #{@out_type}}"
@@ -1040,6 +1103,7 @@ C_PUSH_METATABLE = <tostring>: => '<push-metatable>'
 C_POP = <tostring>: => '<pop>'
 C_ASSERT_NON_NIL = <tostring>: => '<assert-non-nil>'
 C_ASSERT_PRIMITIVE = <tostring>: => '<assert-primitive>'
+C_ASSERT_TABLE_LIKE = <tostring>: => '<assert-table-like>'
 C_ASSERT_TRUTHY = <tostring>: => '<assert-truthy>'
 C_ASSERT_LEN = <tostring>: => '<assert-len>'
 C_ASSERT_EQ = <tostring>: => '<assert-eq>'
@@ -1164,6 +1228,14 @@ check = (check_prog, value, root=true) ->
           arg = [pc + 1]
           if ty != arg
             $check_error "incorrect type: expected #{arg} but got #{ty} (#{repr stack[stack_size]})"
+        when C_ASSERT_TABLE_LIKE
+          value = stack[stack_size]
+          ty = type value
+          if 'table' != ty and
+              'string' != ty and
+              not value.<>? and
+              not value.<index>?
+            $check_error "incorrect type: expected indexable but got #{ty}"
         when C_ASSERT_TRUTHY
           if not stack[stack_size]
             $check_error "incorrect type: expected a truthy value but got #{stack[stack_size]}"
@@ -1379,7 +1451,7 @@ spec ->
       }
 
     it 'emits strucural tokens', ->
-      $expect_that (tokens '(),{}[]:->=>...?+|'), deep_eq {
+      $expect_that (tokens '(),{}[]:->=>...?+|~'), deep_eq {
         Symbol T_PAREN_OPEN
         Symbol T_PAREN_CLOSE
         Symbol T_COMMA
@@ -1394,6 +1466,7 @@ spec ->
         Symbol T_QUESTION
         Symbol T_PLUS
         Symbol T_PIPE
+        Symbol T_TILDE
       }
 
     it 'ignores whitespace', ->
@@ -1409,7 +1482,7 @@ spec ->
       $expect_that (tokens '-- hello\n--world!'), deep_eq {}
 
     it 'rejects unexpected characters', ->
-      $expect_that (-> tokens '~'), errors matches [[unexpected character '~']]
+      $expect_that (-> tokens '*'), errors matches [[unexpected character '%*']]
 
     describe ':peek', ->
       it 'matches :next', ->
@@ -1482,6 +1555,8 @@ spec ->
       it 'accepts arrays', ->
         $expect_that (parse '[string]'), deep_eq Array Primitive 'string'
         $expect_that (parse '[[string]]'), deep_eq Array Array Primitive 'string'
+        $expect_that (parse '~[string]'), deep_eq (Array Primitive 'string')
+          \table_like true
 
       it 'accepts tuples', ->
         $expect_that (parse '()'), deep_eq Tuple {}
@@ -1493,15 +1568,24 @@ spec ->
           Tuple { (UserType 'User'), (Primitive 'table') },
         }
 
+        $expect_that (parse '~()'), deep_eq (Tuple {})
+          \table_like true
+
       it 'accepts sets', ->
         $expect_that (parse '{string}'), deep_eq Set nil, Primitive 'string'
         $expect_that (parse '{{string}}'), deep_eq Set nil, Set nil, Primitive 'string'
         $expect_that (parse '{<>: {}, string}'), deep_eq Set (Struct nil, {}), Primitive 'string'
 
+        $expect_that (parse '~{string}'), deep_eq (Set nil, Primitive 'string')
+          \table_like true
+
       it 'accepts mappings', ->
         $expect_that (parse '{boolean -> number}'), deep_eq Mapping nil, (Primitive 'boolean'), Primitive 'number'
         $expect_that (parse '{{boolean -> number} -> {string -> thread}}'), deep_eq Mapping nil, (Mapping nil, (Primitive 'boolean'), Primitive 'number'), Mapping nil, (Primitive 'string'), Primitive 'thread'
         $expect_that (parse '{<>: {}, boolean -> number}'), deep_eq Mapping (Struct nil, {}), (Primitive 'boolean'), Primitive 'number'
+
+        $expect_that (parse '~{boolean -> number}'), deep_eq (Mapping nil, (Primitive 'boolean'), Primitive 'number')
+          \table_like true
 
       it 'accepts structs', ->
         $expect_that (parse '{}'), deep_eq Struct nil, {}
@@ -1522,6 +1606,9 @@ spec ->
         $expect_that (parse '{<>: {<>: {__tostring: function}}}'), deep_eq do
           Struct (Struct (Struct nil, { Field '__tostring', Primitive 'function' }), {}), {}
 
+        $expect_that (parse '~{}'), deep_eq (Struct nil, {})
+          \table_like true
+
       it 'accepts functions', ->
         $expect_that (parse '() -> <>'), deep_eq Function {}, {}
         $expect_that (parse '() -> nil'), deep_eq Function {}, {Primitive 'nil'}
@@ -1537,6 +1624,8 @@ spec ->
         $expect_that (parse '(boolean, string...) -> <thread, number...>'), deep_eq Function {(Primitive 'boolean'), <index>: => Primitive 'string'}, {(Primitive 'thread'), <index>: => Primitive 'number'}
         $expect_that (parse '() -> [string]...'), deep_eq Function {}, { <index>: => Array Primitive 'string' }
 
+        $expect_that (-> parse '~() -> <>'), errors matches 'functions cannot be table%-like'
+
       it 'accepts methods', ->
         $expect_that (parse '() => <>'), deep_eq Method {}, {}
         $expect_that (parse '() => nil'), deep_eq Method {}, {Primitive 'nil'}
@@ -1551,6 +1640,8 @@ spec ->
         $expect_that (parse '(string...) => <number...>'), deep_eq Method {<index>: => Primitive 'string'}, {<index>: => Primitive 'number'}
         $expect_that (parse '(boolean, string...) => <thread, number...>'), deep_eq Method {(Primitive 'boolean'), <index>: => Primitive 'string'}, {(Primitive 'thread'), <index>: => Primitive 'number'}
         $expect_that (parse '() => [string]...'), deep_eq Method {}, { <index>: => Array Primitive 'string' }
+
+        $expect_that (-> parse '~() => <>'), errors matches 'methods cannot be table%-like'
 
       it 'accepts conjunctions', ->
         $expect_that (parse '[string]+{number->string}+table+function'), deep_eq Conjunction
@@ -1728,6 +1819,13 @@ spec ->
       $expect_that (-> T '{hello: {world: string}}', hello: world: 123), errors matches 'incorrect type: expected string but got number'
       $expect_that (-> T '{hello: {world: string}, foo: boolean}', hello: {world:'asdf'}, foo: 123), errors matches 'incorrect type: expected boolean but got number'
       $expect_that (-> T '{<>: {}}', {}), errors matches 'incorrect type: expected table but got nil'
+
+    it 'checks table-likes', ->
+      -- Tuples are not supported.
+      -- Arrays are not supported.
+      -- Mappings are not supported.
+      -- Sets are not supported.
+      $expect_that (-> T '~{char: function}', ''), no_errors!
 
     it 'checks functions', ->
       $expect_that (-> T '() -> nil', ->), no_errors!
