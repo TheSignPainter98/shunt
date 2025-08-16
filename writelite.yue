@@ -4,14 +4,19 @@ import 'compat' as :HOST
 import 'quicktype' as :declare_singleton_type, :declare_type, :F, :T
 import 'spec' as :spec
 
+FORMAT_VERSION = 1
+MIN_PAGE_SIZE = 1024
+
 declare_type 'writelite.Writelite', [[{
-  open: () => ?string,
+  open: () => <boolean, ?string>,
   transaction: ((writelite.Transaction) -> <>) => <>,
-  close: () => ?string,
+  close: () => <boolean, ?string>,
 }]]
 declare_type 'writelite.Mode', '"plain"'
 declare_type 'writelite.MainHeader', [[{
   format_version: number,
+  page_size: number,
+  mode: writelite.Mode,
 }]]
 export class Writelite
   @_open_transactions: T '{string}', {}
@@ -20,6 +25,7 @@ export class Writelite
     @_journal_path = T 'string', @_path .. '~'
     @_main_file = T '?writelite.File', nil
     @_open = T 'boolean', false
+    @_mode = T '?writelite.Mode', nil
     @_page_size = 4096
     @_page_size_set = T 'boolean', false
 
@@ -32,56 +38,111 @@ export class Writelite
   page_size: F '(number) => Self', (page_size) =>
     if @_page_size_set
       error "cannot change page size once set"
+    if page_size < MIN_PAGE_SIZE
+      error "cannot change page size to #{page_size}: minimum is #{MIN_PAGE_SIZE}"
+    if page_size % 1 != 0
+      error "cannot change page size to #{page_size}: not an integer"
+
+    shifted = page_size
+    while 0 == bit.band shifted, 1
+      shifted = bit.brshift shifted, 1
+    if shifted > 1
+      error "cannot change page size to #{page_size}: not a power of 2"
+
     @_page_size_set = true
     @_page_size = page_size
     @
 
-  open: F '() => ?string', =>
+  open: F '() => <boolean, ?string>', =>
     if @_open
-      return 'cannot open writelite file twice'
+      return false, 'cannot open writelite file twice'
     @_open = true
 
     if not @_mode?
-      return 'cannot open main file: mode unspecified'
+      return false, 'cannot open main file: mode unspecified'
 
     main_file, err = @_fs\open @_path, 'w+'
     if err?
-      error "cannot open main file: #{err}"
+      return false, "cannot open main file: #{err}"
     main_file\setvbuf 'full' -- Minimise writes.
+    main_is_empty = do
+      end_index, err = main_file\seek 'end', 0
+      if err?
+        return false, "cannot seek in main file: #{err}"
+      _, err = main_file\seek 'set', 0
+      if err?
+        return false, "cannot seek in main file: #{err}"
+      end_index == 0
     @_main_file = main_file
 
-    if journal, _ = @_fs\open @_journal_path, 'r'
-      journal_content = journal\read '*a'
-      journal\close!
+    -- if journal, _ = @_fs\open @_journal_path, 'r'
+    --   journal_content = journal\read '*a'
+    --   journal\close!
+    --
+    --   if @_journal_valid journal_content
+    --     @_recover_journal @_main_file, journal_content
+    --   else
+    --     -- Discard incomplete transaction.
+    --     os.remove @_journal_path
 
-      if @_journal_valid journal_content
-        @_recover_journal @_main_file, journal_content
-      else
-        -- Discard incomplete transaction.
-        os.remove @_journal_path
+    local main_header
+    if main_is_empty
+      main_header = @_make_main_header!
+    else
+      main_header, err = @_read_main_header!
+      if err?
+        return "cannot open writelite file: #{err}"
+    @_main_header = main_header
 
-  --   main_header, err = @_read_main_header!
-  --   if err?
-  --     return "cannot open writelite file: #{err}"
-  --   @_main_header = main_header
-  --
-  -- _read_main_header: F '() => <writelite.MainHeader, ?string>', =>
-  --   header = @_main_file
-  --
-  --   checkers =
-  --     format_version: (fv) -> if fv != FORMAT_VERSION
-  --       "format version mismatch"
-  --     mode: (m) -> if m != @_mode
-  --       "mode mismatch"
-  --   for key, value in pairs @_main_header
-  --     checker = checkers[key]
-  --     if not checker?
-  --       return "no such checker"
-  --     err = checker value
-  --     if err?
-  --       return "cannot open #{@_path}: #{err}"
-  --
-  --   header
+    true, nil
+
+  _make_main_header: F '() => writelite.MainHeader', =>
+    header = T 'writelite.MainHeader',
+      format_version: FORMAT_VERSION
+      page_size: @_page_size
+      mode: @_mode
+      checksum: 0 -- Placeholder
+
+    checksum = Hasher!
+      \write header
+      \finish!
+
+    header.checksum = checksum
+    header
+
+  _read_main_header: F '() => <?writelite.MainHeader, ?string>', =>
+    @_main_file\seek 'set', 0
+    raw_header, err = @_main_file\read MIN_PAGE_SIZE
+    if err?
+      return nil, err
+    header = Deserialiser (raw_header\sub #@_main_prelude!)
+      \parse!
+
+    checkers =
+      format_version: (fv) -> if fv != FORMAT_VERSION
+        "format version mismatch"
+      mode: (m) -> if m != @_mode
+        "mode mismatch"
+      header_checksum: ->
+    for key, value in pairs @_main_header
+      checker = checkers[key]
+      if not checker?
+        return "no such checker"
+      err = checker value
+      if err?
+        return "cannot open #{@_path}: #{err}"
+
+    stored_checksum = header.checksum
+    header.checksum = 0
+    computed_checksum = Hasher!
+      \write header
+      \finish!
+    if stored_checksum != computed_checksum
+      return "header corrupt"
+    header.checksum = stored_checksum
+    -- TODO(kcza): check checksum
+
+    header
 
   _journal_valid: F '(string) => <>', (journal_content) =>
     -- TODO(kcza): read the prelude (must be the unedited prefix)
@@ -114,19 +175,19 @@ export class Writelite
       error err
     return
 
-  close: F '() => ?string', =>
+  close: F '() => <boolean, ?string>', =>
     file_closure_error = @_main_file\close!
 
     if @@_open_transactions[@_path]
-      return 'cannot close writelite file whilst transaction is open'
+      return false, 'cannot close writelite file whilst transaction is open'
 
     if not @_open
-      return 'cannot close writelite file: not open'
+      return false, 'cannot close writelite file: not open'
     @_open = false
 
-    file_closure_error
+    not file_closure_error?, file_closure_error
 
-  @_main_prelude: F '() => string', =>
+  _main_prelude: F '() => string', =>
     @_cached_main_prelude ??= do
       prelude_fragments =
         * '\n'
@@ -213,7 +274,7 @@ declare_type 'writelite.Fs', [[{
 }]]
 declare_type 'writelite.FileMode', '"r"|"w"|"a"|"r+"|"w+"|"a+"'
 declare_type 'writelite.File', [[{
-  read: ("*a") => <?string, ?string>,
+  read: ("*a"|number) => <?string, ?string>,
   write: (string) => ?string,
   seek: (Whence, ?number) => <?number, ?string>,
   setvbuf: ("full") => <>,
@@ -590,34 +651,37 @@ class Hasher
   new: F '() => <>', =>
     @_current = 7
 
-  write: F '(any) => Self', (to_add) =>
-    switch type to_add
+  write: F '(any) => Self', (to_write) =>
+    switch type to_write
       when 'boolean'
-        if to_add
-          @_current *= 997 * 127
+        if to_write
+          @_add 997 * 127
         else
-          @_current *= 997 * 13
+          @_add 997 * 13
       when 'number'
-        @_current *= 997 * (8302197 + to_add)
+        @_add 997 * (8302197 + to_write)
       when 'string'
-        @write 1 + #to_add
+        @write 1 + #to_write
 
         CHUNK_SIZE = 100 -- Limit stack usage
-        for i = 1, to_add\len!, CHUNK_SIZE
+        for i = 1, to_write\len!, CHUNK_SIZE
           start_idx = 1 + (i - 1) * CHUNK_SIZE
           end_idx = i * CHUNK_SIZE
-          for byte in *{ to_add\byte start_idx, end_idx }
-            @_current *= 997 * byte
-            @_current %= MAX_HASH
+          for byte in *{ to_write\byte start_idx, end_idx }
+            @_add 997 * byte
       when 'table'
         num_entries = 0
-        for k, v in pairs to_add
+        for k, v in pairs to_write
           @write k
           @write v
-        @write 1 + num_entries
+        @_add 1 + num_entries
       else
-        error "cannot hash a #{type to_add}"
+        error "cannot hash a #{type to_write}"
     @
+
+  _add: F '(number) => <>', (num) =>
+    @_current *= num -- % MAX_HASH
+    @_current %= MAX_HASH
 
   finish: F '() => number', =>
     @_current
@@ -649,15 +713,22 @@ spec ->
 
   class TestFile
     new: F '(string) => <>', (content) =>
-      @cursor = 1
+      @cursor = 0
       @content_bytes = with {}
         for i = 1, #content
           [] = string.byte content, i
 
-    read: F '("*a") => <?string, ?string>', (_mode) =>
+    read: F '("*a"|number) => <?string, ?string>', (amount) =>
       if @closed
         return 'closed'
-      table.concat [ string.char b for b in *@content_bytes[@cursor,] ]
+      end_index = switch amount
+        when '*a'
+          #@content_bytes
+        else
+          @cursor + amount
+      if end_index > #@content_bytes
+        end_index = #@content_bytes
+      table.concat [ string.char b for b in *@content_bytes[1+@cursor,end_index] ], nil
 
     write: F '(string) => ?string', (to_write) =>
       if @closed
@@ -704,17 +775,49 @@ spec ->
             writelite\mode mode_a
             $assert_that (-> writelite\mode mode_b), errors matches 'cannot change mode once set'
 
-      it 'forbids implicit reassignment', ->
-        -- TODO(kcza): write a database to an FS with mode A, close, open again with mode B, where A != B
+      -- it 'forbids implicit reassignment', ->
+      --   fs = TestFs!
+      --   writelite1 = with Writelite 'database.db', fs
+      --     \mode 'plain'
+      --   -- TODO(kcza): write a database to an FS with mode A, close, open again with mode B, where A != B
 
     describe '\\page_size', ->
       it 'forbids explicit reassignment', ->
         writelite = Writelite 'database.db', TestFs!
-        writelite\page_size 128
-        $assert_that (-> writelite\page_size 128), errors matches 'cannot change page size once set'
+        writelite\page_size MIN_PAGE_SIZE
+        $assert_that (-> writelite\page_size MIN_PAGE_SIZE), errors matches 'cannot change page size once set'
 
-      it 'forbids implicit reassignment', ->
-        -- TODO(kcza): write a database to an FS with page size A, close, open again with page size B, where A != B
+      it 'forbids too-small page sizes', ->
+        with Writelite 'database.db', TestFs!
+          $assert_that (-> \page_size MIN_PAGE_SIZE - 1), errors matches "cannot change page size to #{MIN_PAGE_SIZE - 1}: minimum is #{MIN_PAGE_SIZE}"
+
+      it 'requires integers', ->
+        with Writelite 'database.db', TestFs!
+          $assert_that (-> \page_size 1234.5), errors matches 'cannot change page size to 1234%.5: not an integer'
+
+      it 'requires powers of two', ->
+        for i = 10, 30
+          print "testing #{i}..."
+          with Writelite 'database.db', TestFs!
+            $expect_that (-> \page_size bit.blshift 1, i), no_errors!
+
+        with Writelite 'database.db', TestFs!
+          $expect_that (-> \page_size 2000), errors matches 'cannot change page size to 2000: not a power of 2'
+
+      -- it 'forbids implicit reassignment', ->
+      --   -- TODO(kcza): write a database to an FS with page size A, close, open again with page size B, where A != B
+      --   fs = TestFs!
+      --   with writelite 'database.db', fs
+      --     \mode 'plain'
+      --     \page_size bit.blshift 1, 13
+      --     assert \open!
+      --     assert \close!
+      --   -- with Writelite 'database.db', fs
+      --   --   \mode 'plain'
+      --   --   \page_size bit.blshift 1, 20
+      --   --   ok, err = \open!
+      --   --   $expect_that ok, eq false
+      --   --   $expect_that err, matches 'asdf'
 
     describe '\\open', ->
       it 'requires mandatory metadata', ->
@@ -723,7 +826,7 @@ spec ->
             action: (wl) -> wl\mode 'plain'
             expect: 'cannot open main file: mode unspecified'
           * name: 'page size'
-            action: (wl) -> wl\page_size 128
+            action: (wl) -> wl\page_size bit.blshift 1, 13
         for index_to_omit = 1, #metadata
           { :name, :expect } = metadata[index_to_omit]
           print "testing omission of #{name}..."
@@ -736,29 +839,57 @@ spec ->
             metadata[i].action writelite
 
           if expect?
-            $expect_that writelite\open!, matches expect
+            ok, err = writelite\open!
+            $expect_that ok, eq false
+            $expect_that err, matches expect
           else
-            $assert_that writelite\open!, eq nil
-            $expect_that writelite\close!, eq nil
+            ok, err = writelite\open!
+            $assert_that ok, eq true
+            $assert_that err, eq nil
+
+            ok, err = writelite\close!
+            $assert_that ok, eq true
+            $assert_that err, eq nil
 
       it 'cannot be whilst open', ->
         with Writelite 'database.db', TestFs!
           \mode 'plain'
-          $assert_that \open!, eq nil
-          $expect_that \open!, matches 'cannot open writelite file twice'
+          ok, err = \open!
+          $expect_that ok, eq true
+          $expect_that err, eq nil
 
-          $assert_that \close!, eq nil
 
-          $assert_that \open!, eq nil
-          $expect_that \open!, matches 'cannot open writelite file twice'
+          ok, err = \open!
+          $expect_that ok, eq false
+          $expect_that err, matches 'cannot open writelite file twice'
+
+          ok, err = \close!
+          $assert_that ok, eq true
+          $assert_that err, eq nil
+
+          ok, err = \open!
+          $assert_that ok, eq true
+          $assert_that err, eq nil
+
+          ok, err = \open!
+          $assert_that ok, eq false
+          $expect_that err, matches 'cannot open writelite file twice'
 
     describe '\\close', ->
       it 'cannot be called twice', ->
         with Writelite 'database.db', TestFs!
           \mode 'plain'
-          $assert_that \open!, eq nil
-          $assert_that \close!, eq nil
-          $expect_that \close!, eq 'cannot close writelite file: not open'
+          ok, err = \open!
+          $assert_that ok, eq true
+          $expect_that err, eq nil
+
+          ok, err = \close!
+          $assert_that ok, eq true
+          $assert_that err, eq nil
+
+          ok, err = \close!
+          $assert_that ok, eq false
+          $assert_that err, eq 'cannot close writelite file: not open'
 
   describe 'writelite.Hasher', ->
     it 'avoids collisions', ->
