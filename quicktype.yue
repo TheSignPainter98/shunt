@@ -722,14 +722,14 @@ class Array using Is
     @_table_like = false
 
   table_like: (@_table_like) =>
-    if @_table_like
-      error "table-like arrays are not supported"
     @
 
   __tostring: =>
     "[#{@elem_type}]"
 
   checker: (checker_builder=CheckerBuilder!) =>
+    if @_table_like
+      error "table-like arrays are not supported"
     with checker_builder
       \add C_ASSERT_PRIMITIVE, 'table'
       \add C_PUSH, 1
@@ -753,8 +753,6 @@ class Tuple using Is
     @_table_like = false
 
   table_like: (@_table_like) =>
-    if @_table_like
-      error "table-like arrays are not supported"
     @
 
   __tostring: =>
@@ -762,6 +760,8 @@ class Tuple using Is
     "(#{table.concat elem_type_reprs, ', '})"
 
   checker: (checker_builder=CheckerBuilder!) =>
+    if @_table_like
+      error "table-like arrays are not supported"
     with checker_builder
       \add C_ASSERT_PRIMITIVE, 'table'
 
@@ -815,14 +815,14 @@ class Set using Is
     @_table_like = false
 
   table_like: (@_table_like) =>
-    if @_table_like
-      error "table-like arrays are not supported"
     @
 
   __tostring: =>
     "{#{@elem_type}}"
 
   checker: (checker_builder=CheckerBuilder!) =>
+    if @_table_like
+      error "table-like arrays are not supported"
     with checker_builder
       \add C_ASSERT_PRIMITIVE, 'table'
 
@@ -851,14 +851,14 @@ class Mapping using Is
     @_table_like = false
 
   table_like: (@_table_like) =>
-    if @_table_like
-      error "table-like arrays are not supported"
     @
 
   __tostring: =>
     "{#{@in_type} -> #{@out_type}}"
 
   checker: (checker_builder=CheckerBuilder!) =>
+    if @_table_like
+      error "table-like arrays are not supported"
     with checker_builder
       \add C_ASSERT_PRIMITIVE, 'table'
 
