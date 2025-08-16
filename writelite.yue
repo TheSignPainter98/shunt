@@ -670,11 +670,14 @@ class Hasher
           for byte in *{ to_write\byte start_idx, end_idx }
             @_add 997 * byte
       when 'table'
-        num_entries = 0
-        for k, v in pairs to_write
-          @write k
-          @write v
-        @_add 1 + num_entries
+        entries = with {}
+          for key, value in pairs to_write
+            [] = :key, :value
+        @_add 1 + #entries
+        table.sort entries, (a, b) -> a.key < b.key
+        for { :key, :value } in *entries
+          @write key
+          @write value
       else
         error "cannot hash a #{type to_write}"
     @
@@ -907,6 +910,25 @@ spec ->
         if max_collisions < c
           max_collisions = c
       $expect_that max_collisions, lt NUM_STRINGS * 0.01
+
+    it 'is stable for tables', ->
+      make_test_data = ->
+        with {}
+          .k1 =
+            k11: 'a'
+            k12: 'b'
+          .k2 =
+            k21: 'c'
+            k22: 'd'
+      hash = nil
+      for i = 1, 1000
+        h = Hasher!
+          \write make_test_data!
+          \finish!
+        if hash?
+          $assert_that h, eq hash
+        else
+          hash = h
 
   describe 'writelite.Serialiser roundtrip', ->
     tests =
