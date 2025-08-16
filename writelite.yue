@@ -8,6 +8,8 @@ FORMAT_VERSION = 1
 MIN_PAGE_SIZE = 1024
 
 declare_type 'writelite.Writelite', [[{
+  mode: (writelite.Mode) => Self,
+  page_size: (number) => Self,
   open: () => <boolean, ?string>,
   transaction: ((writelite.Transaction) -> <>) => <>,
   close: () => <boolean, ?string>,
@@ -43,6 +45,7 @@ export class Writelite
     if page_size % 1 != 0
       error "cannot change page size to #{page_size}: not an integer"
 
+    -- Assert `page_size` is a power of two.
     shifted = page_size
     while 0 == bit.band shifted, 1
       shifted = bit.brshift shifted, 1
@@ -88,10 +91,13 @@ export class Writelite
     local main_header
     if main_is_empty
       main_header = @_make_main_header!
+      err = @_format_main main_header
+      if err?
+        return false, err
     else
       main_header, err = @_read_main_header!
       if err?
-        return "cannot open writelite file: #{err}"
+        return false, "cannot open writelite file: #{err}"
     @_main_header = main_header
 
     true, nil
@@ -115,7 +121,8 @@ export class Writelite
     raw_header, err = @_main_file\read MIN_PAGE_SIZE
     if err?
       return nil, err
-    header = Deserialiser (raw_header\sub #@_main_prelude!)
+    debug_serialised raw_header\sub #@_main_prelude!
+    header = (Deserialiser raw_header\sub #@_main_prelude!)
       \parse!
 
     checkers =
@@ -123,14 +130,16 @@ export class Writelite
         "format version mismatch"
       mode: (m) -> if m != @_mode
         "mode mismatch"
-      header_checksum: ->
-    for key, value in pairs @_main_header
+      page_size: (ps) -> if ps != @_page_size
+        "page size mismatch"
+      checksum: ->
+    for key, value in pairs header
       checker = checkers[key]
       if not checker?
-        return "no such checker"
+        error "internal error: no such checker '#{key}'"
       err = checker value
       if err?
-        return "cannot open #{@_path}: #{err}"
+        return nil, "cannot open #{@_path}: #{err}"
 
     stored_checksum = header.checksum
     header.checksum = 0
@@ -138,11 +147,31 @@ export class Writelite
       \write header
       \finish!
     if stored_checksum != computed_checksum
-      return "header corrupt"
+      return nil, "header corrupt (computed_checksum=#{computed_checksum}, stored_checksum=#{stored_checksum})"
     header.checksum = stored_checksum
-    -- TODO(kcza): check checksum
 
     header
+
+  _format_main: F '(writelite.MainHeader) => ?string', (header) =>
+    fragments =
+      * @_main_prelude!
+      * Serialiser!
+          \write header
+          \finish!
+
+    current_size = 0
+    for fragment in *fragments
+      current_size += #fragment
+    fragments[] = '\0'\rep MIN_PAGE_SIZE - current_size
+
+    to_write = table.concat fragments
+    if #to_write > MIN_PAGE_SIZE
+      error "internal error: first page too large: #{#to_write} > #{MIN_PAGE_SIZE}"
+    _, err = @_main_file\write to_write
+    if err?
+      return err
+    _, err = @_main_file\flush!
+    err
 
   _journal_valid: F '(string) => <>', (journal_content) =>
     -- TODO(kcza): read the prelude (must be the unedited prefix)
@@ -188,42 +217,26 @@ export class Writelite
     not file_closure_error?, file_closure_error
 
   _main_prelude: F '() => string', =>
-    @_cached_main_prelude ??= do
-      prelude_fragments =
-        * '\n'
-        * '\n'
-        * '\n'
-        * '\n'
-        * 'STOP!\n'
-        * '\n'
-        * 'DO NOT EDIT!\n'
-        * '\n'
-        * 'Editing this file will corrupt the database.\n'
-        * '\n'
-        * 'Close this file and DO NOT SAVE any changes.\n'
-        * '\n'
-        * 'EXIT the editor NOW.\n'
-        * '\n'
-        * '\n'
-        * '\n'
-        * '\n'
-      prelude_len = 0
-      for line in *prelude_fragments
-        prelude_len += #line
-
-      spacer_line = ('.'\rep 49) .. '\n'
-      while prelude_len < @_page_size - #spacer_line
-        prelude_fragments[] = spacer_line
-        prelude_len += #spacer_line
-      while prelude_len < @_page_size - 2
-        prelude_fragments[] = '.'
-        prelude_len += #'\n'
-      prelude_fragments[] = '@'
-      prelude_fragments[] = '\n'
-
-      prelude = table.concat prelude_fragments
-      assert #prelude == @_page_size
-      prelude
+    @_cached_main_prelude ??= table.concat
+      * '\n'
+      * '\n'
+      * '\n'
+      * '\n'
+      * 'STOP!\n'
+      * '\n'
+      * 'DO NOT EDIT!\n'
+      * '\n'
+      * 'Editing this file will corrupt the database.\n'
+      * '\n'
+      * 'Close this file and DO NOT SAVE any changes.\n'
+      * '\n'
+      * 'EXIT the editor NOW.\n'
+      * '\n'
+      * '\n'
+      * '\n'
+      * '\n'
+      * '-'\rep 49
+      * '\n'
     @_cached_main_prelude
 
   _journal_prelude: F '() => string', =>
@@ -278,6 +291,7 @@ declare_type 'writelite.File', [[{
   write: (string) => ?string,
   seek: (Whence, ?number) => <?number, ?string>,
   setvbuf: ("full") => <>,
+  flush: () => <boolean, ?string>,
   close: () => ?string,
 }]]
 class OsFs
@@ -342,8 +356,6 @@ class Transaction
 
   _close: F '() => <>', =>
     if @_aborted
-      -- TODO(kcza): figure out how to NOT write the journal if a power
-      -- failure occurs after an abort but before the journal is removed.
       os.remove @_journal_path
       return
 
@@ -582,6 +594,8 @@ class Deserialiser
 
   parse_value: F '() => any', =>
     head = string.byte @raw, @index
+    if not head?
+      error "internal error: unexpected EOF at index #{@index}"
     @index += 1
     switch bit.band head, TAG_MASK
       when NIL_TAG
@@ -689,6 +703,39 @@ class Hasher
   finish: F '() => number', =>
     @_current
 
+debug_serialised = F '(string) -> <>', (serialised) ->
+  indices = [ '%02d'\format i for i = 1, #serialised]
+  bytes = with {}
+    for i = 1, #serialised
+      [] = '%02x'\format serialised\byte i
+  is_printable = (c) ->
+    'a' <= c and c <= 'z' or
+      'A' <= c and c <= 'Z' or
+      '0' <= c and c <= '9' or
+      c == '-' or
+      c == '+' or
+      c == '_'
+  chars = with {}
+    for i = 1, #serialised
+      byte = serialised\byte i
+      if is_printable string.char byte
+        [] = '% 2s'\format serialised\sub i, i
+      else
+        [] = '%02x'\format byte
+  assert #indices == #bytes
+  assert #indices == #chars
+  PER_LINE = 25
+  first = true
+  for i = 1, #indices, PER_LINE
+    if first
+      first = false
+    else
+      print!
+    print table.concat [ i for i in *indices[i, i+PER_LINE-1] ], ' '
+    print '-'\rep 3 * (PER_LINE + 1) - 1
+    print table.concat [ i for i in *bytes[i, i+PER_LINE-1] ], ' '
+    print table.concat [ i for i in *chars[i, i+PER_LINE-1] ], ' '
+
 spec ->
   local *
 
@@ -708,9 +755,13 @@ spec ->
     open: F '(string, writelite.FileMode) => <?writelite.File, ?string>', (path, mode) =>
       file = @files[path]
       if file?
+        file\open!
         file, nil
       else if mode\match '^w'
-        (TestFile ''), nil
+        file = TestFile ''
+        file\open!
+        @files[path] = file
+        file, nil
       else
         nil, "#{path}: No such file or directory 2"
 
@@ -720,6 +771,10 @@ spec ->
       @content_bytes = with {}
         for i = 1, #content
           [] = string.byte content, i
+      @closed = true
+
+    open: F '() => <>', =>
+      @closed = false
 
     read: F '("*a"|number) => <?string, ?string>', (amount) =>
       if @closed
@@ -758,6 +813,9 @@ spec ->
     setvbuf: F '("full") => <>', (_mode) =>
       if @closed
         error 'closed'
+
+    flush: F '() => <boolean, ?string>', =>
+      true, nil
 
     close: F '() => ?string', =>
       if @closed
@@ -807,20 +865,21 @@ spec ->
         with Writelite 'database.db', TestFs!
           $expect_that (-> \page_size 2000), errors matches 'cannot change page size to 2000: not a power of 2'
 
-      -- it 'forbids implicit reassignment', ->
-      --   -- TODO(kcza): write a database to an FS with page size A, close, open again with page size B, where A != B
-      --   fs = TestFs!
-      --   with writelite 'database.db', fs
-      --     \mode 'plain'
-      --     \page_size bit.blshift 1, 13
-      --     assert \open!
-      --     assert \close!
-      --   -- with Writelite 'database.db', fs
-      --   --   \mode 'plain'
-      --   --   \page_size bit.blshift 1, 20
-      --   --   ok, err = \open!
-      --   --   $expect_that ok, eq false
-      --   --   $expect_that err, matches 'asdf'
+      it 'forbids implicit reassignment', ->
+        fs = TestFs!
+        with Writelite 'database.db', fs
+          \mode 'plain'
+          \page_size bit.blshift 1, 13
+          _, err = \open!
+          $assert_that err, eq nil
+          _, err = \close!
+          $assert_that err, eq nil
+        with Writelite 'database.db', fs
+          \mode 'plain'
+          \page_size bit.blshift 1, 20
+          ok, err = \open!
+          $expect_that ok, eq false
+          $expect_that err, matches 'page size mismatch'
 
     describe '\\open', ->
       it 'requires mandatory metadata', ->
@@ -854,29 +913,28 @@ spec ->
             $assert_that ok, eq true
             $assert_that err, eq nil
 
-      it 'cannot be whilst open', ->
+      it 'cannot be called whilst open', ->
         with Writelite 'database.db', TestFs!
           \mode 'plain'
           ok, err = \open!
           $expect_that ok, eq true
-          $expect_that err, eq nil
-
+          $assert_that err, eq nil
 
           ok, err = \open!
           $expect_that ok, eq false
-          $expect_that err, matches 'cannot open writelite file twice'
+          $assert_that err, matches 'cannot open writelite file twice'
 
           ok, err = \close!
-          $assert_that ok, eq true
+          $expect_that ok, eq true
           $assert_that err, eq nil
 
           ok, err = \open!
-          $assert_that ok, eq true
+          $expect_that ok, eq true
           $assert_that err, eq nil
 
           ok, err = \open!
-          $assert_that ok, eq false
-          $expect_that err, matches 'cannot open writelite file twice'
+          $expect_that ok, eq false
+          $assert_that err, matches 'cannot open writelite file twice'
 
     describe '\\close', ->
       it 'cannot be called twice', ->
@@ -1036,30 +1094,7 @@ spec ->
         serialised = Serialiser!
           \write value
           \finish!
-        indices = [ '%02d'\format i for i = 1, #serialised]
-        bytes = with {}
-          for i = 1, #serialised
-            [] = '%02x'\format serialised\byte i
-        chars = with {}
-          for i = 1, #serialised
-            byte = serialised\byte i
-            if '0'\byte! <= byte and byte <= '9'\byte! or 'a'\byte! <= byte and byte <= 'z'\byte! or byte == '-'\byte! or byte == '+'\byte!
-              [] = '% 2s'\format serialised\sub i, i
-            else
-              [] = '%02x'\format byte
-        assert #indices == #bytes
-        assert #indices == #chars
-        PER_LINE = 25
-        first = true
-        for i = 1, #indices, PER_LINE
-          if first
-            first = false
-          else
-            print!
-          print table.concat [ i for i in *indices[i, i+PER_LINE] ], ' '
-          print '-'\rep 3 * (PER_LINE + 1) - 1
-          print table.concat [ i for i in *bytes[i, i+PER_LINE] ], ' '
-          print table.concat [ i for i in *chars[i, i+PER_LINE] ], ' '
+        debug_serialised serialised
         deserialised_from_string = (Deserialiser serialised)
           \parse!
         check deserialised_from_string, value
