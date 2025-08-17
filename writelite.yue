@@ -121,7 +121,6 @@ export class Writelite
     raw_header, err = @_main_file\read MIN_PAGE_SIZE
     if err?
       return nil, err
-    debug_serialised raw_header\sub #@_main_prelude!
     header = (Deserialiser raw_header\sub #@_main_prelude!)
       \parse!
 
@@ -286,7 +285,7 @@ declare_type 'writelite.Fs', [[{
   open: (string, writelite.FileMode) => <?writelite.File, ?string>
 }]]
 declare_type 'writelite.FileMode', '"r"|"w"|"a"|"r+"|"w+"|"a+"'
-declare_type 'writelite.File', [[{
+declare_type 'writelite.File', [[~{
   read: ("*a"|number) => <?string, ?string>,
   write: (string) => ?string,
   seek: (Whence, ?number) => <?number, ?string>,
@@ -418,10 +417,12 @@ STRING_TAG_CHAR = string.char STRING_TAG
 TABLE_REF_TAG = 6
 TABLE_REF_TAG_CHAR = string.char TABLE_REF_TAG
 TABLE_PAYLOAD_TAG = 7
-TAG_MASK = 0x7
+BLANK_TAG = 8
+BLANK_TAG_CHAR = string.char BLANK_TAG
+TAG_MASK = 0xf
 
-INT_LEN_SHIFT = 3
-INT_LEN_MASK = 0x7
+INT_LEN_SHIFT = 4
+INT_LEN_MASK = 0xf
 
 class Serialiser
   new: F '() => <>', =>
@@ -492,10 +493,10 @@ class Serialiser
   finish: F '() => string', =>
     fragments = {}
 
-    total_len = #@root_fragments
-    for table in *@tables
-      total_len += #table.content_fragments
-    @write_impl total_len, fragments
+    -- Prepare length area.
+    fragments[] = '\0' -- Placeholder
+    for i = 1, 4
+      fragments[] = BLANK_TAG_CHAR
 
     @write_impl #@tables, fragments
     for table in *@tables
@@ -507,7 +508,20 @@ class Serialiser
     for fragment in *@root_fragments
       fragments[] = fragment
 
-    table.concat T '[string]', fragments
+    len = 0
+    for fragment in *fragments
+      len += #fragment
+    len_fragments = {}
+    @write_impl len, len_fragments
+    if #len_fragments > 5
+      error "internal error: len fragments too large #{#len_fragments} > 5"
+    for i = 1, #len_fragments
+      fragments[i] = len_fragments[i]
+
+    ret = table.concat T '[string]', fragments
+    if len != #ret
+      error "written len != actual len (#{len} != #{#ret})"
+    ret
 
 MAX_INT = switch HOST
   when 'native'
@@ -539,21 +553,7 @@ class Deserialiser
     @unresolved_table_refs = T '[{table: table, key: some, ref: number}]', {}
 
   parse: F '() => any', =>
-    @raw = switch type @source
-      when 'string'
-        @source
-      else
-        raw_len, err = @source\read 5 -- Max supported size is 1<<32 - 1
-        if err?
-          error "cannot read length from parse source: #{err}"
-        len = assert tonumber raw_len
-        err = @source\seek 'set', 0
-        if err?
-          error "cannot seek parse source: #{err}"
-        raw, err = @source\read len
-        if err?
-          error "cannot read parse source: #{err}"
-        raw
+    @raw ??= @prepare_raw!
 
     total_len = @parse_value!
     if 'number' != type total_len
@@ -593,9 +593,16 @@ class Deserialiser
           [key] = @parse_value!
 
   parse_value: F '() => any', =>
-    head = string.byte @raw, @index
-    if not head?
-      error "internal error: unexpected EOF at index #{@index}"
+    @raw ??= @prepare_raw!
+
+    local head
+    while true
+      head = string.byte @raw, @index
+      if not head?
+        error "internal error: unexpected EOF at index #{@index}"
+      if head != BLANK_TAG
+        break
+      @index += 1
     @index += 1
     switch bit.band head, TAG_MASK
       when NIL_TAG
@@ -639,8 +646,26 @@ class Deserialiser
         return table
       else
         error "unrecognised tag #{bit.band head, TAG_MASK} at index #{@index - 1}"
-
     error 'unreachable'
+
+  prepare_raw: F '() => string', =>
+    switch type @source
+      when 'string'
+        @source
+      else -- writelite.File
+        raw_len_bytes, err = @source\read 5 -- Max supported integer size is 1<<32 - 1
+        if err?
+          error "cannot read length from parse source: #{err}"
+        len = Deserialiser::deserialise_raw raw_len_bytes
+        if 'number' != type len
+          error "cannot use #{type len} as length"
+        _, err = @source\seek 'set', 0
+        if err?
+          error "cannot seek parse source: #{err}"
+        raw, err = @source\read len
+        if err?
+          error "cannot read parse source: #{err}"
+        raw
 
 class Page
   new: F '(number, string) => <>', (@_offset, @_content) =>
@@ -703,7 +728,7 @@ class Hasher
   finish: F '() => number', =>
     @_current
 
-debug_serialised = F '(string) -> <>', (serialised) ->
+print_serialised = F '(string) -> <>', (serialised) ->
   indices = [ '%02d'\format i for i = 1, #serialised]
   bytes = with {}
     for i = 1, #serialised
@@ -1094,17 +1119,44 @@ spec ->
         serialised = Serialiser!
           \write value
           \finish!
-        debug_serialised serialised
+
+        serialised_directly = Serialiser::serialise value
+        $expect_that serialised_directly, eq serialised
+
+        print_serialised serialised
         deserialised_from_string = (Deserialiser serialised)
           \parse!
         check deserialised_from_string, value
 
-        file = assert io.open os.tmpname!, 'w+'
+        direct_deserialised_from_string = Deserialiser::deserialise serialised
+        check direct_deserialised_from_string, value
+
+        path = os.tmpname!
+        file = assert io.open path, 'w+'
         with file
           assert \write serialised
           assert \flush!
           assert \seek 'set', 0
-          deserialised_from_file = (Deserialiser serialised)
-            \parse!
-          check deserialised_from_file, value
+
+          local err
+
+          try
+            deserialised_from_file = (Deserialiser file)
+              \parse!
+            check deserialised_from_file, value
+          catch err2
+            err = err2
+          if err?
+            error err
+
+          assert \seek 'set', 0
+          try
+            direct_deserialised_from_file = Deserialiser::deserialise file
+            check direct_deserialised_from_file, value
+          catch err2
+            err = err2
+          if err?
+            error err
+
           assert \close!
+        os.remove path

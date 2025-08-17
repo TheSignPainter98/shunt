@@ -601,6 +601,33 @@ class Fields
     else
       "isn't a table in which:\n  #{table.concat field_descriptions, '\n  '}"
 
+visible_chars = with {}
+  ['('] = true
+  [')'] = true
+  ['['] = true
+  [']'] = true
+  ['{'] = true
+  ['}'] = true
+  ['!'] = true
+  ['"'] = true
+  ['$'] = true
+  ['%'] = true
+  ['^'] = true
+  ['&'] = true
+  ['*'] = true
+  ['-'] = true
+  ['_'] = true
+  ['+'] = true
+  ['='] = true
+  a = string.byte 'a'
+  for i = 0, 25
+    [string.char a + i] = true
+  A = string.byte 'A'
+  for i = 0, 25
+    [string.char A + i] = true
+  zero = string.byte '0'
+  for i = 0, 9
+    [string.char zero + i] = true
 export repr = =>
   table.concat with {}
     stack={}
@@ -613,7 +640,14 @@ export repr = =>
 
       switch type @
         when 'string'
-          [] = "'#{@}'"
+          [] = "'"
+          for i = 1, #@
+            c = @\sub i, i
+            if visible_chars[c]
+              [] = c
+            else
+              [] = "\\x%02x"\format string.byte @, i
+          [] = "'"
         when 'table'
           if @.<>? and @.<tostring>?
             [] = tostring @
