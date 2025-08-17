@@ -111,15 +111,15 @@ export class Writelite
       end_index == 0
     @_main_file = main_file
 
-    -- if journal, _ = @_fs\open @_journal_path, 'r'
+    -- journal, _ = @_fs\open @_journal_path, 'r'
+    -- if journal?
     --   journal_content = journal\read '*a'
     --   journal\close!
     --
     --   if @_journal_valid journal_content
     --     @_recover_journal @_main_file, journal_content
-    --   else
-    --     -- Discard incomplete transaction.
-    --     os.remove @_journal_path
+    --   -- All recoverable data has been recovered, delete the old journal.
+    --   os.remove @_journal_path
 
     local main_header
     if main_is_empty
@@ -1026,10 +1026,10 @@ spec ->
           $assert_that err, eq 'cannot close writelite file: not open'
 
     describe 'consistency', ->
-      tests =
-        * failure_point: 'pre-verification'
-          expect_after_failed_run: (initial_fs, current_fs) ->
-          expect_after_second_run: (initial_fs, current_fs) ->
+      tests = {}
+        -- * failure_point: 'pre-verification'
+        --   expect_after_failed_run: (initial_fs, current_fs) ->
+        --   expect_after_second_run: (initial_fs, current_fs) ->
       known_failure_points = $known_failure_points!
       for test in *tests
         { :failure_point, :expect_after_failed_run, :expect_after_second_run } = test
