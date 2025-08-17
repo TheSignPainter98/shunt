@@ -711,6 +711,17 @@ can_sort = (list) ->
         return false
   true
 
+export clone = (value) ->
+  switch type value
+    when 'nil', 'boolean', 'number', 'string'
+      value -- Immutable.
+    when 'table'
+      with {}
+        for k, v in pairs value
+          [clone k] = clone v
+    else
+      error "cannot clone a #{type value} (#{value})"
+
 export matchers =
   anything: -> Anything!
   some: -> Some!
