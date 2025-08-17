@@ -7,6 +7,38 @@ import 'spec' as :spec
 FORMAT_VERSION = 1
 MIN_PAGE_SIZE = 1024
 
+macro failure_marker = -> 'FAILURE_MARKER'
+macro declare_failure_point = (tag) ->
+  if not _G.failure_points?
+    global failure_points = {}
+  if failure_points[tag]
+    error "failure point '#{tag}' redeclared"
+  failure_points[tag] = true
+
+  lines =
+    * 'injected_failures ??= @_injected_failures'
+    * "if injected_failures? and injected_failures[#{tag}]"
+    * "  error '#{$failure_marker}'"
+  table.concat lines, '\n'
+macro known_failure_points = ->
+  if not _G.failure_points?
+    global failure_points = {}
+  seen = {}
+  table.concat with {}
+    [] = '{'
+    first = true
+    tags = [ tag for tag, _ in pairs failure_points ]
+    table.sort tags
+    for tag in *tags
+      if first
+        first = false
+      else
+        [] = ','
+      [] = '['
+      [] = tag
+      [] = ']: true'
+    [] = '}'
+
 declare_type 'writelite.Writelite', [[{
   mode: (writelite.Mode) => Self,
   page_size: (number) => Self,
@@ -30,6 +62,7 @@ export class Writelite
     @_mode = T '?writelite.Mode', nil
     @_page_size = 4096
     @_page_size_set = T 'boolean', false
+    @_injected_failures = T '?{string}', nil
 
   mode: F '(writelite.Mode) => Self', (mode) =>
     if @_mode?
@@ -274,6 +307,8 @@ export class Writelite
   @_zero_page: F '() => string', =>
     @_cached_zero_page ??= '\0'\rep @_page_size
     @_cached_zero_page
+
+  _ut_inject_failures: F '(?{string}) => <>', (@_injected_failures) =>
 
 declare_type 'writelite.Fs', [[{
   open: (string, writelite.FileMode) => <?writelite.File, ?string>
@@ -779,9 +814,9 @@ spec ->
 
   import 'spec_macros' as $
 
-  import 'spec' as :describe, :it, :matchers
+  import 'spec' as :clone, :describe, :it, :matchers
 
-  import deep_eq, eq, errors, len, lt, matches, near, no_errors from matchers
+  import deep_eq, eq, errors, has_fields, len, lt, matches, near, no_errors, not_ from matchers
 
   declare_type 'writelite.FileSpec', [[{
     content: string,
@@ -989,6 +1024,61 @@ spec ->
           ok, err = \close!
           $assert_that ok, eq false
           $assert_that err, eq 'cannot close writelite file: not open'
+
+    describe 'consistency', ->
+      tests =
+        * failure_point: 'pre-verification'
+          expect_after_failed_run: (initial_fs, current_fs) ->
+          expect_after_second_run: (initial_fs, current_fs) ->
+      known_failure_points = $known_failure_points!
+      for test in *tests
+        { :failure_point, :expect_after_failed_run, :expect_after_second_run } = test
+        it "is maintained at #{failure_point} failure", ->
+          if not known_failure_points[failure_point]?
+            error "no such failure point '#{failure_point}'"
+
+          fs = TestFs!
+
+          -- Prepare fresh, empty database.
+          with Writelite 'database.db', fs
+            \mode 'blob'
+            assert \open!
+            assert \close!
+
+          $assert_that fs.files, has_fields
+            ['database.db']: not_ eq nil
+            ['database.db~']: eq nil
+
+          -- initial_fs = clone fs
+          --
+          -- try
+          --   with Writelite 'database.db', fs
+          --     \mode 'blob'
+          --     \_ut_inject_failures
+          --       [failure_point]: true
+          --
+          --     ok, err = \open!
+          --     \transaction (txn) ->
+          --       -- TODO(kcza): complete me once the journal is ready.
+          --     ok, err = \close!
+          -- catch err2
+          --   if err2 != $failure_marker!
+          --     err = err2
+          -- $assert_that err, eq nil
+          --
+          -- expect_after_failed_run initial_fs, fs
+          --
+          -- try
+          --   with Writelite 'database.db', fs
+          --     \mode 'blob'
+          --     assert \open!
+          --     assert \close!
+          -- catch err2
+          --   if err2 != $failure_marker!
+          --     err = err2
+          -- $assert_that err, eq nil
+          --
+          -- expect_after_second_run initial_fs, fs
 
   describe 'writelite.Hasher', ->
     it 'avoids collisions', ->
