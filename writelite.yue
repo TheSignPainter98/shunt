@@ -109,9 +109,7 @@ export class Writelite
       mode: @_mode
       checksum: 0 -- Placeholder
 
-    checksum = Hasher!
-      \write header
-      \finish!
+    checksum = Hasher::hash header
 
     header.checksum = checksum
     header
@@ -142,9 +140,7 @@ export class Writelite
 
     stored_checksum = header.checksum
     header.checksum = 0
-    computed_checksum = Hasher!
-      \write header
-      \finish!
+    computed_checksum = Hasher::hash header
     if stored_checksum != computed_checksum
       return nil, "header corrupt (computed_checksum=#{computed_checksum}, stored_checksum=#{stored_checksum})"
     header.checksum = stored_checksum
@@ -154,9 +150,7 @@ export class Writelite
   _format_main: F '(writelite.MainHeader) => ?string', (header) =>
     fragments =
       * @_main_prelude!
-      * Serialiser!
-          \write header
-          \finish!
+      * Serialiser::serialise header
 
     current_size = 0
     for fragment in *fragments
@@ -431,6 +425,11 @@ class Serialiser
     @tables = T '[{num_pairs: number, content_fragments: [string]}]', {}
     @refs = T '{table->number}', {}
 
+  @serialise: F '(any) => string', (to_serialise) =>
+    Serialiser!
+      \write to_serialise
+      \finish!
+
   write: F '(any) => Self', (to_write) =>
     @write_impl to_write, @root_fragments
     @
@@ -551,6 +550,14 @@ class Deserialiser
     @index = T 'number', 1
     @tables_by_ref = T '{number->table}', {}
     @unresolved_table_refs = T '[{table: table, key: some, ref: number}]', {}
+
+  @deserialise: F '(writelite.DeserialiserSource) => any', (source) =>
+    (Deserialiser source)
+      \parse!
+
+  @deserialise_raw: F '(string) => any', (source) =>
+    (Deserialiser source)
+      \parse_value!
 
   parse: F '() => any', =>
     @raw ??= @prepare_raw!
@@ -683,12 +690,18 @@ MAX_HASH = 99999999 -- 18446744073709551557
 assert MAX_INT >= MAX_HASH
 
 declare_type 'writelite.Hasher', [[{
+  hash: (any) => number,
   write: (string) => <>,
   finish: () => number,
 }]]
 class Hasher
   new: F '() => <>', =>
     @_current = 7
+
+  @hash: F '(any) => number', (to_hash) =>
+    Hasher!
+      \write to_hash
+      \finish!
 
   write: F '(any) => Self', (to_write) =>
     switch type to_write
