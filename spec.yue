@@ -619,6 +619,15 @@ visible_chars = with {}
   ['_'] = true
   ['+'] = true
   ['='] = true
+  [':'] = true
+  [' '] = true
+  ['\t'] = true
+  ['.'] = true
+  [','] = true
+  ['/'] = true
+  ['\\'] = true
+  ['>'] = true
+  ['<'] = true
   a = string.byte 'a'
   for i = 0, 25
     [string.char a + i] = true
