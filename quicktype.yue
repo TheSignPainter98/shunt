@@ -1233,8 +1233,7 @@ check = (check_prog, value, root=true) ->
           ty = type value
           if 'table' != ty and
               'string' != ty and
-              not value.<>? and
-              not value.<index>?
+              (not value.<>? or not value.<index>?)
             $check_error "incorrect type: expected indexable but got #{ty}"
         when C_ASSERT_TRUTHY
           if not stack[stack_size]

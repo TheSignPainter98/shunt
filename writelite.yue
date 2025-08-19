@@ -64,6 +64,8 @@ export class Writelite
     @_page_size_set = T 'boolean', false
     @_injected_failures = T '?{string}', nil
 
+    @_page_cache = PageCache @
+
   mode: F '(writelite.Mode) => Self', (mode) =>
     if @_mode?
       error "cannot change mode once set"
@@ -87,6 +89,10 @@ export class Writelite
 
     @_page_size_set = true
     @_page_size = page_size
+    @
+
+  max_cached_pages: F '(number) => Self', (max_cached_pages) =>
+    @_page_cache\set_max_cached_pages max_cached_pages
     @
 
   open: F '() => <boolean, ?string>', =>
@@ -215,7 +221,7 @@ export class Writelite
   transaction: F '((writelite.Transaction) -> <>) => <>', (f) =>
     @@_open_transactions[@_path] = true
 
-    txn = Transaction @_main_file, @_journal_path
+    txn = Transaction @
     err = nil
     try
       f txn
@@ -308,6 +314,9 @@ export class Writelite
     @_cached_zero_page ??= '\0'\rep @_page_size
     @_cached_zero_page
 
+  _ut_max_cached_pages: F '() => number', =>
+    @_page_cache.max_cached_pages
+
   _ut_inject_failures: F '(?{string}) => <>', (@_injected_failures) =>
 
 declare_type 'writelite.Fs', [[{
@@ -328,6 +337,100 @@ class OsFs
   open: F '(string, writelite.FileMode) => <?writelite.File, ?string>', (path, mode) =>
     io.open path, mode
 
+declare_type 'writelite.PageCache', [[{
+  get: (number) => ?writelite.Page,
+  set: (number, writelite.Page) => <>,
+  set_max_cached_pages: (number) => <>,
+}]]
+declare_type 'writelite.PageCacheOpts', [[{
+  _page_size: number,
+  _main_file: ?writelite.File, -- Lazy
+}]]
+class PageCache
+  new: F '(writelite.PageCacheOpts) => <>', (@opts) =>
+    -- NB: options are NOT unpacked here to allow changes to be inherited
+    -- transparently.
+    @cached_pages = T '{number->writelite.Page}', {}
+    @num_cached_pages = T 'number', 0
+    @lru_map = T '{number->number}', {}
+    @lru_counter = T 'number', 0
+    @max_cached_pages = T 'number', 1000
+
+  get: F '(number) => ?writelite.Page', (offset) =>
+    page_size = @opts._page_size
+
+    if offset % page_size != 0
+      error "internal error: page-cache offset must be a multiple of the page size"
+
+    @lru_map[offset] = @lru_counter
+    @lru_counter += 1
+
+    if page = @cached_pages[offset]
+      return page
+
+    if @num_cached_pages >= @max_cached_pages
+      @discard_old!
+
+    page = do
+      main_file = @opts._main_file
+      main_file\seek 'set', offset
+
+      page_content = with {}
+        raw, err = main_file\read page_size
+        if err?
+          error err
+        for i = 1, #raw
+          [] = raw\byte i
+        for i = #raw+1, page_size
+          [] = 0
+      if #page_content != page_size
+        error "internal error: incorrect page size (#{#page_content} != #{page_size})"
+      Page
+        :offset
+        content: page_content
+
+    @num_cached_pages += 1
+    @cached_pages[offset] = page
+    page
+
+  set: F '(number, writelite.Page) => <>', (offset, page) =>
+    page_size = @opts._page_size
+
+    if offset % page_size != 0
+      error "internal error: page-cache offset must be a multiple of the page size"
+    if #page.content != page_size
+      error "internal error: page has the wrong size (#{#page.content} != #{page_size})"
+    if offset != page.offset
+      error "internal error: required and declared offset mismatch (#{offset} != #{page.offset})"
+
+    @lru_map[offset] = @lru_counter
+    @lru_counter += 1
+
+    if not @cached_pages[offset]?
+      @num_cached_pages += 1
+    @cached_pages[offset] = page
+
+    if @num_cached_pages > @max_cached_pages
+      @discard_old!
+
+  discard_old: F '() => <>', =>
+    discard_horizon = @lru_counter - @max_cached_pages * 0.5
+    indices_to_discard = with {}
+      for index, last_used in pairs @lru_map
+        if last_used < discard_horizon
+          [] = index
+    for index in *indices_to_discard
+      @lru_map[index] = nil
+      @cached_pages[index] = nil
+    @num_cached_pages -= #indices_to_discard
+
+  set_max_cached_pages: F '(number) => <>', (max_cached_pages) =>
+    if max_cached_pages < 1
+      error "cannot set max cached pages to #{max_cached_pages}: too small"
+    if is_float max_cached_pages
+      error "cannot set max cached pages to #{max_cached_pages}: not an integer"
+    @max_cached_pages = max_cached_pages
+
 declare_type 'writelite.Transaction', [[{
   write: (string) => <>,
   seek: (Whence, ?number) => <?number, ?string>,
@@ -336,8 +439,7 @@ declare_type 'writelite.Transaction', [[{
 declare_type 'Whence', '"set"|"cur"|"end"'
 class Transaction
   new: F '(writelite.Writelite) => <>', (@_parent) =>
-    @_pages = T '[writelite.Page]', {}
-    @_len = T 'number', 0
+    @_deltas = T '[writelite.Delta]', {}
     @_cursor = T 'number', 0
     @_aborted = T 'boolean', false
     @_page_size = @_parent._page_size
@@ -346,17 +448,10 @@ class Transaction
     if @_aborted
       error 'cannot write to aborted transaction'
 
-    @_len += #bytes
-    new_pages = {}
-    if #bytes == @_page_size
-      @_pages[] = bytes
-      @_cursor += @_page_size
-    else
-      for bytes_offset = 0, #bytes, @_page_size
-        new_page = Page @_cursor, bytes\sub 1 + bytes_offset, 1 + bytes_offset + @_page_size
-        new_pages[] = new_page
-        @_pages[] = new_page
-        @_cursor += @_page_size
+    @_deltas[] =
+      offset: @_cursor
+      content: bytes
+    @_cursor += #bytes
 
   seek: F '(Whence, ?number) => <>', (whence, offset) =>
     if @_aborted
@@ -384,53 +479,100 @@ class Transaction
 
   _close: F '() => <>', =>
     if @_aborted
-      os.remove @_journal_path
+      -- Ensure that no journal is present.
+      if file = io.open @_journal_path, 'r'
+        file\close!
+        os.remove @_journal_path
       return
 
     -- Create and write to journal.
-    with assert io.open @_journal_path, 'w+'
-      assert \setvbuf 'full' -- Minimise writes.
-      assert \seek 'set', 0
-      assert \write ZERO_PAGE
+    pages_to_write = @_pages_to_write!
 
-      -- Write pages.
-      for page in *@_pages
-        assert \seek 'set', page._offset
-        assert \write page._content
-
-      -- Write header.
-      assert \seek 'set', 0
-      assert \write @_journal_header!
-
-      assert \close!
+    -- TODO(kcza): write to the journal
+    -- with assert io.open @_journal_path, 'w+'
+    --   assert \setvbuf 'full' -- Minimise writes.
+    --   assert \seek 'set', 0
+    --   assert \write ZERO_PAGE
+    --
+    --   -- Write pages.
+    --   for page in *pages_to_write
+    --     assert \seek 'set', page.offset
+    --     assert \write page.content
+    --
+    --   -- Write header.
+    --   assert \seek 'set', 0
+    --   assert \write @_journal_header!
+    --
+    --   assert \close!
 
     -- Write to main file.
-    for page in *@_pages
-      @_main_file\seek 'set', page._offset
-      @_main_file\write page._content
+    for page in *pages_to_write
+      @_main_file\seek 'set', page.offset
+      @_main_file\write page.content
     @_main_file\flush!
 
-    -- Delete journal.
-    os.remove @_journal_path
+    -- TODO(kcza): delete the journal
+    -- -- Delete journal.
+    -- os.remove @_journal_path
 
-  _journal_header: F '() => string', =>
-    content_hasher = Hasher!
-    for page in *@_pages
-      content_hasher\write page._content
-    content_hash = content_hasher\finish!
+  _pages_to_write: F '() => [writelite.Page]', =>
+    { :page_cache, :page_size } = @_parent
 
-    payload = Deserialiser
-      :content_hash
-    journal_hash = Hasher!
-      \write JOURNAL_PRELUDE
-      \write payload
-      \finish!
+    deltas_by_page = with {}
+      for delta in *@deltas
+        page_offset = delta.offset - data.offset % page_size
+        [page_offset] ??= {}
+        [page_offset][] =
+          :page_offset
+          :deltas
+    with {}
+      for page_deltas in *deltas_by_page
+        { :page_offset, :deltas } = page_deltas
+        buf = {}
+        for page_delta in *deltas
+          { :offset, :content } = page_delta
+          for char in content\gmatch '.'
+            buf[offset + 1] = char
+            offset += 1
+        gaps_present = false
+        for i = 1, page_size
+          if not buf[i]?
+            gaps_present = true
+            break
+        if gaps_present
+          prev_page = page_cache\get page_offset
+          for i = 1, page_size
+            if not buf[i]?
+              buf[i] = prev_page\byte i
+        [] = Page
+          offset: page_offset
+          content: buf
 
-    table.concat
-      * JOURNAL_PRELUDE
-      * encode_number journal_hash
-      * encode_number #payload
-      * payload
+  -- _journal_header: F '() => string', =>
+  --   content_hasher = Hasher!
+  --   for page in *@_pages
+  --     content_hasher\write page._content
+  --   content_hash = content_hasher\finish!
+  --
+  --   payload = Deserialiser
+  --     :content_hash
+  --   journal_hash = Hasher!
+  --     \write JOURNAL_PRELUDE
+  --     \write payload
+  --     \finish!
+  --
+  --   table.concat
+  --     * JOURNAL_PRELUDE
+  --     * encode_number journal_hash
+  --     * encode_number #payload
+  --     * payload
+
+declare_type 'writelite.Delta', [[{
+  offset: number,
+  content: string,
+}]]
+class Delta
+  new: F '(number, string) => <>', (@offset, @content) =>
 
 NIL_TAG = 0
 NIL_TAG_CHAR = string.char NIL_TAG
@@ -709,17 +851,24 @@ class Deserialiser
           error "cannot read parse source: #{err}"
         raw
 
+declare_type 'writelite.PageOpts', [[{
+  offset: number,
+  content: [number],
+}]]
+declare_type 'writelite.Page', [[{
+  offset: number,
+  content: [number],
+  checksum: number,
+}]]
 class Page
-  new: F '(number, string) => <>', (@_offset, @_content) =>
-    @_len = #@_content
-
-  encode: F '() => string', =>
-    buf = {}
-    @_encode_number @_offset, buf
-    @_encode_number @_len, buf
-    for byte in *@_content
-      buf[] = byte
-    string.char unpack buf
+  new: F '(writelite.PageOpts) => <>', (opts) =>
+    {
+      :offset
+      :content
+    } = opts
+    @offset = offset
+    @content = content
+    @checksum = Hasher::hash content
 
 MAX_HASH = 99999999 -- 18446744073709551557
 assert MAX_INT >= MAX_HASH
@@ -816,7 +965,7 @@ spec ->
 
   import 'spec' as :clone, :describe, :it, :matchers
 
-  import deep_eq, eq, errors, has_fields, len, lt, matches, near, no_errors, not_ from matchers
+  import deep_eq, each_value, eq, errors, has_fields, len, lt, matches, near, no_errors, not_ from matchers
 
   declare_type 'writelite.FileSpec', [[{
     content: string,
@@ -851,7 +1000,7 @@ spec ->
 
     read: F '("*a"|number) => <?string, ?string>', (amount) =>
       if @closed
-        return 'closed'
+        return nil, 'closed'
       end_index = switch amount
         when '*a'
           #@content_bytes
@@ -859,6 +1008,8 @@ spec ->
           @cursor + amount
       if end_index > #@content_bytes
         end_index = #@content_bytes
+      if @cursor == #@content_bytes
+        return nil, nil
       table.concat [ string.char b for b in *@content_bytes[1+@cursor,end_index] ], nil
 
     write: F '(string) => ?string', (to_write) =>
@@ -953,6 +1104,29 @@ spec ->
           ok, err = \open!
           $expect_that ok, eq false
           $expect_that err, matches 'page size mismatch'
+
+    describe '\\max_cached_pages', ->
+      tests =
+        * it: 'accepts valid numbers'
+          max_cached_pages: 256
+        * it: 'rejects floats'
+          max_cached_pages: 255.5
+          expect: 'cannot set max cached pages to 255.5: not an integer'
+        * it: 'rejects too small numbers'
+          max_cached_pages: 0
+          expect: 'cannot set max cached pages to 0: too small'
+        * it: 'rejects negative numbers'
+          max_cached_pages: -1
+          expect: 'cannot set max cached pages to %-1: too small'
+      for test in *tests
+        it test.it, ->
+          { :max_cached_pages, :expect } = test
+          writelite = Writelite 'database.db', TestFs!
+          if expect?
+            $expect_that (-> writelite\max_cached_pages max_cached_pages), errors matches expect
+          else
+            $expect_that (writelite\max_cached_pages max_cached_pages), eq writelite
+            $expect_that writelite\_ut_max_cached_pages!, eq max_cached_pages
 
     describe '\\open', ->
       it 'requires mandatory metadata', ->
@@ -1079,6 +1253,126 @@ spec ->
           -- $assert_that err, eq nil
           --
           -- expect_after_second_run initial_fs, fs
+
+  describe 'writelite.PageCache', ->
+    describe '\\write', ->
+      it 'accesses the filesystem', ->
+        page_size = 10
+
+        main_file = TestFile table.concat with {}
+          [] = 'a'\rep page_size
+          [] = 'b'\rep page_size
+          [] = 'c'\rep page_size / 2
+        main_file\open!
+
+        cache = PageCache
+          _main_file: main_file
+          _page_size: page_size
+        $expect_that (cache\get 0 * page_size), has_fields
+          offset: eq 0
+          content: deep_eq with {}
+            for i = 1, page_size
+              [] = 'a'\byte!
+        $expect_that (cache\get 0 * page_size), has_fields
+          offset: eq 0
+          content: deep_eq with {}
+            for i = 1, page_size
+              [] = 'a'\byte!
+        $expect_that (cache\get 1 * page_size), has_fields
+          offset: eq page_size
+          content: deep_eq with {}
+            for i = 1, page_size
+              [] = 'b'\byte!
+        $expect_that (cache\get 2 * page_size), has_fields
+          offset: eq 2 * page_size
+          content: deep_eq with {}
+            for i = 1, page_size / 2
+              [] = 'c'\byte!
+            for i = 1, page_size / 2
+              [] = 0
+        $expect_that (cache\get 1 * page_size), has_fields
+          offset: eq page_size
+          content: deep_eq with {}
+            for i = 1, page_size
+              [] = 'b'\byte!
+
+      it 'accesses the filesystem', ->
+        PAGE_SIZE = 10
+
+        main_file = TestFile table.concat with {}
+          a = string.byte 'a'
+          for i = 0, 20
+            [] = (string.char a + i)\rep PAGE_SIZE
+        main_file\open!
+
+        MAX_CACHED_PAGES = 10
+        cache = PageCache
+          _main_file: main_file
+          _page_size: PAGE_SIZE
+        cache\set_max_cached_pages MAX_CACHED_PAGES
+
+        -- Populate cache
+        for i = 0, MAX_CACHED_PAGES - 1
+          cache\get i * PAGE_SIZE
+
+        -- Mutate file
+        main_file\seek 'set', 0
+        err = main_file\write '0'\rep 20 * PAGE_SIZE
+        assert not err?, err
+
+        -- Test cached pages are used.
+        a = string.byte 'a'
+        for i = 0, MAX_CACHED_PAGES - 1
+          $expect_that (cache\get i * PAGE_SIZE), has_fields
+            offset: eq i * PAGE_SIZE
+            content: deep_eq with {}
+              for _ = 1, PAGE_SIZE
+                [] = a + i
+
+        -- Trigger eviction
+        cache\get MAX_CACHED_PAGES * PAGE_SIZE
+
+        $expect_that (cache\get 0), has_fields
+          offset: eq 0
+          content: each_value eq '0'\byte!
+
+    describe '\\set', ->
+      it 'shows changes immediately', ->
+        PAGE_SIZE = 10
+
+        main_file = TestFile table.concat with {}
+          a = string.byte 'a'
+          for i = 0, 20
+            [] = (string.char a + i)\rep PAGE_SIZE
+        main_file\open!
+
+        MAX_CACHED_PAGES = 10
+        cache = PageCache
+          _main_file: main_file
+          _page_size: PAGE_SIZE
+        cache\set_max_cached_pages MAX_CACHED_PAGES
+
+      it 'rejects unaligned pages', ->
+        PAGE_SIZE = 32
+        cache = PageCache
+          _main_file: with TestFile ''
+            \open!
+          _page_size: PAGE_SIZE
+        page = Page
+          offset: 0
+          content: [ 0 for _ = 1, PAGE_SIZE ]
+        $expect_that (-> cache\set 12, page), errors matches 'page%-cache offset must be a multiple of the page size'
+
+      it 'rejects incorrect-size pages', ->
+        PAGE_SIZE = 32
+        cache = PageCache
+          _main_file: with TestFile ''
+            \open!
+          _page_size: PAGE_SIZE
+        page = Page
+          offset: 123 * PAGE_SIZE
+          content: { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 }
+        $expect_that (-> cache\set 123 * PAGE_SIZE, page), errors matches "internal error: page has the wrong size %(10 != #{PAGE_SIZE}%)"
 
   describe 'writelite.Hasher', ->
     it 'avoids collisions', ->

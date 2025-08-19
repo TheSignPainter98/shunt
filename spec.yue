@@ -610,6 +610,7 @@ visible_chars = with {}
   ['}'] = true
   ['!'] = true
   ['"'] = true
+  ["'"] = true
   ['$'] = true
   ['%'] = true
   ['^'] = true
