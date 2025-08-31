@@ -1287,22 +1287,29 @@ spec ->
       describe 'on golden-path', ->
         PAGE_SIZE = 1024
         tests =
-          * name: 'no pages'
+          * name: 'no deltas'
             txn_fn: (txn) ->
-          * name: 'pages'
+          * name: 'single page deltas'
             txn_fn: (txn) ->
               txn\seek 'set', 0
               txn\write 'hello, world'
               txn\seek 'set', 128
               txn\write 'how are you?'
             assertion: (content) ->
-              $expect_that content, matches '^#!writelite'
-
               first_chunk_start_index = content\find 'hello, world'
               $expect_that first_chunk_start_index, eq PAGE_SIZE + 1
 
               second_chunk_start_index = content\find 'how are you?'
               $expect_that second_chunk_start_index, eq PAGE_SIZE + 1 + 128
+          * name: 'overlapping small deltas'
+            txn_fn: (txn) ->
+              txn\seek 'set', 128
+              txn\write 'aaaaa.....ccccc'
+              txn\seek 'set', 128 + 5
+              txn\write 'bbbbb'
+            assertion: (content) ->
+              pattern_index = content\find 'aaaaabbbbbccccc'
+              $expect_that pattern_index, eq PAGE_SIZE + 1 + 128
         for test in *tests
           { :name, :txn_fn, :assertion } = test
           it "functions with #{name}", ->
@@ -1319,8 +1326,10 @@ spec ->
 
               \transaction txn_fn
 
+              content = fs.files[FILE]\content!
+              $expect_that content, matches '^#!writelite'
               if assertion?
-                assertion fs.files[FILE]\content!
+                assertion content
 
               ok, err = \close!
               $assert_that ok, eq true
