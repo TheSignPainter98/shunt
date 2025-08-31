@@ -103,18 +103,29 @@ export class Writelite
     if not @_mode?
       return false, 'cannot open main file: mode unspecified'
 
-    main_file, err = @_fs\open @_path, 'w+'
+    main_file_content = nil
+    with? @_fs\open @_path, 'rb'
+      main_file_content, err = \read '*a'
+      if err?
+        return false, "cannot open main file: #{err}"
+      _, err = \close!
+      if err?
+        return false, "cannot close main file after initial read: #{err}"
+    main_file_content ??= ''
+    main_is_empty = #main_file_content == 0
+
+    main_file, err = @_fs\open @_path, 'wb+'
     if err?
       return false, "cannot open main file: #{err}"
+    if not main_is_empty
+      _, err = main_file\write main_file_content
+      if err?
+        -- If an error occurs here, ALL of the initial contents are lost.
+        -- There doesn't seem to be a way around this with the file modes
+        -- Lua has access to. An error at this point would be catastrophic.
+        return false, "cannot copy previous main file content to new file: #{err}"
+
     main_file\setvbuf 'full' -- Minimise writes.
-    main_is_empty = do
-      end_index, err = main_file\seek 'end', 0
-      if err?
-        return false, "cannot seek in main file: #{err}"
-      _, err = main_file\seek 'set', 0
-      if err?
-        return false, "cannot seek in main file: #{err}"
-      end_index == 0
     @_main_file = main_file
 
     -- journal, _ = @_fs\open @_journal_path, 'r'
@@ -158,7 +169,9 @@ export class Writelite
     raw_header, err = @_main_file\read MIN_PAGE_SIZE
     if err?
       return nil, err
-    header = (Deserialiser raw_header\sub #@_main_prelude!)
+    if not raw_header?
+      return nil, "main file empty"
+    header = (Deserialiser raw_header\sub #@_main_prelude! + 1)
       \parse!
 
     checkers =
@@ -228,16 +241,18 @@ export class Writelite
     catch err2
       err = err2
       txn\abort!
-    txn\_close!
+    err2 = txn\_close!
 
     @@_open_transactions[@_path] = nil
 
     if err?
       error err
+    if err2?
+      error err2
     return
 
   close: F '() => <boolean, ?string>', =>
-    file_closure_error = @_main_file\close!
+    _, file_closure_error = @_main_file\close!
 
     if @@_open_transactions[@_path]
       return false, 'cannot close writelite file whilst transaction is open'
@@ -250,25 +265,20 @@ export class Writelite
 
   _main_prelude: F '() => string', =>
     @_cached_main_prelude ??= table.concat
-      * '\n'
-      * '\n'
-      * '\n'
-      * '\n'
-      * 'STOP!\n'
-      * '\n'
-      * 'DO NOT EDIT!\n'
-      * '\n'
-      * 'Editing this file will corrupt the database.\n'
-      * '\n'
-      * 'Close this file and DO NOT SAVE any changes.\n'
-      * '\n'
-      * 'EXIT the editor NOW.\n'
-      * '\n'
-      * '\n'
-      * '\n'
-      * '\n'
-      * '-'\rep 49
-      * '\n'
+      * '#!writelite\n'
+      * '+----------------------------------------------+\n'
+      * '|                                              |\n'
+      * '|                !!! STOP !!!                  |\n'
+      * '|                                              |\n'
+      * '|                DO NOT EDIT!                  |\n'
+      * '|                                              |\n'
+      * '| Editing this file will corrupt the database. |\n'
+      * '|                                              |\n'
+      * '| Close this file and DO NOT SAVE any changes. |\n'
+      * '|                                              |\n'
+      * '|             EXIT the editor NOW.             |\n'
+      * '|                                              |\n'
+      * '+----------------------------------------------+\n'
     @_cached_main_prelude
 
   _journal_prelude: F '() => string', =>
@@ -320,22 +330,27 @@ export class Writelite
   _ut_inject_failures: F '(?{string}) => <>', (@_injected_failures) =>
 
 declare_type 'writelite.Fs', [[{
-  open: (string, writelite.FileMode) => <?writelite.File, ?string>
+  open: (string, writelite.FileMode) => <?writelite.File, ?string, ?number>
 }]]
-declare_type 'writelite.FileMode', '"r"|"w"|"a"|"r+"|"w+"|"a+"'
+declare_type 'writelite.FileMode', [[
+  "r"|"w"|"a"
+  |"r+"|"w+"|"a+"
+  |"rb"|"wb"|"ab"
+  |"rb+"|"wb+"|"ab+"
+]]
 declare_type 'writelite.File', [[~{
   read: ("*a"|number) => <?string, ?string>,
   write: (string) => ?string,
   seek: (Whence, ?number) => <?number, ?string>,
   setvbuf: ("full") => <>,
   flush: () => <boolean, ?string>,
-  close: () => ?string,
+  close: () => <boolean, ?string>,
 }]]
 class OsFs
   new: F '(?string) => <>', (@dir='.') =>
 
-  open: F '(string, writelite.FileMode) => <?writelite.File, ?string>', (path, mode) =>
-    io.open path, mode
+  open: F '(string, writelite.FileMode) => <?writelite.File, ?string, ?number>', (path, mode) =>
+    io.open "#{@dir}/#{path}", mode
 
 declare_type 'writelite.PageCache', [[{
   get: (number) => ?writelite.Page,
@@ -375,19 +390,19 @@ class PageCache
       main_file = @opts._main_file
       main_file\seek 'set', offset
 
-      page_content = with {}
-        raw, err = main_file\read page_size
+      content = do
+        content, err = main_file\read page_size
         if err?
           error err
-        for i = 1, #raw
-          [] = raw\byte i
-        for i = #raw+1, page_size
-          [] = 0
-      if #page_content != page_size
-        error "internal error: incorrect page size (#{#page_content} != #{page_size})"
+        content = content ?? ''
+        if #content < page_size
+          content ..= '\0'\rep page_size - #content
+        content
+      if #content != page_size
+        error "internal error: incorrect page size (#{#content} != #{page_size})"
       Page
         :offset
-        content: page_content
+        :content
 
     @num_cached_pages += 1
     @cached_pages[offset] = page
@@ -437,19 +452,27 @@ declare_type 'writelite.Transaction', [[{
   abort: () => <>,
 }]]
 declare_type 'Whence', '"set"|"cur"|"end"'
+declare_type 'writelite.Delta', [[{
+  offset: number,
+  content: string,
+}]]
 class Transaction
   new: F '(writelite.Writelite) => <>', (@_parent) =>
     @_deltas = T '[writelite.Delta]', {}
     @_cursor = T 'number', 0
     @_aborted = T 'boolean', false
     @_page_size = @_parent._page_size
+    @_mode = T 'writelite.Mode', @_parent._mode
 
   write: F '(string) => <>', (bytes) =>
+    if @_mode != 'blob'
+      error "cannot use write method in #{@_mode} mode (must be in blob mode)"
     if @_aborted
       error 'cannot write to aborted transaction'
 
+    offset = @_cursor + @_page_size -- Skip header.
     @_deltas[] =
-      offset: @_cursor
+      :offset
       content: bytes
     @_cursor += #bytes
 
@@ -471,19 +494,18 @@ class Transaction
         new_cursor = @_len
       else
         error 'internal error: unreachable'
-    new_cursor += @_page_size -- Account for header
     @_cursor = new_cursor
 
   abort: F '() => <>', =>
     @_aborted = true
 
-  _close: F '() => <>', =>
+  _close: F '() => ?string', =>
     if @_aborted
       -- Ensure that no journal is present.
       if file = io.open @_journal_path, 'r'
         file\close!
         os.remove @_journal_path
-      return
+      return nil
 
     -- Create and write to journal.
     pages_to_write = @_pages_to_write!
@@ -506,47 +528,102 @@ class Transaction
     --   assert \close!
 
     -- Write to main file.
+    main_file = @_parent._main_file
     for page in *pages_to_write
-      @_main_file\seek 'set', page.offset
-      @_main_file\write page.content
-    @_main_file\flush!
+      _, err = main_file\seek 'set', page.offset
+      if err?
+        return "cannot seek in main file: #{err}"
+      err = main_file\write page.content
+      if err?
+        return "cannot write to main file: #{err}"
+
+    _, err = main_file\flush!
+    if err?
+      return "cannot flush main file: #{err}"
 
     -- TODO(kcza): delete the journal
     -- -- Delete journal.
     -- os.remove @_journal_path
+    nil
 
   _pages_to_write: F '() => [writelite.Page]', =>
-    { :page_cache, :page_size } = @_parent
+    {
+      _page_cache: page_cache
+      _page_size: page_size
+    } = @_parent
+
+    page_sized_deltas = with {}
+      for delta in *@_deltas
+        { :offset, :content } = delta
+
+        start_page_offset = @_to_page_offset offset
+        end_page_offset = @_to_page_offset offset + #content
+        if start_page_offset == end_page_offset
+          [] =
+            page_offset: start_page_offset
+            :offset
+            :content
+          continue
+
+        first_chunk_size = offset - offset % page_size
+        [] =
+          page_offset: start_page_offset
+          :offset
+          content: content\sub 1, first_chunk_size
+        for start_idx = first_chunk_size, #content, page_size
+          end_idx = start_idx + page_size
+          if end_idx > #content
+            end_idx = #content
+          [] =
+            page_offset: @_to_page_offset start_idx
+            offset: offset + i
+            content: content\sub start_idx, end_idx
+
+    for delta in *page_sized_deltas
+      if #delta.content > page_size
+        error "internal error: chunk too large: #{#delta.content} > #{page_size}"
 
     deltas_by_page = with {}
-      for delta in *@deltas
-        page_offset = delta.offset - data.offset % page_size
+      for delta in *page_sized_deltas
+        page_offset = delta.page_offset
         [page_offset] ??= {}
-        [page_offset][] =
-          :page_offset
-          :deltas
-    with {}
-      for page_deltas in *deltas_by_page
-        { :page_offset, :deltas } = page_deltas
-        buf = {}
-        for page_delta in *deltas
-          { :offset, :content } = page_delta
-          for char in content\gmatch '.'
-            buf[offset + 1] = char
-            offset += 1
+        [page_offset][] = delta
+
+    ret = with {}
+      for page_offset, page_deltas in pairs deltas_by_page
+        content_bytes = {}
+        for delta in *page_deltas
+          {
+            :offset
+            :content
+          } = delta
+
+          offset_within_page = offset - page_offset
+          for i = 1, #content
+            content_bytes[offset_within_page + i] = content\byte i
+
         gaps_present = false
         for i = 1, page_size
-          if not buf[i]?
+          if not content_bytes[i]?
             gaps_present = true
             break
         if gaps_present
-          prev_page = page_cache\get page_offset
+          prev_page = assert page_cache\get page_offset
+          prev_page_content = prev_page.content
           for i = 1, page_size
-            if not buf[i]?
-              buf[i] = prev_page\byte i
+            if not content_bytes[i]?
+              content_bytes[i] = prev_page_content\byte i
+        if #content_bytes != page_size
+          error "internal error: produced page does not match page size #{#content_bytes} != #{page_size}"
+
         [] = Page
           offset: page_offset
-          content: buf
+          content: table.concat [ string.char c for c in *content_bytes ]
+    table.sort ret, (a, b) -> a.offset < b.offset
+    ret
+
+  _to_page_offset: F '(number) => number', (offset) =>
+    offset - offset % @_parent._page_size
 
   -- _journal_header: F '() => string', =>
   --   content_hasher = Hasher!
@@ -566,13 +643,6 @@ class Transaction
   --     * encode_number journal_hash
   --     * encode_number #payload
   --     * payload
-
-declare_type 'writelite.Delta', [[{
-  offset: number,
-  content: string,
-}]]
-class Delta
-  new: F '(number, string) => <>', (@offset, @content) =>
 
 NIL_TAG = 0
 NIL_TAG_CHAR = string.char NIL_TAG
@@ -634,7 +704,8 @@ class Serialiser
           to_write = bit.brshift to_write, 8
 
         len = #fragments - tag_index
-        assert len <= INT_LEN_MASK
+        if len > INT_LEN_MASK
+          error "internal error: len too large #{len} > #{INT_LEN_MASK}"
         fragments[tag_index] = string.char bit.bor INT_TYPE,
           bit.blshift len, INT_LEN_SHIFT
       when 'string'
@@ -766,7 +837,7 @@ class Deserialiser
       for _ = 1, num_pairs
         key = @parse_value!
 
-        if TABLE_REF_TAG == string.byte @raw, @index
+        if TABLE_REF_TAG == @raw\byte @index
           @index += 1
           ref = @parse_value!
           @unresolved_table_refs[] =
@@ -781,7 +852,7 @@ class Deserialiser
 
     local head
     while true
-      head = string.byte @raw, @index
+      head = @raw\byte @index
       if not head?
         error "internal error: unexpected EOF at index #{@index}"
       if head != BLANK_TAG
@@ -803,7 +874,7 @@ class Deserialiser
         ret = 0
         for i = 0, len - 1
           ret = bit.bor ret,
-            bit.blshift (string.byte @raw, @index),
+            bit.blshift (@raw\byte @index),
               i * 8
           @index += 1
         return ret
@@ -829,7 +900,9 @@ class Deserialiser
           error "internal error: ref #{ref} invalid at #{index}"
         return table
       else
-        error "unrecognised tag #{bit.band head, TAG_MASK} at index #{@index - 1}"
+        print_serialised @raw
+        error "unrecognised tag %02x at index %d"\format (bit.band head, TAG_MASK),
+          @index - 1
     error 'unreachable'
 
   prepare_raw: F '() => string', =>
@@ -853,11 +926,11 @@ class Deserialiser
 
 declare_type 'writelite.PageOpts', [[{
   offset: number,
-  content: [number],
+  content: string,
 }]]
 declare_type 'writelite.Page', [[{
   offset: number,
-  content: [number],
+  content: string,
   checksum: number,
 }]]
 class Page
@@ -974,49 +1047,60 @@ spec ->
     new: F '(?{string->writelite.FileSpec}) => <>', (files={}) =>
       @files = { file, TestFile content for file, { :content } in pairs files }
 
-    open: F '(string, writelite.FileMode) => <?writelite.File, ?string>', (path, mode) =>
-      file = @files[path]
-      if file?
-        file\open!
-        file, nil
-      else if mode\match '^w'
+    open: F '(string, writelite.FileMode) => <?writelite.File, ?string, ?number>', (path, mode) =>
+      if mode\match '^w'
         file = TestFile ''
         file\open!
         @files[path] = file
-        file, nil
+        file, nil, nil
+      else if file = @files[path]
+        file\open!
+        file, nil, nil
       else
-        nil, "#{path}: No such file or directory 2"
+        nil, "#{path}: No such file or directory", 2
 
   class TestFile
     new: F '(string) => <>', (content) =>
       @cursor = 0
       @content_bytes = with {}
         for i = 1, #content
-          [] = string.byte content, i
+          [i - 1] = content\byte i
       @closed = true
 
+    content: F '() => string', =>
+      table.concat with {}
+        i = 0
+        while @content_bytes[i]?
+          [] = string.char @content_bytes[i]
+          i += 1
+
     open: F '() => <>', =>
+      if @closed
+        @cursor = 0
       @closed = false
 
     read: F '("*a"|number) => <?string, ?string>', (amount) =>
       if @closed
         return nil, 'closed'
+      content = @content!
       end_index = switch amount
         when '*a'
-          #@content_bytes
+          #content
         else
           @cursor + amount
-      if end_index > #@content_bytes
-        end_index = #@content_bytes
-      if @cursor == #@content_bytes
+      if end_index > #content
+        end_index = #content
+      if @cursor == #content
         return nil, nil
-      table.concat [ string.char b for b in *@content_bytes[1+@cursor,end_index] ], nil
+      cursor = @cursor
+      @cursor = end_index
+      (@content!\sub 1 + cursor, end_index), nil
 
     write: F '(string) => ?string', (to_write) =>
       if @closed
         return 'closed'
       for i = 1, #to_write
-        @content_bytes[@cursor] = string.byte to_write, i
+        @content_bytes[@cursor] = to_write\byte i
         @cursor += 1
       nil
 
@@ -1041,11 +1125,11 @@ spec ->
     flush: F '() => <boolean, ?string>', =>
       true, nil
 
-    close: F '() => ?string', =>
+    close: F '() => <boolean, ?string>', =>
       if @closed
-        return 'closed'
+        return false, 'closed'
       @closed = true
-      nil
+      true, nil
 
   describe 'writelite.Writelite', ->
     describe '\\mode', ->
@@ -1200,59 +1284,102 @@ spec ->
           $assert_that err, eq 'cannot close writelite file: not open'
 
     describe 'consistency', ->
-      tests = {}
-        -- * failure_point: 'pre-verification'
-        --   expect_after_failed_run: (initial_fs, current_fs) ->
-        --   expect_after_second_run: (initial_fs, current_fs) ->
-      known_failure_points = $known_failure_points!
-      for test in *tests
-        { :failure_point, :expect_after_failed_run, :expect_after_second_run } = test
-        it "is maintained at #{failure_point} failure", ->
-          if not known_failure_points[failure_point]?
-            error "no such failure point '#{failure_point}'"
+      describe 'on golden-path', ->
+        PAGE_SIZE = 1024
+        tests =
+          * name: 'no pages'
+            txn_fn: (txn) ->
+          * name: 'pages'
+            txn_fn: (txn) ->
+              txn\seek 'set', 0
+              txn\write 'hello, world'
+              txn\seek 'set', 128
+              txn\write 'how are you?'
+            assertion: (content) ->
+              $expect_that content, matches '^#!writelite'
 
-          fs = TestFs!
+              first_chunk_start_index = content\find 'hello, world'
+              $expect_that first_chunk_start_index, eq PAGE_SIZE + 1
 
-          -- Prepare fresh, empty database.
-          with Writelite 'database.db', fs
-            \mode 'blob'
-            assert \open!
-            assert \close!
+              second_chunk_start_index = content\find 'how are you?'
+              $expect_that second_chunk_start_index, eq PAGE_SIZE + 1 + 128
+        for test in *tests
+          { :name, :txn_fn, :assertion } = test
+          it "functions with #{name}", ->
+            fs = TestFs!
+            FILE = 'database.db'
+            with Writelite FILE, fs
+              \mode 'blob'
+              \page_size PAGE_SIZE
+              ok, err = \open!
+              $assert_that ok, eq true
+              $expect_that err, eq nil
 
-          $assert_that fs.files, has_fields
-            ['database.db']: not_ eq nil
-            ['database.db~']: eq nil
+              $expect_that fs.files[FILE]?, eq true
 
-          -- initial_fs = clone fs
-          --
-          -- try
-          --   with Writelite 'database.db', fs
-          --     \mode 'blob'
-          --     \_ut_inject_failures
-          --       [failure_point]: true
-          --
-          --     ok, err = \open!
-          --     \transaction (txn) ->
-          --       -- TODO(kcza): complete me once the journal is ready.
-          --     ok, err = \close!
-          -- catch err2
-          --   if err2 != $failure_marker!
-          --     err = err2
-          -- $assert_that err, eq nil
-          --
-          -- expect_after_failed_run initial_fs, fs
-          --
-          -- try
-          --   with Writelite 'database.db', fs
-          --     \mode 'blob'
-          --     assert \open!
-          --     assert \close!
-          -- catch err2
-          --   if err2 != $failure_marker!
-          --     err = err2
-          -- $assert_that err, eq nil
-          --
-          -- expect_after_second_run initial_fs, fs
+              \transaction txn_fn
+
+              if assertion?
+                assertion fs.files[FILE]\content!
+
+              ok, err = \close!
+              $assert_that ok, eq true
+              $assert_that err, eq nil
+
+      describe 'with failures', ->
+        tests = {}
+          -- * failure_point: 'pre-verification'
+          --   expect_after_failed_run: (initial_fs, current_fs) ->
+          --   expect_after_second_run: (initial_fs, current_fs) ->
+        known_failure_points = $known_failure_points!
+        for test in *tests
+          { :failure_point, :expect_after_failed_run, :expect_after_second_run } = test
+          it "is maintained at #{failure_point} failure", ->
+            if not known_failure_points[failure_point]?
+              error "no such failure point '#{failure_point}'"
+
+            fs = TestFs!
+
+            -- Prepare fresh, empty database.
+            with Writelite 'database.db', fs
+              \mode 'blob'
+              assert \open!
+              assert \close!
+
+            $assert_that fs.files, has_fields
+              ['database.db']: not_ eq nil
+              ['database.db~']: eq nil
+
+            -- initial_fs = clone fs
+            --
+            -- try
+            --   with Writelite 'database.db', fs
+            --     \mode 'blob'
+            --     \_ut_inject_failures
+            --       [failure_point]: true
+            --
+            --     ok, err = \open!
+            --     \transaction (txn) ->
+            --       -- TODO(kcza): complete me once the journal is ready.
+            --     ok, err = \close!
+            -- catch err2
+            --   if err2 != $failure_marker!
+            --     err = err2
+            -- $assert_that err, eq nil
+            --
+            -- expect_after_failed_run initial_fs, fs
+            --
+            -- try
+            --   with Writelite 'database.db', fs
+            --     \mode 'blob'
+            --     assert \open!
+            --     assert \close!
+            -- catch err2
+            --   if err2 != $failure_marker!
+            --     err = err2
+            -- $assert_that err, eq nil
+            --
+            -- expect_after_second_run initial_fs, fs
 
   describe 'writelite.PageCache', ->
     describe '\\write', ->
@@ -1270,37 +1397,27 @@ spec ->
           _page_size: page_size
         $expect_that (cache\get 0 * page_size), has_fields
           offset: eq 0
-          content: deep_eq with {}
-            for i = 1, page_size
-              [] = 'a'\byte!
+          content: eq 'a'\rep page_size
         $expect_that (cache\get 0 * page_size), has_fields
           offset: eq 0
-          content: deep_eq with {}
-            for i = 1, page_size
-              [] = 'a'\byte!
+          content: eq 'a'\rep page_size
         $expect_that (cache\get 1 * page_size), has_fields
           offset: eq page_size
-          content: deep_eq with {}
-            for i = 1, page_size
-              [] = 'b'\byte!
+          content: eq 'b'\rep page_size
         $expect_that (cache\get 2 * page_size), has_fields
           offset: eq 2 * page_size
-          content: deep_eq with {}
-            for i = 1, page_size / 2
-              [] = 'c'\byte!
-            for i = 1, page_size / 2
-              [] = 0
+          content: eq table.concat
+            * 'c'\rep page_size / 2
+            * '\0'\rep page_size / 2
         $expect_that (cache\get 1 * page_size), has_fields
           offset: eq page_size
-          content: deep_eq with {}
-            for i = 1, page_size
-              [] = 'b'\byte!
+          content: eq 'b'\rep page_size
 
-      it 'accesses the filesystem', ->
+      it 'caches appropriately', ->
         PAGE_SIZE = 10
 
         main_file = TestFile table.concat with {}
-          a = string.byte 'a'
+          a = 'a'\byte!
           for i = 0, 20
             [] = (string.char a + i)\rep PAGE_SIZE
         main_file\open!
@@ -1321,27 +1438,25 @@ spec ->
         assert not err?, err
 
         -- Test cached pages are used.
-        a = string.byte 'a'
+        a = 'a'\byte!
         for i = 0, MAX_CACHED_PAGES - 1
           $expect_that (cache\get i * PAGE_SIZE), has_fields
             offset: eq i * PAGE_SIZE
-            content: deep_eq with {}
-              for _ = 1, PAGE_SIZE
-                [] = a + i
+            content: eq (string.char a + i)\rep PAGE_SIZE
 
         -- Trigger eviction
         cache\get MAX_CACHED_PAGES * PAGE_SIZE
 
         $expect_that (cache\get 0), has_fields
           offset: eq 0
-          content: each_value eq '0'\byte!
+          content: eq '0'\rep PAGE_SIZE
 
     describe '\\set', ->
       it 'shows changes immediately', ->
         PAGE_SIZE = 10
 
         main_file = TestFile table.concat with {}
-          a = string.byte 'a'
+          a = 'a'\byte!
           for i = 0, 20
             [] = (string.char a + i)\rep PAGE_SIZE
         main_file\open!
@@ -1360,7 +1475,7 @@ spec ->
           _page_size: PAGE_SIZE
         page = Page
           offset: 0
-          content: [ 0 for _ = 1, PAGE_SIZE ]
+          content: '\0'\rep PAGE_SIZE
         $expect_that (-> cache\set 12, page), errors matches 'page%-cache offset must be a multiple of the page size'
 
       it 'rejects incorrect-size pages', ->
@@ -1371,7 +1486,7 @@ spec ->
           _page_size: PAGE_SIZE
         page = Page
           offset: 123 * PAGE_SIZE
-          content: { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 }
+          content: '0123456789'
         $expect_that (-> cache\set 123 * PAGE_SIZE, page), errors matches "internal error: page has the wrong size %(10 != #{PAGE_SIZE}%)"
 
   describe 'writelite.Hasher', ->
@@ -1557,3 +1672,4 @@ spec ->
 
           assert \close!
         os.remove path
+-- TODO(kcza): test partially-writing three consecutive pages (partial, full, partial)
