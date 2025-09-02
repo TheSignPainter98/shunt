@@ -139,6 +139,7 @@ export class Writelite
       main_header, err = @_read_main_header!
       if err?
         return false, "cannot open writelite: #{err}"
+      -- TODO(kcza): validate main
     @_main_header = main_header
 
     true, nil
