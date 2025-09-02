@@ -556,27 +556,31 @@ class Transaction
         if start_page_offset == end_page_offset
           [] =
             page_offset: start_page_offset
-            :offset
+            offset: offset % page_size
             :content
           continue
 
-        first_chunk_size = offset - offset % page_size
+        first_chunk_size = page_size - offset % page_size
         [] =
           page_offset: start_page_offset
-          :offset
+          offset: offset % page_size
           content: content\sub 1, first_chunk_size
-        for start_idx = first_chunk_size, #content, page_size
-          end_idx = start_idx + page_size
+        chunk_offset = offset
+        for start_idx = 1 + first_chunk_size, #content, page_size
+          end_idx = start_idx + page_size - 1
           if end_idx > #content
             end_idx = #content
           [] =
-            page_offset: @_to_page_offset start_idx
-            offset: offset + i
+            page_offset: @_to_page_offset start_idx + offset
+            offset: 0
             content: content\sub start_idx, end_idx
+          chunk_offset += page_size
 
     for delta in *page_sized_deltas
       if #delta.content > page_size
-        error "internal error: chunk too large: #{#delta.content} > #{page_size}"
+        error "internal error: chunk too large: #{#delta.content} > #{page_size} at (#{delta.page_offset}, #{delta.offset})#"
+      if delta.offset > page_size
+        error "internal error: invalid delta offset: #{delta.offset} > #{page_size}"
 
     deltas_by_page = with {}
       for delta in *page_sized_deltas
@@ -593,9 +597,8 @@ class Transaction
             :content
           } = delta
 
-          offset_within_page = offset - page_offset
           for i = 1, #content
-            content_bytes[offset_within_page + i] = content\byte i
+            content_bytes[offset + i] = content\byte i
 
         gaps_present = false
         for i = 1, page_size
@@ -1102,6 +1105,7 @@ spec ->
     seek: F '(Whence, ?number) => <?number, ?string>', (whence, num) =>
       if @closed
         return nil, 'closed'
+      num, _ = math.modf num, 1
       switch whence
         when 'set'
           @cursor = num
@@ -1305,6 +1309,13 @@ spec ->
             assertion: (content) ->
               pattern_index = content\find 'aaaaabbbbbccccc'
               $expect_that pattern_index, eq PAGE_SIZE + 1 + 128
+          * name: 'multi-page delta'
+            txn_fn: (txn) ->
+              txn\seek 'set', PAGE_SIZE / 4
+              txn\write 'a'\rep 2 * PAGE_SIZE
+            assertion: (content) ->
+              pattern_index = content\find 'a'\rep 2 * PAGE_SIZE
+              $expect_that pattern_index, eq 1 + PAGE_SIZE + PAGE_SIZE / 4
         for test in *tests
           { :name, :txn_fn, :assertion } = test
           it "functions with #{name}", ->
@@ -1676,4 +1687,3 @@ spec ->
 
           assert \close!
         os.remove path
--- TODO(kcza): test partially-writing three consecutive pages (partial, full, partial)
