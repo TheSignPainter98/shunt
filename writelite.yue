@@ -97,36 +97,28 @@ export class Writelite
 
   open: F '() => <boolean, ?string>', =>
     if @_open
-      return false, 'cannot open writelite file twice'
+      return false, 'cannot open writelite twice'
     @_open = true
 
     if not @_mode?
       return false, 'cannot open main file: mode unspecified'
 
-    main_file_content = nil
-    with? @_fs\open @_path, 'rb'
-      main_file_content, err = \read '*a'
+    main_file, _, _ = @_fs\open @_path, 'rb+'
+    if not main_file?
+      -- The possibility that main is written at this point and has
+      -- important contents is ignored. We assume that the IO operations are
+      -- blocking, i.e. another coroutine cannot come in at this point and
+      -- write data.
+      main_file, err, _ = @_fs\open @_path, 'wb+'
       if err?
         return false, "cannot open main file: #{err}"
-      _, err = \close!
-      if err?
-        return false, "cannot close main file after initial read: #{err}"
-    main_file_content ??= ''
-    main_is_empty = #main_file_content == 0
-
-    main_file, err = @_fs\open @_path, 'wb+'
-    if err?
-      return false, "cannot open main file: #{err}"
-    if not main_is_empty
-      _, err = main_file\write main_file_content
-      if err?
-        -- If an error occurs here, ALL of the initial contents are lost.
-        -- There doesn't seem to be a way around this with the file modes
-        -- Lua has access to. An error at this point would be catastrophic.
-        return false, "cannot copy previous main file content to new file: #{err}"
-
     main_file\setvbuf 'full' -- Minimise writes.
     @_main_file = main_file
+
+    main_file_content, err = @_main_file\read '*a'
+    if err?
+      return false, "cannot read main file: #{err}"
+    main_file_content ??= ''
 
     -- journal, _ = @_fs\open @_journal_path, 'r'
     -- if journal?
@@ -139,7 +131,7 @@ export class Writelite
     --   os.remove @_journal_path
 
     local main_header
-    if main_is_empty
+    if #main_file_content == 0
       main_header = @_make_main_header!
       err = @_format_main main_header
       if err?
@@ -147,7 +139,7 @@ export class Writelite
     else
       main_header, err = @_read_main_header!
       if err?
-        return false, "cannot open writelite file: #{err}"
+        return false, "cannot open writelite: #{err}"
     @_main_header = main_header
 
     true, nil
@@ -212,6 +204,9 @@ export class Writelite
     to_write = table.concat fragments
     if #to_write > MIN_PAGE_SIZE
       error "internal error: first page too large: #{#to_write} > #{MIN_PAGE_SIZE}"
+    _, err = @_main_file\seek 'set', 0
+    if err?
+      return err
     _, err = @_main_file\write to_write
     if err?
       return err
@@ -502,7 +497,7 @@ class Transaction
   _close: F '() => ?string', =>
     if @_aborted
       -- Ensure that no journal is present.
-      if file = io.open @_journal_path, 'r'
+      if file = io.open @_journal_path, 'rb'
         file\close!
         os.remove @_journal_path
       return nil
@@ -511,7 +506,7 @@ class Transaction
     pages_to_write = @_pages_to_write!
 
     -- TODO(kcza): write to the journal
-    -- with assert io.open @_journal_path, 'w+'
+    -- with assert io.open @_journal_path, 'rb+'
     --   assert \setvbuf 'full' -- Minimise writes.
     --   assert \seek 'set', 0
     --   assert \write ZERO_PAGE
@@ -1253,7 +1248,7 @@ spec ->
 
           ok, err = \open!
           $expect_that ok, eq false
-          $assert_that err, matches 'cannot open writelite file twice'
+          $assert_that err, matches 'cannot open writelite twice'
 
           ok, err = \close!
           $expect_that ok, eq true
@@ -1265,7 +1260,7 @@ spec ->
 
           ok, err = \open!
           $expect_that ok, eq false
-          $assert_that err, matches 'cannot open writelite file twice'
+          $assert_that err, matches 'cannot open writelite twice'
 
     describe '\\close', ->
       it 'cannot be called twice', ->
