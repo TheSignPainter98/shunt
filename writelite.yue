@@ -115,10 +115,9 @@ export class Writelite
     main_file\setvbuf 'full' -- Minimise writes.
     @_main_file = main_file
 
-    main_file_content, err = @_main_file\read '*a'
+    main_end_index, err = @_main_file\seek 'end', 0
     if err?
       return false, "cannot read main file: #{err}"
-    main_file_content ??= ''
 
     -- journal, _ = @_fs\open @_journal_path, 'r'
     -- if journal?
@@ -131,7 +130,7 @@ export class Writelite
     --   os.remove @_journal_path
 
     local main_header
-    if #main_file_content == 0
+    if main_end_index == 0
       main_header = @_make_main_header!
       err = @_format_main main_header
       if err?
