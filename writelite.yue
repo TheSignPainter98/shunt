@@ -163,7 +163,7 @@ export class Writelite
       return nil, err
     if not raw_header?
       return nil, "main file empty"
-    header = (Deserialiser raw_header\sub #@_main_prelude! + 1)
+    header = (Deserialiser raw_header\sub #MAIN_PRELUDE + 1)
       \parse!
 
     checkers =
@@ -193,7 +193,7 @@ export class Writelite
 
   _format_main: F '(writelite.MainHeader) => ?string', (header) =>
     fragments =
-      * @_main_prelude!
+      * MAIN_PRELUDE
       * Serialiser::serialise header
 
     current_size = 0
@@ -258,63 +258,6 @@ export class Writelite
 
     not file_closure_error?, file_closure_error
 
-  _main_prelude: F '() => string', =>
-    @_cached_main_prelude ??= table.concat
-      * '#!writelite\n'
-      * '+----------------------------------------------+\n'
-      * '|                                              |\n'
-      * '|                !!! STOP !!!                  |\n'
-      * '|                                              |\n'
-      * '|                DO NOT EDIT!                  |\n'
-      * '|                                              |\n'
-      * '| Editing this file will corrupt the database. |\n'
-      * '|                                              |\n'
-      * '| Close this file and DO NOT SAVE any changes. |\n'
-      * '|                                              |\n'
-      * '|             EXIT the editor NOW.             |\n'
-      * '|                                              |\n'
-      * '+----------------------------------------------+\n'
-    @_cached_main_prelude
-
-  _journal_prelude: F '() => string', =>
-    @_cached_journal_prelude ??= do
-      prelude_fragments =
-        * '\n'
-        * '\n'
-        * '\n'
-        * '\n'
-        * 'STOP!\n'
-        * '\n'
-        * 'DO NOT EDIT!\n'
-        * '\n'
-        * 'Editing this file will cause data-loss.\n'
-        * '\n'
-        * 'Close this file and DO NOT SAVE any changes.\n'
-        * '\n'
-        * 'EXIT the editor NOW.\n'
-        * '\n'
-        * '\n'
-        * '\n'
-        * '\n'
-      prelude_len = 0
-      for line in *prelude_fragments
-        prelude_len += #line
-
-      spacer_line = ('.'\rep 49) .. '\n'
-      while prelude_len < PAGE_SIZE - #spacer_line
-        prelude_fragments[] = spacer_line
-        prelude_len += #spacer_line
-      while prelude_len < PAGE_SIZE - 2
-        prelude_fragments[] = '.'
-        prelude_len += #'\n'
-      prelude_fragments[] = '@'
-      prelude_fragments[] = '\n'
-
-      prelude = table.concat prelude_fragments
-      assert #prelude == PAGE_SIZE
-      prelude
-    @_cached_journal_prelude
-
   @_zero_page: F '() => string', =>
     @_cached_zero_page ??= '\0'\rep @_page_size
     @_cached_zero_page
@@ -323,6 +266,24 @@ export class Writelite
     @_page_cache.max_cached_pages
 
   _ut_inject_failures: F '(?{string}) => <>', (@_injected_failures) =>
+
+CORRUPTION_WARNING = T 'string', '
++----------------------------------------------+
+|                                              |
+|                !!! STOP !!!                  |
+|                                              |
+|                DO NOT EDIT!                  |
+|                                              |
+|   Editing this file will corrupt its data.   |
+|                                              |
+| Close this file and DO NOT SAVE any changes. |
+|                                              |
+|             EXIT the editor NOW.             |
+|                                              |
++----------------------------------------------+
+'
+MAIN_PRELUDE = "#!writelite\0\0\0\0\0#{CORRUPTION_WARNING}"
+JOURNAL_PRELUDE = "#!writelitejrnl\0#{CORRUPTION_WARNING}"
 
 declare_type 'writelite.Fs', [[{
   open: (string, writelite.FileMode) => <?writelite.File, ?string, ?number>
@@ -1333,7 +1294,7 @@ spec ->
               \transaction txn_fn
 
               content = fs.files[FILE]\content!
-              $expect_that content, matches '^#!writelite'
+              $expect_that content, matches '^#!writelite\0'
               if assertion?
                 assertion content
 
