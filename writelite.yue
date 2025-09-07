@@ -48,7 +48,7 @@ declare_type 'writelite.Writelite', [[{
 }]]
 declare_type 'writelite.Mode', '"blob"'
 declare_type 'writelite.MainHeader', [[{
-  format_version: number,
+  format_version: 1,
   page_size: number,
   mode: writelite.Mode,
 }]]
@@ -119,15 +119,26 @@ export class Writelite
     if err?
       return false, "cannot read main file: #{err}"
 
-    -- journal, _ = @_fs\open @_journal_path, 'r'
-    -- if journal?
-    --   journal_content = journal\read '*a'
-    --   journal\close!
-    --
-    --   if @_journal_valid journal_content
-    --     @_recover_journal @_main_file, journal_content
-    --   -- All recoverable data has been recovered, delete the old journal.
-    --   os.remove @_journal_path
+    journal_file, _ = @_fs\open @_journal_path, 'rb'
+    if journal_file?
+      journal_content = journal_file\read '*a'
+      journal_file\close!
+
+      journal, err = Journal::load journal_content, @_page_size
+      if err?
+        print "cannot load journal: #{err}"
+      if journal?
+        for page in *journal.pages
+          { :offset, :content } = page
+          _, err = @_main_file\seek 'set', offset
+          if err?
+            error "cannot seek in main file"
+          _, err = @_main_file\write content
+          if err?
+            error "cannot write to main file"
+
+      -- All recoverable data has been recovered, delete the journal.
+      os.remove @_journal_path
 
     local main_header
     if main_end_index == 0
@@ -212,19 +223,6 @@ export class Writelite
       return err
     _, err = @_main_file\flush!
     err
-
-  _journal_valid: F '(string) => <>', (journal_content) =>
-    -- TODO(kcza): read the prelude (must be the unedited prefix)
-    -- TODO(kcza): read the header
-    -- TODO(kcza): read the content, compute the hash, compare the hash
-    error 'todo'
-
-  _recover_journal: F '() => <>', =>
-    -- TODO(kcza): Read the page map
-    -- TODO(kcza): Read the pages
-    -- TODO(kcza): Write the pages once mapped
-    -- TODO(kcza): DO NOT DELETE THE JOURNAL! THIS NEEDS TO BE DONE AFTER THE DB IS READ TO ALLOW APPROPRIATE CRASHES!
-    error 'todo'
 
   transaction: F '((writelite.Transaction) -> <>) => <>', (f) =>
     @@_open_transactions[@_path] = true
@@ -456,32 +454,35 @@ class Transaction
     @_aborted = true
 
   _close: F '() => ?string', =>
+    journal_path = @_parent._journal_path
+
     if @_aborted
       -- Ensure that no journal is present.
-      if file = io.open @_journal_path, 'rb'
+      if file = io.open journal_path, 'rb'
         file\close!
-        os.remove @_journal_path
+        os.remove journal_path
       return nil
 
     -- Create and write to journal.
     pages_to_write = @_pages_to_write!
 
-    -- TODO(kcza): write to the journal
-    -- with assert io.open @_journal_path, 'rb+'
-    --   assert \setvbuf 'full' -- Minimise writes.
-    --   assert \seek 'set', 0
-    --   assert \write ZERO_PAGE
-    --
-    --   -- Write pages.
-    --   for page in *pages_to_write
-    --     assert \seek 'set', page.offset
-    --     assert \write page.content
-    --
-    --   -- Write header.
-    --   assert \seek 'set', 0
-    --   assert \write @_journal_header!
-    --
-    --   assert \close!
+    do
+      journal = Journal @_page_size
+      for page in *pages_to_write
+        journal\add page
+
+      fs = @_parent._fs
+      journal_file, err = fs\open journal_path, 'wb+'
+      if err?
+        error "cannot open journal file '#{journal_path}': #{err}"
+      with journal_file
+        \setvbuf 'full' -- Minimise writes.
+        _, err = journal\write_to journal_file
+        if err?
+          error "cannot write to journal file '#{journal_path}': #{err}"
+        _, err = \close!
+        if err?
+          error "cannot close journal file '#{journal_path}: #{err}"
 
     -- Write to main file.
     main_file = @_parent._main_file
@@ -489,7 +490,7 @@ class Transaction
       _, err = main_file\seek 'set', page.offset
       if err?
         return "cannot seek in main file: #{err}"
-      err = main_file\write page.content
+      _, err = main_file\write page.content
       if err?
         return "cannot write to main file: #{err}"
 
@@ -497,9 +498,8 @@ class Transaction
     if err?
       return "cannot flush main file: #{err}"
 
-    -- TODO(kcza): delete the journal
-    -- -- Delete journal.
-    -- os.remove @_journal_path
+    -- Delete journal.
+    os.remove journal_path
     nil
 
   _pages_to_write: F '() => [writelite.Page]', =>
@@ -584,24 +584,95 @@ class Transaction
   _to_page_offset: F '(number) => number', (offset) =>
     offset - offset % @_parent._page_size
 
-  -- _journal_header: F '() => string', =>
-  --   content_hasher = Hasher!
-  --   for page in *@_pages
-  --     content_hasher\write page._content
-  --   content_hash = content_hasher\finish!
-  --
-  --   payload = Deserialiser
-  --     :content_hash
-  --   journal_hash = Hasher!
-  --     \write JOURNAL_PRELUDE
-  --     \write payload
-  --     \finish!
-  --
-  --   table.concat
-  --     * JOURNAL_PRELUDE
-  --     * encode_number journal_hash
-  --     * encode_number #payload
-  --     * payload
+declare_type 'writelite.Journal', [[{
+  create: () => <boolean, ?string>,
+  pages: () => [writelite.Page],
+  add: (writelite.Page) => <boolean, ?string>,
+  add_raw: (writelite.Page) => <boolean, ?string>,
+  write_to: (writelite.File) => <boolean, ?string>,
+}]]
+declare_type 'writelite.JournalHeader', [[{
+  format_version: 1,
+  page_size: number,
+  mode: writelite.JournalMode,
+  payload_length: number,
+}]]
+declare_type 'writelite.JournalMode', '"delete"'
+class Journal
+  new: F '(number) => <>', (@_page_size) =>
+    @_pages = T '[writelite.Page]', {}
+    @_header = T '?writelite.JournalHeader', nil
+
+  @load: F '(string) => <?writelite.Journal, ?string>', (content, page_size) =>
+    journal = with Journal page_size
+      err = \_validate_raw content
+      if err?
+        return nil, err
+      header = T 'writelite.JournalHeader', Deserialiser::deserialise content
+
+      with Deserialiser content, 1 + page_size
+        while true
+          offset, eof = \parse!
+          if eof
+            break
+          offset = T 'number', offset
+
+          content, eof = \parse!
+          if eof
+            return nil, 'unexpected end of journal'
+          content = T 'string', content
+          if #content != @_page_size
+            return nil, "incorrect page size, expected #{@_page_size} but got #{#content}"
+
+          \add
+            :offset
+            :content
+    journal, nil
+
+  _validate_raw: F '(string) => ?string', (content) =>
+    first_page = content\sub 1, @_page_size - 1
+    if not first_page?
+      return "header missing"
+    if (first_page\sub #JOURNAL_PRELUDE) != JOURNAL_PRELUDE
+      return "prelude was edited"
+    header = Deserialiser::deserialise first_page, #JOURNAL_PRELUDE + 1
+    {
+      :format_version
+      :page_size
+      :mode
+      :page_count
+    } = header
+    if format_version != FORMAT_VERSION
+      return "format version #{format_version} unsupported"
+    if mode != 'delete'
+      return "unrecognised journal mode '#{mode}'"
+    if page_count < 0
+      return "invalid page count #{page_count}"
+    expected_content_len = page_count + (page_size + 5)
+    if #content != expected_content_len
+      return "unexpected length: expected #{expected_content_len} bytes for #{page_count} pages, but got #{#content}"
+    -- TODO(kcza): read the content, compute the hash, compare the hash
+    nil
+
+  pages: F '() => [writelite.Page]', =>
+    @_pages
+
+  add: F '(writelite.Page) => <>', (page) =>
+    @_pages[] = page
+
+  write_to: F '(writelite.File) => <boolean, ?string>', (file) =>
+    serialised_pages = Serialiser::serialise @_pages
+    header = T 'writelite.JournalHeader',
+      format_version: FORMAT_VERSION
+      page_size: @_page_size
+      mode: 'delete'
+      payload_length: #serialised_pages
+    _, err = file\write table.concat
+      * Serialiser::serialise header
+      * serialised_pages
+    if err?
+      return false, err
+    true, nil
 
 NIL_TAG = 0
 NIL_TAG_CHAR = string.char NIL_TAG
@@ -753,21 +824,23 @@ is_float = F '(number) -> boolean', (num) ->
 
 declare_type 'writelite.DeserialiserSource', 'string|writelite.File'
 class Deserialiser
-  new: F '(writelite.DeserialiserSource) => <>', (@source) =>
-    @index = T 'number', 1
+  new: F '(writelite.DeserialiserSource, ?number) => <>', (@source, @index=1) =>
     @tables_by_ref = T '{number->table}', {}
     @unresolved_table_refs = T '[{table: table, key: some, ref: number}]', {}
 
-  @deserialise: F '(writelite.DeserialiserSource) => any', (source) =>
-    (Deserialiser source)
+  @deserialise: F '(writelite.DeserialiserSource, ?number) => any', (source, index) =>
+    v, _ = (Deserialiser source, index)
       \parse!
+    v
 
-  @deserialise_raw: F '(string) => any', (source) =>
-    (Deserialiser source)
+  @deserialise_raw: F '(string, ?number) => any', (source, index) =>
+    (Deserialiser source, index)
       \parse_value!
 
-  parse: F '() => any', =>
+  parse: F '() => <any, boolean>', =>
     @raw ??= @prepare_raw!
+    if @index > #@raw
+      return nil, true
 
     total_len = @parse_value!
     if 'number' != type total_len
@@ -778,12 +851,14 @@ class Deserialiser
       error 'internal error: num_tables field is not a number'
     for ref = num_tables - 1, 0, -1
       @parse_table_def ref
-    with @parse_value!
-      for { :table, :key, :ref } in *@unresolved_table_refs
-        value = @tables_by_ref[ref]
-        if not value?
-          error "internal error: unresolved reference #{ref}"
-        table[key] = value
+
+    ret = @parse_value!
+    for { :table, :key, :ref } in *@unresolved_table_refs
+      value = @tables_by_ref[ref]
+      if not value?
+        error "internal error: unresolved reference #{ref}"
+      table[key] = value
+    ret, @index > #@raw
 
   parse_table_def: F '(number) => {}', (ref) =>
     num_pairs = @parse_value!
@@ -1612,9 +1687,10 @@ spec ->
         $expect_that serialised_directly, eq serialised
 
         print_serialised serialised
-        deserialised_from_string = (Deserialiser serialised)
+        deserialised_from_string, eof = (Deserialiser serialised)
           \parse!
         check deserialised_from_string, value
+        $expect_that eof, eq true
 
         direct_deserialised_from_string = Deserialiser::deserialise serialised
         check direct_deserialised_from_string, value
