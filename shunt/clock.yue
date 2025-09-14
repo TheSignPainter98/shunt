@@ -1,6 +1,6 @@
 local *
 
-import 'quicktype' as :declare_type, :F
+import 'shunt.quicktype' as :declare_type, :F
 
 declare_type 'Clock', [[{
   now: () => number,

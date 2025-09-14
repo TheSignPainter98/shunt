@@ -3,11 +3,11 @@ LUA = luajit
 DIAGRAM_NAMES = marshal-main marshal-resource_orchestrator marshal-scheduler marshal-schedule_generator marshal-schedule_generator_impl upgrade_listener config_listener
 DIAGRAMS = $(patsubst %,docs/src/reference-materials/state-machine-diagrams/%.mmd,$(DIAGRAM_NAMES))
 DOCS_HELPERS = docs/mdbook-shunt/target/release/mdbook-shunt
-SITE_SRCS = $(DIAGRAMS) $(DOCS_HELPERS) .version.txt docs/src/shunt
+SITE_SRCS = $(DIAGRAMS) $(DOCS_HELPERS) .version.txt docs/src/shunt docs/src/libshunt.lua
 RUST_SOURCES = $(shell find docs/mdbook-shunt/src/ -name '*.rs')
 SOURCES = $(shell find -name '*.yue')
 OBJECTS = $(patsubst %.yue,%.lua,$(SOURCES))
-BINARIES = bin/shunt bin/goo bin/snoop
+BINARIES = bin/shunt bin/goo bin/snoop bin/libshunt.lua
 
 NODE_FONTNAME = C059
 EDGE_FONTNAME = $(NODE_FONTNAME)
@@ -31,10 +31,13 @@ serve-site: $(SITE_SRCS)
 docs/mdbook-shunt/target/release/mdbook-shunt: docs/mdbook-shunt/Cargo.toml $(RUST_SOURCES)
 	cargo build --release --manifest-path $<
 
+docs/src/libshunt.lua: bin/libshunt.lua
+	cp $< $@
+
 docs/src/shunt: bin/shunt
 	cp $< $@
 
-bin/%: bin/%.lua.packed nitro.lua clap.lua spec.lua
+bin/% bin/%.lua: bin/%.lua.packed nitro.lua shunt/clap.lua shunt/spec.lua
 # $(LUA) ./nitro.lua $< -o $@
 	cp $< $@
 
@@ -48,10 +51,10 @@ bin/%.lua.packed: %.lua $(OBJECTS) moonpack.lua
 	@touch $@
 .PRECIOUS: %.lua
 
-shunt.yue: compat.lua
+shunt.yue: shunt/compat.lua
 
 clean:
-	$(RM) $(OBJECTS) startup.lua packed/shunt shunt.goo $(BINARIES) bin/*
+	$(RM) $(OBJECTS) startup.lua packed/shunt packed/libshunt.lua shunt.goo $(BINARIES) bin/*
 	cargo clean --manifest-path docs/mdbook-shunt/Cargo.toml
 	mdbook clean docs/
 .PHONY: clean
@@ -83,7 +86,8 @@ shunt/version.lua: .version.txt
 .FORCE:
 .PHONY: .FORCE
 
-release: bin/shunt ./scripts/release bin/snoop
+release: bin/shunt bin/libshunt.lua ./scripts/release bin/snoop
 	./scripts/release bin/shunt
 	./scripts/release bin/snoop
+	./scripts/release bin/libshunt.lua
 .PHONY: release

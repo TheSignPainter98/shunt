@@ -1,7 +1,7 @@
 local *
 
-import 'quicktype' as :declare_type, :F, :T
-import 'spec' as :spec
+import 'shunt.quicktype' as :declare_type, :F, :T
+import 'shunt.spec' as :spec
 
 declare_type 'Queue', [[{
   len: () => number,
@@ -65,9 +65,9 @@ export class Queue
         i += 1
 
 spec ->
-  import 'spec_macros' as $
+  import 'shunt.spec_macros' as $
 
-  import 'spec' as :describe, :it, :matchers
+  import 'shunt.spec' as :describe, :it, :matchers
 
   import contains, deep_eq, eq, errors, matches from matchers
 

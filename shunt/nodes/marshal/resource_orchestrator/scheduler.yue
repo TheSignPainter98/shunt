@@ -2,15 +2,15 @@ local *
 local ScheduleGenerator
 local ScheduleGeneratorImpl
 
-import 'quicktype' as :declare_type, :F, :T
 import 'shunt.data.queue' as :Queue
 import 'shunt.firewall' as :Firewall
 import 'shunt.logger' as :log, :trace
 import 'shunt.nodes.marshal.resource_orchestrator.promise_tracker' as :PromiseTracker
 import 'shunt.nodes.marshal.util.pseudo_random' as :PseudoRandom
 import 'shunt.peripheral.station' as :time_units
+import 'shunt.quicktype' as :declare_type, :F, :T
+import 'shunt.spec' as :spec
 import 'shunt.state' as :shallow_log_reporter, :State, :StateMachineBuilder, :StateResponsesBuilder
-import 'spec' as :spec
 
 declare_type 'Scheduler', [[{
   events: Queue,
@@ -690,10 +690,10 @@ export class ScheduleGeneratorImpl
   on_out_of_schedules: F '() => <>', =>
 
 spec ->
-  import 'spec_macros' as $
+  import 'shunt.spec_macros' as $
 
   import 'shunt.clock' as :TestClock
-  import 'spec' as :describe, :it, :matchers
+  import 'shunt.spec' as :describe, :it, :matchers
 
   import deep_eq, eq, ge, gt, has_fields, le, len, lt, matches, not_ from matchers
 

@@ -1,17 +1,16 @@
 local *
 
-import 'compat' as :apply_compat, :HOST, :test_compat
+import 'shunt.compat' as :apply_compat, :HOST, :test_compat
 apply_compat!
 
-import 'quicktype' as :declare_type
-declare_type 'Self', 'some'
+import 'shunt.quicktype' as :declare_type
 
-import 'quicktype' as :F
 import 'shunt.args' as :Args
 import 'shunt.instrument' as :instrument
 import 'shunt.logger' as :log
 import 'shunt.monitor' as :detect_and_use_monitor
-import 'spec' as :run_tests
+import 'shunt.quicktype' as :F
+import 'shunt.spec' as :run_tests
 
 import 'shunt.cmd.clean'
 import 'shunt.cmd.declare'
@@ -23,7 +22,7 @@ import 'shunt.cmd.init'
 import 'shunt.cmd.start'
 import 'shunt.cmd.upgrade'
 import 'shunt.logger'
-import 'spec'
+import 'shunt.spec'
 
 -- Import type definitions
 require 'shunt.component'
@@ -90,7 +89,7 @@ run = (args) ->
     error 'internal error: no command recognised'
 
 spec.spec ->
-  import 'spec' as :describe, :it
+  import 'shunt.spec' as :describe, :it
 
   describe 'compat', ->
     it 'passes checks', ->

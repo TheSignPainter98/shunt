@@ -1,9 +1,9 @@
 local *
 
-import 'quicktype' as :declare_type, :F, :is
 import 'shunt.configurator.main' as :GetConfigRequest, :GetConfigResponse, :SetConfigRequest, :SetConfigResponse
 import 'shunt.data.queue' as :Queue
 import 'shunt.firewall' as :Firewall
+import 'shunt.quicktype' as :declare_type, :F, :is
 import 'shunt.state' as :shallow_log_reporter, :State, :StateMachineBuilder, :StateResponsesBuilder
 
 import 'shunt.toml'
@@ -118,7 +118,7 @@ export class ConfigListener
         @sm\goto 'analysing_set_config_request',
           :packet
       else
-        import 'spec' as :repr
+        import 'shunt.spec' as :repr
         error "internal error: unhandled packet admitted through firewall: #{repr protocol}"
 
   on_analysing_get_config_request: F '() => <>', =>

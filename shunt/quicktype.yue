@@ -1,7 +1,7 @@
 local *
 local Symbol
 
-import 'spec' as :repr, :spec
+import 'shunt.spec' as :repr, :spec
 
 export T = (type_spec, value) ->
   if skip_typechecking
@@ -1360,6 +1360,8 @@ export declare_type = (name, type_spec) ->
   user_types[name] = parsed_type
   type_checkers[name] = parsed_type\checker!\build!
 
+declare_type 'Self', 'some'
+
 export declare_singleton_type = (value) ->
   if not value?
     error "declare_singleton_type requires a value"
@@ -1390,9 +1392,9 @@ export stats = ->
   stats_arr
 
 spec ->
-  import 'spec_macros' as $
+  import 'shunt.spec_macros' as $
 
-  import 'spec' as :describe, :it, :matchers
+  import 'shunt.spec' as :describe, :it, :matchers
 
   import anything, contains_value, deep_eq, each_value, eq, errors, has_fields, ge, gt, len, match, matches, no_errors from matchers
 

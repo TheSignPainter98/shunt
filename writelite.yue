@@ -1,8 +1,8 @@
 local *
 
-import 'compat' as :HOST
-import 'quicktype' as :declare_singleton_type, :declare_type, :F, :T
-import 'spec' as :spec
+import 'shunt.compat' as :HOST
+import 'shunt.quicktype' as :declare_singleton_type, :declare_type, :F, :T
+import 'shunt.spec' as :spec
 
 FORMAT_VERSION = 1
 MIN_PAGE_SIZE = 1024
@@ -1073,9 +1073,9 @@ print_serialised = F '(string) -> <>', (serialised) ->
 spec ->
   local *
 
-  import 'spec_macros' as $
+  import 'shunt.spec_macros' as $
 
-  import 'spec' as :clone, :describe, :it, :matchers
+  import 'shunt.spec' as :clone, :describe, :it, :matchers
 
   import deep_eq, each_value, eq, errors, has_fields, len, lt, matches, near, no_errors, not_ from matchers
 

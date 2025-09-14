@@ -7,11 +7,11 @@ local GetConfigResponse
 local SetConfigRequest
 local SetConfigResponse
 
-import 'quicktype' as :declare_type, :F, :is, :T
 import 'shunt.configurator.editor' as :ABORT, :Editor
 import 'shunt.pc' as :Pc
 import 'shunt.peripheral.uplink' as :IdempotenceToken, :Packet, :TIMEOUT, :Uplink
-import 'spec' as :spec
+import 'shunt.quicktype' as :declare_type, :F, :is, :T
+import 'shunt.spec' as :spec
 
 import 'shunt.toml'
 
@@ -163,12 +163,12 @@ export class SetConfigResponse extends Packet
     super!
 
 spec ->
-  import 'spec_macros' as $
+  import 'shunt.spec_macros' as $
 
   import 'shunt.configurator.editor' as :TestEditorBackend
   import 'shunt.pc' as :TestPcBackend
   import 'shunt.peripheral.uplink' as :TestUplinkBackend
-  import 'spec' as :describe, :it, :matchers
+  import 'shunt.spec' as :describe, :it, :matchers
 
   import deep_eq, each_value, eq, gt, has_type, has_fields, matches, not_ from matchers
 

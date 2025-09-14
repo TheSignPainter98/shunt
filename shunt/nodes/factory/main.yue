@@ -3,15 +3,15 @@ local FactoryHeartbeat
 local ScheduleRequest
 local ScheduleResponse
 
-import 'compat' as :HOST
-import 'quicktype' as :declare_type, :F, :is, :T
+import 'shunt.compat' as :HOST
 import 'shunt.configurator.main' as :GetConfigRequest, :GetConfigResponse, :SetConfigRequest, :SetConfigResponse
 import 'shunt.logger' as :fatal, :log
 import 'shunt.pc' as :Pc
 import 'shunt.peripheral.station' as MinecraftBackend: MinecraftStationBackend, :Station
 import 'shunt.peripheral.stockpile' as :Inventory, MinecraftBackend: MinecraftInventoryBackend, :Stockpile
 import 'shunt.peripheral.uplink' as :IdempotenceToken, :Packet, :Uplink
-import 'spec' as :repr, :spec
+import 'shunt.quicktype' as :declare_type, :F, :is, :T
+import 'shunt.spec' as :repr, :spec
 
 import 'shunt.toml'
 
@@ -370,13 +370,13 @@ export class FactoryHeartbeat extends Packet
     super!
 
 spec ->
-  import 'spec_macros' as $
+  import 'shunt.spec_macros' as $
 
   import 'shunt.pc' as :TestPcBackend
   import 'shunt.peripheral.station' as :TestStationBackend
   import 'shunt.peripheral.stockpile' as :TestInventoryBackend
   import 'shunt.peripheral.uplink' as :TestUplinkBackend
-  import 'spec' as :describe, :it, :matchers
+  import 'shunt.spec' as :describe, :it, :matchers
 
   import deep_eq, eq, has_fields, len, matches, some from matchers
 

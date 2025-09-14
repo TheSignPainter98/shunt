@@ -2,9 +2,9 @@ local *
 local CurrentReleaseRequest
 local CurrentReleaseResponse
 
-import 'quicktype' as :declare_type, :F
 import 'shunt.logger' as :log, :trace
 import 'shunt.peripheral.uplink' as :IdempotenceToken, :Packet, :TIMEOUT
+import 'shunt.quicktype' as :declare_type, :F
 import 'shunt.version' as :VERSION
 
 declare_type 'UpgradeMonitorConfig', [[{

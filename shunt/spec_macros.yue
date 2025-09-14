@@ -6,7 +6,7 @@ export macro expect_that = (expr, matcher) ->
     eqs ..= '='
   label = "[#{eqs}[#{expr}]#{eqs}]"
   location = '"#{$FILE}:#{$LINE}"'
-  "require('spec')._expect_that #{label}, #{expr}, (#{matcher}), #{location}"
+  "require('shunt.spec')._expect_that #{label}, #{expr}, (#{matcher}), #{location}"
 
 export macro assert_that = (expr, matcher) ->
   eqs = '='
@@ -14,4 +14,4 @@ export macro assert_that = (expr, matcher) ->
     eqs ..= '='
   label = "[#{eqs}[#{expr}]#{eqs}]"
   location = '"#{$FILE}:#{$LINE}"'
-  "require('spec')._assert_that #{label}, #{expr}, (#{matcher}), #{location}"
+  "require('shunt.spec')._assert_that #{label}, #{expr}, (#{matcher}), #{location}"

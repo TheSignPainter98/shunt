@@ -2,11 +2,11 @@ local *
 local DeclareTrainState
 local DeclareTrainStateResponse
 
-import 'clap' as :Flag, :Param, :Subcommand
-import 'quicktype' as :declare_type, :F
+import 'shunt.clap' as :Flag, :Param, :Subcommand
 import 'shunt.pc' as :Pc
 import 'shunt.peripheral.uplink' as :IdempotenceToken, :Packet, :TIMEOUT, :Uplink
-import 'spec' as :spec
+import 'shunt.quicktype' as :declare_type, :F
+import 'shunt.spec' as :spec
 
 declare_type 'DeclareArgs', [[{
   train: ?{
@@ -77,11 +77,11 @@ export class DeclareTrainStateResponse extends Packet
     super!
 
 spec ->
-  import 'spec_macros' as $
+  import 'shunt.spec_macros' as $
 
   import 'shunt.pc' as :TestPcBackend
   import 'shunt.peripheral.uplink' as :TestUplinkBackend
-  import 'spec' as :describe, :it, :matchers
+  import 'shunt.spec' as :describe, :it, :matchers
 
   import deep_eq, eq, has_fields, len, lt, matches from matchers
 

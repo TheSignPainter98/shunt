@@ -1,9 +1,9 @@
 local *
 
-import 'clap' as :Param, :Subcommand
-import 'quicktype' as :declare_type, :F
+import 'shunt.clap' as :Param, :Subcommand
 import 'shunt.peripheral.drive' as :Drive
-import 'spec' as :spec
+import 'shunt.quicktype' as :declare_type, :F
+import 'shunt.spec' as :spec
 
 export subcommand = with Subcommand 'flash'
   \description 'create an installer disk'
@@ -113,10 +113,10 @@ startup_script = F '(string) -> string', (label) ->
   table.concat lines, '\n'
 
 spec ->
-  import 'spec_macros' as $
+  import 'shunt.spec_macros' as $
 
   import 'shunt.peripheral.drive' as :TestDrive
-  import 'spec' as :describe, :it, :matchers
+  import 'shunt.spec' as :describe, :it, :matchers
 
   import eq, gt, len from matchers
 

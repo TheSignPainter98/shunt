@@ -1,7 +1,7 @@
 local *
 
-import 'quicktype' as :declare_singleton_type, :declare_type, :F, :T
-import 'spec' as :spec
+import 'shunt.quicktype' as :declare_singleton_type, :declare_type, :F, :T
+import 'shunt.spec' as :spec
 
 declare_type 'Editor', [[{
   edit_file: (string) => ?string,
@@ -98,9 +98,9 @@ class LinuxBackend
     nil
 
 spec ->
-  import 'spec_macros' as $
+  import 'shunt.spec_macros' as $
 
-  import 'spec' as :describe, :it, :matchers
+  import 'shunt.spec' as :describe, :it, :matchers
 
   import deep_eq, eq from matchers
 

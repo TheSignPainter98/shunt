@@ -1,9 +1,9 @@
 local *
 
-import 'clap' as :Flag, :Subcommand
-import 'quicktype' as :declare_type, :F, :T
+import 'shunt.clap' as :Flag, :Subcommand
 import 'shunt.data.queue' as :Queue
-import 'spec' as :spec
+import 'shunt.quicktype' as :declare_type, :F, :T
+import 'shunt.spec' as :spec
 
 import 'shunt.toml'
 
@@ -165,9 +165,9 @@ fmt_cell = F '(string, number) -> string', (string, width) ->
     "#{string\sub 1, width - 3}..."
 
 spec ->
-  import 'spec_macros' as $
+  import 'shunt.spec_macros' as $
 
-  import 'spec' as :describe, :it, :matchers
+  import 'shunt.spec' as :describe, :it, :matchers
 
   import deep_eq, eq from matchers
 

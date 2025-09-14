@@ -1,9 +1,9 @@
 local *
 
-import 'quicktype' as :F
 import 'shunt.execute' as :execute
 import 'shunt.logger' as :log
-import 'spec' as :spec
+import 'shunt.quicktype' as :F
+import 'shunt.spec' as :spec
 
 export class Tester
   test: F '(Release) => <boolean, ?string>', (release) =>
@@ -30,9 +30,9 @@ export class Tester
     true, nil
 
 spec ->
-  import 'spec_macros' as $
+  import 'shunt.spec_macros' as $
 
-  import 'spec' as :describe, :it, :matchers
+  import 'shunt.spec' as :describe, :it, :matchers
 
   import eq, has_type from matchers
 

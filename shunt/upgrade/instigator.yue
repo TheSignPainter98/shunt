@@ -1,12 +1,12 @@
 local *
 local MarshalBumpRelease
 
-import 'quicktype' as :declare_type, :F
 import 'shunt.logger' as :fatal, :log
 import 'shunt.peripheral.uplink' as :IdempotenceToken, :Packet, :TIMEOUT, :Uplink
+import 'shunt.quicktype' as :declare_type, :F
+import 'shunt.spec' as :spec
 import 'shunt.upgrade.rebooter' as :MinecraftRebooter, :RebootRequest
 import 'shunt.upgrade.tester' as :Tester
-import 'spec' as :spec
 
 declare_type 'InstigatorOpts', [[{
   config: ?{},
@@ -75,11 +75,11 @@ export class MarshalBumpRelease extends Packet
     super!
 
 spec ->
-  import 'spec_macros' as $
+  import 'shunt.spec_macros' as $
 
   import 'shunt.pc' as :Pc, :TestPcBackend
   import 'shunt.peripheral.uplink' as :TestUplinkBackend
-  import 'spec' as :describe, :it, :matchers
+  import 'shunt.spec' as :describe, :it, :matchers
 
   import deep_eq, eq, errors, has_fields, len, matches from matchers
 
