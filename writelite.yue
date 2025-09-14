@@ -7,19 +7,26 @@ import 'spec' as :spec
 FORMAT_VERSION = 1
 MIN_PAGE_SIZE = 1024
 
-macro failure_marker = -> 'FAILURE_MARKER'
-macro declare_failure_point = (tag) ->
+injected_failures = nil
+failure_points_passed = nil
+macro failure_marker = -> "'FAILURE_MARKER'"
+macro failure_point = (tag) ->
   if not _G.failure_points?
     global failure_points = {}
   if failure_points[tag]
     error "failure point '#{tag}' redeclared"
   failure_points[tag] = true
 
+  tag_content = tag\sub 2, #tag - 1
   lines =
-    * 'injected_failures ??= @_injected_failures'
     * "if injected_failures? and injected_failures[#{tag}]"
-    * "  error '#{$failure_marker}'"
+    * "  failure_points_passed ??= {}"
+    * "  failure_points_passed[#{tag}] = true"
+    * "  error '#{$failure_marker}-#{tag_content}'"
   table.concat lines, '\n'
+macro set_enabled_failure_points = (failure_points) ->
+  "injected_failures = #{failure_points}"
+
 macro known_failure_points = ->
   if not _G.failure_points?
     global failure_points = {}
@@ -103,6 +110,7 @@ export class Writelite
     if not @_mode?
       return false, 'cannot open main file: mode unspecified'
 
+    $failure_point 'pre-open'
     main_file, _, _ = @_fs\open @_path, 'rb+'
     if not main_file?
       -- The possibility that main is written at this point and has
@@ -114,6 +122,7 @@ export class Writelite
         return false, "cannot open main file: #{err}"
     main_file\setvbuf 'full' -- Minimise writes.
     @_main_file = main_file
+    $failure_point 'post-open'
 
     main_end_index, err = @_main_file\seek 'end', 0
     if err?
@@ -123,12 +132,14 @@ export class Writelite
     if journal_file?
       journal_content = journal_file\read '*a'
       journal_file\close!
+      $failure_point 'post-journal-read'
 
       journal, err = Journal::load journal_content, @_page_size
       if err?
-        print "cannot load journal: #{err}"
+        error "cannot load journal: #{err}"
+      $failure_point 'post-journal-load'
       if journal?
-        for page in *journal.pages
+        for page in *journal\pages!
           { :offset, :content } = page
           _, err = @_main_file\seek 'set', offset
           if err?
@@ -136,9 +147,12 @@ export class Writelite
           _, err = @_main_file\write content
           if err?
             error "cannot write to main file"
+          $failure_point 'mid-journal-recovery'
 
       -- All recoverable data has been recovered, delete the journal.
-      os.remove @_journal_path
+      $failure_point 'pre-journal-removal'
+      @_fs\remove @_journal_path
+      $failure_point 'post-journal-removal'
 
     local main_header
     if main_end_index == 0
@@ -151,7 +165,6 @@ export class Writelite
       if err?
         return false, "cannot open writelite: #{err}"
       -- TODO(kcza): validate main
-    @_main_header = main_header
 
     true, nil
 
@@ -234,9 +247,12 @@ export class Writelite
     catch err2
       err = err2
       txn\abort!
-    err2 = txn\_close!
 
     @@_open_transactions[@_path] = nil
+
+    $failure_point 'mid-transaction'
+    err = txn\_close!
+    $failure_point 'post-transaction'
 
     if err?
       error err
@@ -248,10 +264,10 @@ export class Writelite
     _, file_closure_error = @_main_file\close!
 
     if @@_open_transactions[@_path]
-      return false, 'cannot close writelite file whilst transaction is open'
+      return false, "cannot close writelite file #{@_path}: a transaction is open"
 
     if not @_open
-      return false, 'cannot close writelite file: not open'
+      return false, "cannot close writelite file #{@_path}: not open"
     @_open = false
 
     not file_closure_error?, file_closure_error
@@ -262,8 +278,6 @@ export class Writelite
 
   _ut_max_cached_pages: F '() => number', =>
     @_page_cache.max_cached_pages
-
-  _ut_inject_failures: F '(?{string}) => <>', (@_injected_failures) =>
 
 CORRUPTION_WARNING = T 'string', '
 +----------------------------------------------+
@@ -284,7 +298,8 @@ MAIN_PRELUDE = "#!writelite\0\0\0\0\0#{CORRUPTION_WARNING}"
 JOURNAL_PRELUDE = "#!writelitejrnl\0#{CORRUPTION_WARNING}"
 
 declare_type 'writelite.Fs', [[{
-  open: (string, writelite.FileMode) => <?writelite.File, ?string, ?number>
+  open: (string, writelite.FileMode) => <?writelite.File, ?string, ?number>,
+  remove: (string) => boolean,
 }]]
 declare_type 'writelite.FileMode', [[
   "r"|"w"|"a"
@@ -305,6 +320,9 @@ class OsFs
 
   open: F '(string, writelite.FileMode) => <?writelite.File, ?string, ?number>', (path, mode) =>
     io.open "#{@dir}/#{path}", mode
+
+  remove: F '(string) => boolean', (path) =>
+    os.remove path
 
 declare_type 'writelite.PageCache', [[{
   get: (number) => ?writelite.Page,
@@ -458,13 +476,15 @@ class Transaction
 
     if @_aborted
       -- Ensure that no journal is present.
-      if file = io.open journal_path, 'rb'
-        file\close!
-        os.remove journal_path
+      @_parent._fs\remove journal_path
       return nil
 
     -- Create and write to journal.
     pages_to_write = @_pages_to_write!
+
+    if #pages_to_write == 0
+      -- Fast path on empty transaction.
+      return nil
 
     do
       journal = Journal @_page_size
@@ -499,7 +519,7 @@ class Transaction
       return "cannot flush main file: #{err}"
 
     -- Delete journal.
-    os.remove journal_path
+    @_parent._fs\remove journal_path
     nil
 
   _pages_to_write: F '() => [writelite.Page]', =>
@@ -585,10 +605,8 @@ class Transaction
     offset - offset % @_parent._page_size
 
 declare_type 'writelite.Journal', [[{
-  create: () => <boolean, ?string>,
   pages: () => [writelite.Page],
-  add: (writelite.Page) => <boolean, ?string>,
-  add_raw: (writelite.Page) => <boolean, ?string>,
+  add: (writelite.Page) => <>,
   write_to: (writelite.File) => <boolean, ?string>,
 }]]
 declare_type 'writelite.JournalHeader', [[{
@@ -603,54 +621,40 @@ class Journal
     @_pages = T '[writelite.Page]', {}
     @_header = T '?writelite.JournalHeader', nil
 
-  @load: F '(string) => <?writelite.Journal, ?string>', (content, page_size) =>
+  @load: F '(string, number) => <?writelite.Journal, ?string>', (content, page_size) =>
     journal = with Journal page_size
-      err = \_validate_raw content
+      de = Deserialiser content, #JOURNAL_PRELUDE + 1
+      header = T 'writelite.JournalHeader', de\parse!
+      err = \_validate_raw header, de.index - 1, content
       if err?
         return nil, err
-      header = T 'writelite.JournalHeader', Deserialiser::deserialise content
 
-      with Deserialiser content, 1 + page_size
-        while true
-          offset, eof = \parse!
-          if eof
-            break
-          offset = T 'number', offset
-
-          content, eof = \parse!
-          if eof
-            return nil, 'unexpected end of journal'
-          content = T 'string', content
-          if #content != @_page_size
-            return nil, "incorrect page size, expected #{@_page_size} but got #{#content}"
-
-          \add
-            :offset
-            :content
+      for page in *T '[writelite.Page]', de\parse!
+        \add page
     journal, nil
 
-  _validate_raw: F '(string) => ?string', (content) =>
+  _validate_raw: F '(writelite.JournalHeader, number, string) => ?string', (header, header_end_index, content) =>
     first_page = content\sub 1, @_page_size - 1
     if not first_page?
       return "header missing"
-    if (first_page\sub #JOURNAL_PRELUDE) != JOURNAL_PRELUDE
+    if (first_page\sub 1, #JOURNAL_PRELUDE) != JOURNAL_PRELUDE
       return "prelude was edited"
-    header = Deserialiser::deserialise first_page, #JOURNAL_PRELUDE + 1
+
     {
       :format_version
       :page_size
       :mode
-      :page_count
+      :payload_length
     } = header
     if format_version != FORMAT_VERSION
       return "format version #{format_version} unsupported"
     if mode != 'delete'
       return "unrecognised journal mode '#{mode}'"
-    if page_count < 0
-      return "invalid page count #{page_count}"
-    expected_content_len = page_count + (page_size + 5)
+    if payload_length < 0
+      return "invalid payload length #{payload_length}"
+    expected_content_len = payload_length + header_end_index
     if #content != expected_content_len
-      return "unexpected length: expected #{expected_content_len} bytes for #{page_count} pages, but got #{#content}"
+      return "unexpected length: expected #{expected_content_len} but got #{#content}"
     -- TODO(kcza): read the content, compute the hash, compare the hash
     nil
 
@@ -668,6 +672,7 @@ class Journal
       mode: 'delete'
       payload_length: #serialised_pages
     _, err = file\write table.concat
+      * JOURNAL_PRELUDE
       * Serialiser::serialise header
       * serialised_pages
     if err?
@@ -1080,6 +1085,7 @@ spec ->
   class TestFs
     new: F '(?{string->writelite.FileSpec}) => <>', (files={}) =>
       @files = { file, TestFile content for file, { :content } in pairs files }
+      @removed = T '{string->[writelite.File]}', {}
 
     open: F '(string, writelite.FileMode) => <?writelite.File, ?string, ?number>', (path, mode) =>
       if mode\match '^w'
@@ -1092,6 +1098,25 @@ spec ->
         file, nil, nil
       else
         nil, "#{path}: No such file or directory", 2
+
+    remove: F '(string) => boolean', (path) =>
+      file = @files[path]
+      if not file?
+        return false
+
+      if not file.closed
+        error 'cannot remove open file'
+
+      @removed[path] ??= {}
+      @removed[path][] = file
+      @files[path] = nil
+      true
+
+    reinstate: F '(string) => <>', (path) =>
+      versions = @removed[path]
+      if not versions?
+        error "cannot reinstate #{path}: never deleted"
+      @files[path] = versions[#versions]
 
   class TestFile
     new: F '(string) => <>', (content) =>
@@ -1316,7 +1341,7 @@ spec ->
 
           ok, err = \close!
           $assert_that ok, eq false
-          $assert_that err, eq 'cannot close writelite file: not open'
+          $assert_that err, eq 'cannot close writelite file database.db: not open'
 
     describe 'consistency', ->
       describe 'on golden-path', ->
@@ -1378,59 +1403,204 @@ spec ->
               $assert_that err, eq nil
 
       describe 'with failures', ->
-        tests = {}
-          -- * failure_point: 'pre-verification'
-          --   expect_after_failed_run: (initial_fs, current_fs) ->
-          --   expect_after_second_run: (initial_fs, current_fs) ->
-        known_failure_points = $known_failure_points!
-        for test in *tests
-          { :failure_point, :expect_after_failed_run, :expect_after_second_run } = test
-          it "is maintained at #{failure_point} failure", ->
-            if not known_failure_points[failure_point]?
-              error "no such failure point '#{failure_point}'"
+        PAGE_SIZE = 1024
 
-            fs = TestFs!
+        clean_fs = do
+          clean_fs = TestFs!
+          -- Prepare fresh, empty database.
+          with Writelite 'database.db', clean_fs
+            \mode 'blob'
+            \page_size PAGE_SIZE
+            assert \open!
+            assert \close!
+          clean_fs
 
-            -- Prepare fresh, empty database.
-            with Writelite 'database.db', fs
-              \mode 'blob'
-              assert \open!
-              assert \close!
+        it 'is tested with a clean file system', ->
+          $assert_that clean_fs.files, has_fields
+            ['database.db']: not_ eq nil
+            ['database.db~']: eq nil
 
-            $assert_that fs.files, has_fields
-              ['database.db']: not_ eq nil
-              ['database.db~']: eq nil
+        clone_fs = (fs) ->
+          with clone fs
+            .<> = fs.<>
+            mt = (TestFile '').<>
+            for _, file in pairs .files
+              file.<> = mt
 
-            -- initial_fs = clone fs
-            --
-            -- try
-            --   with Writelite 'database.db', fs
-            --     \mode 'blob'
-            --     \_ut_inject_failures
-            --       [failure_point]: true
-            --
-            --     ok, err = \open!
-            --     \transaction (txn) ->
-            --       -- TODO(kcza): complete me once the journal is ready.
-            --     ok, err = \close!
-            -- catch err2
-            --   if err2 != $failure_marker!
-            --     err = err2
-            -- $assert_that err, eq nil
-            --
-            -- expect_after_failed_run initial_fs, fs
-            --
-            -- try
-            --   with Writelite 'database.db', fs
-            --     \mode 'blob'
-            --     assert \open!
-            --     assert \close!
-            -- catch err2
-            --   if err2 != $failure_marker!
-            --     err = err2
-            -- $assert_that err, eq nil
-            --
-            -- expect_after_second_run initial_fs, fs
+        journal_present = (fs) ->
+          $expect_that fs.files['database.db~'], not_ eq nil
+        journal_absent = (fs) ->
+          $expect_that fs.files['database.db~'], eq nil
+        main_unchanged = (fs) ->
+          $expect_that fs.files['database.db']\content!, eq clean_fs.files['database.db']\content!
+        main_advanced = (fs) ->
+          $expect_that fs.files['database.db']\content!, matches 'a'\rep 3 * PAGE_SIZE
+
+        clean_tests =
+          * failure_points:
+              * 'pre-open'
+            expect_after_first_run:
+              * journal_absent
+            expect_after_second_run:
+              * journal_absent
+              * main_unchanged
+          * failure_points:
+              * 'post-open'
+            expect_after_first_run:
+              * journal_absent
+            expect_after_second_run:
+              * journal_absent
+              * main_unchanged
+          * failure_points:
+              * 'mid-transaction'
+            expect_after_first_run:
+              * journal_absent
+            expect_after_second_run:
+              * journal_absent
+              * main_unchanged
+          * failure_points:
+              * 'post-transaction'
+            expect_after_first_run:
+              * journal_absent
+            expect_after_second_run:
+              * journal_absent
+              * main_advanced
+        for test in *clean_tests
+          {
+            :failure_points
+            :expect_after_first_run
+            :expect_after_second_run
+          } = test
+          it "is maintained with a clean file system at #{table.concat failure_points, '+'} failures", ->
+            print 'first-run'
+            fs = clone_fs clean_fs
+            $set_enabled_failure_points { name, true for name in *failure_points }
+            local err
+            try
+              with Writelite 'database.db', fs
+                \mode 'blob'
+                \page_size PAGE_SIZE
+                assert \open!
+                \transaction (txn) ->
+                  with txn
+                    \seek 'set', 256
+                    \write 'a'\rep 3 * PAGE_SIZE
+                assert \close!
+            catch err2
+              if not err2\match $failure_marker!
+                err = err2
+            $assert_that err, eq nil
+
+            for check in *expect_after_first_run
+              check fs
+
+            print 'second-run'
+            $set_enabled_failure_points nil
+            local err
+            try
+              with Writelite 'database.db', fs
+                \mode 'blob'
+                \page_size PAGE_SIZE
+                assert \open!
+                assert \close!
+            catch err2
+              err = err2
+            $assert_that err, eq nil
+
+            for check in *expect_after_second_run
+              check fs
+
+        dirty_fs = do
+          dirty_fs = clone_fs clean_fs
+          with Writelite 'database.db', dirty_fs
+            \mode 'blob'
+            \page_size PAGE_SIZE
+            assert \open!
+            local err
+            try
+              \transaction (txn) ->
+                txn\write 'a'\rep 3 * PAGE_SIZE
+            catch err2
+              err = err2
+            if err?
+              error "unexpected error: #{err}"
+            assert \close!
+
+          -- Roll back main file, add journal to take it to the next state.
+          dirty_fs.files['database.db'] = clean_fs.files['database.db']
+          dirty_fs\reinstate 'database.db~'
+
+          dirty_fs
+
+        it 'is tested with a dirty file system', ->
+          $assert_that dirty_fs.files, has_fields
+            ['database.db']: not_ eq nil
+            ['database.db~']: not_ eq nil
+
+        dirty_tests =
+          * failure_points:
+              * 'pre-open'
+            expect_after_run:
+              * journal_present
+              * main_unchanged
+          * failure_points:
+              * 'post-open'
+            expect_after_run:
+              * journal_present
+              * main_unchanged
+          * failure_points:
+              * 'post-journal-read'
+            expect_after_run:
+              * journal_present
+              * main_unchanged
+          * failure_points:
+              * 'post-journal-load'
+            expect_after_run:
+              * journal_present
+              * main_unchanged
+          * failure_points:
+              * 'mid-journal-recovery'
+            expect_after_run:
+              * journal_present
+          * failure_points:
+              * 'pre-journal-removal'
+            expect_after_run:
+              * journal_present
+              * main_advanced
+          * failure_points:
+              * 'post-journal-removal'
+            expect_after_run:
+              * journal_absent
+              * main_advanced
+        for test in *dirty_tests
+          {
+            :failure_points
+            :expect_after_run
+          } = test
+          it "is maintained with a dirty file system at #{table.concat failure_points, '+'} failures", ->
+            fs = clone_fs dirty_fs
+            $set_enabled_failure_points { name, true for name in *failure_points }
+            local err
+            try
+              with Writelite 'database.db', fs
+                \mode 'blob'
+                \page_size PAGE_SIZE
+                assert \open!
+                assert \close!
+            catch err2
+              if not err2\match $failure_marker!
+                err = err2
+            $assert_that err, eq nil
+
+            for check in *expect_after_run
+              check fs
+
+        -- it 'is tested comprehensively', ->
+        --   known_failure_points = $known_failure_points!
+        --   table.sort known_failure_points
+        --   used_failure_points = { test.failure_point, true for test in *tests }
+        --   table.sort used_failure_points
+        --   $assert_that used_failure_points, deep_eq known_failure_points
 
   describe 'writelite.PageCache', ->
     describe '\\write', ->
