@@ -27,6 +27,9 @@ import 'shunt.spec'
 -- Import type definitions
 require 'shunt.component'
 
+-- Import as unused for now
+require 'shunt.writelite'
+
 debug_ = require 'shunt.cmd.debug'
 
 global skip_minecraft_tests = false

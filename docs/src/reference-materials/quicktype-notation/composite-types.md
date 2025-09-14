@@ -37,6 +37,15 @@ Examples:
 The metatable of a struct can be constrained using the `<>` field.
 For example, the constraint `{<>: { __add: function }, hello: string}` accepts structs with `hello` containing a string and whose metatable’s `__add` field contains a function.
 
+By prepending a `~`, a struct becomes _table-like,_ that is, it accepts indexable values which have the appropriate fields.
+
+Examples:
+
+- `""` implements `~{len: function}`
+- `file` implements `~{write: function}`
+- `""` does _not_ implement `{len: function}`
+- `file` does _not_ implement `{write: function}`
+
 ## Mappings -- `{type->type}` {#mappings}
 
 A mapping is a Lua table in which all keys have the same type and in which all values have the same type. The key type and value type may differ.

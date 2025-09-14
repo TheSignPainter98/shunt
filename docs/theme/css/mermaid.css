@@ -21,3 +21,12 @@ pre.mermaid {
   background-color: #0000 !important;
   stroke: #0000 !important;
 }
+
+text.packetByte,
+text.packetLabel {
+  font-size: inherit !important;
+}
+
+.packetBlock {
+  fill: none !important;
+}
