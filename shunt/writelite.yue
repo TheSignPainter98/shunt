@@ -53,7 +53,7 @@ declare_type 'writelite.Writelite', [[{
   transaction: ((writelite.Transaction) -> <>) => <>,
   close: () => <boolean, ?string>,
 }]]
-declare_type 'writelite.Mode', '"blob"'
+declare_type 'writelite.Mode', '"blob"|"key-value"'
 declare_type 'writelite.MainHeader', [[{
   format_version: 1,
   page_size: number,
@@ -1242,6 +1242,7 @@ spec ->
     describe '\\mode', ->
       modes = T '[writelite.Mode]'
         * 'blob'
+        * 'key-value'
 
       it 'forbids explicit reassignment', ->
         for mode_a in *modes
@@ -1251,11 +1252,22 @@ spec ->
             writelite\mode mode_a
             $assert_that (-> writelite\mode mode_b), errors matches 'cannot change mode once set'
 
-      -- it 'forbids implicit reassignment', ->
-      --   fs = TestFs!
-      --   writelite1 = with Writelite 'database.db', fs
-      --     \mode 'blob'
-      --   -- TODO(kcza): write a database to an FS with mode A, close, open again with mode B, where A != B
+      it 'forbids implicit reassignment', ->
+        for initial_mode in *modes
+          for new_mode in *modes
+            if initial_mode == new_mode
+              continue
+            fs = TestFs!
+            with Writelite 'database.db', fs
+              \mode initial_mode
+              assert \open!
+              assert \close!
+            with Writelite 'database.db', fs
+              \mode new_mode
+              ok, err = \open!
+              $expect_that ok, eq false
+              $expect_that err, matches 'mode mismatch'
+              assert \close!
 
     describe '\\page_size', ->
       it 'forbids explicit reassignment', ->
