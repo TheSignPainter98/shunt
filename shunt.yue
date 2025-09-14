@@ -28,7 +28,7 @@ import 'shunt.spec'
 require 'shunt.component'
 
 -- Import as unused for now
-require 'writelite'
+require 'shunt.writelite'
 
 debug_ = require 'shunt.cmd.debug'
 
