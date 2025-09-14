@@ -494,6 +494,9 @@ class Transaction
     @_cursor += #bytes
 
   seek: F '(Whence, ?number) => <>', (whence, offset) =>
+    if @_mode != 'blob'
+      error "cannot use write method in #{@_mode} mode (must be in blob mode)"
+
     if @_aborted
       error 'cannot seek in aborted transaction'
 
