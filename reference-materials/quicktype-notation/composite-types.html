@@ -216,6 +216,14 @@ Multiple fields may be specified as a comma-separated lists—<code>{field_1: ty
 </ul>
 <p>The metatable of a struct can be constrained using the <code>&lt;&gt;</code> field.
 For example, the constraint <code>{&lt;&gt;: { __add: function }, hello: string}</code> accepts structs with <code>hello</code> containing a string and whose metatable’s <code>__add</code> field contains a function.</p>
+<p>By prepending a <code>~</code>, a struct becomes <em>table-like,</em> that is, it accepts indexable values which have the appropriate fields.</p>
+<p>Examples:</p>
+<ul>
+<li><code>""</code> implements <code>~{len: function}</code></li>
+<li><code>file</code> implements <code>~{write: function}</code></li>
+<li><code>""</code> does <em>not</em> implement <code>{len: function}</code></li>
+<li><code>file</code> does <em>not</em> implement <code>{write: function}</code></li>
+</ul>
 <h2 id="mappings"><a class="header" href="#mappings">Mappings – <code>{type-&gt;type}</code></a></h2>
 <p>A mapping is a Lua table in which all keys have the same type and in which all values have the same type. The key type and value type may differ.</p>
 <p>Examples:</p>

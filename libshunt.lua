@@ -1261,7 +1261,7 @@ end
 package.preload['shunt.quicktype'] = function(...)
 -- [yue]: shunt/quicktype.yue
 local _module_0 = { } -- shunt/quicktype.yue:1
-local T, t_impl, is, COLLECT_STATS, type_checkers, type_checker, F, function_types, function_type, is_valid_type_spec, parse, contains, TypeSpecParser, T_PAREN_OPEN, T_PAREN_CLOSE, T_BRACE_OPEN, T_BRACE_CLOSE, T_BRACKET_OPEN, T_BRACKET_CLOSE, T_ANGLE_OPEN, T_ANGLE_CLOSE, T_COMMA, T_COLON, T_BANG, T_THIN_ARROW, T_FAT_ARROW, T_DOTDOTDOT, T_QUESTION, T_PLUS, T_PIPE, T_NAME, T_PREFIXED_NAME, T_BOOLEAN, T_NUMBER, T_STRING, Lexer, Checkpoint, known_primitives, named_type, prefixed_named_type, Is, Primitive, Any, Some, Never, UserType, SingletonType, BooleanType, NumberType, StringType, Optional, Array, Tuple, Struct, Field, Set, Mapping, Function, Method, Remainder, Disjunction, Conjunction, CheckerBuilder, Label, C_PUSH, C_PUSH_METATABLE, C_POP, C_ASSERT_NON_NIL, C_ASSERT_PRIMITIVE, C_ASSERT_TRUTHY, C_ASSERT_LEN, C_ASSERT_EQ, C_ASSERT_NEVER, C_GET_FIELD, C_INCR, C_DECR, C_NEXT, C_JMP, C_JMP_IF_NIL, C_PUSH_CHECKER, C_PUSH_UNION_CTX, C_CLEAR_BAILING, C_SET_UNION_BAIL_TARGET, C_POP_UNION_CTX, V_NIL, checker_program_repr, LABEL_PLACEHOLDER, MAX_CHECKER_DEPTH, stack_size, stack, keys_used, num_unions, union_depths, union_bail_jumps, root_union, num_running_checkers, instruction_counts, check, user_types, declare_type, declare_singleton_type, skip_typechecking, deactivate_typechecks, stats -- shunt/quicktype.yue:1
+local T, t_impl, is, COLLECT_STATS, type_checkers, type_checker, F, function_types, function_type, is_valid_type_spec, parse, contains, TypeSpecParser, T_PAREN_OPEN, T_PAREN_CLOSE, T_BRACE_OPEN, T_BRACE_CLOSE, T_BRACKET_OPEN, T_BRACKET_CLOSE, T_ANGLE_OPEN, T_ANGLE_CLOSE, T_TILDE, T_COMMA, T_COLON, T_BANG, T_THIN_ARROW, T_FAT_ARROW, T_DOTDOTDOT, T_QUESTION, T_PLUS, T_PIPE, T_NAME, T_PREFIXED_NAME, T_BOOLEAN, T_NUMBER, T_STRING, Lexer, Checkpoint, known_primitives, named_type, prefixed_named_type, Is, Primitive, Any, Some, Never, UserType, SingletonType, BooleanType, NumberType, StringType, Optional, Array, Tuple, Struct, Field, Set, Mapping, Function, Method, Remainder, Disjunction, Conjunction, CheckerBuilder, Label, C_PUSH, C_PUSH_METATABLE, C_POP, C_ASSERT_NON_NIL, C_ASSERT_PRIMITIVE, C_ASSERT_TABLE_LIKE, C_ASSERT_TRUTHY, C_ASSERT_LEN, C_ASSERT_EQ, C_ASSERT_NEVER, C_GET_FIELD, C_INCR, C_DECR, C_NEXT, C_JMP, C_JMP_IF_NIL, C_PUSH_CHECKER, C_PUSH_UNION_CTX, C_CLEAR_BAILING, C_SET_UNION_BAIL_TARGET, C_POP_UNION_CTX, V_NIL, checker_program_repr, LABEL_PLACEHOLDER, MAX_CHECKER_DEPTH, stack_size, stack, keys_used, num_unions, union_depths, union_bail_jumps, root_union, num_running_checkers, instruction_counts, check, user_types, declare_type, declare_singleton_type, skip_typechecking, deactivate_typechecks, stats -- shunt/quicktype.yue:1
 local Symbol -- shunt/quicktype.yue:2
 local repr, spec -- shunt/quicktype.yue:0
 do -- shunt/quicktype.yue:0
@@ -1711,320 +1711,370 @@ do -- shunt/quicktype.yue:214
           end)() -- shunt/quicktype.yue:265
         }, -- shunt/quicktype.yue:264
         { -- shunt/quicktype.yue:266
-          token = T_BRACE_OPEN, -- shunt/quicktype.yue:266
+          token = T_TILDE, -- shunt/quicktype.yue:266
           action = (function() -- shunt/quicktype.yue:267
             local _base_1 = self -- shunt/quicktype.yue:267
-            local _fn_0 = _base_1.parse_table -- shunt/quicktype.yue:267
+            local _fn_0 = _base_1.parse_table_like -- shunt/quicktype.yue:267
             return _fn_0 and function(...) -- shunt/quicktype.yue:267
               return _fn_0(_base_1, ...) -- shunt/quicktype.yue:267
             end -- shunt/quicktype.yue:267
           end)() -- shunt/quicktype.yue:267
-        } -- shunt/quicktype.yue:266
-      }) -- shunt/quicktype.yue:267
-    end, -- shunt/quicktype.yue:269
-    parse_named_type = function(self) -- shunt/quicktype.yue:269
-      return named_type(self:expect(T_NAME)) -- shunt/quicktype.yue:270
-    end, -- shunt/quicktype.yue:272
-    parse_prefixed_named_type = function(self) -- shunt/quicktype.yue:272
-      return prefixed_named_type(self:expect(T_PREFIXED_NAME)) -- shunt/quicktype.yue:273
-    end, -- shunt/quicktype.yue:275
-    parse_boolean_type = function(self) -- shunt/quicktype.yue:275
-      return BooleanType(self:expect(T_BOOLEAN)) -- shunt/quicktype.yue:276
-    end, -- shunt/quicktype.yue:278
-    parse_number_type = function(self) -- shunt/quicktype.yue:278
-      return NumberType(self:expect(T_NUMBER)) -- shunt/quicktype.yue:279
-    end, -- shunt/quicktype.yue:281
-    parse_string_type = function(self) -- shunt/quicktype.yue:281
-      return StringType(self:expect(T_STRING)) -- shunt/quicktype.yue:282
-    end, -- shunt/quicktype.yue:284
-    parse_array = function(self) -- shunt/quicktype.yue:284
-      local elem_type = self:sequence({ -- shunt/quicktype.yue:286
-        { -- shunt/quicktype.yue:286
-          token = T_BRACKET_OPEN -- shunt/quicktype.yue:286
-        }, -- shunt/quicktype.yue:286
-        { -- shunt/quicktype.yue:287
-          action = (function() -- shunt/quicktype.yue:287
-            local _base_1 = self -- shunt/quicktype.yue:287
-            local _fn_0 = _base_1.parse_type -- shunt/quicktype.yue:287
-            return _fn_0 and function(...) -- shunt/quicktype.yue:287
-              return _fn_0(_base_1, ...) -- shunt/quicktype.yue:287
-            end -- shunt/quicktype.yue:287
-          end)() -- shunt/quicktype.yue:287
-        }, -- shunt/quicktype.yue:287
+        }, -- shunt/quicktype.yue:266
+        { -- shunt/quicktype.yue:268
+          token = T_BRACE_OPEN, -- shunt/quicktype.yue:268
+          action = (function() -- shunt/quicktype.yue:269
+            local _base_1 = self -- shunt/quicktype.yue:269
+            local _fn_0 = _base_1.parse_table -- shunt/quicktype.yue:269
+            return _fn_0 and function(...) -- shunt/quicktype.yue:269
+              return _fn_0(_base_1, ...) -- shunt/quicktype.yue:269
+            end -- shunt/quicktype.yue:269
+          end)() -- shunt/quicktype.yue:269
+        } -- shunt/quicktype.yue:268
+      }) -- shunt/quicktype.yue:269
+    end, -- shunt/quicktype.yue:271
+    parse_named_type = function(self) -- shunt/quicktype.yue:271
+      return named_type(self:expect(T_NAME)) -- shunt/quicktype.yue:272
+    end, -- shunt/quicktype.yue:274
+    parse_prefixed_named_type = function(self) -- shunt/quicktype.yue:274
+      return prefixed_named_type(self:expect(T_PREFIXED_NAME)) -- shunt/quicktype.yue:275
+    end, -- shunt/quicktype.yue:277
+    parse_boolean_type = function(self) -- shunt/quicktype.yue:277
+      return BooleanType(self:expect(T_BOOLEAN)) -- shunt/quicktype.yue:278
+    end, -- shunt/quicktype.yue:280
+    parse_number_type = function(self) -- shunt/quicktype.yue:280
+      return NumberType(self:expect(T_NUMBER)) -- shunt/quicktype.yue:281
+    end, -- shunt/quicktype.yue:283
+    parse_string_type = function(self) -- shunt/quicktype.yue:283
+      return StringType(self:expect(T_STRING)) -- shunt/quicktype.yue:284
+    end, -- shunt/quicktype.yue:286
+    parse_array = function(self, is_table_like) -- shunt/quicktype.yue:286
+      if is_table_like == nil then -- shunt/quicktype.yue:286
+        is_table_like = false -- shunt/quicktype.yue:286
+      end -- shunt/quicktype.yue:286
+      local elem_type = self:sequence({ -- shunt/quicktype.yue:288
         { -- shunt/quicktype.yue:288
-          token = T_BRACKET_CLOSE -- shunt/quicktype.yue:288
-        } -- shunt/quicktype.yue:288
-      })[2] -- shunt/quicktype.yue:285
-      return Array(elem_type) -- shunt/quicktype.yue:289
-    end, -- shunt/quicktype.yue:291
-    parse_tuple_or_function = function(self) -- shunt/quicktype.yue:291
-      self:expect(T_PAREN_OPEN) -- shunt/quicktype.yue:292
-      local types -- shunt/quicktype.yue:293
-      if self:maybe(T_PAREN_CLOSE) then -- shunt/quicktype.yue:294
-        types = { } -- shunt/quicktype.yue:295
-      else -- shunt/quicktype.yue:297
-        types = self:sequence({ -- shunt/quicktype.yue:298
-          { -- shunt/quicktype.yue:298
-            action = function() -- shunt/quicktype.yue:298
-              return self:parse_repeat_separated((function() -- shunt/quicktype.yue:299
-                local _base_1 = self -- shunt/quicktype.yue:299
-                local _fn_0 = _base_1.parse_function_io_type -- shunt/quicktype.yue:299
-                return _fn_0 and function(...) -- shunt/quicktype.yue:299
-                  return _fn_0(_base_1, ...) -- shunt/quicktype.yue:299
-                end -- shunt/quicktype.yue:299
-              end)(), T_COMMA, { -- shunt/quicktype.yue:299
-                separator_trails_before = T_PAREN_CLOSE -- shunt/quicktype.yue:299
-              }) -- shunt/quicktype.yue:299
-            end -- shunt/quicktype.yue:298
-          }, -- shunt/quicktype.yue:298
-          { -- shunt/quicktype.yue:300
-            token = T_PAREN_CLOSE -- shunt/quicktype.yue:300
-          } -- shunt/quicktype.yue:300
-        })[1] -- shunt/quicktype.yue:297
+          token = T_BRACKET_OPEN -- shunt/quicktype.yue:288
+        }, -- shunt/quicktype.yue:288
+        { -- shunt/quicktype.yue:289
+          action = (function() -- shunt/quicktype.yue:289
+            local _base_1 = self -- shunt/quicktype.yue:289
+            local _fn_0 = _base_1.parse_type -- shunt/quicktype.yue:289
+            return _fn_0 and function(...) -- shunt/quicktype.yue:289
+              return _fn_0(_base_1, ...) -- shunt/quicktype.yue:289
+            end -- shunt/quicktype.yue:289
+          end)() -- shunt/quicktype.yue:289
+        }, -- shunt/quicktype.yue:289
+        { -- shunt/quicktype.yue:290
+          token = T_BRACKET_CLOSE -- shunt/quicktype.yue:290
+        } -- shunt/quicktype.yue:290
+      })[2] -- shunt/quicktype.yue:287
+      return (Array(elem_type)):table_like(is_table_like) -- shunt/quicktype.yue:292
+    end, -- shunt/quicktype.yue:294
+    parse_tuple_or_function = function(self, is_table_like) -- shunt/quicktype.yue:294
+      if is_table_like == nil then -- shunt/quicktype.yue:294
+        is_table_like = false -- shunt/quicktype.yue:294
       end -- shunt/quicktype.yue:294
-      local function_arrow -- shunt/quicktype.yue:301
-      do -- shunt/quicktype.yue:301
-        local _exp_0 = (self:maybe(T_THIN_ARROW)) -- shunt/quicktype.yue:301
-        if _exp_0 ~= nil then -- shunt/quicktype.yue:301
-          function_arrow = _exp_0 -- shunt/quicktype.yue:301
-        else -- shunt/quicktype.yue:301
-          function_arrow = self:maybe(T_FAT_ARROW) -- shunt/quicktype.yue:301
-        end -- shunt/quicktype.yue:301
-      end -- shunt/quicktype.yue:301
-      if not (function_arrow ~= nil) then -- shunt/quicktype.yue:302
-        for _index_0 = 1, #types do -- shunt/quicktype.yue:303
-          local ty = types[_index_0] -- shunt/quicktype.yue:303
-          if ty:is(Remainder) then -- shunt/quicktype.yue:304
-            error('tuple type cannot contain varargs') -- shunt/quicktype.yue:305
-          end -- shunt/quicktype.yue:304
-        end -- shunt/quicktype.yue:305
-        return Tuple(types) -- shunt/quicktype.yue:306
-      end -- shunt/quicktype.yue:302
-      do -- shunt/quicktype.yue:308
-        local _max_0 = -1 -- shunt/quicktype.yue:308
-        for _index_0 = 1, _max_0 < 0 and #types + _max_0 or _max_0 do -- shunt/quicktype.yue:308
-          local ty = types[_index_0] -- shunt/quicktype.yue:308
-          if ty:is(Remainder) then -- shunt/quicktype.yue:309
-            error('varargs can only be declared at end of a param type list') -- shunt/quicktype.yue:310
-          end -- shunt/quicktype.yue:309
-        end -- shunt/quicktype.yue:310
-      end -- shunt/quicktype.yue:310
-      local last_ty = types[#types] -- shunt/quicktype.yue:312
-      if (last_ty ~= nil) and last_ty:is(Remainder) then -- shunt/quicktype.yue:313
-        setmetatable(types, { -- shunt/quicktype.yue:314
-          __index = function(self) -- shunt/quicktype.yue:314
-            return last_ty.type -- shunt/quicktype.yue:314
-          end -- shunt/quicktype.yue:314
-        }) -- shunt/quicktype.yue:314
-        types[#types] = nil -- shunt/quicktype.yue:315
-      end -- shunt/quicktype.yue:313
-      if T_THIN_ARROW == function_arrow then -- shunt/quicktype.yue:318
-        return Function(types, self:parse_return_type()) -- shunt/quicktype.yue:319
-      elseif T_FAT_ARROW == function_arrow then -- shunt/quicktype.yue:320
-        return Method(types, self:parse_return_type()) -- shunt/quicktype.yue:321
-      else -- shunt/quicktype.yue:323
-        return error("internal error: unknown function arrow type: " .. tostring(function_arrow)) -- shunt/quicktype.yue:323
-      end -- shunt/quicktype.yue:323
-    end, -- shunt/quicktype.yue:325
-    parse_return_type = function(self) -- shunt/quicktype.yue:325
-      return self:select({ -- shunt/quicktype.yue:327
-        { -- shunt/quicktype.yue:327
-          token = T_ANGLE_OPEN, -- shunt/quicktype.yue:327
-          action = function() -- shunt/quicktype.yue:328
-            self:expect(T_ANGLE_OPEN) -- shunt/quicktype.yue:329
-            if self:maybe(T_ANGLE_CLOSE) then -- shunt/quicktype.yue:330
-              return { } -- shunt/quicktype.yue:331
-            end -- shunt/quicktype.yue:330
-            local types = self:parse_repeat_separated((function() -- shunt/quicktype.yue:332
-              local _base_1 = self -- shunt/quicktype.yue:332
-              local _fn_0 = _base_1.parse_function_io_type -- shunt/quicktype.yue:332
-              return _fn_0 and function(...) -- shunt/quicktype.yue:332
-                return _fn_0(_base_1, ...) -- shunt/quicktype.yue:332
-              end -- shunt/quicktype.yue:332
-            end)(), T_COMMA, { -- shunt/quicktype.yue:332
-              separator_trails_before = T_ANGLE_CLOSE -- shunt/quicktype.yue:332
-            }) -- shunt/quicktype.yue:332
-            self:expect(T_ANGLE_CLOSE) -- shunt/quicktype.yue:333
-            do -- shunt/quicktype.yue:335
-              local _max_0 = -1 -- shunt/quicktype.yue:335
-              for _index_0 = 1, _max_0 < 0 and #types + _max_0 or _max_0 do -- shunt/quicktype.yue:335
-                local ty = types[_index_0] -- shunt/quicktype.yue:335
-                if ty:is(Remainder) then -- shunt/quicktype.yue:336
-                  error('variable returns can only be declared at end of a return type list') -- shunt/quicktype.yue:337
-                end -- shunt/quicktype.yue:336
-              end -- shunt/quicktype.yue:337
-            end -- shunt/quicktype.yue:337
-            local last_ty = types[#types] -- shunt/quicktype.yue:339
-            if (last_ty ~= nil) and last_ty:is(Remainder) then -- shunt/quicktype.yue:340
-              setmetatable(types, { -- shunt/quicktype.yue:341
-                __index = function(self) -- shunt/quicktype.yue:341
-                  return last_ty.type -- shunt/quicktype.yue:341
-                end -- shunt/quicktype.yue:341
-              }) -- shunt/quicktype.yue:341
-              types[#types] = nil -- shunt/quicktype.yue:342
-            end -- shunt/quicktype.yue:340
-            return types -- shunt/quicktype.yue:344
-          end -- shunt/quicktype.yue:328
-        }, -- shunt/quicktype.yue:327
-        otherwise = function() -- shunt/quicktype.yue:345
-          local ty = self:parse_function_io_type() -- shunt/quicktype.yue:346
-          if ty:is(Remainder) then -- shunt/quicktype.yue:347
-            return setmetatable({ }, { -- shunt/quicktype.yue:348
-              __index = function(self) -- shunt/quicktype.yue:348
-                return ty.type -- shunt/quicktype.yue:348
-              end -- shunt/quicktype.yue:348
-            }) -- shunt/quicktype.yue:348
-          else -- shunt/quicktype.yue:350
-            return { -- shunt/quicktype.yue:350
-              ty -- shunt/quicktype.yue:350
-            } -- shunt/quicktype.yue:350
-          end -- shunt/quicktype.yue:347
-        end -- shunt/quicktype.yue:345
-      }) -- shunt/quicktype.yue:350
-    end, -- shunt/quicktype.yue:352
-    parse_function_io_type = function(self) -- shunt/quicktype.yue:352
-      local ty = self:parse_type() -- shunt/quicktype.yue:353
-      if ((self:maybe(T_DOTDOTDOT)) ~= nil) then -- shunt/quicktype.yue:354
-        return Remainder(ty) -- shunt/quicktype.yue:355
-      else -- shunt/quicktype.yue:357
-        return ty -- shunt/quicktype.yue:357
-      end -- shunt/quicktype.yue:354
-    end, -- shunt/quicktype.yue:359
-    parse_table = function(self) -- shunt/quicktype.yue:359
-      local table = self:sequence({ -- shunt/quicktype.yue:361
-        { -- shunt/quicktype.yue:361
-          token = T_BRACE_OPEN -- shunt/quicktype.yue:361
-        }, -- shunt/quicktype.yue:361
-        { -- shunt/quicktype.yue:362
-          action = (function() -- shunt/quicktype.yue:362
-            local _base_1 = self -- shunt/quicktype.yue:362
-            local _fn_0 = _base_1.parse_table_content -- shunt/quicktype.yue:362
-            return _fn_0 and function(...) -- shunt/quicktype.yue:362
-              return _fn_0(_base_1, ...) -- shunt/quicktype.yue:362
-            end -- shunt/quicktype.yue:362
-          end)() -- shunt/quicktype.yue:362
-        }, -- shunt/quicktype.yue:362
-        { -- shunt/quicktype.yue:363
-          token = T_BRACE_CLOSE -- shunt/quicktype.yue:363
-        } -- shunt/quicktype.yue:363
-      })[2] -- shunt/quicktype.yue:360
-      return table -- shunt/quicktype.yue:364
-    end, -- shunt/quicktype.yue:366
-    parse_table_content = function(self) -- shunt/quicktype.yue:366
-      if ((function() -- shunt/quicktype.yue:367
-        local _exp_0 = self.lexer:peek() -- shunt/quicktype.yue:367
-        if _exp_0 ~= nil then -- shunt/quicktype.yue:367
-          return _exp_0 -- shunt/quicktype.yue:367
-        else -- shunt/quicktype.yue:367
-          return { } -- shunt/quicktype.yue:367
-        end -- shunt/quicktype.yue:367
-      end)()).type == T_BRACE_CLOSE then -- shunt/quicktype.yue:367
-        return Struct(nil, { }) -- shunt/quicktype.yue:368
-      end -- shunt/quicktype.yue:367
-      local metatable_type -- shunt/quicktype.yue:370
-      if ((self:maybe(T_ANGLE_OPEN)) ~= nil) then -- shunt/quicktype.yue:371
-        self:expect(T_ANGLE_CLOSE) -- shunt/quicktype.yue:372
-        self:expect(T_COLON) -- shunt/quicktype.yue:373
-        metatable_type = self:parse_type() -- shunt/quicktype.yue:374
-        local checkpoint = self.lexer:checkpoint() -- shunt/quicktype.yue:375
-        self:maybe(T_COMMA) -- shunt/quicktype.yue:376
-        if ((function() -- shunt/quicktype.yue:377
-          local _exp_0 = self.lexer:peek() -- shunt/quicktype.yue:377
-          if _exp_0 ~= nil then -- shunt/quicktype.yue:377
-            return _exp_0 -- shunt/quicktype.yue:377
-          else -- shunt/quicktype.yue:377
-            return { } -- shunt/quicktype.yue:377
+      self:expect(T_PAREN_OPEN) -- shunt/quicktype.yue:295
+      local types -- shunt/quicktype.yue:296
+      if self:maybe(T_PAREN_CLOSE) then -- shunt/quicktype.yue:297
+        types = { } -- shunt/quicktype.yue:298
+      else -- shunt/quicktype.yue:300
+        types = self:sequence({ -- shunt/quicktype.yue:301
+          { -- shunt/quicktype.yue:301
+            action = function() -- shunt/quicktype.yue:301
+              return self:parse_repeat_separated((function() -- shunt/quicktype.yue:302
+                local _base_1 = self -- shunt/quicktype.yue:302
+                local _fn_0 = _base_1.parse_function_io_type -- shunt/quicktype.yue:302
+                return _fn_0 and function(...) -- shunt/quicktype.yue:302
+                  return _fn_0(_base_1, ...) -- shunt/quicktype.yue:302
+                end -- shunt/quicktype.yue:302
+              end)(), T_COMMA, { -- shunt/quicktype.yue:302
+                separator_trails_before = T_PAREN_CLOSE -- shunt/quicktype.yue:302
+              }) -- shunt/quicktype.yue:302
+            end -- shunt/quicktype.yue:301
+          }, -- shunt/quicktype.yue:301
+          { -- shunt/quicktype.yue:303
+            token = T_PAREN_CLOSE -- shunt/quicktype.yue:303
+          } -- shunt/quicktype.yue:303
+        })[1] -- shunt/quicktype.yue:300
+      end -- shunt/quicktype.yue:297
+      local function_arrow -- shunt/quicktype.yue:304
+      do -- shunt/quicktype.yue:304
+        local _exp_0 = (self:maybe(T_THIN_ARROW)) -- shunt/quicktype.yue:304
+        if _exp_0 ~= nil then -- shunt/quicktype.yue:304
+          function_arrow = _exp_0 -- shunt/quicktype.yue:304
+        else -- shunt/quicktype.yue:304
+          function_arrow = self:maybe(T_FAT_ARROW) -- shunt/quicktype.yue:304
+        end -- shunt/quicktype.yue:304
+      end -- shunt/quicktype.yue:304
+      if not (function_arrow ~= nil) then -- shunt/quicktype.yue:305
+        for _index_0 = 1, #types do -- shunt/quicktype.yue:306
+          local ty = types[_index_0] -- shunt/quicktype.yue:306
+          if ty:is(Remainder) then -- shunt/quicktype.yue:307
+            error('tuple type cannot contain varargs') -- shunt/quicktype.yue:308
+          end -- shunt/quicktype.yue:307
+        end -- shunt/quicktype.yue:308
+        return (Tuple(types)):table_like(is_table_like) -- shunt/quicktype.yue:310
+      end -- shunt/quicktype.yue:305
+      if is_table_like then -- shunt/quicktype.yue:312
+        local ty -- shunt/quicktype.yue:313
+        if function_arrow == T_THIN_ARROW then -- shunt/quicktype.yue:314
+          ty = 'functions' -- shunt/quicktype.yue:315
+        else -- shunt/quicktype.yue:317
+          ty = 'methods' -- shunt/quicktype.yue:317
+        end -- shunt/quicktype.yue:314
+        error(tostring(ty) .. " cannot be table-like") -- shunt/quicktype.yue:318
+      end -- shunt/quicktype.yue:312
+      do -- shunt/quicktype.yue:320
+        local _max_0 = -1 -- shunt/quicktype.yue:320
+        for _index_0 = 1, _max_0 < 0 and #types + _max_0 or _max_0 do -- shunt/quicktype.yue:320
+          local ty = types[_index_0] -- shunt/quicktype.yue:320
+          if ty:is(Remainder) then -- shunt/quicktype.yue:321
+            error('varargs can only be declared at end of a param type list') -- shunt/quicktype.yue:322
+          end -- shunt/quicktype.yue:321
+        end -- shunt/quicktype.yue:322
+      end -- shunt/quicktype.yue:322
+      local last_ty = types[#types] -- shunt/quicktype.yue:324
+      if (last_ty ~= nil) and last_ty:is(Remainder) then -- shunt/quicktype.yue:325
+        setmetatable(types, { -- shunt/quicktype.yue:326
+          __index = function(self) -- shunt/quicktype.yue:326
+            return last_ty.type -- shunt/quicktype.yue:326
+          end -- shunt/quicktype.yue:326
+        }) -- shunt/quicktype.yue:326
+        types[#types] = nil -- shunt/quicktype.yue:327
+      end -- shunt/quicktype.yue:325
+      if T_THIN_ARROW == function_arrow then -- shunt/quicktype.yue:330
+        return Function(types, self:parse_return_type()) -- shunt/quicktype.yue:331
+      elseif T_FAT_ARROW == function_arrow then -- shunt/quicktype.yue:332
+        return Method(types, self:parse_return_type()) -- shunt/quicktype.yue:333
+      else -- shunt/quicktype.yue:335
+        return error("internal error: unknown function arrow type: " .. tostring(function_arrow)) -- shunt/quicktype.yue:335
+      end -- shunt/quicktype.yue:335
+    end, -- shunt/quicktype.yue:337
+    parse_return_type = function(self) -- shunt/quicktype.yue:337
+      return self:select({ -- shunt/quicktype.yue:339
+        { -- shunt/quicktype.yue:339
+          token = T_ANGLE_OPEN, -- shunt/quicktype.yue:339
+          action = function() -- shunt/quicktype.yue:340
+            self:expect(T_ANGLE_OPEN) -- shunt/quicktype.yue:341
+            if self:maybe(T_ANGLE_CLOSE) then -- shunt/quicktype.yue:342
+              return { } -- shunt/quicktype.yue:343
+            end -- shunt/quicktype.yue:342
+            local types = self:parse_repeat_separated((function() -- shunt/quicktype.yue:344
+              local _base_1 = self -- shunt/quicktype.yue:344
+              local _fn_0 = _base_1.parse_function_io_type -- shunt/quicktype.yue:344
+              return _fn_0 and function(...) -- shunt/quicktype.yue:344
+                return _fn_0(_base_1, ...) -- shunt/quicktype.yue:344
+              end -- shunt/quicktype.yue:344
+            end)(), T_COMMA, { -- shunt/quicktype.yue:344
+              separator_trails_before = T_ANGLE_CLOSE -- shunt/quicktype.yue:344
+            }) -- shunt/quicktype.yue:344
+            self:expect(T_ANGLE_CLOSE) -- shunt/quicktype.yue:345
+            do -- shunt/quicktype.yue:347
+              local _max_0 = -1 -- shunt/quicktype.yue:347
+              for _index_0 = 1, _max_0 < 0 and #types + _max_0 or _max_0 do -- shunt/quicktype.yue:347
+                local ty = types[_index_0] -- shunt/quicktype.yue:347
+                if ty:is(Remainder) then -- shunt/quicktype.yue:348
+                  error('variable returns can only be declared at end of a return type list') -- shunt/quicktype.yue:349
+                end -- shunt/quicktype.yue:348
+              end -- shunt/quicktype.yue:349
+            end -- shunt/quicktype.yue:349
+            local last_ty = types[#types] -- shunt/quicktype.yue:351
+            if (last_ty ~= nil) and last_ty:is(Remainder) then -- shunt/quicktype.yue:352
+              setmetatable(types, { -- shunt/quicktype.yue:353
+                __index = function(self) -- shunt/quicktype.yue:353
+                  return last_ty.type -- shunt/quicktype.yue:353
+                end -- shunt/quicktype.yue:353
+              }) -- shunt/quicktype.yue:353
+              types[#types] = nil -- shunt/quicktype.yue:354
+            end -- shunt/quicktype.yue:352
+            return types -- shunt/quicktype.yue:356
+          end -- shunt/quicktype.yue:340
+        }, -- shunt/quicktype.yue:339
+        otherwise = function() -- shunt/quicktype.yue:357
+          local ty = self:parse_function_io_type() -- shunt/quicktype.yue:358
+          if ty:is(Remainder) then -- shunt/quicktype.yue:359
+            return setmetatable({ }, { -- shunt/quicktype.yue:360
+              __index = function(self) -- shunt/quicktype.yue:360
+                return ty.type -- shunt/quicktype.yue:360
+              end -- shunt/quicktype.yue:360
+            }) -- shunt/quicktype.yue:360
+          else -- shunt/quicktype.yue:362
+            return { -- shunt/quicktype.yue:362
+              ty -- shunt/quicktype.yue:362
+            } -- shunt/quicktype.yue:362
+          end -- shunt/quicktype.yue:359
+        end -- shunt/quicktype.yue:357
+      }) -- shunt/quicktype.yue:362
+    end, -- shunt/quicktype.yue:364
+    parse_function_io_type = function(self) -- shunt/quicktype.yue:364
+      local ty = self:parse_type() -- shunt/quicktype.yue:365
+      if ((self:maybe(T_DOTDOTDOT)) ~= nil) then -- shunt/quicktype.yue:366
+        return Remainder(ty) -- shunt/quicktype.yue:367
+      else -- shunt/quicktype.yue:369
+        return ty -- shunt/quicktype.yue:369
+      end -- shunt/quicktype.yue:366
+    end, -- shunt/quicktype.yue:371
+    parse_table_like = function(self) -- shunt/quicktype.yue:371
+      self:expect(T_TILDE) -- shunt/quicktype.yue:372
+      return self:select({ -- shunt/quicktype.yue:374
+        { -- shunt/quicktype.yue:374
+          token = T_BRACE_OPEN, -- shunt/quicktype.yue:374
+          action = function() -- shunt/quicktype.yue:375
+            return self:parse_table(true) -- shunt/quicktype.yue:375
+          end -- shunt/quicktype.yue:375
+        }, -- shunt/quicktype.yue:374
+        { -- shunt/quicktype.yue:376
+          token = T_BRACKET_OPEN, -- shunt/quicktype.yue:376
+          action = function() -- shunt/quicktype.yue:377
+            return self:parse_array(true) -- shunt/quicktype.yue:377
           end -- shunt/quicktype.yue:377
-        end)()).type == T_BRACE_CLOSE then -- shunt/quicktype.yue:377
-          return Struct(metatable_type, { }) -- shunt/quicktype.yue:378
-        end -- shunt/quicktype.yue:377
-        self.lexer:restore(checkpoint) -- shunt/quicktype.yue:379
-        self:expect(T_COMMA) -- shunt/quicktype.yue:380
-      end -- shunt/quicktype.yue:371
-      local checkpoint = self.lexer:checkpoint() -- shunt/quicktype.yue:382
-      local is_struct = ((self:maybe(T_NAME)) ~= nil) and ((self:maybe(T_COLON)) ~= nil) -- shunt/quicktype.yue:383
-      self.lexer:restore(checkpoint) -- shunt/quicktype.yue:384
-      if is_struct then -- shunt/quicktype.yue:386
-        return Struct(metatable_type, self:parse_repeat_separated((function() -- shunt/quicktype.yue:387
-          local _base_1 = self -- shunt/quicktype.yue:387
-          local _fn_0 = _base_1.parse_field -- shunt/quicktype.yue:387
-          return _fn_0 and function(...) -- shunt/quicktype.yue:387
-            return _fn_0(_base_1, ...) -- shunt/quicktype.yue:387
-          end -- shunt/quicktype.yue:387
-        end)(), T_COMMA, { -- shunt/quicktype.yue:387
-          separator_trails_before = T_BRACE_CLOSE -- shunt/quicktype.yue:387
-        })) -- shunt/quicktype.yue:387
-      end -- shunt/quicktype.yue:386
-      local first_type = self:parse_type() -- shunt/quicktype.yue:389
-      local table_content_type = self:select({ -- shunt/quicktype.yue:391
-        { -- shunt/quicktype.yue:391
-          token = T_BRACE_CLOSE, -- shunt/quicktype.yue:391
-          action = function() -- shunt/quicktype.yue:392
-            return 'set' -- shunt/quicktype.yue:392
-          end -- shunt/quicktype.yue:392
-        }, -- shunt/quicktype.yue:391
-        { -- shunt/quicktype.yue:393
-          token = T_THIN_ARROW, -- shunt/quicktype.yue:393
-          action = function() -- shunt/quicktype.yue:394
-            return 'mapping' -- shunt/quicktype.yue:394
-          end -- shunt/quicktype.yue:394
-        } -- shunt/quicktype.yue:393
-      }) -- shunt/quicktype.yue:390
-      if 'set' == table_content_type then -- shunt/quicktype.yue:397
-        return Set(metatable_type, first_type) -- shunt/quicktype.yue:398
-      elseif 'mapping' == table_content_type then -- shunt/quicktype.yue:399
-        local maps_to = self:sequence({ -- shunt/quicktype.yue:401
-          { -- shunt/quicktype.yue:401
-            token = T_THIN_ARROW -- shunt/quicktype.yue:401
-          }, -- shunt/quicktype.yue:401
-          { -- shunt/quicktype.yue:402
-            action = (function() -- shunt/quicktype.yue:402
-              local _base_1 = self -- shunt/quicktype.yue:402
-              local _fn_0 = _base_1.parse_type -- shunt/quicktype.yue:402
-              return _fn_0 and function(...) -- shunt/quicktype.yue:402
-                return _fn_0(_base_1, ...) -- shunt/quicktype.yue:402
-              end -- shunt/quicktype.yue:402
-            end)() -- shunt/quicktype.yue:402
-          } -- shunt/quicktype.yue:402
-        })[2] -- shunt/quicktype.yue:400
-        return Mapping(metatable_type, first_type, maps_to) -- shunt/quicktype.yue:403
-      else -- shunt/quicktype.yue:405
-        return error("internal error: illegal table contents type: " .. tostring(repr(table_content_type))) -- shunt/quicktype.yue:405
-      end -- shunt/quicktype.yue:405
-    end, -- shunt/quicktype.yue:407
-    parse_field = function(self) -- shunt/quicktype.yue:407
-      local name, type -- shunt/quicktype.yue:408
-      do -- shunt/quicktype.yue:408
-        local _obj_0 = self:sequence({ -- shunt/quicktype.yue:409
-          { -- shunt/quicktype.yue:409
-            token = T_NAME -- shunt/quicktype.yue:409
-          }, -- shunt/quicktype.yue:409
-          { -- shunt/quicktype.yue:410
-            token = T_COLON -- shunt/quicktype.yue:410
-          }, -- shunt/quicktype.yue:410
-          { -- shunt/quicktype.yue:411
-            action = (function() -- shunt/quicktype.yue:411
-              local _base_1 = self -- shunt/quicktype.yue:411
-              local _fn_0 = _base_1.parse_type -- shunt/quicktype.yue:411
-              return _fn_0 and function(...) -- shunt/quicktype.yue:411
-                return _fn_0(_base_1, ...) -- shunt/quicktype.yue:411
-              end -- shunt/quicktype.yue:411
-            end)() -- shunt/quicktype.yue:411
-          } -- shunt/quicktype.yue:411
-        }) -- shunt/quicktype.yue:408
-        name, type = _obj_0[1], _obj_0[3] -- shunt/quicktype.yue:408
-      end -- shunt/quicktype.yue:411
-      return Field(name, type) -- shunt/quicktype.yue:412
+        }, -- shunt/quicktype.yue:376
+        { -- shunt/quicktype.yue:378
+          token = T_PAREN_OPEN, -- shunt/quicktype.yue:378
+          action = function() -- shunt/quicktype.yue:379
+            return self:parse_tuple_or_function(true) -- shunt/quicktype.yue:379
+          end -- shunt/quicktype.yue:379
+        } -- shunt/quicktype.yue:378
+      }) -- shunt/quicktype.yue:379
+    end, -- shunt/quicktype.yue:381
+    parse_table = function(self, is_table_like) -- shunt/quicktype.yue:381
+      if is_table_like == nil then -- shunt/quicktype.yue:381
+        is_table_like = false -- shunt/quicktype.yue:381
+      end -- shunt/quicktype.yue:381
+      local table = self:sequence({ -- shunt/quicktype.yue:383
+        { -- shunt/quicktype.yue:383
+          token = T_BRACE_OPEN -- shunt/quicktype.yue:383
+        }, -- shunt/quicktype.yue:383
+        { -- shunt/quicktype.yue:384
+          action = function() -- shunt/quicktype.yue:384
+            return self:parse_table_content(is_table_like) -- shunt/quicktype.yue:384
+          end -- shunt/quicktype.yue:384
+        }, -- shunt/quicktype.yue:384
+        { -- shunt/quicktype.yue:385
+          token = T_BRACE_CLOSE -- shunt/quicktype.yue:385
+        } -- shunt/quicktype.yue:385
+      })[2] -- shunt/quicktype.yue:382
+      return table -- shunt/quicktype.yue:386
+    end, -- shunt/quicktype.yue:388
+    parse_table_content = function(self, is_table_like) -- shunt/quicktype.yue:388
+      if is_table_like == nil then -- shunt/quicktype.yue:388
+        is_table_like = false -- shunt/quicktype.yue:388
+      end -- shunt/quicktype.yue:388
+      if ((function() -- shunt/quicktype.yue:389
+        local _exp_0 = self.lexer:peek() -- shunt/quicktype.yue:389
+        if _exp_0 ~= nil then -- shunt/quicktype.yue:389
+          return _exp_0 -- shunt/quicktype.yue:389
+        else -- shunt/quicktype.yue:389
+          return { } -- shunt/quicktype.yue:389
+        end -- shunt/quicktype.yue:389
+      end)()).type == T_BRACE_CLOSE then -- shunt/quicktype.yue:389
+        return (Struct(nil, { })):table_like(is_table_like) -- shunt/quicktype.yue:391
+      end -- shunt/quicktype.yue:389
+      local metatable_type -- shunt/quicktype.yue:393
+      if ((self:maybe(T_ANGLE_OPEN)) ~= nil) then -- shunt/quicktype.yue:394
+        self:expect(T_ANGLE_CLOSE) -- shunt/quicktype.yue:395
+        self:expect(T_COLON) -- shunt/quicktype.yue:396
+        metatable_type = self:parse_type() -- shunt/quicktype.yue:397
+        local checkpoint = self.lexer:checkpoint() -- shunt/quicktype.yue:398
+        self:maybe(T_COMMA) -- shunt/quicktype.yue:399
+        if ((function() -- shunt/quicktype.yue:400
+          local _exp_0 = self.lexer:peek() -- shunt/quicktype.yue:400
+          if _exp_0 ~= nil then -- shunt/quicktype.yue:400
+            return _exp_0 -- shunt/quicktype.yue:400
+          else -- shunt/quicktype.yue:400
+            return { } -- shunt/quicktype.yue:400
+          end -- shunt/quicktype.yue:400
+        end)()).type == T_BRACE_CLOSE then -- shunt/quicktype.yue:400
+          return (Struct(metatable_type, { })):table_like(is_table_like) -- shunt/quicktype.yue:402
+        end -- shunt/quicktype.yue:400
+        self.lexer:restore(checkpoint) -- shunt/quicktype.yue:403
+        self:expect(T_COMMA) -- shunt/quicktype.yue:404
+      end -- shunt/quicktype.yue:394
+      local checkpoint = self.lexer:checkpoint() -- shunt/quicktype.yue:406
+      local is_struct = ((self:maybe(T_NAME)) ~= nil) and ((self:maybe(T_COLON)) ~= nil) -- shunt/quicktype.yue:407
+      self.lexer:restore(checkpoint) -- shunt/quicktype.yue:408
+      if is_struct then -- shunt/quicktype.yue:410
+        return (Struct(metatable_type, self:parse_repeat_separated((function() -- shunt/quicktype.yue:411
+          local _base_1 = self -- shunt/quicktype.yue:411
+          local _fn_0 = _base_1.parse_field -- shunt/quicktype.yue:411
+          return _fn_0 and function(...) -- shunt/quicktype.yue:411
+            return _fn_0(_base_1, ...) -- shunt/quicktype.yue:411
+          end -- shunt/quicktype.yue:411
+        end)(), T_COMMA, { -- shunt/quicktype.yue:411
+          separator_trails_before = T_BRACE_CLOSE -- shunt/quicktype.yue:411
+        }))):table_like(is_table_like) -- shunt/quicktype.yue:412
+      end -- shunt/quicktype.yue:410
+      local first_type = self:parse_type() -- shunt/quicktype.yue:414
+      local table_content_type = self:select({ -- shunt/quicktype.yue:416
+        { -- shunt/quicktype.yue:416
+          token = T_BRACE_CLOSE, -- shunt/quicktype.yue:416
+          action = function() -- shunt/quicktype.yue:417
+            return 'set' -- shunt/quicktype.yue:417
+          end -- shunt/quicktype.yue:417
+        }, -- shunt/quicktype.yue:416
+        { -- shunt/quicktype.yue:418
+          token = T_THIN_ARROW, -- shunt/quicktype.yue:418
+          action = function() -- shunt/quicktype.yue:419
+            return 'mapping' -- shunt/quicktype.yue:419
+          end -- shunt/quicktype.yue:419
+        } -- shunt/quicktype.yue:418
+      }) -- shunt/quicktype.yue:415
+      if 'set' == table_content_type then -- shunt/quicktype.yue:422
+        return (Set(metatable_type, first_type)):table_like(is_table_like) -- shunt/quicktype.yue:424
+      elseif 'mapping' == table_content_type then -- shunt/quicktype.yue:425
+        local maps_to = self:sequence({ -- shunt/quicktype.yue:427
+          { -- shunt/quicktype.yue:427
+            token = T_THIN_ARROW -- shunt/quicktype.yue:427
+          }, -- shunt/quicktype.yue:427
+          { -- shunt/quicktype.yue:428
+            action = (function() -- shunt/quicktype.yue:428
+              local _base_1 = self -- shunt/quicktype.yue:428
+              local _fn_0 = _base_1.parse_type -- shunt/quicktype.yue:428
+              return _fn_0 and function(...) -- shunt/quicktype.yue:428
+                return _fn_0(_base_1, ...) -- shunt/quicktype.yue:428
+              end -- shunt/quicktype.yue:428
+            end)() -- shunt/quicktype.yue:428
+          } -- shunt/quicktype.yue:428
+        })[2] -- shunt/quicktype.yue:426
+        return (Mapping(metatable_type, first_type, maps_to)):table_like(is_table_like) -- shunt/quicktype.yue:430
+      else -- shunt/quicktype.yue:432
+        return error("internal error: illegal table contents type: " .. tostring(repr(table_content_type))) -- shunt/quicktype.yue:432
+      end -- shunt/quicktype.yue:432
+    end, -- shunt/quicktype.yue:434
+    parse_field = function(self) -- shunt/quicktype.yue:434
+      local name, type -- shunt/quicktype.yue:435
+      do -- shunt/quicktype.yue:435
+        local _obj_0 = self:sequence({ -- shunt/quicktype.yue:436
+          { -- shunt/quicktype.yue:436
+            token = T_NAME -- shunt/quicktype.yue:436
+          }, -- shunt/quicktype.yue:436
+          { -- shunt/quicktype.yue:437
+            token = T_COLON -- shunt/quicktype.yue:437
+          }, -- shunt/quicktype.yue:437
+          { -- shunt/quicktype.yue:438
+            action = (function() -- shunt/quicktype.yue:438
+              local _base_1 = self -- shunt/quicktype.yue:438
+              local _fn_0 = _base_1.parse_type -- shunt/quicktype.yue:438
+              return _fn_0 and function(...) -- shunt/quicktype.yue:438
+                return _fn_0(_base_1, ...) -- shunt/quicktype.yue:438
+              end -- shunt/quicktype.yue:438
+            end)() -- shunt/quicktype.yue:438
+          } -- shunt/quicktype.yue:438
+        }) -- shunt/quicktype.yue:435
+        name, type = _obj_0[1], _obj_0[3] -- shunt/quicktype.yue:435
+      end -- shunt/quicktype.yue:438
+      return Field(name, type) -- shunt/quicktype.yue:439
     end -- shunt/quicktype.yue:214
   } -- shunt/quicktype.yue:214
-  for _key_0, _val_0 in pairs(_parent_0.__base) do -- shunt/quicktype.yue:412
+  for _key_0, _val_0 in pairs(_parent_0.__base) do -- shunt/quicktype.yue:439
     if _base_0[_key_0] == nil and _key_0:match("^__") and not (_key_0 == "__index" and _val_0 == _parent_0.__base) then -- shunt/quicktype.yue:214
       _base_0[_key_0] = _val_0 -- shunt/quicktype.yue:214
     end -- shunt/quicktype.yue:214
-  end -- shunt/quicktype.yue:412
+  end -- shunt/quicktype.yue:439
   if _base_0.__index == nil then -- shunt/quicktype.yue:214
     _base_0.__index = _base_0 -- shunt/quicktype.yue:214
-  end -- shunt/quicktype.yue:412
+  end -- shunt/quicktype.yue:439
   setmetatable(_base_0, _parent_0.__base) -- shunt/quicktype.yue:214
   _class_0 = setmetatable({ -- shunt/quicktype.yue:214
     __init = function(self, ...) -- shunt/quicktype.yue:214
@@ -2056,3823 +2106,3934 @@ do -- shunt/quicktype.yue:214
     _parent_0.__inherited(_parent_0, _class_0) -- shunt/quicktype.yue:214
   end -- shunt/quicktype.yue:214
   TypeSpecParser = _class_0 -- shunt/quicktype.yue:214
-end -- shunt/quicktype.yue:412
-T_PAREN_OPEN = setmetatable({ }, { -- shunt/quicktype.yue:415
-  __tostring = function(self) -- shunt/quicktype.yue:415
-    return "'('" -- shunt/quicktype.yue:415
-  end -- shunt/quicktype.yue:415
-}) -- shunt/quicktype.yue:415
-T_PAREN_CLOSE = setmetatable({ }, { -- shunt/quicktype.yue:416
-  __tostring = function(self) -- shunt/quicktype.yue:416
-    return "')'" -- shunt/quicktype.yue:416
-  end -- shunt/quicktype.yue:416
-}) -- shunt/quicktype.yue:416
-T_BRACE_OPEN = setmetatable({ }, { -- shunt/quicktype.yue:417
-  __tostring = function(self) -- shunt/quicktype.yue:417
-    return "'{'" -- shunt/quicktype.yue:417
-  end -- shunt/quicktype.yue:417
-}) -- shunt/quicktype.yue:417
-T_BRACE_CLOSE = setmetatable({ }, { -- shunt/quicktype.yue:418
-  __tostring = function(self) -- shunt/quicktype.yue:418
-    return "'}'" -- shunt/quicktype.yue:418
-  end -- shunt/quicktype.yue:418
-}) -- shunt/quicktype.yue:418
-T_BRACKET_OPEN = setmetatable({ }, { -- shunt/quicktype.yue:419
-  __tostring = function(self) -- shunt/quicktype.yue:419
-    return "'['" -- shunt/quicktype.yue:419
-  end -- shunt/quicktype.yue:419
-}) -- shunt/quicktype.yue:419
-T_BRACKET_CLOSE = setmetatable({ }, { -- shunt/quicktype.yue:420
-  __tostring = function(self) -- shunt/quicktype.yue:420
-    return "']'" -- shunt/quicktype.yue:420
-  end -- shunt/quicktype.yue:420
-}) -- shunt/quicktype.yue:420
-T_ANGLE_OPEN = setmetatable({ }, { -- shunt/quicktype.yue:421
-  __tostring = function(self) -- shunt/quicktype.yue:421
-    return '"<"' -- shunt/quicktype.yue:421
-  end -- shunt/quicktype.yue:421
-}) -- shunt/quicktype.yue:421
-T_ANGLE_CLOSE = setmetatable({ }, { -- shunt/quicktype.yue:422
-  __tostring = function(self) -- shunt/quicktype.yue:422
-    return '">"' -- shunt/quicktype.yue:422
-  end -- shunt/quicktype.yue:422
-}) -- shunt/quicktype.yue:422
-T_COMMA = setmetatable({ }, { -- shunt/quicktype.yue:423
-  __tostring = function(self) -- shunt/quicktype.yue:423
-    return "','" -- shunt/quicktype.yue:423
-  end -- shunt/quicktype.yue:423
-}) -- shunt/quicktype.yue:423
-T_COLON = setmetatable({ }, { -- shunt/quicktype.yue:424
-  __tostring = function(self) -- shunt/quicktype.yue:424
-    return "':'" -- shunt/quicktype.yue:424
-  end -- shunt/quicktype.yue:424
-}) -- shunt/quicktype.yue:424
-T_BANG = setmetatable({ }, { -- shunt/quicktype.yue:425
-  __tostring = function(self) -- shunt/quicktype.yue:425
-    return "'!'" -- shunt/quicktype.yue:425
-  end -- shunt/quicktype.yue:425
-}) -- shunt/quicktype.yue:425
-T_THIN_ARROW = setmetatable({ }, { -- shunt/quicktype.yue:426
-  __tostring = function(self) -- shunt/quicktype.yue:426
-    return "'->'" -- shunt/quicktype.yue:426
-  end -- shunt/quicktype.yue:426
-}) -- shunt/quicktype.yue:426
-T_FAT_ARROW = setmetatable({ }, { -- shunt/quicktype.yue:427
-  __tostring = function(self) -- shunt/quicktype.yue:427
-    return "'=>'" -- shunt/quicktype.yue:427
-  end -- shunt/quicktype.yue:427
-}) -- shunt/quicktype.yue:427
-T_DOTDOTDOT = setmetatable({ }, { -- shunt/quicktype.yue:428
-  __tostring = function(self) -- shunt/quicktype.yue:428
-    return "'...'" -- shunt/quicktype.yue:428
-  end -- shunt/quicktype.yue:428
-}) -- shunt/quicktype.yue:428
-T_QUESTION = setmetatable({ }, { -- shunt/quicktype.yue:429
-  __tostring = function(self) -- shunt/quicktype.yue:429
-    return "'?'" -- shunt/quicktype.yue:429
-  end -- shunt/quicktype.yue:429
-}) -- shunt/quicktype.yue:429
-T_PLUS = setmetatable({ }, { -- shunt/quicktype.yue:430
-  __tostring = function(self) -- shunt/quicktype.yue:430
-    return "'+'" -- shunt/quicktype.yue:430
-  end -- shunt/quicktype.yue:430
-}) -- shunt/quicktype.yue:430
-T_PIPE = setmetatable({ }, { -- shunt/quicktype.yue:431
-  __tostring = function(self) -- shunt/quicktype.yue:431
-    return "'|'" -- shunt/quicktype.yue:431
-  end -- shunt/quicktype.yue:431
-}) -- shunt/quicktype.yue:431
-T_NAME = setmetatable({ }, { -- shunt/quicktype.yue:432
-  __tostring = function(self) -- shunt/quicktype.yue:432
-    return "<name>" -- shunt/quicktype.yue:432
-  end -- shunt/quicktype.yue:432
-}) -- shunt/quicktype.yue:432
-T_PREFIXED_NAME = setmetatable({ }, { -- shunt/quicktype.yue:433
-  __tostring = function(self) -- shunt/quicktype.yue:433
-    return "<prefixed-name>" -- shunt/quicktype.yue:433
-  end -- shunt/quicktype.yue:433
-}) -- shunt/quicktype.yue:433
-T_BOOLEAN = setmetatable({ }, { -- shunt/quicktype.yue:434
-  __tostring = function(self) -- shunt/quicktype.yue:434
-    return "<boolean>" -- shunt/quicktype.yue:434
-  end -- shunt/quicktype.yue:434
-}) -- shunt/quicktype.yue:434
-T_NUMBER = setmetatable({ }, { -- shunt/quicktype.yue:435
-  __tostring = function(self) -- shunt/quicktype.yue:435
-    return "<number>" -- shunt/quicktype.yue:435
-  end -- shunt/quicktype.yue:435
-}) -- shunt/quicktype.yue:435
-T_STRING = setmetatable({ }, { -- shunt/quicktype.yue:436
-  __tostring = function(self) -- shunt/quicktype.yue:436
-    return "<string>" -- shunt/quicktype.yue:436
-  end -- shunt/quicktype.yue:436
-}) -- shunt/quicktype.yue:436
-do -- shunt/quicktype.yue:438
-  local _class_0 -- shunt/quicktype.yue:438
-  local _base_0 = { -- shunt/quicktype.yue:438
-    peek = function(self) -- shunt/quicktype.yue:505
-      if self.done then -- shunt/quicktype.yue:506
-        return nil -- shunt/quicktype.yue:507
-      end -- shunt/quicktype.yue:506
-      if (self.peeked ~= nil) then -- shunt/quicktype.yue:509
-        return self.peeked -- shunt/quicktype.yue:510
-      end -- shunt/quicktype.yue:509
-      self.peeked = self:tokens() -- shunt/quicktype.yue:512
-      if not self.peeked then -- shunt/quicktype.yue:513
-        self.done = true -- shunt/quicktype.yue:514
-      end -- shunt/quicktype.yue:513
-      return self.peeked -- shunt/quicktype.yue:515
-    end, -- shunt/quicktype.yue:517
-    next = function(self) -- shunt/quicktype.yue:517
-      if self.done then -- shunt/quicktype.yue:518
-        return nil -- shunt/quicktype.yue:519
-      end -- shunt/quicktype.yue:518
-      if (self.peeked ~= nil) then -- shunt/quicktype.yue:521
-        local peeked = self.peeked -- shunt/quicktype.yue:522
-        self.peeked = nil -- shunt/quicktype.yue:523
-        return peeked -- shunt/quicktype.yue:524
-      else -- shunt/quicktype.yue:526
-        local ret = self:tokens() -- shunt/quicktype.yue:526
-        if not (ret ~= nil) then -- shunt/quicktype.yue:527
-          self.done = true -- shunt/quicktype.yue:528
-        end -- shunt/quicktype.yue:527
-        return ret -- shunt/quicktype.yue:529
-      end -- shunt/quicktype.yue:521
-    end, -- shunt/quicktype.yue:531
-    checkpoint = function(self) -- shunt/quicktype.yue:531
-      return Checkpoint(self.index, self.peeked) -- shunt/quicktype.yue:532
-    end, -- shunt/quicktype.yue:534
-    restore = function(self, checkpoint) -- shunt/quicktype.yue:534
-      local index, peeked = checkpoint.index, checkpoint.peeked -- shunt/quicktype.yue:535
-      self.index = index -- shunt/quicktype.yue:536
-      self.peeked = peeked -- shunt/quicktype.yue:537
-    end -- shunt/quicktype.yue:438
-  } -- shunt/quicktype.yue:438
-  if _base_0.__index == nil then -- shunt/quicktype.yue:438
-    _base_0.__index = _base_0 -- shunt/quicktype.yue:438
-  end -- shunt/quicktype.yue:537
-  _class_0 = setmetatable({ -- shunt/quicktype.yue:438
-    __init = function(self, type_spec) -- shunt/quicktype.yue:439
-      self.type_spec = type_spec -- shunt/quicktype.yue:439
-      self.index = 1 -- shunt/quicktype.yue:440
-      self.done = false -- shunt/quicktype.yue:441
-      self.peeked = nil -- shunt/quicktype.yue:442
-      self.tokens = coroutine.wrap(function() -- shunt/quicktype.yue:443
-        while self.index <= #type_spec do -- shunt/quicktype.yue:444
-          local _continue_0 = false -- shunt/quicktype.yue:445
-          repeat -- shunt/quicktype.yue:445
-            local ty, value, bytes_consumed -- shunt/quicktype.yue:445
-            do -- shunt/quicktype.yue:445
-              local match = type_spec:match('^%-%-[^\r\n]*', self.index) -- shunt/quicktype.yue:445
-              if match then -- shunt/quicktype.yue:445
-                ty, value, bytes_consumed = nil, nil, #match -- shunt/quicktype.yue:446
-              else -- shunt/quicktype.yue:447
-                do -- shunt/quicktype.yue:447
-                  local whitespace = type_spec:match('^[ \t\r\n]+', self.index) -- shunt/quicktype.yue:447
-                  if whitespace then -- shunt/quicktype.yue:447
-                    ty, value, bytes_consumed = nil, nil, #whitespace -- shunt/quicktype.yue:448
-                  else -- shunt/quicktype.yue:449
-                    match = type_spec:match('^%(', self.index) -- shunt/quicktype.yue:449
-                    if match then -- shunt/quicktype.yue:449
-                      ty, value, bytes_consumed = T_PAREN_OPEN, nil, #match -- shunt/quicktype.yue:450
-                    else -- shunt/quicktype.yue:451
-                      match = type_spec:match('^%)', self.index) -- shunt/quicktype.yue:451
-                      if match then -- shunt/quicktype.yue:451
-                        ty, value, bytes_consumed = T_PAREN_CLOSE, nil, #match -- shunt/quicktype.yue:452
-                      else -- shunt/quicktype.yue:453
-                        match = type_spec:match('^,', self.index) -- shunt/quicktype.yue:453
-                        if match then -- shunt/quicktype.yue:453
-                          ty, value, bytes_consumed = T_COMMA, nil, #match -- shunt/quicktype.yue:454
-                        else -- shunt/quicktype.yue:455
-                          match = type_spec:match('^{', self.index) -- shunt/quicktype.yue:455
-                          if match then -- shunt/quicktype.yue:455
-                            ty, value, bytes_consumed = T_BRACE_OPEN, nil, #match -- shunt/quicktype.yue:456
-                          else -- shunt/quicktype.yue:457
-                            match = type_spec:match('^}', self.index) -- shunt/quicktype.yue:457
-                            if match then -- shunt/quicktype.yue:457
-                              ty, value, bytes_consumed = T_BRACE_CLOSE, nil, #match -- shunt/quicktype.yue:458
-                            else -- shunt/quicktype.yue:459
-                              match = type_spec:match('^%[', self.index) -- shunt/quicktype.yue:459
-                              if match then -- shunt/quicktype.yue:459
-                                ty, value, bytes_consumed = T_BRACKET_OPEN, nil, #match -- shunt/quicktype.yue:460
-                              else -- shunt/quicktype.yue:461
-                                match = type_spec:match('^]', self.index) -- shunt/quicktype.yue:461
-                                if match then -- shunt/quicktype.yue:461
-                                  ty, value, bytes_consumed = T_BRACKET_CLOSE, nil, #match -- shunt/quicktype.yue:462
-                                else -- shunt/quicktype.yue:463
-                                  match = type_spec:match('^:', self.index) -- shunt/quicktype.yue:463
-                                  if match then -- shunt/quicktype.yue:463
-                                    ty, value, bytes_consumed = T_COLON, nil, #match -- shunt/quicktype.yue:464
-                                  else -- shunt/quicktype.yue:465
-                                    match = type_spec:match('^!', self.index) -- shunt/quicktype.yue:465
-                                    if match then -- shunt/quicktype.yue:465
-                                      ty, value, bytes_consumed = T_BANG, nil, #match -- shunt/quicktype.yue:466
-                                    else -- shunt/quicktype.yue:467
-                                      match = type_spec:match('^->', self.index) -- shunt/quicktype.yue:467
-                                      if match then -- shunt/quicktype.yue:467
-                                        ty, value, bytes_consumed = T_THIN_ARROW, nil, #match -- shunt/quicktype.yue:468
-                                      else -- shunt/quicktype.yue:469
-                                        match = type_spec:match('^=>', self.index) -- shunt/quicktype.yue:469
-                                        if match then -- shunt/quicktype.yue:469
-                                          ty, value, bytes_consumed = T_FAT_ARROW, nil, #match -- shunt/quicktype.yue:470
-                                        else -- shunt/quicktype.yue:471
-                                          match = type_spec:match('^%.%.%.', self.index) -- shunt/quicktype.yue:471
-                                          if match then -- shunt/quicktype.yue:471
-                                            ty, value, bytes_consumed = T_DOTDOTDOT, nil, #match -- shunt/quicktype.yue:472
-                                          else -- shunt/quicktype.yue:473
-                                            match = type_spec:match('^<', self.index) -- shunt/quicktype.yue:473
-                                            if match then -- shunt/quicktype.yue:473
-                                              ty, value, bytes_consumed = T_ANGLE_OPEN, nil, #match -- shunt/quicktype.yue:474
-                                            else -- shunt/quicktype.yue:475
-                                              match = type_spec:match('^>', self.index) -- shunt/quicktype.yue:475
-                                              if match then -- shunt/quicktype.yue:475
-                                                ty, value, bytes_consumed = T_ANGLE_CLOSE, nil, #match -- shunt/quicktype.yue:476
-                                              else -- shunt/quicktype.yue:477
-                                                match = type_spec:match('^?', self.index) -- shunt/quicktype.yue:477
-                                                if match then -- shunt/quicktype.yue:477
-                                                  ty, value, bytes_consumed = T_QUESTION, nil, #match -- shunt/quicktype.yue:478
-                                                else -- shunt/quicktype.yue:479
-                                                  match = type_spec:match('^+', self.index) -- shunt/quicktype.yue:479
-                                                  if match then -- shunt/quicktype.yue:479
-                                                    ty, value, bytes_consumed = T_PLUS, nil, #match -- shunt/quicktype.yue:480
-                                                  else -- shunt/quicktype.yue:481
-                                                    match = type_spec:match('^|', self.index) -- shunt/quicktype.yue:481
-                                                    if match then -- shunt/quicktype.yue:481
-                                                      ty, value, bytes_consumed = T_PIPE, nil, #match -- shunt/quicktype.yue:482
-                                                    else -- shunt/quicktype.yue:483
-                                                      match = type_spec:match('^true', self.index) -- shunt/quicktype.yue:483
-                                                      if match then -- shunt/quicktype.yue:483
-                                                        ty, value, bytes_consumed = T_BOOLEAN, true, #match -- shunt/quicktype.yue:484
-                                                      else -- shunt/quicktype.yue:485
-                                                        match = type_spec:match('^false', self.index) -- shunt/quicktype.yue:485
-                                                        if match then -- shunt/quicktype.yue:485
-                                                          ty, value, bytes_consumed = T_BOOLEAN, false, #match -- shunt/quicktype.yue:486
-                                                        else -- shunt/quicktype.yue:487
-                                                          do -- shunt/quicktype.yue:487
-                                                            local prefixed_name = type_spec:match('^([a-zA-Z_][a-zA-Z0-9_]*[a-zA-Z0-9_]%.[a-zA-Z_][a-zA-Z0-9_]*[a-zA-Z0-9_])', self.index) -- shunt/quicktype.yue:487
-                                                            if prefixed_name then -- shunt/quicktype.yue:487
-                                                              ty, value, bytes_consumed = T_PREFIXED_NAME, prefixed_name, #prefixed_name -- shunt/quicktype.yue:488
-                                                            else -- shunt/quicktype.yue:489
-                                                              do -- shunt/quicktype.yue:489
-                                                                local name = type_spec:match('^([a-zA-Z_][a-zA-Z0-9_-]*[a-zA-Z0-9_])', self.index) -- shunt/quicktype.yue:489
-                                                                if name then -- shunt/quicktype.yue:489
-                                                                  ty, value, bytes_consumed = T_NAME, name, #name -- shunt/quicktype.yue:490
-                                                                else -- shunt/quicktype.yue:491
-                                                                  do -- shunt/quicktype.yue:491
-                                                                    local number = type_spec:match('^%-?[0-9]*%.[0-9]+', self.index) -- shunt/quicktype.yue:491
-                                                                    if number then -- shunt/quicktype.yue:491
-                                                                      ty, value, bytes_consumed = T_NUMBER, (assert(tonumber(number))), #number -- shunt/quicktype.yue:492
-                                                                    else -- shunt/quicktype.yue:493
-                                                                      number = type_spec:match('^%-?[0-9]+', self.index) -- shunt/quicktype.yue:493
-                                                                      if number then -- shunt/quicktype.yue:493
-                                                                        ty, value, bytes_consumed = T_NUMBER, (assert(tonumber(number))), #number -- shunt/quicktype.yue:494
-                                                                      else -- shunt/quicktype.yue:495
-                                                                        do -- shunt/quicktype.yue:495
-                                                                          local string = type_spec:match([[^"([^"]*)"]], self.index) -- shunt/quicktype.yue:495
-                                                                          if string then -- shunt/quicktype.yue:495
-                                                                            ty, value, bytes_consumed = T_STRING, string, #string + 2 -- shunt/quicktype.yue:496
-                                                                          else -- shunt/quicktype.yue:498
-                                                                            ty, value, bytes_consumed = error("unexpected character '" .. tostring(type_spec:sub(self.index, self.index)) .. "' in type spec '" .. tostring(type_spec) .. "'") -- shunt/quicktype.yue:498
-                                                                          end -- shunt/quicktype.yue:495
-                                                                        end -- shunt/quicktype.yue:495
-                                                                      end -- shunt/quicktype.yue:493
-                                                                    end -- shunt/quicktype.yue:491
-                                                                  end -- shunt/quicktype.yue:491
-                                                                end -- shunt/quicktype.yue:489
-                                                              end -- shunt/quicktype.yue:489
-                                                            end -- shunt/quicktype.yue:487
-                                                          end -- shunt/quicktype.yue:487
-                                                        end -- shunt/quicktype.yue:485
-                                                      end -- shunt/quicktype.yue:483
-                                                    end -- shunt/quicktype.yue:481
-                                                  end -- shunt/quicktype.yue:479
-                                                end -- shunt/quicktype.yue:477
-                                              end -- shunt/quicktype.yue:475
-                                            end -- shunt/quicktype.yue:473
-                                          end -- shunt/quicktype.yue:471
-                                        end -- shunt/quicktype.yue:469
-                                      end -- shunt/quicktype.yue:467
-                                    end -- shunt/quicktype.yue:465
-                                  end -- shunt/quicktype.yue:463
-                                end -- shunt/quicktype.yue:461
-                              end -- shunt/quicktype.yue:459
-                            end -- shunt/quicktype.yue:457
-                          end -- shunt/quicktype.yue:455
-                        end -- shunt/quicktype.yue:453
-                      end -- shunt/quicktype.yue:451
-                    end -- shunt/quicktype.yue:449
-                  end -- shunt/quicktype.yue:447
-                end -- shunt/quicktype.yue:447
-              end -- shunt/quicktype.yue:445
-            end -- shunt/quicktype.yue:445
-            self.index = self.index + bytes_consumed -- shunt/quicktype.yue:500
-            if not (ty ~= nil) then -- shunt/quicktype.yue:501
-              _continue_0 = true -- shunt/quicktype.yue:502
-              break -- shunt/quicktype.yue:502
-            end -- shunt/quicktype.yue:501
-            coroutine.yield(Symbol(ty, value)) -- shunt/quicktype.yue:503
-            _continue_0 = true -- shunt/quicktype.yue:445
-          until true -- shunt/quicktype.yue:503
-          if not _continue_0 then -- shunt/quicktype.yue:503
-            break -- shunt/quicktype.yue:503
-          end -- shunt/quicktype.yue:503
-        end -- shunt/quicktype.yue:503
-      end) -- shunt/quicktype.yue:443
-    end, -- shunt/quicktype.yue:438
-    __base = _base_0, -- shunt/quicktype.yue:438
-    __name = "Lexer" -- shunt/quicktype.yue:438
-  }, { -- shunt/quicktype.yue:438
-    __index = _base_0, -- shunt/quicktype.yue:438
-    __call = function(cls, ...) -- shunt/quicktype.yue:438
-      local _self_0 = setmetatable({ }, _base_0) -- shunt/quicktype.yue:438
-      cls.__init(_self_0, ...) -- shunt/quicktype.yue:438
-      return _self_0 -- shunt/quicktype.yue:438
-    end -- shunt/quicktype.yue:438
-  }) -- shunt/quicktype.yue:438
-  _base_0.__class = _class_0 -- shunt/quicktype.yue:438
-  Lexer = _class_0 -- shunt/quicktype.yue:438
-end -- shunt/quicktype.yue:537
-do -- shunt/quicktype.yue:539
-  local _class_0 -- shunt/quicktype.yue:539
-  local _base_0 = { } -- shunt/quicktype.yue:539
-  if _base_0.__index == nil then -- shunt/quicktype.yue:539
-    _base_0.__index = _base_0 -- shunt/quicktype.yue:539
-  end -- shunt/quicktype.yue:540
-  _class_0 = setmetatable({ -- shunt/quicktype.yue:539
-    __init = function(self, index, peeked) -- shunt/quicktype.yue:540
-      self.index = index -- shunt/quicktype.yue:540
-      self.peeked = peeked -- shunt/quicktype.yue:540
-    end, -- shunt/quicktype.yue:539
-    __base = _base_0, -- shunt/quicktype.yue:539
-    __name = "Checkpoint" -- shunt/quicktype.yue:539
-  }, { -- shunt/quicktype.yue:539
-    __index = _base_0, -- shunt/quicktype.yue:539
-    __call = function(cls, ...) -- shunt/quicktype.yue:539
-      local _self_0 = setmetatable({ }, _base_0) -- shunt/quicktype.yue:539
-      cls.__init(_self_0, ...) -- shunt/quicktype.yue:539
-      return _self_0 -- shunt/quicktype.yue:539
-    end -- shunt/quicktype.yue:539
-  }) -- shunt/quicktype.yue:539
-  _base_0.__class = _class_0 -- shunt/quicktype.yue:539
-  Checkpoint = _class_0 -- shunt/quicktype.yue:539
-end -- shunt/quicktype.yue:540
-do -- shunt/quicktype.yue:542
-  local _class_0 -- shunt/quicktype.yue:542
-  local _base_0 = { -- shunt/quicktype.yue:542
-    __tostring = function(self) -- shunt/quicktype.yue:545
-      if (self.value ~= nil) then -- shunt/quicktype.yue:546
-        return tostring(self.type) .. "(" .. tostring(self.value) .. ")" -- shunt/quicktype.yue:547
-      else -- shunt/quicktype.yue:549
-        return tostring(self.type) -- shunt/quicktype.yue:549
-      end -- shunt/quicktype.yue:546
-    end -- shunt/quicktype.yue:542
-  } -- shunt/quicktype.yue:542
-  if _base_0.__index == nil then -- shunt/quicktype.yue:542
-    _base_0.__index = _base_0 -- shunt/quicktype.yue:542
-  end -- shunt/quicktype.yue:549
-  _class_0 = setmetatable({ -- shunt/quicktype.yue:542
-    __init = function(self, type, value) -- shunt/quicktype.yue:543
-      if value == nil then -- shunt/quicktype.yue:543
-        value = nil -- shunt/quicktype.yue:543
+end -- shunt/quicktype.yue:439
+T_PAREN_OPEN = setmetatable({ }, { -- shunt/quicktype.yue:442
+  __tostring = function(self) -- shunt/quicktype.yue:442
+    return "'('" -- shunt/quicktype.yue:442
+  end -- shunt/quicktype.yue:442
+}) -- shunt/quicktype.yue:442
+T_PAREN_CLOSE = setmetatable({ }, { -- shunt/quicktype.yue:443
+  __tostring = function(self) -- shunt/quicktype.yue:443
+    return "')'" -- shunt/quicktype.yue:443
+  end -- shunt/quicktype.yue:443
+}) -- shunt/quicktype.yue:443
+T_BRACE_OPEN = setmetatable({ }, { -- shunt/quicktype.yue:444
+  __tostring = function(self) -- shunt/quicktype.yue:444
+    return "'{'" -- shunt/quicktype.yue:444
+  end -- shunt/quicktype.yue:444
+}) -- shunt/quicktype.yue:444
+T_BRACE_CLOSE = setmetatable({ }, { -- shunt/quicktype.yue:445
+  __tostring = function(self) -- shunt/quicktype.yue:445
+    return "'}'" -- shunt/quicktype.yue:445
+  end -- shunt/quicktype.yue:445
+}) -- shunt/quicktype.yue:445
+T_BRACKET_OPEN = setmetatable({ }, { -- shunt/quicktype.yue:446
+  __tostring = function(self) -- shunt/quicktype.yue:446
+    return "'['" -- shunt/quicktype.yue:446
+  end -- shunt/quicktype.yue:446
+}) -- shunt/quicktype.yue:446
+T_BRACKET_CLOSE = setmetatable({ }, { -- shunt/quicktype.yue:447
+  __tostring = function(self) -- shunt/quicktype.yue:447
+    return "']'" -- shunt/quicktype.yue:447
+  end -- shunt/quicktype.yue:447
+}) -- shunt/quicktype.yue:447
+T_ANGLE_OPEN = setmetatable({ }, { -- shunt/quicktype.yue:448
+  __tostring = function(self) -- shunt/quicktype.yue:448
+    return '"<"' -- shunt/quicktype.yue:448
+  end -- shunt/quicktype.yue:448
+}) -- shunt/quicktype.yue:448
+T_ANGLE_CLOSE = setmetatable({ }, { -- shunt/quicktype.yue:449
+  __tostring = function(self) -- shunt/quicktype.yue:449
+    return '">"' -- shunt/quicktype.yue:449
+  end -- shunt/quicktype.yue:449
+}) -- shunt/quicktype.yue:449
+T_TILDE = setmetatable({ }, { -- shunt/quicktype.yue:450
+  __tostring = function(self) -- shunt/quicktype.yue:450
+    return '~' -- shunt/quicktype.yue:450
+  end -- shunt/quicktype.yue:450
+}) -- shunt/quicktype.yue:450
+T_COMMA = setmetatable({ }, { -- shunt/quicktype.yue:451
+  __tostring = function(self) -- shunt/quicktype.yue:451
+    return "','" -- shunt/quicktype.yue:451
+  end -- shunt/quicktype.yue:451
+}) -- shunt/quicktype.yue:451
+T_COLON = setmetatable({ }, { -- shunt/quicktype.yue:452
+  __tostring = function(self) -- shunt/quicktype.yue:452
+    return "':'" -- shunt/quicktype.yue:452
+  end -- shunt/quicktype.yue:452
+}) -- shunt/quicktype.yue:452
+T_BANG = setmetatable({ }, { -- shunt/quicktype.yue:453
+  __tostring = function(self) -- shunt/quicktype.yue:453
+    return "'!'" -- shunt/quicktype.yue:453
+  end -- shunt/quicktype.yue:453
+}) -- shunt/quicktype.yue:453
+T_THIN_ARROW = setmetatable({ }, { -- shunt/quicktype.yue:454
+  __tostring = function(self) -- shunt/quicktype.yue:454
+    return "'->'" -- shunt/quicktype.yue:454
+  end -- shunt/quicktype.yue:454
+}) -- shunt/quicktype.yue:454
+T_FAT_ARROW = setmetatable({ }, { -- shunt/quicktype.yue:455
+  __tostring = function(self) -- shunt/quicktype.yue:455
+    return "'=>'" -- shunt/quicktype.yue:455
+  end -- shunt/quicktype.yue:455
+}) -- shunt/quicktype.yue:455
+T_DOTDOTDOT = setmetatable({ }, { -- shunt/quicktype.yue:456
+  __tostring = function(self) -- shunt/quicktype.yue:456
+    return "'...'" -- shunt/quicktype.yue:456
+  end -- shunt/quicktype.yue:456
+}) -- shunt/quicktype.yue:456
+T_QUESTION = setmetatable({ }, { -- shunt/quicktype.yue:457
+  __tostring = function(self) -- shunt/quicktype.yue:457
+    return "'?'" -- shunt/quicktype.yue:457
+  end -- shunt/quicktype.yue:457
+}) -- shunt/quicktype.yue:457
+T_PLUS = setmetatable({ }, { -- shunt/quicktype.yue:458
+  __tostring = function(self) -- shunt/quicktype.yue:458
+    return "'+'" -- shunt/quicktype.yue:458
+  end -- shunt/quicktype.yue:458
+}) -- shunt/quicktype.yue:458
+T_PIPE = setmetatable({ }, { -- shunt/quicktype.yue:459
+  __tostring = function(self) -- shunt/quicktype.yue:459
+    return "'|'" -- shunt/quicktype.yue:459
+  end -- shunt/quicktype.yue:459
+}) -- shunt/quicktype.yue:459
+T_NAME = setmetatable({ }, { -- shunt/quicktype.yue:460
+  __tostring = function(self) -- shunt/quicktype.yue:460
+    return "<name>" -- shunt/quicktype.yue:460
+  end -- shunt/quicktype.yue:460
+}) -- shunt/quicktype.yue:460
+T_PREFIXED_NAME = setmetatable({ }, { -- shunt/quicktype.yue:461
+  __tostring = function(self) -- shunt/quicktype.yue:461
+    return "<prefixed-name>" -- shunt/quicktype.yue:461
+  end -- shunt/quicktype.yue:461
+}) -- shunt/quicktype.yue:461
+T_BOOLEAN = setmetatable({ }, { -- shunt/quicktype.yue:462
+  __tostring = function(self) -- shunt/quicktype.yue:462
+    return "<boolean>" -- shunt/quicktype.yue:462
+  end -- shunt/quicktype.yue:462
+}) -- shunt/quicktype.yue:462
+T_NUMBER = setmetatable({ }, { -- shunt/quicktype.yue:463
+  __tostring = function(self) -- shunt/quicktype.yue:463
+    return "<number>" -- shunt/quicktype.yue:463
+  end -- shunt/quicktype.yue:463
+}) -- shunt/quicktype.yue:463
+T_STRING = setmetatable({ }, { -- shunt/quicktype.yue:464
+  __tostring = function(self) -- shunt/quicktype.yue:464
+    return "<string>" -- shunt/quicktype.yue:464
+  end -- shunt/quicktype.yue:464
+}) -- shunt/quicktype.yue:464
+do -- shunt/quicktype.yue:466
+  local _class_0 -- shunt/quicktype.yue:466
+  local _base_0 = { -- shunt/quicktype.yue:466
+    peek = function(self) -- shunt/quicktype.yue:535
+      if self.done then -- shunt/quicktype.yue:536
+        return nil -- shunt/quicktype.yue:537
+      end -- shunt/quicktype.yue:536
+      if (self.peeked ~= nil) then -- shunt/quicktype.yue:539
+        return self.peeked -- shunt/quicktype.yue:540
+      end -- shunt/quicktype.yue:539
+      self.peeked = self:tokens() -- shunt/quicktype.yue:542
+      if not self.peeked then -- shunt/quicktype.yue:543
+        self.done = true -- shunt/quicktype.yue:544
       end -- shunt/quicktype.yue:543
-      self.type = type -- shunt/quicktype.yue:543
-      self.value = value -- shunt/quicktype.yue:543
-    end, -- shunt/quicktype.yue:542
-    __base = _base_0, -- shunt/quicktype.yue:542
-    __name = "Symbol" -- shunt/quicktype.yue:542
-  }, { -- shunt/quicktype.yue:542
-    __index = _base_0, -- shunt/quicktype.yue:542
-    __call = function(cls, ...) -- shunt/quicktype.yue:542
-      local _self_0 = setmetatable({ }, _base_0) -- shunt/quicktype.yue:542
-      cls.__init(_self_0, ...) -- shunt/quicktype.yue:542
-      return _self_0 -- shunt/quicktype.yue:542
-    end -- shunt/quicktype.yue:542
-  }) -- shunt/quicktype.yue:542
-  _base_0.__class = _class_0 -- shunt/quicktype.yue:542
-  Symbol = _class_0 -- shunt/quicktype.yue:542
-end -- shunt/quicktype.yue:549
-_module_0["Symbol"] = Symbol -- shunt/quicktype.yue:542
-known_primitives = { -- shunt/quicktype.yue:552
-  ["nil"] = true, -- shunt/quicktype.yue:552
-  boolean = true, -- shunt/quicktype.yue:553
-  number = true, -- shunt/quicktype.yue:554
-  string = true, -- shunt/quicktype.yue:555
-  ["function"] = true, -- shunt/quicktype.yue:556
-  table = true, -- shunt/quicktype.yue:557
-  thread = true, -- shunt/quicktype.yue:558
-  userdata = true -- shunt/quicktype.yue:559
-} -- shunt/quicktype.yue:551
-named_type = function(name) -- shunt/quicktype.yue:561
-  if (known_primitives[name] ~= nil) then -- shunt/quicktype.yue:562
-    return Primitive(name) -- shunt/quicktype.yue:563
-  else -- shunt/quicktype.yue:564
-    if name == 'any' then -- shunt/quicktype.yue:564
-      return Any() -- shunt/quicktype.yue:565
-    else -- shunt/quicktype.yue:566
-      if name == 'some' then -- shunt/quicktype.yue:566
-        return Some() -- shunt/quicktype.yue:567
-      else -- shunt/quicktype.yue:568
-        if not name:match('^[A-Z]') then -- shunt/quicktype.yue:568
-          return error("cannot use '" .. tostring(name) .. "' as user type name: name must start with an uppercase letter") -- shunt/quicktype.yue:569
-        else -- shunt/quicktype.yue:571
-          return UserType(name) -- shunt/quicktype.yue:571
-        end -- shunt/quicktype.yue:568
-      end -- shunt/quicktype.yue:566
-    end -- shunt/quicktype.yue:564
-  end -- shunt/quicktype.yue:562
-end -- shunt/quicktype.yue:561
-prefixed_named_type = function(prefixed_name) -- shunt/quicktype.yue:573
-  local prefix, name = prefixed_name:match('^([^.]+)%.([^.]*)$') -- shunt/quicktype.yue:574
-  if not (prefix ~= nil) or not (name ~= nil) then -- shunt/quicktype.yue:575
-    error("internal error: cannot parse prefixed name '" .. tostring(prefixed_name) .. "'") -- shunt/quicktype.yue:576
-  end -- shunt/quicktype.yue:575
-  if (known_primitives[prefix] ~= nil) then -- shunt/quicktype.yue:577
-    error("cannot use '" .. tostring(prefix) .. "' as type-prefix: must not be a primitive") -- shunt/quicktype.yue:578
-  end -- shunt/quicktype.yue:577
-  if not prefix:match('^[a-z]') then -- shunt/quicktype.yue:579
-    error("cannot use '" .. tostring(prefix) .. "' as type-prefix: must start with a lowercase letter") -- shunt/quicktype.yue:580
+      return self.peeked -- shunt/quicktype.yue:545
+    end, -- shunt/quicktype.yue:547
+    next = function(self) -- shunt/quicktype.yue:547
+      if self.done then -- shunt/quicktype.yue:548
+        return nil -- shunt/quicktype.yue:549
+      end -- shunt/quicktype.yue:548
+      if (self.peeked ~= nil) then -- shunt/quicktype.yue:551
+        local peeked = self.peeked -- shunt/quicktype.yue:552
+        self.peeked = nil -- shunt/quicktype.yue:553
+        return peeked -- shunt/quicktype.yue:554
+      else -- shunt/quicktype.yue:556
+        local ret = self:tokens() -- shunt/quicktype.yue:556
+        if not (ret ~= nil) then -- shunt/quicktype.yue:557
+          self.done = true -- shunt/quicktype.yue:558
+        end -- shunt/quicktype.yue:557
+        return ret -- shunt/quicktype.yue:559
+      end -- shunt/quicktype.yue:551
+    end, -- shunt/quicktype.yue:561
+    checkpoint = function(self) -- shunt/quicktype.yue:561
+      return Checkpoint(self.index, self.peeked) -- shunt/quicktype.yue:562
+    end, -- shunt/quicktype.yue:564
+    restore = function(self, checkpoint) -- shunt/quicktype.yue:564
+      local index, peeked = checkpoint.index, checkpoint.peeked -- shunt/quicktype.yue:565
+      self.index = index -- shunt/quicktype.yue:566
+      self.peeked = peeked -- shunt/quicktype.yue:567
+    end -- shunt/quicktype.yue:466
+  } -- shunt/quicktype.yue:466
+  if _base_0.__index == nil then -- shunt/quicktype.yue:466
+    _base_0.__index = _base_0 -- shunt/quicktype.yue:466
+  end -- shunt/quicktype.yue:567
+  _class_0 = setmetatable({ -- shunt/quicktype.yue:466
+    __init = function(self, type_spec) -- shunt/quicktype.yue:467
+      self.type_spec = type_spec -- shunt/quicktype.yue:467
+      self.index = 1 -- shunt/quicktype.yue:468
+      self.done = false -- shunt/quicktype.yue:469
+      self.peeked = nil -- shunt/quicktype.yue:470
+      self.tokens = coroutine.wrap(function() -- shunt/quicktype.yue:471
+        while self.index <= #type_spec do -- shunt/quicktype.yue:472
+          local _continue_0 = false -- shunt/quicktype.yue:473
+          repeat -- shunt/quicktype.yue:473
+            local ty, value, bytes_consumed -- shunt/quicktype.yue:473
+            do -- shunt/quicktype.yue:473
+              local match = type_spec:match('^%-%-[^\r\n]*', self.index) -- shunt/quicktype.yue:473
+              if match then -- shunt/quicktype.yue:473
+                ty, value, bytes_consumed = nil, nil, #match -- shunt/quicktype.yue:474
+              else -- shunt/quicktype.yue:475
+                do -- shunt/quicktype.yue:475
+                  local whitespace = type_spec:match('^[ \t\r\n]+', self.index) -- shunt/quicktype.yue:475
+                  if whitespace then -- shunt/quicktype.yue:475
+                    ty, value, bytes_consumed = nil, nil, #whitespace -- shunt/quicktype.yue:476
+                  else -- shunt/quicktype.yue:477
+                    match = type_spec:match('^%(', self.index) -- shunt/quicktype.yue:477
+                    if match then -- shunt/quicktype.yue:477
+                      ty, value, bytes_consumed = T_PAREN_OPEN, nil, #match -- shunt/quicktype.yue:478
+                    else -- shunt/quicktype.yue:479
+                      match = type_spec:match('^%)', self.index) -- shunt/quicktype.yue:479
+                      if match then -- shunt/quicktype.yue:479
+                        ty, value, bytes_consumed = T_PAREN_CLOSE, nil, #match -- shunt/quicktype.yue:480
+                      else -- shunt/quicktype.yue:481
+                        match = type_spec:match('^,', self.index) -- shunt/quicktype.yue:481
+                        if match then -- shunt/quicktype.yue:481
+                          ty, value, bytes_consumed = T_COMMA, nil, #match -- shunt/quicktype.yue:482
+                        else -- shunt/quicktype.yue:483
+                          match = type_spec:match('^{', self.index) -- shunt/quicktype.yue:483
+                          if match then -- shunt/quicktype.yue:483
+                            ty, value, bytes_consumed = T_BRACE_OPEN, nil, #match -- shunt/quicktype.yue:484
+                          else -- shunt/quicktype.yue:485
+                            match = type_spec:match('^}', self.index) -- shunt/quicktype.yue:485
+                            if match then -- shunt/quicktype.yue:485
+                              ty, value, bytes_consumed = T_BRACE_CLOSE, nil, #match -- shunt/quicktype.yue:486
+                            else -- shunt/quicktype.yue:487
+                              match = type_spec:match('^%[', self.index) -- shunt/quicktype.yue:487
+                              if match then -- shunt/quicktype.yue:487
+                                ty, value, bytes_consumed = T_BRACKET_OPEN, nil, #match -- shunt/quicktype.yue:488
+                              else -- shunt/quicktype.yue:489
+                                match = type_spec:match('^]', self.index) -- shunt/quicktype.yue:489
+                                if match then -- shunt/quicktype.yue:489
+                                  ty, value, bytes_consumed = T_BRACKET_CLOSE, nil, #match -- shunt/quicktype.yue:490
+                                else -- shunt/quicktype.yue:491
+                                  match = type_spec:match('^:', self.index) -- shunt/quicktype.yue:491
+                                  if match then -- shunt/quicktype.yue:491
+                                    ty, value, bytes_consumed = T_COLON, nil, #match -- shunt/quicktype.yue:492
+                                  else -- shunt/quicktype.yue:493
+                                    match = type_spec:match('^!', self.index) -- shunt/quicktype.yue:493
+                                    if match then -- shunt/quicktype.yue:493
+                                      ty, value, bytes_consumed = T_BANG, nil, #match -- shunt/quicktype.yue:494
+                                    else -- shunt/quicktype.yue:495
+                                      match = type_spec:match('^->', self.index) -- shunt/quicktype.yue:495
+                                      if match then -- shunt/quicktype.yue:495
+                                        ty, value, bytes_consumed = T_THIN_ARROW, nil, #match -- shunt/quicktype.yue:496
+                                      else -- shunt/quicktype.yue:497
+                                        match = type_spec:match('^=>', self.index) -- shunt/quicktype.yue:497
+                                        if match then -- shunt/quicktype.yue:497
+                                          ty, value, bytes_consumed = T_FAT_ARROW, nil, #match -- shunt/quicktype.yue:498
+                                        else -- shunt/quicktype.yue:499
+                                          match = type_spec:match('^%.%.%.', self.index) -- shunt/quicktype.yue:499
+                                          if match then -- shunt/quicktype.yue:499
+                                            ty, value, bytes_consumed = T_DOTDOTDOT, nil, #match -- shunt/quicktype.yue:500
+                                          else -- shunt/quicktype.yue:501
+                                            match = type_spec:match('^<', self.index) -- shunt/quicktype.yue:501
+                                            if match then -- shunt/quicktype.yue:501
+                                              ty, value, bytes_consumed = T_ANGLE_OPEN, nil, #match -- shunt/quicktype.yue:502
+                                            else -- shunt/quicktype.yue:503
+                                              match = type_spec:match('^>', self.index) -- shunt/quicktype.yue:503
+                                              if match then -- shunt/quicktype.yue:503
+                                                ty, value, bytes_consumed = T_ANGLE_CLOSE, nil, #match -- shunt/quicktype.yue:504
+                                              else -- shunt/quicktype.yue:505
+                                                match = type_spec:match('^?', self.index) -- shunt/quicktype.yue:505
+                                                if match then -- shunt/quicktype.yue:505
+                                                  ty, value, bytes_consumed = T_QUESTION, nil, #match -- shunt/quicktype.yue:506
+                                                else -- shunt/quicktype.yue:507
+                                                  match = type_spec:match('^+', self.index) -- shunt/quicktype.yue:507
+                                                  if match then -- shunt/quicktype.yue:507
+                                                    ty, value, bytes_consumed = T_PLUS, nil, #match -- shunt/quicktype.yue:508
+                                                  else -- shunt/quicktype.yue:509
+                                                    match = type_spec:match('^|', self.index) -- shunt/quicktype.yue:509
+                                                    if match then -- shunt/quicktype.yue:509
+                                                      ty, value, bytes_consumed = T_PIPE, nil, #match -- shunt/quicktype.yue:510
+                                                    else -- shunt/quicktype.yue:511
+                                                      match = type_spec:match('^true', self.index) -- shunt/quicktype.yue:511
+                                                      if match then -- shunt/quicktype.yue:511
+                                                        ty, value, bytes_consumed = T_BOOLEAN, true, #match -- shunt/quicktype.yue:512
+                                                      else -- shunt/quicktype.yue:513
+                                                        match = type_spec:match('^false', self.index) -- shunt/quicktype.yue:513
+                                                        if match then -- shunt/quicktype.yue:513
+                                                          ty, value, bytes_consumed = T_BOOLEAN, false, #match -- shunt/quicktype.yue:514
+                                                        else -- shunt/quicktype.yue:515
+                                                          do -- shunt/quicktype.yue:515
+                                                            local prefixed_name = type_spec:match('^([a-zA-Z_][a-zA-Z0-9_]*[a-zA-Z0-9_]%.[a-zA-Z_][a-zA-Z0-9_]*[a-zA-Z0-9_])', self.index) -- shunt/quicktype.yue:515
+                                                            if prefixed_name then -- shunt/quicktype.yue:515
+                                                              ty, value, bytes_consumed = T_PREFIXED_NAME, prefixed_name, #prefixed_name -- shunt/quicktype.yue:516
+                                                            else -- shunt/quicktype.yue:517
+                                                              do -- shunt/quicktype.yue:517
+                                                                local name = type_spec:match('^([a-zA-Z_][a-zA-Z0-9_-]*[a-zA-Z0-9_])', self.index) -- shunt/quicktype.yue:517
+                                                                if name then -- shunt/quicktype.yue:517
+                                                                  ty, value, bytes_consumed = T_NAME, name, #name -- shunt/quicktype.yue:518
+                                                                else -- shunt/quicktype.yue:519
+                                                                  do -- shunt/quicktype.yue:519
+                                                                    local number = type_spec:match('^%-?[0-9]*%.[0-9]+', self.index) -- shunt/quicktype.yue:519
+                                                                    if number then -- shunt/quicktype.yue:519
+                                                                      ty, value, bytes_consumed = T_NUMBER, (assert(tonumber(number))), #number -- shunt/quicktype.yue:520
+                                                                    else -- shunt/quicktype.yue:521
+                                                                      number = type_spec:match('^%-?[0-9]+', self.index) -- shunt/quicktype.yue:521
+                                                                      if number then -- shunt/quicktype.yue:521
+                                                                        ty, value, bytes_consumed = T_NUMBER, (assert(tonumber(number))), #number -- shunt/quicktype.yue:522
+                                                                      else -- shunt/quicktype.yue:523
+                                                                        do -- shunt/quicktype.yue:523
+                                                                          local string = type_spec:match([[^"([^"]*)"]], self.index) -- shunt/quicktype.yue:523
+                                                                          if string then -- shunt/quicktype.yue:523
+                                                                            ty, value, bytes_consumed = T_STRING, string, #string + 2 -- shunt/quicktype.yue:524
+                                                                          else -- shunt/quicktype.yue:525
+                                                                            match = type_spec:match('^~', self.index) -- shunt/quicktype.yue:525
+                                                                            if match then -- shunt/quicktype.yue:525
+                                                                              ty, value, bytes_consumed = T_TILDE, nil, #match -- shunt/quicktype.yue:526
+                                                                            else -- shunt/quicktype.yue:528
+                                                                              ty, value, bytes_consumed = error("unexpected character '" .. tostring(type_spec:sub(self.index, self.index)) .. "' in type spec '" .. tostring(type_spec) .. "'") -- shunt/quicktype.yue:528
+                                                                            end -- shunt/quicktype.yue:525
+                                                                          end -- shunt/quicktype.yue:523
+                                                                        end -- shunt/quicktype.yue:523
+                                                                      end -- shunt/quicktype.yue:521
+                                                                    end -- shunt/quicktype.yue:519
+                                                                  end -- shunt/quicktype.yue:519
+                                                                end -- shunt/quicktype.yue:517
+                                                              end -- shunt/quicktype.yue:517
+                                                            end -- shunt/quicktype.yue:515
+                                                          end -- shunt/quicktype.yue:515
+                                                        end -- shunt/quicktype.yue:513
+                                                      end -- shunt/quicktype.yue:511
+                                                    end -- shunt/quicktype.yue:509
+                                                  end -- shunt/quicktype.yue:507
+                                                end -- shunt/quicktype.yue:505
+                                              end -- shunt/quicktype.yue:503
+                                            end -- shunt/quicktype.yue:501
+                                          end -- shunt/quicktype.yue:499
+                                        end -- shunt/quicktype.yue:497
+                                      end -- shunt/quicktype.yue:495
+                                    end -- shunt/quicktype.yue:493
+                                  end -- shunt/quicktype.yue:491
+                                end -- shunt/quicktype.yue:489
+                              end -- shunt/quicktype.yue:487
+                            end -- shunt/quicktype.yue:485
+                          end -- shunt/quicktype.yue:483
+                        end -- shunt/quicktype.yue:481
+                      end -- shunt/quicktype.yue:479
+                    end -- shunt/quicktype.yue:477
+                  end -- shunt/quicktype.yue:475
+                end -- shunt/quicktype.yue:475
+              end -- shunt/quicktype.yue:473
+            end -- shunt/quicktype.yue:473
+            self.index = self.index + bytes_consumed -- shunt/quicktype.yue:530
+            if not (ty ~= nil) then -- shunt/quicktype.yue:531
+              _continue_0 = true -- shunt/quicktype.yue:532
+              break -- shunt/quicktype.yue:532
+            end -- shunt/quicktype.yue:531
+            coroutine.yield(Symbol(ty, value)) -- shunt/quicktype.yue:533
+            _continue_0 = true -- shunt/quicktype.yue:473
+          until true -- shunt/quicktype.yue:533
+          if not _continue_0 then -- shunt/quicktype.yue:533
+            break -- shunt/quicktype.yue:533
+          end -- shunt/quicktype.yue:533
+        end -- shunt/quicktype.yue:533
+      end) -- shunt/quicktype.yue:471
+    end, -- shunt/quicktype.yue:466
+    __base = _base_0, -- shunt/quicktype.yue:466
+    __name = "Lexer" -- shunt/quicktype.yue:466
+  }, { -- shunt/quicktype.yue:466
+    __index = _base_0, -- shunt/quicktype.yue:466
+    __call = function(cls, ...) -- shunt/quicktype.yue:466
+      local _self_0 = setmetatable({ }, _base_0) -- shunt/quicktype.yue:466
+      cls.__init(_self_0, ...) -- shunt/quicktype.yue:466
+      return _self_0 -- shunt/quicktype.yue:466
+    end -- shunt/quicktype.yue:466
+  }) -- shunt/quicktype.yue:466
+  _base_0.__class = _class_0 -- shunt/quicktype.yue:466
+  Lexer = _class_0 -- shunt/quicktype.yue:466
+end -- shunt/quicktype.yue:567
+do -- shunt/quicktype.yue:569
+  local _class_0 -- shunt/quicktype.yue:569
+  local _base_0 = { } -- shunt/quicktype.yue:569
+  if _base_0.__index == nil then -- shunt/quicktype.yue:569
+    _base_0.__index = _base_0 -- shunt/quicktype.yue:569
+  end -- shunt/quicktype.yue:570
+  _class_0 = setmetatable({ -- shunt/quicktype.yue:569
+    __init = function(self, index, peeked) -- shunt/quicktype.yue:570
+      self.index = index -- shunt/quicktype.yue:570
+      self.peeked = peeked -- shunt/quicktype.yue:570
+    end, -- shunt/quicktype.yue:569
+    __base = _base_0, -- shunt/quicktype.yue:569
+    __name = "Checkpoint" -- shunt/quicktype.yue:569
+  }, { -- shunt/quicktype.yue:569
+    __index = _base_0, -- shunt/quicktype.yue:569
+    __call = function(cls, ...) -- shunt/quicktype.yue:569
+      local _self_0 = setmetatable({ }, _base_0) -- shunt/quicktype.yue:569
+      cls.__init(_self_0, ...) -- shunt/quicktype.yue:569
+      return _self_0 -- shunt/quicktype.yue:569
+    end -- shunt/quicktype.yue:569
+  }) -- shunt/quicktype.yue:569
+  _base_0.__class = _class_0 -- shunt/quicktype.yue:569
+  Checkpoint = _class_0 -- shunt/quicktype.yue:569
+end -- shunt/quicktype.yue:570
+do -- shunt/quicktype.yue:572
+  local _class_0 -- shunt/quicktype.yue:572
+  local _base_0 = { -- shunt/quicktype.yue:572
+    __tostring = function(self) -- shunt/quicktype.yue:575
+      if (self.value ~= nil) then -- shunt/quicktype.yue:576
+        return tostring(self.type) .. "(" .. tostring(self.value) .. ")" -- shunt/quicktype.yue:577
+      else -- shunt/quicktype.yue:579
+        return tostring(self.type) -- shunt/quicktype.yue:579
+      end -- shunt/quicktype.yue:576
+    end -- shunt/quicktype.yue:572
+  } -- shunt/quicktype.yue:572
+  if _base_0.__index == nil then -- shunt/quicktype.yue:572
+    _base_0.__index = _base_0 -- shunt/quicktype.yue:572
   end -- shunt/quicktype.yue:579
-  if not name:match('^[A-Z]') then -- shunt/quicktype.yue:581
-    error("cannot use '" .. tostring(name) .. "' as disambiguated type name: must start with an uppercase letter") -- shunt/quicktype.yue:582
-  end -- shunt/quicktype.yue:581
-  return UserType(prefixed_name) -- shunt/quicktype.yue:583
-end -- shunt/quicktype.yue:573
-do -- shunt/quicktype.yue:585
-  local _class_0 -- shunt/quicktype.yue:585
-  local _base_0 = { -- shunt/quicktype.yue:585
-    is = function(self, ty) -- shunt/quicktype.yue:586
-      return getmetatable(self).__class.__name == ty.__base.__class.__name -- shunt/quicktype.yue:587
-    end -- shunt/quicktype.yue:585
-  } -- shunt/quicktype.yue:585
-  if _base_0.__index == nil then -- shunt/quicktype.yue:585
-    _base_0.__index = _base_0 -- shunt/quicktype.yue:585
-  end -- shunt/quicktype.yue:587
-  _class_0 = setmetatable({ -- shunt/quicktype.yue:585
-    __init = function() end, -- shunt/quicktype.yue:585
-    __base = _base_0, -- shunt/quicktype.yue:585
-    __name = "Is" -- shunt/quicktype.yue:585
-  }, { -- shunt/quicktype.yue:585
-    __index = _base_0, -- shunt/quicktype.yue:585
-    __call = function(cls, ...) -- shunt/quicktype.yue:585
-      local _self_0 = setmetatable({ }, _base_0) -- shunt/quicktype.yue:585
-      cls.__init(_self_0, ...) -- shunt/quicktype.yue:585
-      return _self_0 -- shunt/quicktype.yue:585
-    end -- shunt/quicktype.yue:585
-  }) -- shunt/quicktype.yue:585
-  _base_0.__class = _class_0 -- shunt/quicktype.yue:585
-  Is = _class_0 -- shunt/quicktype.yue:585
-end -- shunt/quicktype.yue:587
-do -- shunt/quicktype.yue:589
-  local _class_0 -- shunt/quicktype.yue:589
-  local _base_0 = { -- shunt/quicktype.yue:589
-    __tostring = function(self) -- shunt/quicktype.yue:592
-      return self.name -- shunt/quicktype.yue:592
-    end, -- shunt/quicktype.yue:594
-    checker = function(self, checker_builder) -- shunt/quicktype.yue:594
-      if checker_builder == nil then -- shunt/quicktype.yue:594
-        checker_builder = CheckerBuilder() -- shunt/quicktype.yue:594
-      end -- shunt/quicktype.yue:594
-      checker_builder:add(C_ASSERT_PRIMITIVE, self.name) -- shunt/quicktype.yue:596
-      return checker_builder -- shunt/quicktype.yue:595
-    end -- shunt/quicktype.yue:589
-  } -- shunt/quicktype.yue:589
-  local _list_0 = { -- shunt/quicktype.yue:589
-    Is -- shunt/quicktype.yue:589
-  } -- shunt/quicktype.yue:589
-  for _index_0 = 1, #_list_0 do -- shunt/quicktype.yue:596
-    local _item_0 = _list_0[_index_0] -- shunt/quicktype.yue:589
-    local _cls_0, _mixin_0 = (_item_0.__base ~= nil), _item_0.__base or _item_0 -- shunt/quicktype.yue:589
-    for _key_0, _val_0 in pairs(_mixin_0) do -- shunt/quicktype.yue:596
-      if _base_0[_key_0] == nil and (not _cls_0 or not _key_0:match("^__")) then -- shunt/quicktype.yue:589
-        _base_0[_key_0] = _val_0 -- shunt/quicktype.yue:589
-      end -- shunt/quicktype.yue:589
-    end -- shunt/quicktype.yue:596
-  end -- shunt/quicktype.yue:596
-  if _base_0.__index == nil then -- shunt/quicktype.yue:589
-    _base_0.__index = _base_0 -- shunt/quicktype.yue:589
-  end -- shunt/quicktype.yue:596
-  _class_0 = setmetatable({ -- shunt/quicktype.yue:589
-    __init = function(self, name) -- shunt/quicktype.yue:590
-      self.name = name -- shunt/quicktype.yue:590
-    end, -- shunt/quicktype.yue:589
-    __base = _base_0, -- shunt/quicktype.yue:589
-    __name = "Primitive" -- shunt/quicktype.yue:589
-  }, { -- shunt/quicktype.yue:589
-    __index = _base_0, -- shunt/quicktype.yue:589
-    __call = function(cls, ...) -- shunt/quicktype.yue:589
-      local _self_0 = setmetatable({ }, _base_0) -- shunt/quicktype.yue:589
-      cls.__init(_self_0, ...) -- shunt/quicktype.yue:589
-      return _self_0 -- shunt/quicktype.yue:589
-    end -- shunt/quicktype.yue:589
-  }) -- shunt/quicktype.yue:589
-  _base_0.__class = _class_0 -- shunt/quicktype.yue:589
-  Primitive = _class_0 -- shunt/quicktype.yue:589
-end -- shunt/quicktype.yue:596
-do -- shunt/quicktype.yue:598
-  local _class_0 -- shunt/quicktype.yue:598
-  local _base_0 = { -- shunt/quicktype.yue:598
-    __tostring = function(self) -- shunt/quicktype.yue:599
-      return 'any' -- shunt/quicktype.yue:600
-    end, -- shunt/quicktype.yue:602
-    checker = function(self, checker_builder) -- shunt/quicktype.yue:602
-      if checker_builder == nil then -- shunt/quicktype.yue:602
-        checker_builder = CheckerBuilder() -- shunt/quicktype.yue:602
-      end -- shunt/quicktype.yue:602
-      return checker_builder -- shunt/quicktype.yue:603
-    end -- shunt/quicktype.yue:598
-  } -- shunt/quicktype.yue:598
-  local _list_0 = { -- shunt/quicktype.yue:598
-    Is -- shunt/quicktype.yue:598
-  } -- shunt/quicktype.yue:598
-  for _index_0 = 1, #_list_0 do -- shunt/quicktype.yue:603
-    local _item_0 = _list_0[_index_0] -- shunt/quicktype.yue:598
-    local _cls_0, _mixin_0 = (_item_0.__base ~= nil), _item_0.__base or _item_0 -- shunt/quicktype.yue:598
-    for _key_0, _val_0 in pairs(_mixin_0) do -- shunt/quicktype.yue:603
-      if _base_0[_key_0] == nil and (not _cls_0 or not _key_0:match("^__")) then -- shunt/quicktype.yue:598
-        _base_0[_key_0] = _val_0 -- shunt/quicktype.yue:598
-      end -- shunt/quicktype.yue:598
-    end -- shunt/quicktype.yue:603
-  end -- shunt/quicktype.yue:603
-  if _base_0.__index == nil then -- shunt/quicktype.yue:598
-    _base_0.__index = _base_0 -- shunt/quicktype.yue:598
-  end -- shunt/quicktype.yue:603
-  _class_0 = setmetatable({ -- shunt/quicktype.yue:598
-    __init = function() end, -- shunt/quicktype.yue:598
-    __base = _base_0, -- shunt/quicktype.yue:598
-    __name = "Any" -- shunt/quicktype.yue:598
-  }, { -- shunt/quicktype.yue:598
-    __index = _base_0, -- shunt/quicktype.yue:598
-    __call = function(cls, ...) -- shunt/quicktype.yue:598
-      local _self_0 = setmetatable({ }, _base_0) -- shunt/quicktype.yue:598
-      cls.__init(_self_0, ...) -- shunt/quicktype.yue:598
-      return _self_0 -- shunt/quicktype.yue:598
-    end -- shunt/quicktype.yue:598
-  }) -- shunt/quicktype.yue:598
-  _base_0.__class = _class_0 -- shunt/quicktype.yue:598
-  Any = _class_0 -- shunt/quicktype.yue:598
+  _class_0 = setmetatable({ -- shunt/quicktype.yue:572
+    __init = function(self, type, value) -- shunt/quicktype.yue:573
+      if value == nil then -- shunt/quicktype.yue:573
+        value = nil -- shunt/quicktype.yue:573
+      end -- shunt/quicktype.yue:573
+      self.type = type -- shunt/quicktype.yue:573
+      self.value = value -- shunt/quicktype.yue:573
+    end, -- shunt/quicktype.yue:572
+    __base = _base_0, -- shunt/quicktype.yue:572
+    __name = "Symbol" -- shunt/quicktype.yue:572
+  }, { -- shunt/quicktype.yue:572
+    __index = _base_0, -- shunt/quicktype.yue:572
+    __call = function(cls, ...) -- shunt/quicktype.yue:572
+      local _self_0 = setmetatable({ }, _base_0) -- shunt/quicktype.yue:572
+      cls.__init(_self_0, ...) -- shunt/quicktype.yue:572
+      return _self_0 -- shunt/quicktype.yue:572
+    end -- shunt/quicktype.yue:572
+  }) -- shunt/quicktype.yue:572
+  _base_0.__class = _class_0 -- shunt/quicktype.yue:572
+  Symbol = _class_0 -- shunt/quicktype.yue:572
+end -- shunt/quicktype.yue:579
+_module_0["Symbol"] = Symbol -- shunt/quicktype.yue:572
+known_primitives = { -- shunt/quicktype.yue:582
+  ["nil"] = true, -- shunt/quicktype.yue:582
+  boolean = true, -- shunt/quicktype.yue:583
+  number = true, -- shunt/quicktype.yue:584
+  string = true, -- shunt/quicktype.yue:585
+  ["function"] = true, -- shunt/quicktype.yue:586
+  table = true, -- shunt/quicktype.yue:587
+  thread = true, -- shunt/quicktype.yue:588
+  userdata = true -- shunt/quicktype.yue:589
+} -- shunt/quicktype.yue:581
+named_type = function(name) -- shunt/quicktype.yue:591
+  if (known_primitives[name] ~= nil) then -- shunt/quicktype.yue:592
+    return Primitive(name) -- shunt/quicktype.yue:593
+  else -- shunt/quicktype.yue:594
+    if name == 'any' then -- shunt/quicktype.yue:594
+      return Any() -- shunt/quicktype.yue:595
+    else -- shunt/quicktype.yue:596
+      if name == 'some' then -- shunt/quicktype.yue:596
+        return Some() -- shunt/quicktype.yue:597
+      else -- shunt/quicktype.yue:598
+        if not name:match('^[A-Z]') then -- shunt/quicktype.yue:598
+          return error("cannot use '" .. tostring(name) .. "' as user type name: name must start with an uppercase letter") -- shunt/quicktype.yue:599
+        else -- shunt/quicktype.yue:601
+          return UserType(name) -- shunt/quicktype.yue:601
+        end -- shunt/quicktype.yue:598
+      end -- shunt/quicktype.yue:596
+    end -- shunt/quicktype.yue:594
+  end -- shunt/quicktype.yue:592
+end -- shunt/quicktype.yue:591
+prefixed_named_type = function(prefixed_name) -- shunt/quicktype.yue:603
+  local prefix, name = prefixed_name:match('^([^.]+)%.([^.]*)$') -- shunt/quicktype.yue:604
+  if not (prefix ~= nil) or not (name ~= nil) then -- shunt/quicktype.yue:605
+    error("internal error: cannot parse prefixed name '" .. tostring(prefixed_name) .. "'") -- shunt/quicktype.yue:606
+  end -- shunt/quicktype.yue:605
+  if (known_primitives[prefix] ~= nil) then -- shunt/quicktype.yue:607
+    error("cannot use '" .. tostring(prefix) .. "' as type-prefix: must not be a primitive") -- shunt/quicktype.yue:608
+  end -- shunt/quicktype.yue:607
+  if not prefix:match('^[a-z]') then -- shunt/quicktype.yue:609
+    error("cannot use '" .. tostring(prefix) .. "' as type-prefix: must start with a lowercase letter") -- shunt/quicktype.yue:610
+  end -- shunt/quicktype.yue:609
+  if not name:match('^[A-Z]') then -- shunt/quicktype.yue:611
+    error("cannot use '" .. tostring(name) .. "' as disambiguated type name: must start with an uppercase letter") -- shunt/quicktype.yue:612
+  end -- shunt/quicktype.yue:611
+  return UserType(prefixed_name) -- shunt/quicktype.yue:613
 end -- shunt/quicktype.yue:603
-do -- shunt/quicktype.yue:605
-  local _class_0 -- shunt/quicktype.yue:605
-  local _base_0 = { -- shunt/quicktype.yue:605
-    __tostring = function(self) -- shunt/quicktype.yue:606
-      return 'some' -- shunt/quicktype.yue:607
-    end, -- shunt/quicktype.yue:609
-    checker = function(self, checker_builder) -- shunt/quicktype.yue:609
-      if checker_builder == nil then -- shunt/quicktype.yue:609
-        checker_builder = CheckerBuilder() -- shunt/quicktype.yue:609
-      end -- shunt/quicktype.yue:609
-      checker_builder:add(C_ASSERT_NON_NIL) -- shunt/quicktype.yue:611
-      return checker_builder -- shunt/quicktype.yue:610
-    end -- shunt/quicktype.yue:605
-  } -- shunt/quicktype.yue:605
-  local _list_0 = { -- shunt/quicktype.yue:605
-    Is -- shunt/quicktype.yue:605
-  } -- shunt/quicktype.yue:605
-  for _index_0 = 1, #_list_0 do -- shunt/quicktype.yue:611
-    local _item_0 = _list_0[_index_0] -- shunt/quicktype.yue:605
-    local _cls_0, _mixin_0 = (_item_0.__base ~= nil), _item_0.__base or _item_0 -- shunt/quicktype.yue:605
-    for _key_0, _val_0 in pairs(_mixin_0) do -- shunt/quicktype.yue:611
-      if _base_0[_key_0] == nil and (not _cls_0 or not _key_0:match("^__")) then -- shunt/quicktype.yue:605
-        _base_0[_key_0] = _val_0 -- shunt/quicktype.yue:605
-      end -- shunt/quicktype.yue:605
-    end -- shunt/quicktype.yue:611
-  end -- shunt/quicktype.yue:611
-  if _base_0.__index == nil then -- shunt/quicktype.yue:605
-    _base_0.__index = _base_0 -- shunt/quicktype.yue:605
-  end -- shunt/quicktype.yue:611
-  _class_0 = setmetatable({ -- shunt/quicktype.yue:605
-    __init = function() end, -- shunt/quicktype.yue:605
-    __base = _base_0, -- shunt/quicktype.yue:605
-    __name = "Some" -- shunt/quicktype.yue:605
-  }, { -- shunt/quicktype.yue:605
-    __index = _base_0, -- shunt/quicktype.yue:605
-    __call = function(cls, ...) -- shunt/quicktype.yue:605
-      local _self_0 = setmetatable({ }, _base_0) -- shunt/quicktype.yue:605
-      cls.__init(_self_0, ...) -- shunt/quicktype.yue:605
-      return _self_0 -- shunt/quicktype.yue:605
-    end -- shunt/quicktype.yue:605
-  }) -- shunt/quicktype.yue:605
-  _base_0.__class = _class_0 -- shunt/quicktype.yue:605
-  Some = _class_0 -- shunt/quicktype.yue:605
-end -- shunt/quicktype.yue:611
-do -- shunt/quicktype.yue:613
-  local _class_0 -- shunt/quicktype.yue:613
-  local _base_0 = { -- shunt/quicktype.yue:613
-    __tostring = function(self) -- shunt/quicktype.yue:614
-      return '!' -- shunt/quicktype.yue:615
-    end, -- shunt/quicktype.yue:617
-    checker = function(self, checker_builder) -- shunt/quicktype.yue:617
-      if checker_builder == nil then -- shunt/quicktype.yue:617
-        checker_builder = CheckerBuilder() -- shunt/quicktype.yue:617
-      end -- shunt/quicktype.yue:617
-      checker_builder:add(C_ASSERT_NEVER) -- shunt/quicktype.yue:619
-      return checker_builder -- shunt/quicktype.yue:618
-    end -- shunt/quicktype.yue:613
-  } -- shunt/quicktype.yue:613
-  local _list_0 = { -- shunt/quicktype.yue:613
-    Is -- shunt/quicktype.yue:613
-  } -- shunt/quicktype.yue:613
-  for _index_0 = 1, #_list_0 do -- shunt/quicktype.yue:619
-    local _item_0 = _list_0[_index_0] -- shunt/quicktype.yue:613
-    local _cls_0, _mixin_0 = (_item_0.__base ~= nil), _item_0.__base or _item_0 -- shunt/quicktype.yue:613
-    for _key_0, _val_0 in pairs(_mixin_0) do -- shunt/quicktype.yue:619
-      if _base_0[_key_0] == nil and (not _cls_0 or not _key_0:match("^__")) then -- shunt/quicktype.yue:613
-        _base_0[_key_0] = _val_0 -- shunt/quicktype.yue:613
-      end -- shunt/quicktype.yue:613
+do -- shunt/quicktype.yue:615
+  local _class_0 -- shunt/quicktype.yue:615
+  local _base_0 = { -- shunt/quicktype.yue:615
+    is = function(self, ty) -- shunt/quicktype.yue:616
+      return getmetatable(self).__class.__name == ty.__base.__class.__name -- shunt/quicktype.yue:617
+    end -- shunt/quicktype.yue:615
+  } -- shunt/quicktype.yue:615
+  if _base_0.__index == nil then -- shunt/quicktype.yue:615
+    _base_0.__index = _base_0 -- shunt/quicktype.yue:615
+  end -- shunt/quicktype.yue:617
+  _class_0 = setmetatable({ -- shunt/quicktype.yue:615
+    __init = function() end, -- shunt/quicktype.yue:615
+    __base = _base_0, -- shunt/quicktype.yue:615
+    __name = "Is" -- shunt/quicktype.yue:615
+  }, { -- shunt/quicktype.yue:615
+    __index = _base_0, -- shunt/quicktype.yue:615
+    __call = function(cls, ...) -- shunt/quicktype.yue:615
+      local _self_0 = setmetatable({ }, _base_0) -- shunt/quicktype.yue:615
+      cls.__init(_self_0, ...) -- shunt/quicktype.yue:615
+      return _self_0 -- shunt/quicktype.yue:615
+    end -- shunt/quicktype.yue:615
+  }) -- shunt/quicktype.yue:615
+  _base_0.__class = _class_0 -- shunt/quicktype.yue:615
+  Is = _class_0 -- shunt/quicktype.yue:615
+end -- shunt/quicktype.yue:617
+do -- shunt/quicktype.yue:619
+  local _class_0 -- shunt/quicktype.yue:619
+  local _base_0 = { -- shunt/quicktype.yue:619
+    __tostring = function(self) -- shunt/quicktype.yue:622
+      return self.name -- shunt/quicktype.yue:622
+    end, -- shunt/quicktype.yue:624
+    checker = function(self, checker_builder) -- shunt/quicktype.yue:624
+      if checker_builder == nil then -- shunt/quicktype.yue:624
+        checker_builder = CheckerBuilder() -- shunt/quicktype.yue:624
+      end -- shunt/quicktype.yue:624
+      checker_builder:add(C_ASSERT_PRIMITIVE, self.name) -- shunt/quicktype.yue:626
+      return checker_builder -- shunt/quicktype.yue:625
     end -- shunt/quicktype.yue:619
-  end -- shunt/quicktype.yue:619
-  if _base_0.__index == nil then -- shunt/quicktype.yue:613
-    _base_0.__index = _base_0 -- shunt/quicktype.yue:613
-  end -- shunt/quicktype.yue:619
-  _class_0 = setmetatable({ -- shunt/quicktype.yue:613
-    __init = function() end, -- shunt/quicktype.yue:613
-    __base = _base_0, -- shunt/quicktype.yue:613
-    __name = "Never" -- shunt/quicktype.yue:613
-  }, { -- shunt/quicktype.yue:613
-    __index = _base_0, -- shunt/quicktype.yue:613
-    __call = function(cls, ...) -- shunt/quicktype.yue:613
-      local _self_0 = setmetatable({ }, _base_0) -- shunt/quicktype.yue:613
-      cls.__init(_self_0, ...) -- shunt/quicktype.yue:613
-      return _self_0 -- shunt/quicktype.yue:613
-    end -- shunt/quicktype.yue:613
-  }) -- shunt/quicktype.yue:613
-  _base_0.__class = _class_0 -- shunt/quicktype.yue:613
-  Never = _class_0 -- shunt/quicktype.yue:613
-end -- shunt/quicktype.yue:619
-do -- shunt/quicktype.yue:621
-  local _class_0 -- shunt/quicktype.yue:621
-  local _base_0 = { -- shunt/quicktype.yue:621
-    __tostring = function(self) -- shunt/quicktype.yue:624
-      return self.name -- shunt/quicktype.yue:624
-    end, -- shunt/quicktype.yue:626
-    checker = function(self, checker_builder) -- shunt/quicktype.yue:626
-      if checker_builder == nil then -- shunt/quicktype.yue:626
-        checker_builder = CheckerBuilder() -- shunt/quicktype.yue:626
-      end -- shunt/quicktype.yue:626
-      local parsed_user_type = user_types[self.name] -- shunt/quicktype.yue:628
-      if not (parsed_user_type ~= nil) or checker_builder:already_building(self) then -- shunt/quicktype.yue:629
-        checker_builder:add(C_PUSH_CHECKER, self.name) -- shunt/quicktype.yue:630
-      else -- shunt/quicktype.yue:632
-        checker_builder:push_building(self) -- shunt/quicktype.yue:632
-        parsed_user_type:checker(checker_builder) -- shunt/quicktype.yue:633
-        checker_builder:pop_building(self) -- shunt/quicktype.yue:634
-      end -- shunt/quicktype.yue:629
-      return checker_builder -- shunt/quicktype.yue:627
-    end -- shunt/quicktype.yue:621
-  } -- shunt/quicktype.yue:621
-  local _list_0 = { -- shunt/quicktype.yue:621
-    Is -- shunt/quicktype.yue:621
-  } -- shunt/quicktype.yue:621
-  for _index_0 = 1, #_list_0 do -- shunt/quicktype.yue:634
-    local _item_0 = _list_0[_index_0] -- shunt/quicktype.yue:621
-    local _cls_0, _mixin_0 = (_item_0.__base ~= nil), _item_0.__base or _item_0 -- shunt/quicktype.yue:621
-    for _key_0, _val_0 in pairs(_mixin_0) do -- shunt/quicktype.yue:634
-      if _base_0[_key_0] == nil and (not _cls_0 or not _key_0:match("^__")) then -- shunt/quicktype.yue:621
-        _base_0[_key_0] = _val_0 -- shunt/quicktype.yue:621
-      end -- shunt/quicktype.yue:621
-    end -- shunt/quicktype.yue:634
-  end -- shunt/quicktype.yue:634
-  if _base_0.__index == nil then -- shunt/quicktype.yue:621
-    _base_0.__index = _base_0 -- shunt/quicktype.yue:621
-  end -- shunt/quicktype.yue:634
-  _class_0 = setmetatable({ -- shunt/quicktype.yue:621
-    __init = function(self, name) -- shunt/quicktype.yue:622
-      self.name = name -- shunt/quicktype.yue:622
-    end, -- shunt/quicktype.yue:621
-    __base = _base_0, -- shunt/quicktype.yue:621
-    __name = "UserType" -- shunt/quicktype.yue:621
-  }, { -- shunt/quicktype.yue:621
-    __index = _base_0, -- shunt/quicktype.yue:621
-    __call = function(cls, ...) -- shunt/quicktype.yue:621
-      local _self_0 = setmetatable({ }, _base_0) -- shunt/quicktype.yue:621
-      cls.__init(_self_0, ...) -- shunt/quicktype.yue:621
-      return _self_0 -- shunt/quicktype.yue:621
-    end -- shunt/quicktype.yue:621
-  }) -- shunt/quicktype.yue:621
-  _base_0.__class = _class_0 -- shunt/quicktype.yue:621
-  UserType = _class_0 -- shunt/quicktype.yue:621
-end -- shunt/quicktype.yue:634
-do -- shunt/quicktype.yue:636
-  local _class_0 -- shunt/quicktype.yue:636
-  local _base_0 = { -- shunt/quicktype.yue:636
-    __tostring = function(self) -- shunt/quicktype.yue:639
-      return self.name -- shunt/quicktype.yue:639
-    end, -- shunt/quicktype.yue:641
-    checker = function(self, checker_builder) -- shunt/quicktype.yue:641
-      if checker_builder == nil then -- shunt/quicktype.yue:641
-        checker_builder = CheckerBuilder() -- shunt/quicktype.yue:641
-      end -- shunt/quicktype.yue:641
-      checker_builder:add(C_ASSERT_EQ, self.value) -- shunt/quicktype.yue:643
-      return checker_builder -- shunt/quicktype.yue:642
-    end -- shunt/quicktype.yue:636
-  } -- shunt/quicktype.yue:636
-  local _list_0 = { -- shunt/quicktype.yue:636
-    Is -- shunt/quicktype.yue:636
-  } -- shunt/quicktype.yue:636
-  for _index_0 = 1, #_list_0 do -- shunt/quicktype.yue:643
-    local _item_0 = _list_0[_index_0] -- shunt/quicktype.yue:636
-    local _cls_0, _mixin_0 = (_item_0.__base ~= nil), _item_0.__base or _item_0 -- shunt/quicktype.yue:636
-    for _key_0, _val_0 in pairs(_mixin_0) do -- shunt/quicktype.yue:643
-      if _base_0[_key_0] == nil and (not _cls_0 or not _key_0:match("^__")) then -- shunt/quicktype.yue:636
-        _base_0[_key_0] = _val_0 -- shunt/quicktype.yue:636
-      end -- shunt/quicktype.yue:636
+  } -- shunt/quicktype.yue:619
+  local _list_0 = { -- shunt/quicktype.yue:619
+    Is -- shunt/quicktype.yue:619
+  } -- shunt/quicktype.yue:619
+  for _index_0 = 1, #_list_0 do -- shunt/quicktype.yue:626
+    local _item_0 = _list_0[_index_0] -- shunt/quicktype.yue:619
+    local _cls_0, _mixin_0 = (_item_0.__base ~= nil), _item_0.__base or _item_0 -- shunt/quicktype.yue:619
+    for _key_0, _val_0 in pairs(_mixin_0) do -- shunt/quicktype.yue:626
+      if _base_0[_key_0] == nil and (not _cls_0 or not _key_0:match("^__")) then -- shunt/quicktype.yue:619
+        _base_0[_key_0] = _val_0 -- shunt/quicktype.yue:619
+      end -- shunt/quicktype.yue:619
+    end -- shunt/quicktype.yue:626
+  end -- shunt/quicktype.yue:626
+  if _base_0.__index == nil then -- shunt/quicktype.yue:619
+    _base_0.__index = _base_0 -- shunt/quicktype.yue:619
+  end -- shunt/quicktype.yue:626
+  _class_0 = setmetatable({ -- shunt/quicktype.yue:619
+    __init = function(self, name) -- shunt/quicktype.yue:620
+      self.name = name -- shunt/quicktype.yue:620
+    end, -- shunt/quicktype.yue:619
+    __base = _base_0, -- shunt/quicktype.yue:619
+    __name = "Primitive" -- shunt/quicktype.yue:619
+  }, { -- shunt/quicktype.yue:619
+    __index = _base_0, -- shunt/quicktype.yue:619
+    __call = function(cls, ...) -- shunt/quicktype.yue:619
+      local _self_0 = setmetatable({ }, _base_0) -- shunt/quicktype.yue:619
+      cls.__init(_self_0, ...) -- shunt/quicktype.yue:619
+      return _self_0 -- shunt/quicktype.yue:619
+    end -- shunt/quicktype.yue:619
+  }) -- shunt/quicktype.yue:619
+  _base_0.__class = _class_0 -- shunt/quicktype.yue:619
+  Primitive = _class_0 -- shunt/quicktype.yue:619
+end -- shunt/quicktype.yue:626
+do -- shunt/quicktype.yue:628
+  local _class_0 -- shunt/quicktype.yue:628
+  local _base_0 = { -- shunt/quicktype.yue:628
+    __tostring = function(self) -- shunt/quicktype.yue:629
+      return 'any' -- shunt/quicktype.yue:630
+    end, -- shunt/quicktype.yue:632
+    checker = function(self, checker_builder) -- shunt/quicktype.yue:632
+      if checker_builder == nil then -- shunt/quicktype.yue:632
+        checker_builder = CheckerBuilder() -- shunt/quicktype.yue:632
+      end -- shunt/quicktype.yue:632
+      return checker_builder -- shunt/quicktype.yue:633
+    end -- shunt/quicktype.yue:628
+  } -- shunt/quicktype.yue:628
+  local _list_0 = { -- shunt/quicktype.yue:628
+    Is -- shunt/quicktype.yue:628
+  } -- shunt/quicktype.yue:628
+  for _index_0 = 1, #_list_0 do -- shunt/quicktype.yue:633
+    local _item_0 = _list_0[_index_0] -- shunt/quicktype.yue:628
+    local _cls_0, _mixin_0 = (_item_0.__base ~= nil), _item_0.__base or _item_0 -- shunt/quicktype.yue:628
+    for _key_0, _val_0 in pairs(_mixin_0) do -- shunt/quicktype.yue:633
+      if _base_0[_key_0] == nil and (not _cls_0 or not _key_0:match("^__")) then -- shunt/quicktype.yue:628
+        _base_0[_key_0] = _val_0 -- shunt/quicktype.yue:628
+      end -- shunt/quicktype.yue:628
+    end -- shunt/quicktype.yue:633
+  end -- shunt/quicktype.yue:633
+  if _base_0.__index == nil then -- shunt/quicktype.yue:628
+    _base_0.__index = _base_0 -- shunt/quicktype.yue:628
+  end -- shunt/quicktype.yue:633
+  _class_0 = setmetatable({ -- shunt/quicktype.yue:628
+    __init = function() end, -- shunt/quicktype.yue:628
+    __base = _base_0, -- shunt/quicktype.yue:628
+    __name = "Any" -- shunt/quicktype.yue:628
+  }, { -- shunt/quicktype.yue:628
+    __index = _base_0, -- shunt/quicktype.yue:628
+    __call = function(cls, ...) -- shunt/quicktype.yue:628
+      local _self_0 = setmetatable({ }, _base_0) -- shunt/quicktype.yue:628
+      cls.__init(_self_0, ...) -- shunt/quicktype.yue:628
+      return _self_0 -- shunt/quicktype.yue:628
+    end -- shunt/quicktype.yue:628
+  }) -- shunt/quicktype.yue:628
+  _base_0.__class = _class_0 -- shunt/quicktype.yue:628
+  Any = _class_0 -- shunt/quicktype.yue:628
+end -- shunt/quicktype.yue:633
+do -- shunt/quicktype.yue:635
+  local _class_0 -- shunt/quicktype.yue:635
+  local _base_0 = { -- shunt/quicktype.yue:635
+    __tostring = function(self) -- shunt/quicktype.yue:636
+      return 'some' -- shunt/quicktype.yue:637
+    end, -- shunt/quicktype.yue:639
+    checker = function(self, checker_builder) -- shunt/quicktype.yue:639
+      if checker_builder == nil then -- shunt/quicktype.yue:639
+        checker_builder = CheckerBuilder() -- shunt/quicktype.yue:639
+      end -- shunt/quicktype.yue:639
+      checker_builder:add(C_ASSERT_NON_NIL) -- shunt/quicktype.yue:641
+      return checker_builder -- shunt/quicktype.yue:640
+    end -- shunt/quicktype.yue:635
+  } -- shunt/quicktype.yue:635
+  local _list_0 = { -- shunt/quicktype.yue:635
+    Is -- shunt/quicktype.yue:635
+  } -- shunt/quicktype.yue:635
+  for _index_0 = 1, #_list_0 do -- shunt/quicktype.yue:641
+    local _item_0 = _list_0[_index_0] -- shunt/quicktype.yue:635
+    local _cls_0, _mixin_0 = (_item_0.__base ~= nil), _item_0.__base or _item_0 -- shunt/quicktype.yue:635
+    for _key_0, _val_0 in pairs(_mixin_0) do -- shunt/quicktype.yue:641
+      if _base_0[_key_0] == nil and (not _cls_0 or not _key_0:match("^__")) then -- shunt/quicktype.yue:635
+        _base_0[_key_0] = _val_0 -- shunt/quicktype.yue:635
+      end -- shunt/quicktype.yue:635
+    end -- shunt/quicktype.yue:641
+  end -- shunt/quicktype.yue:641
+  if _base_0.__index == nil then -- shunt/quicktype.yue:635
+    _base_0.__index = _base_0 -- shunt/quicktype.yue:635
+  end -- shunt/quicktype.yue:641
+  _class_0 = setmetatable({ -- shunt/quicktype.yue:635
+    __init = function() end, -- shunt/quicktype.yue:635
+    __base = _base_0, -- shunt/quicktype.yue:635
+    __name = "Some" -- shunt/quicktype.yue:635
+  }, { -- shunt/quicktype.yue:635
+    __index = _base_0, -- shunt/quicktype.yue:635
+    __call = function(cls, ...) -- shunt/quicktype.yue:635
+      local _self_0 = setmetatable({ }, _base_0) -- shunt/quicktype.yue:635
+      cls.__init(_self_0, ...) -- shunt/quicktype.yue:635
+      return _self_0 -- shunt/quicktype.yue:635
+    end -- shunt/quicktype.yue:635
+  }) -- shunt/quicktype.yue:635
+  _base_0.__class = _class_0 -- shunt/quicktype.yue:635
+  Some = _class_0 -- shunt/quicktype.yue:635
+end -- shunt/quicktype.yue:641
+do -- shunt/quicktype.yue:643
+  local _class_0 -- shunt/quicktype.yue:643
+  local _base_0 = { -- shunt/quicktype.yue:643
+    __tostring = function(self) -- shunt/quicktype.yue:644
+      return '!' -- shunt/quicktype.yue:645
+    end, -- shunt/quicktype.yue:647
+    checker = function(self, checker_builder) -- shunt/quicktype.yue:647
+      if checker_builder == nil then -- shunt/quicktype.yue:647
+        checker_builder = CheckerBuilder() -- shunt/quicktype.yue:647
+      end -- shunt/quicktype.yue:647
+      checker_builder:add(C_ASSERT_NEVER) -- shunt/quicktype.yue:649
+      return checker_builder -- shunt/quicktype.yue:648
     end -- shunt/quicktype.yue:643
-  end -- shunt/quicktype.yue:643
-  if _base_0.__index == nil then -- shunt/quicktype.yue:636
-    _base_0.__index = _base_0 -- shunt/quicktype.yue:636
-  end -- shunt/quicktype.yue:643
-  _class_0 = setmetatable({ -- shunt/quicktype.yue:636
-    __init = function(self, name, value) -- shunt/quicktype.yue:637
-      self.name = name -- shunt/quicktype.yue:637
-      self.value = value -- shunt/quicktype.yue:637
-    end, -- shunt/quicktype.yue:636
-    __base = _base_0, -- shunt/quicktype.yue:636
-    __name = "SingletonType" -- shunt/quicktype.yue:636
-  }, { -- shunt/quicktype.yue:636
-    __index = _base_0, -- shunt/quicktype.yue:636
-    __call = function(cls, ...) -- shunt/quicktype.yue:636
-      local _self_0 = setmetatable({ }, _base_0) -- shunt/quicktype.yue:636
-      cls.__init(_self_0, ...) -- shunt/quicktype.yue:636
-      return _self_0 -- shunt/quicktype.yue:636
-    end -- shunt/quicktype.yue:636
-  }) -- shunt/quicktype.yue:636
-  _base_0.__class = _class_0 -- shunt/quicktype.yue:636
-  SingletonType = _class_0 -- shunt/quicktype.yue:636
-end -- shunt/quicktype.yue:643
-do -- shunt/quicktype.yue:645
-  local _class_0 -- shunt/quicktype.yue:645
-  local _base_0 = { -- shunt/quicktype.yue:645
-    __tostring = function(self) -- shunt/quicktype.yue:648
-      return tostring(self.value) -- shunt/quicktype.yue:649
-    end, -- shunt/quicktype.yue:651
-    checker = function(self, checker_builder) -- shunt/quicktype.yue:651
-      if checker_builder == nil then -- shunt/quicktype.yue:651
-        checker_builder = CheckerBuilder() -- shunt/quicktype.yue:651
-      end -- shunt/quicktype.yue:651
-      checker_builder:add(C_ASSERT_PRIMITIVE, 'boolean') -- shunt/quicktype.yue:653
-      checker_builder:add(C_ASSERT_EQ, self.value) -- shunt/quicktype.yue:654
-      return checker_builder -- shunt/quicktype.yue:652
-    end -- shunt/quicktype.yue:645
-  } -- shunt/quicktype.yue:645
-  local _list_0 = { -- shunt/quicktype.yue:645
-    Is -- shunt/quicktype.yue:645
-  } -- shunt/quicktype.yue:645
-  for _index_0 = 1, #_list_0 do -- shunt/quicktype.yue:654
-    local _item_0 = _list_0[_index_0] -- shunt/quicktype.yue:645
-    local _cls_0, _mixin_0 = (_item_0.__base ~= nil), _item_0.__base or _item_0 -- shunt/quicktype.yue:645
-    for _key_0, _val_0 in pairs(_mixin_0) do -- shunt/quicktype.yue:654
-      if _base_0[_key_0] == nil and (not _cls_0 or not _key_0:match("^__")) then -- shunt/quicktype.yue:645
-        _base_0[_key_0] = _val_0 -- shunt/quicktype.yue:645
-      end -- shunt/quicktype.yue:645
-    end -- shunt/quicktype.yue:654
-  end -- shunt/quicktype.yue:654
-  if _base_0.__index == nil then -- shunt/quicktype.yue:645
-    _base_0.__index = _base_0 -- shunt/quicktype.yue:645
-  end -- shunt/quicktype.yue:654
-  _class_0 = setmetatable({ -- shunt/quicktype.yue:645
-    __init = function(self, value) -- shunt/quicktype.yue:646
-      self.value = value -- shunt/quicktype.yue:646
-    end, -- shunt/quicktype.yue:645
-    __base = _base_0, -- shunt/quicktype.yue:645
-    __name = "BooleanType" -- shunt/quicktype.yue:645
-  }, { -- shunt/quicktype.yue:645
-    __index = _base_0, -- shunt/quicktype.yue:645
-    __call = function(cls, ...) -- shunt/quicktype.yue:645
-      local _self_0 = setmetatable({ }, _base_0) -- shunt/quicktype.yue:645
-      cls.__init(_self_0, ...) -- shunt/quicktype.yue:645
-      return _self_0 -- shunt/quicktype.yue:645
-    end -- shunt/quicktype.yue:645
-  }) -- shunt/quicktype.yue:645
-  _base_0.__class = _class_0 -- shunt/quicktype.yue:645
-  BooleanType = _class_0 -- shunt/quicktype.yue:645
-end -- shunt/quicktype.yue:654
-do -- shunt/quicktype.yue:656
-  local _class_0 -- shunt/quicktype.yue:656
-  local _base_0 = { -- shunt/quicktype.yue:656
-    __tostring = function(self) -- shunt/quicktype.yue:659
-      return tostring(self.value) -- shunt/quicktype.yue:660
-    end, -- shunt/quicktype.yue:662
-    checker = function(self, checker_builder) -- shunt/quicktype.yue:662
-      if checker_builder == nil then -- shunt/quicktype.yue:662
-        checker_builder = CheckerBuilder() -- shunt/quicktype.yue:662
-      end -- shunt/quicktype.yue:662
-      checker_builder:add(C_ASSERT_PRIMITIVE, 'number') -- shunt/quicktype.yue:664
-      checker_builder:add(C_ASSERT_EQ, self.value) -- shunt/quicktype.yue:665
-      return checker_builder -- shunt/quicktype.yue:663
-    end -- shunt/quicktype.yue:656
-  } -- shunt/quicktype.yue:656
-  local _list_0 = { -- shunt/quicktype.yue:656
-    Is -- shunt/quicktype.yue:656
-  } -- shunt/quicktype.yue:656
-  for _index_0 = 1, #_list_0 do -- shunt/quicktype.yue:665
-    local _item_0 = _list_0[_index_0] -- shunt/quicktype.yue:656
-    local _cls_0, _mixin_0 = (_item_0.__base ~= nil), _item_0.__base or _item_0 -- shunt/quicktype.yue:656
-    for _key_0, _val_0 in pairs(_mixin_0) do -- shunt/quicktype.yue:665
-      if _base_0[_key_0] == nil and (not _cls_0 or not _key_0:match("^__")) then -- shunt/quicktype.yue:656
-        _base_0[_key_0] = _val_0 -- shunt/quicktype.yue:656
-      end -- shunt/quicktype.yue:656
-    end -- shunt/quicktype.yue:665
-  end -- shunt/quicktype.yue:665
-  if _base_0.__index == nil then -- shunt/quicktype.yue:656
-    _base_0.__index = _base_0 -- shunt/quicktype.yue:656
-  end -- shunt/quicktype.yue:665
-  _class_0 = setmetatable({ -- shunt/quicktype.yue:656
-    __init = function(self, value) -- shunt/quicktype.yue:657
-      self.value = value -- shunt/quicktype.yue:657
+  } -- shunt/quicktype.yue:643
+  local _list_0 = { -- shunt/quicktype.yue:643
+    Is -- shunt/quicktype.yue:643
+  } -- shunt/quicktype.yue:643
+  for _index_0 = 1, #_list_0 do -- shunt/quicktype.yue:649
+    local _item_0 = _list_0[_index_0] -- shunt/quicktype.yue:643
+    local _cls_0, _mixin_0 = (_item_0.__base ~= nil), _item_0.__base or _item_0 -- shunt/quicktype.yue:643
+    for _key_0, _val_0 in pairs(_mixin_0) do -- shunt/quicktype.yue:649
+      if _base_0[_key_0] == nil and (not _cls_0 or not _key_0:match("^__")) then -- shunt/quicktype.yue:643
+        _base_0[_key_0] = _val_0 -- shunt/quicktype.yue:643
+      end -- shunt/quicktype.yue:643
+    end -- shunt/quicktype.yue:649
+  end -- shunt/quicktype.yue:649
+  if _base_0.__index == nil then -- shunt/quicktype.yue:643
+    _base_0.__index = _base_0 -- shunt/quicktype.yue:643
+  end -- shunt/quicktype.yue:649
+  _class_0 = setmetatable({ -- shunt/quicktype.yue:643
+    __init = function() end, -- shunt/quicktype.yue:643
+    __base = _base_0, -- shunt/quicktype.yue:643
+    __name = "Never" -- shunt/quicktype.yue:643
+  }, { -- shunt/quicktype.yue:643
+    __index = _base_0, -- shunt/quicktype.yue:643
+    __call = function(cls, ...) -- shunt/quicktype.yue:643
+      local _self_0 = setmetatable({ }, _base_0) -- shunt/quicktype.yue:643
+      cls.__init(_self_0, ...) -- shunt/quicktype.yue:643
+      return _self_0 -- shunt/quicktype.yue:643
+    end -- shunt/quicktype.yue:643
+  }) -- shunt/quicktype.yue:643
+  _base_0.__class = _class_0 -- shunt/quicktype.yue:643
+  Never = _class_0 -- shunt/quicktype.yue:643
+end -- shunt/quicktype.yue:649
+do -- shunt/quicktype.yue:651
+  local _class_0 -- shunt/quicktype.yue:651
+  local _base_0 = { -- shunt/quicktype.yue:651
+    __tostring = function(self) -- shunt/quicktype.yue:654
+      return self.name -- shunt/quicktype.yue:654
     end, -- shunt/quicktype.yue:656
-    __base = _base_0, -- shunt/quicktype.yue:656
-    __name = "NumberType" -- shunt/quicktype.yue:656
-  }, { -- shunt/quicktype.yue:656
-    __index = _base_0, -- shunt/quicktype.yue:656
-    __call = function(cls, ...) -- shunt/quicktype.yue:656
-      local _self_0 = setmetatable({ }, _base_0) -- shunt/quicktype.yue:656
-      cls.__init(_self_0, ...) -- shunt/quicktype.yue:656
-      return _self_0 -- shunt/quicktype.yue:656
-    end -- shunt/quicktype.yue:656
-  }) -- shunt/quicktype.yue:656
-  _base_0.__class = _class_0 -- shunt/quicktype.yue:656
-  NumberType = _class_0 -- shunt/quicktype.yue:656
-end -- shunt/quicktype.yue:665
-do -- shunt/quicktype.yue:667
-  local _class_0 -- shunt/quicktype.yue:667
-  local _base_0 = { -- shunt/quicktype.yue:667
-    __tostring = function(self) -- shunt/quicktype.yue:670
-      return "\"" .. tostring(self.content) .. "\"" -- shunt/quicktype.yue:671
-    end, -- shunt/quicktype.yue:673
-    checker = function(self, checker_builder) -- shunt/quicktype.yue:673
-      if checker_builder == nil then -- shunt/quicktype.yue:673
-        checker_builder = CheckerBuilder() -- shunt/quicktype.yue:673
-      end -- shunt/quicktype.yue:673
-      checker_builder:add(C_ASSERT_PRIMITIVE, 'string') -- shunt/quicktype.yue:675
-      checker_builder:add(C_ASSERT_EQ, self.content) -- shunt/quicktype.yue:676
-      return checker_builder -- shunt/quicktype.yue:674
-    end -- shunt/quicktype.yue:667
-  } -- shunt/quicktype.yue:667
-  local _list_0 = { -- shunt/quicktype.yue:667
-    Is -- shunt/quicktype.yue:667
-  } -- shunt/quicktype.yue:667
-  for _index_0 = 1, #_list_0 do -- shunt/quicktype.yue:676
-    local _item_0 = _list_0[_index_0] -- shunt/quicktype.yue:667
-    local _cls_0, _mixin_0 = (_item_0.__base ~= nil), _item_0.__base or _item_0 -- shunt/quicktype.yue:667
-    for _key_0, _val_0 in pairs(_mixin_0) do -- shunt/quicktype.yue:676
-      if _base_0[_key_0] == nil and (not _cls_0 or not _key_0:match("^__")) then -- shunt/quicktype.yue:667
-        _base_0[_key_0] = _val_0 -- shunt/quicktype.yue:667
-      end -- shunt/quicktype.yue:667
-    end -- shunt/quicktype.yue:676
-  end -- shunt/quicktype.yue:676
-  if _base_0.__index == nil then -- shunt/quicktype.yue:667
-    _base_0.__index = _base_0 -- shunt/quicktype.yue:667
-  end -- shunt/quicktype.yue:676
-  _class_0 = setmetatable({ -- shunt/quicktype.yue:667
-    __init = function(self, content) -- shunt/quicktype.yue:668
-      self.content = content -- shunt/quicktype.yue:668
-    end, -- shunt/quicktype.yue:667
-    __base = _base_0, -- shunt/quicktype.yue:667
-    __name = "StringType" -- shunt/quicktype.yue:667
-  }, { -- shunt/quicktype.yue:667
-    __index = _base_0, -- shunt/quicktype.yue:667
-    __call = function(cls, ...) -- shunt/quicktype.yue:667
-      local _self_0 = setmetatable({ }, _base_0) -- shunt/quicktype.yue:667
-      cls.__init(_self_0, ...) -- shunt/quicktype.yue:667
-      return _self_0 -- shunt/quicktype.yue:667
-    end -- shunt/quicktype.yue:667
-  }) -- shunt/quicktype.yue:667
-  _base_0.__class = _class_0 -- shunt/quicktype.yue:667
-  StringType = _class_0 -- shunt/quicktype.yue:667
-end -- shunt/quicktype.yue:676
-do -- shunt/quicktype.yue:678
-  local _class_0 -- shunt/quicktype.yue:678
-  local _base_0 = { -- shunt/quicktype.yue:678
-    __tostring = function(self) -- shunt/quicktype.yue:681
-      return "?" .. tostring(self.inner_type) -- shunt/quicktype.yue:682
-    end, -- shunt/quicktype.yue:684
-    checker = function(self, checker_builder) -- shunt/quicktype.yue:684
-      if checker_builder == nil then -- shunt/quicktype.yue:684
-        checker_builder = CheckerBuilder() -- shunt/quicktype.yue:684
-      end -- shunt/quicktype.yue:684
-      local inner_skip_target = checker_builder:add_with_unresolved_target(C_JMP_IF_NIL) -- shunt/quicktype.yue:686
-      self.inner_type:checker(checker_builder) -- shunt/quicktype.yue:687
-      inner_skip_target:resolve_here() -- shunt/quicktype.yue:688
-      return checker_builder -- shunt/quicktype.yue:685
-    end -- shunt/quicktype.yue:678
-  } -- shunt/quicktype.yue:678
-  local _list_0 = { -- shunt/quicktype.yue:678
-    Is -- shunt/quicktype.yue:678
-  } -- shunt/quicktype.yue:678
-  for _index_0 = 1, #_list_0 do -- shunt/quicktype.yue:688
-    local _item_0 = _list_0[_index_0] -- shunt/quicktype.yue:678
-    local _cls_0, _mixin_0 = (_item_0.__base ~= nil), _item_0.__base or _item_0 -- shunt/quicktype.yue:678
-    for _key_0, _val_0 in pairs(_mixin_0) do -- shunt/quicktype.yue:688
-      if _base_0[_key_0] == nil and (not _cls_0 or not _key_0:match("^__")) then -- shunt/quicktype.yue:678
-        _base_0[_key_0] = _val_0 -- shunt/quicktype.yue:678
-      end -- shunt/quicktype.yue:678
-    end -- shunt/quicktype.yue:688
-  end -- shunt/quicktype.yue:688
-  if _base_0.__index == nil then -- shunt/quicktype.yue:678
-    _base_0.__index = _base_0 -- shunt/quicktype.yue:678
-  end -- shunt/quicktype.yue:688
-  _class_0 = setmetatable({ -- shunt/quicktype.yue:678
-    __init = function(self, inner_type) -- shunt/quicktype.yue:679
-      self.inner_type = inner_type -- shunt/quicktype.yue:679
-    end, -- shunt/quicktype.yue:678
-    __base = _base_0, -- shunt/quicktype.yue:678
-    __name = "Optional" -- shunt/quicktype.yue:678
-  }, { -- shunt/quicktype.yue:678
-    __index = _base_0, -- shunt/quicktype.yue:678
-    __call = function(cls, ...) -- shunt/quicktype.yue:678
-      local _self_0 = setmetatable({ }, _base_0) -- shunt/quicktype.yue:678
-      cls.__init(_self_0, ...) -- shunt/quicktype.yue:678
-      return _self_0 -- shunt/quicktype.yue:678
-    end -- shunt/quicktype.yue:678
-  }) -- shunt/quicktype.yue:678
-  _base_0.__class = _class_0 -- shunt/quicktype.yue:678
-  Optional = _class_0 -- shunt/quicktype.yue:678
-end -- shunt/quicktype.yue:688
-do -- shunt/quicktype.yue:690
-  local _class_0 -- shunt/quicktype.yue:690
-  local _base_0 = { -- shunt/quicktype.yue:690
-    __tostring = function(self) -- shunt/quicktype.yue:693
-      return "[" .. tostring(self.elem_type) .. "]" -- shunt/quicktype.yue:694
-    end, -- shunt/quicktype.yue:696
-    checker = function(self, checker_builder) -- shunt/quicktype.yue:696
-      if checker_builder == nil then -- shunt/quicktype.yue:696
-        checker_builder = CheckerBuilder() -- shunt/quicktype.yue:696
-      end -- shunt/quicktype.yue:696
-      checker_builder:add(C_ASSERT_PRIMITIVE, 'table') -- shunt/quicktype.yue:698
-      checker_builder:add(C_PUSH, 1) -- shunt/quicktype.yue:699
-      local loop_start = checker_builder:add_labelled(C_GET_FIELD) -- shunt/quicktype.yue:701
-      local loop_exit_target = checker_builder:add_with_unresolved_target(C_JMP_IF_NIL) -- shunt/quicktype.yue:703
-      self.elem_type:checker(checker_builder) -- shunt/quicktype.yue:704
-      checker_builder:add(C_POP) -- shunt/quicktype.yue:705
-      checker_builder:add(C_INCR) -- shunt/quicktype.yue:706
-      checker_builder:add(C_JMP, loop_start.index) -- shunt/quicktype.yue:707
-      loop_exit_target:resolve_here() -- shunt/quicktype.yue:709
-      checker_builder:add(C_POP) -- shunt/quicktype.yue:710
-      checker_builder:add(C_DECR) -- shunt/quicktype.yue:711
-      checker_builder:add(C_ASSERT_LEN) -- shunt/quicktype.yue:712
-      checker_builder:add(C_POP) -- shunt/quicktype.yue:713
-      return checker_builder -- shunt/quicktype.yue:697
-    end -- shunt/quicktype.yue:690
-  } -- shunt/quicktype.yue:690
-  local _list_0 = { -- shunt/quicktype.yue:690
-    Is -- shunt/quicktype.yue:690
-  } -- shunt/quicktype.yue:690
-  for _index_0 = 1, #_list_0 do -- shunt/quicktype.yue:713
-    local _item_0 = _list_0[_index_0] -- shunt/quicktype.yue:690
-    local _cls_0, _mixin_0 = (_item_0.__base ~= nil), _item_0.__base or _item_0 -- shunt/quicktype.yue:690
-    for _key_0, _val_0 in pairs(_mixin_0) do -- shunt/quicktype.yue:713
-      if _base_0[_key_0] == nil and (not _cls_0 or not _key_0:match("^__")) then -- shunt/quicktype.yue:690
-        _base_0[_key_0] = _val_0 -- shunt/quicktype.yue:690
-      end -- shunt/quicktype.yue:690
-    end -- shunt/quicktype.yue:713
-  end -- shunt/quicktype.yue:713
-  if _base_0.__index == nil then -- shunt/quicktype.yue:690
-    _base_0.__index = _base_0 -- shunt/quicktype.yue:690
-  end -- shunt/quicktype.yue:713
-  _class_0 = setmetatable({ -- shunt/quicktype.yue:690
-    __init = function(self, elem_type) -- shunt/quicktype.yue:691
-      self.elem_type = elem_type -- shunt/quicktype.yue:691
-    end, -- shunt/quicktype.yue:690
-    __base = _base_0, -- shunt/quicktype.yue:690
-    __name = "Array" -- shunt/quicktype.yue:690
-  }, { -- shunt/quicktype.yue:690
-    __index = _base_0, -- shunt/quicktype.yue:690
-    __call = function(cls, ...) -- shunt/quicktype.yue:690
-      local _self_0 = setmetatable({ }, _base_0) -- shunt/quicktype.yue:690
-      cls.__init(_self_0, ...) -- shunt/quicktype.yue:690
-      return _self_0 -- shunt/quicktype.yue:690
-    end -- shunt/quicktype.yue:690
-  }) -- shunt/quicktype.yue:690
-  _base_0.__class = _class_0 -- shunt/quicktype.yue:690
-  Array = _class_0 -- shunt/quicktype.yue:690
-end -- shunt/quicktype.yue:713
-do -- shunt/quicktype.yue:715
-  local _class_0 -- shunt/quicktype.yue:715
-  local _base_0 = { -- shunt/quicktype.yue:715
-    __tostring = function(self) -- shunt/quicktype.yue:718
-      local elem_type_reprs -- shunt/quicktype.yue:719
-      do -- shunt/quicktype.yue:719
-        local _accum_0 = { } -- shunt/quicktype.yue:719
-        local _len_0 = 1 -- shunt/quicktype.yue:719
-        local _list_0 = self.elem_types -- shunt/quicktype.yue:719
-        for _index_0 = 1, #_list_0 do -- shunt/quicktype.yue:719
-          local elem_type = _list_0[_index_0] -- shunt/quicktype.yue:719
-          _accum_0[_len_0] = tostring(elem_type) -- shunt/quicktype.yue:719
-          _len_0 = _len_0 + 1 -- shunt/quicktype.yue:719
-        end -- shunt/quicktype.yue:719
-        elem_type_reprs = _accum_0 -- shunt/quicktype.yue:719
-      end -- shunt/quicktype.yue:719
-      return "(" .. tostring(table.concat(elem_type_reprs, ', ')) .. ")" -- shunt/quicktype.yue:720
-    end, -- shunt/quicktype.yue:722
-    checker = function(self, checker_builder) -- shunt/quicktype.yue:722
-      if checker_builder == nil then -- shunt/quicktype.yue:722
-        checker_builder = CheckerBuilder() -- shunt/quicktype.yue:722
-      end -- shunt/quicktype.yue:722
-      checker_builder:add(C_ASSERT_PRIMITIVE, 'table') -- shunt/quicktype.yue:724
-      for i = 1, #self.elem_types do -- shunt/quicktype.yue:725
-        checker_builder:add(C_PUSH, i) -- shunt/quicktype.yue:726
-        checker_builder:add(C_GET_FIELD) -- shunt/quicktype.yue:727
-        self.elem_types[i]:checker(checker_builder) -- shunt/quicktype.yue:728
-        checker_builder:add(C_POP) -- shunt/quicktype.yue:729
-        checker_builder:add(C_POP) -- shunt/quicktype.yue:730
+    checker = function(self, checker_builder) -- shunt/quicktype.yue:656
+      if checker_builder == nil then -- shunt/quicktype.yue:656
+        checker_builder = CheckerBuilder() -- shunt/quicktype.yue:656
+      end -- shunt/quicktype.yue:656
+      local parsed_user_type = user_types[self.name] -- shunt/quicktype.yue:658
+      if not (parsed_user_type ~= nil) or checker_builder:already_building(self) then -- shunt/quicktype.yue:659
+        checker_builder:add(C_PUSH_CHECKER, self.name) -- shunt/quicktype.yue:660
+      else -- shunt/quicktype.yue:662
+        checker_builder:push_building(self) -- shunt/quicktype.yue:662
+        parsed_user_type:checker(checker_builder) -- shunt/quicktype.yue:663
+        checker_builder:pop_building(self) -- shunt/quicktype.yue:664
+      end -- shunt/quicktype.yue:659
+      return checker_builder -- shunt/quicktype.yue:657
+    end -- shunt/quicktype.yue:651
+  } -- shunt/quicktype.yue:651
+  local _list_0 = { -- shunt/quicktype.yue:651
+    Is -- shunt/quicktype.yue:651
+  } -- shunt/quicktype.yue:651
+  for _index_0 = 1, #_list_0 do -- shunt/quicktype.yue:664
+    local _item_0 = _list_0[_index_0] -- shunt/quicktype.yue:651
+    local _cls_0, _mixin_0 = (_item_0.__base ~= nil), _item_0.__base or _item_0 -- shunt/quicktype.yue:651
+    for _key_0, _val_0 in pairs(_mixin_0) do -- shunt/quicktype.yue:664
+      if _base_0[_key_0] == nil and (not _cls_0 or not _key_0:match("^__")) then -- shunt/quicktype.yue:651
+        _base_0[_key_0] = _val_0 -- shunt/quicktype.yue:651
+      end -- shunt/quicktype.yue:651
+    end -- shunt/quicktype.yue:664
+  end -- shunt/quicktype.yue:664
+  if _base_0.__index == nil then -- shunt/quicktype.yue:651
+    _base_0.__index = _base_0 -- shunt/quicktype.yue:651
+  end -- shunt/quicktype.yue:664
+  _class_0 = setmetatable({ -- shunt/quicktype.yue:651
+    __init = function(self, name) -- shunt/quicktype.yue:652
+      self.name = name -- shunt/quicktype.yue:652
+    end, -- shunt/quicktype.yue:651
+    __base = _base_0, -- shunt/quicktype.yue:651
+    __name = "UserType" -- shunt/quicktype.yue:651
+  }, { -- shunt/quicktype.yue:651
+    __index = _base_0, -- shunt/quicktype.yue:651
+    __call = function(cls, ...) -- shunt/quicktype.yue:651
+      local _self_0 = setmetatable({ }, _base_0) -- shunt/quicktype.yue:651
+      cls.__init(_self_0, ...) -- shunt/quicktype.yue:651
+      return _self_0 -- shunt/quicktype.yue:651
+    end -- shunt/quicktype.yue:651
+  }) -- shunt/quicktype.yue:651
+  _base_0.__class = _class_0 -- shunt/quicktype.yue:651
+  UserType = _class_0 -- shunt/quicktype.yue:651
+end -- shunt/quicktype.yue:664
+do -- shunt/quicktype.yue:666
+  local _class_0 -- shunt/quicktype.yue:666
+  local _base_0 = { -- shunt/quicktype.yue:666
+    __tostring = function(self) -- shunt/quicktype.yue:669
+      return self.name -- shunt/quicktype.yue:669
+    end, -- shunt/quicktype.yue:671
+    checker = function(self, checker_builder) -- shunt/quicktype.yue:671
+      if checker_builder == nil then -- shunt/quicktype.yue:671
+        checker_builder = CheckerBuilder() -- shunt/quicktype.yue:671
+      end -- shunt/quicktype.yue:671
+      checker_builder:add(C_ASSERT_EQ, self.value) -- shunt/quicktype.yue:673
+      return checker_builder -- shunt/quicktype.yue:672
+    end -- shunt/quicktype.yue:666
+  } -- shunt/quicktype.yue:666
+  local _list_0 = { -- shunt/quicktype.yue:666
+    Is -- shunt/quicktype.yue:666
+  } -- shunt/quicktype.yue:666
+  for _index_0 = 1, #_list_0 do -- shunt/quicktype.yue:673
+    local _item_0 = _list_0[_index_0] -- shunt/quicktype.yue:666
+    local _cls_0, _mixin_0 = (_item_0.__base ~= nil), _item_0.__base or _item_0 -- shunt/quicktype.yue:666
+    for _key_0, _val_0 in pairs(_mixin_0) do -- shunt/quicktype.yue:673
+      if _base_0[_key_0] == nil and (not _cls_0 or not _key_0:match("^__")) then -- shunt/quicktype.yue:666
+        _base_0[_key_0] = _val_0 -- shunt/quicktype.yue:666
+      end -- shunt/quicktype.yue:666
+    end -- shunt/quicktype.yue:673
+  end -- shunt/quicktype.yue:673
+  if _base_0.__index == nil then -- shunt/quicktype.yue:666
+    _base_0.__index = _base_0 -- shunt/quicktype.yue:666
+  end -- shunt/quicktype.yue:673
+  _class_0 = setmetatable({ -- shunt/quicktype.yue:666
+    __init = function(self, name, value) -- shunt/quicktype.yue:667
+      self.name = name -- shunt/quicktype.yue:667
+      self.value = value -- shunt/quicktype.yue:667
+    end, -- shunt/quicktype.yue:666
+    __base = _base_0, -- shunt/quicktype.yue:666
+    __name = "SingletonType" -- shunt/quicktype.yue:666
+  }, { -- shunt/quicktype.yue:666
+    __index = _base_0, -- shunt/quicktype.yue:666
+    __call = function(cls, ...) -- shunt/quicktype.yue:666
+      local _self_0 = setmetatable({ }, _base_0) -- shunt/quicktype.yue:666
+      cls.__init(_self_0, ...) -- shunt/quicktype.yue:666
+      return _self_0 -- shunt/quicktype.yue:666
+    end -- shunt/quicktype.yue:666
+  }) -- shunt/quicktype.yue:666
+  _base_0.__class = _class_0 -- shunt/quicktype.yue:666
+  SingletonType = _class_0 -- shunt/quicktype.yue:666
+end -- shunt/quicktype.yue:673
+do -- shunt/quicktype.yue:675
+  local _class_0 -- shunt/quicktype.yue:675
+  local _base_0 = { -- shunt/quicktype.yue:675
+    __tostring = function(self) -- shunt/quicktype.yue:678
+      return tostring(self.value) -- shunt/quicktype.yue:679
+    end, -- shunt/quicktype.yue:681
+    checker = function(self, checker_builder) -- shunt/quicktype.yue:681
+      if checker_builder == nil then -- shunt/quicktype.yue:681
+        checker_builder = CheckerBuilder() -- shunt/quicktype.yue:681
+      end -- shunt/quicktype.yue:681
+      checker_builder:add(C_ASSERT_PRIMITIVE, 'boolean') -- shunt/quicktype.yue:683
+      checker_builder:add(C_ASSERT_EQ, self.value) -- shunt/quicktype.yue:684
+      return checker_builder -- shunt/quicktype.yue:682
+    end -- shunt/quicktype.yue:675
+  } -- shunt/quicktype.yue:675
+  local _list_0 = { -- shunt/quicktype.yue:675
+    Is -- shunt/quicktype.yue:675
+  } -- shunt/quicktype.yue:675
+  for _index_0 = 1, #_list_0 do -- shunt/quicktype.yue:684
+    local _item_0 = _list_0[_index_0] -- shunt/quicktype.yue:675
+    local _cls_0, _mixin_0 = (_item_0.__base ~= nil), _item_0.__base or _item_0 -- shunt/quicktype.yue:675
+    for _key_0, _val_0 in pairs(_mixin_0) do -- shunt/quicktype.yue:684
+      if _base_0[_key_0] == nil and (not _cls_0 or not _key_0:match("^__")) then -- shunt/quicktype.yue:675
+        _base_0[_key_0] = _val_0 -- shunt/quicktype.yue:675
+      end -- shunt/quicktype.yue:675
+    end -- shunt/quicktype.yue:684
+  end -- shunt/quicktype.yue:684
+  if _base_0.__index == nil then -- shunt/quicktype.yue:675
+    _base_0.__index = _base_0 -- shunt/quicktype.yue:675
+  end -- shunt/quicktype.yue:684
+  _class_0 = setmetatable({ -- shunt/quicktype.yue:675
+    __init = function(self, value) -- shunt/quicktype.yue:676
+      self.value = value -- shunt/quicktype.yue:676
+    end, -- shunt/quicktype.yue:675
+    __base = _base_0, -- shunt/quicktype.yue:675
+    __name = "BooleanType" -- shunt/quicktype.yue:675
+  }, { -- shunt/quicktype.yue:675
+    __index = _base_0, -- shunt/quicktype.yue:675
+    __call = function(cls, ...) -- shunt/quicktype.yue:675
+      local _self_0 = setmetatable({ }, _base_0) -- shunt/quicktype.yue:675
+      cls.__init(_self_0, ...) -- shunt/quicktype.yue:675
+      return _self_0 -- shunt/quicktype.yue:675
+    end -- shunt/quicktype.yue:675
+  }) -- shunt/quicktype.yue:675
+  _base_0.__class = _class_0 -- shunt/quicktype.yue:675
+  BooleanType = _class_0 -- shunt/quicktype.yue:675
+end -- shunt/quicktype.yue:684
+do -- shunt/quicktype.yue:686
+  local _class_0 -- shunt/quicktype.yue:686
+  local _base_0 = { -- shunt/quicktype.yue:686
+    __tostring = function(self) -- shunt/quicktype.yue:689
+      return tostring(self.value) -- shunt/quicktype.yue:690
+    end, -- shunt/quicktype.yue:692
+    checker = function(self, checker_builder) -- shunt/quicktype.yue:692
+      if checker_builder == nil then -- shunt/quicktype.yue:692
+        checker_builder = CheckerBuilder() -- shunt/quicktype.yue:692
+      end -- shunt/quicktype.yue:692
+      checker_builder:add(C_ASSERT_PRIMITIVE, 'number') -- shunt/quicktype.yue:694
+      checker_builder:add(C_ASSERT_EQ, self.value) -- shunt/quicktype.yue:695
+      return checker_builder -- shunt/quicktype.yue:693
+    end -- shunt/quicktype.yue:686
+  } -- shunt/quicktype.yue:686
+  local _list_0 = { -- shunt/quicktype.yue:686
+    Is -- shunt/quicktype.yue:686
+  } -- shunt/quicktype.yue:686
+  for _index_0 = 1, #_list_0 do -- shunt/quicktype.yue:695
+    local _item_0 = _list_0[_index_0] -- shunt/quicktype.yue:686
+    local _cls_0, _mixin_0 = (_item_0.__base ~= nil), _item_0.__base or _item_0 -- shunt/quicktype.yue:686
+    for _key_0, _val_0 in pairs(_mixin_0) do -- shunt/quicktype.yue:695
+      if _base_0[_key_0] == nil and (not _cls_0 or not _key_0:match("^__")) then -- shunt/quicktype.yue:686
+        _base_0[_key_0] = _val_0 -- shunt/quicktype.yue:686
+      end -- shunt/quicktype.yue:686
+    end -- shunt/quicktype.yue:695
+  end -- shunt/quicktype.yue:695
+  if _base_0.__index == nil then -- shunt/quicktype.yue:686
+    _base_0.__index = _base_0 -- shunt/quicktype.yue:686
+  end -- shunt/quicktype.yue:695
+  _class_0 = setmetatable({ -- shunt/quicktype.yue:686
+    __init = function(self, value) -- shunt/quicktype.yue:687
+      self.value = value -- shunt/quicktype.yue:687
+    end, -- shunt/quicktype.yue:686
+    __base = _base_0, -- shunt/quicktype.yue:686
+    __name = "NumberType" -- shunt/quicktype.yue:686
+  }, { -- shunt/quicktype.yue:686
+    __index = _base_0, -- shunt/quicktype.yue:686
+    __call = function(cls, ...) -- shunt/quicktype.yue:686
+      local _self_0 = setmetatable({ }, _base_0) -- shunt/quicktype.yue:686
+      cls.__init(_self_0, ...) -- shunt/quicktype.yue:686
+      return _self_0 -- shunt/quicktype.yue:686
+    end -- shunt/quicktype.yue:686
+  }) -- shunt/quicktype.yue:686
+  _base_0.__class = _class_0 -- shunt/quicktype.yue:686
+  NumberType = _class_0 -- shunt/quicktype.yue:686
+end -- shunt/quicktype.yue:695
+do -- shunt/quicktype.yue:697
+  local _class_0 -- shunt/quicktype.yue:697
+  local _base_0 = { -- shunt/quicktype.yue:697
+    __tostring = function(self) -- shunt/quicktype.yue:700
+      return "\"" .. tostring(self.content) .. "\"" -- shunt/quicktype.yue:701
+    end, -- shunt/quicktype.yue:703
+    checker = function(self, checker_builder) -- shunt/quicktype.yue:703
+      if checker_builder == nil then -- shunt/quicktype.yue:703
+        checker_builder = CheckerBuilder() -- shunt/quicktype.yue:703
+      end -- shunt/quicktype.yue:703
+      checker_builder:add(C_ASSERT_PRIMITIVE, 'string') -- shunt/quicktype.yue:705
+      checker_builder:add(C_ASSERT_EQ, self.content) -- shunt/quicktype.yue:706
+      return checker_builder -- shunt/quicktype.yue:704
+    end -- shunt/quicktype.yue:697
+  } -- shunt/quicktype.yue:697
+  local _list_0 = { -- shunt/quicktype.yue:697
+    Is -- shunt/quicktype.yue:697
+  } -- shunt/quicktype.yue:697
+  for _index_0 = 1, #_list_0 do -- shunt/quicktype.yue:706
+    local _item_0 = _list_0[_index_0] -- shunt/quicktype.yue:697
+    local _cls_0, _mixin_0 = (_item_0.__base ~= nil), _item_0.__base or _item_0 -- shunt/quicktype.yue:697
+    for _key_0, _val_0 in pairs(_mixin_0) do -- shunt/quicktype.yue:706
+      if _base_0[_key_0] == nil and (not _cls_0 or not _key_0:match("^__")) then -- shunt/quicktype.yue:697
+        _base_0[_key_0] = _val_0 -- shunt/quicktype.yue:697
+      end -- shunt/quicktype.yue:697
+    end -- shunt/quicktype.yue:706
+  end -- shunt/quicktype.yue:706
+  if _base_0.__index == nil then -- shunt/quicktype.yue:697
+    _base_0.__index = _base_0 -- shunt/quicktype.yue:697
+  end -- shunt/quicktype.yue:706
+  _class_0 = setmetatable({ -- shunt/quicktype.yue:697
+    __init = function(self, content) -- shunt/quicktype.yue:698
+      self.content = content -- shunt/quicktype.yue:698
+    end, -- shunt/quicktype.yue:697
+    __base = _base_0, -- shunt/quicktype.yue:697
+    __name = "StringType" -- shunt/quicktype.yue:697
+  }, { -- shunt/quicktype.yue:697
+    __index = _base_0, -- shunt/quicktype.yue:697
+    __call = function(cls, ...) -- shunt/quicktype.yue:697
+      local _self_0 = setmetatable({ }, _base_0) -- shunt/quicktype.yue:697
+      cls.__init(_self_0, ...) -- shunt/quicktype.yue:697
+      return _self_0 -- shunt/quicktype.yue:697
+    end -- shunt/quicktype.yue:697
+  }) -- shunt/quicktype.yue:697
+  _base_0.__class = _class_0 -- shunt/quicktype.yue:697
+  StringType = _class_0 -- shunt/quicktype.yue:697
+end -- shunt/quicktype.yue:706
+do -- shunt/quicktype.yue:708
+  local _class_0 -- shunt/quicktype.yue:708
+  local _base_0 = { -- shunt/quicktype.yue:708
+    __tostring = function(self) -- shunt/quicktype.yue:711
+      return "?" .. tostring(self.inner_type) -- shunt/quicktype.yue:712
+    end, -- shunt/quicktype.yue:714
+    checker = function(self, checker_builder) -- shunt/quicktype.yue:714
+      if checker_builder == nil then -- shunt/quicktype.yue:714
+        checker_builder = CheckerBuilder() -- shunt/quicktype.yue:714
+      end -- shunt/quicktype.yue:714
+      local inner_skip_target = checker_builder:add_with_unresolved_target(C_JMP_IF_NIL) -- shunt/quicktype.yue:716
+      self.inner_type:checker(checker_builder) -- shunt/quicktype.yue:717
+      inner_skip_target:resolve_here() -- shunt/quicktype.yue:718
+      return checker_builder -- shunt/quicktype.yue:715
+    end -- shunt/quicktype.yue:708
+  } -- shunt/quicktype.yue:708
+  local _list_0 = { -- shunt/quicktype.yue:708
+    Is -- shunt/quicktype.yue:708
+  } -- shunt/quicktype.yue:708
+  for _index_0 = 1, #_list_0 do -- shunt/quicktype.yue:718
+    local _item_0 = _list_0[_index_0] -- shunt/quicktype.yue:708
+    local _cls_0, _mixin_0 = (_item_0.__base ~= nil), _item_0.__base or _item_0 -- shunt/quicktype.yue:708
+    for _key_0, _val_0 in pairs(_mixin_0) do -- shunt/quicktype.yue:718
+      if _base_0[_key_0] == nil and (not _cls_0 or not _key_0:match("^__")) then -- shunt/quicktype.yue:708
+        _base_0[_key_0] = _val_0 -- shunt/quicktype.yue:708
+      end -- shunt/quicktype.yue:708
+    end -- shunt/quicktype.yue:718
+  end -- shunt/quicktype.yue:718
+  if _base_0.__index == nil then -- shunt/quicktype.yue:708
+    _base_0.__index = _base_0 -- shunt/quicktype.yue:708
+  end -- shunt/quicktype.yue:718
+  _class_0 = setmetatable({ -- shunt/quicktype.yue:708
+    __init = function(self, inner_type) -- shunt/quicktype.yue:709
+      self.inner_type = inner_type -- shunt/quicktype.yue:709
+    end, -- shunt/quicktype.yue:708
+    __base = _base_0, -- shunt/quicktype.yue:708
+    __name = "Optional" -- shunt/quicktype.yue:708
+  }, { -- shunt/quicktype.yue:708
+    __index = _base_0, -- shunt/quicktype.yue:708
+    __call = function(cls, ...) -- shunt/quicktype.yue:708
+      local _self_0 = setmetatable({ }, _base_0) -- shunt/quicktype.yue:708
+      cls.__init(_self_0, ...) -- shunt/quicktype.yue:708
+      return _self_0 -- shunt/quicktype.yue:708
+    end -- shunt/quicktype.yue:708
+  }) -- shunt/quicktype.yue:708
+  _base_0.__class = _class_0 -- shunt/quicktype.yue:708
+  Optional = _class_0 -- shunt/quicktype.yue:708
+end -- shunt/quicktype.yue:718
+do -- shunt/quicktype.yue:720
+  local _class_0 -- shunt/quicktype.yue:720
+  local _base_0 = { -- shunt/quicktype.yue:720
+    table_like = function(self, _table_like) -- shunt/quicktype.yue:724
+      self._table_like = _table_like -- shunt/quicktype.yue:724
+      return self -- shunt/quicktype.yue:725
+    end, -- shunt/quicktype.yue:727
+    __tostring = function(self) -- shunt/quicktype.yue:727
+      return "[" .. tostring(self.elem_type) .. "]" -- shunt/quicktype.yue:728
+    end, -- shunt/quicktype.yue:730
+    checker = function(self, checker_builder) -- shunt/quicktype.yue:730
+      if checker_builder == nil then -- shunt/quicktype.yue:730
+        checker_builder = CheckerBuilder() -- shunt/quicktype.yue:730
       end -- shunt/quicktype.yue:730
-      return checker_builder -- shunt/quicktype.yue:723
-    end -- shunt/quicktype.yue:715
-  } -- shunt/quicktype.yue:715
-  local _list_0 = { -- shunt/quicktype.yue:715
-    Is -- shunt/quicktype.yue:715
-  } -- shunt/quicktype.yue:715
-  for _index_0 = 1, #_list_0 do -- shunt/quicktype.yue:730
-    local _item_0 = _list_0[_index_0] -- shunt/quicktype.yue:715
-    local _cls_0, _mixin_0 = (_item_0.__base ~= nil), _item_0.__base or _item_0 -- shunt/quicktype.yue:715
-    for _key_0, _val_0 in pairs(_mixin_0) do -- shunt/quicktype.yue:730
-      if _base_0[_key_0] == nil and (not _cls_0 or not _key_0:match("^__")) then -- shunt/quicktype.yue:715
-        _base_0[_key_0] = _val_0 -- shunt/quicktype.yue:715
-      end -- shunt/quicktype.yue:715
-    end -- shunt/quicktype.yue:730
-  end -- shunt/quicktype.yue:730
-  if _base_0.__index == nil then -- shunt/quicktype.yue:715
-    _base_0.__index = _base_0 -- shunt/quicktype.yue:715
-  end -- shunt/quicktype.yue:730
-  _class_0 = setmetatable({ -- shunt/quicktype.yue:715
-    __init = function(self, elem_types) -- shunt/quicktype.yue:716
-      self.elem_types = elem_types -- shunt/quicktype.yue:716
-    end, -- shunt/quicktype.yue:715
-    __base = _base_0, -- shunt/quicktype.yue:715
-    __name = "Tuple" -- shunt/quicktype.yue:715
-  }, { -- shunt/quicktype.yue:715
-    __index = _base_0, -- shunt/quicktype.yue:715
-    __call = function(cls, ...) -- shunt/quicktype.yue:715
-      local _self_0 = setmetatable({ }, _base_0) -- shunt/quicktype.yue:715
-      cls.__init(_self_0, ...) -- shunt/quicktype.yue:715
-      return _self_0 -- shunt/quicktype.yue:715
-    end -- shunt/quicktype.yue:715
-  }) -- shunt/quicktype.yue:715
-  _base_0.__class = _class_0 -- shunt/quicktype.yue:715
-  Tuple = _class_0 -- shunt/quicktype.yue:715
-end -- shunt/quicktype.yue:730
-do -- shunt/quicktype.yue:732
-  local _class_0 -- shunt/quicktype.yue:732
-  local _base_0 = { -- shunt/quicktype.yue:732
-    __tostring = function(self) -- shunt/quicktype.yue:735
-      local field_reprs -- shunt/quicktype.yue:736
-      do -- shunt/quicktype.yue:736
-        local _accum_0 = { } -- shunt/quicktype.yue:736
-        local _len_0 = 1 -- shunt/quicktype.yue:736
-        local _list_0 = self.fields -- shunt/quicktype.yue:736
-        for _index_0 = 1, #_list_0 do -- shunt/quicktype.yue:736
-          local field = _list_0[_index_0] -- shunt/quicktype.yue:736
-          _accum_0[_len_0] = tostring(field) -- shunt/quicktype.yue:736
-          _len_0 = _len_0 + 1 -- shunt/quicktype.yue:736
-        end -- shunt/quicktype.yue:736
-        field_reprs = _accum_0 -- shunt/quicktype.yue:736
-      end -- shunt/quicktype.yue:736
-      return "{" .. tostring(table.concat(field_reprs, ', ')) .. "}" -- shunt/quicktype.yue:737
-    end, -- shunt/quicktype.yue:739
-    checker = function(self, checker_builder) -- shunt/quicktype.yue:739
-      if checker_builder == nil then -- shunt/quicktype.yue:739
-        checker_builder = CheckerBuilder() -- shunt/quicktype.yue:739
-      end -- shunt/quicktype.yue:739
-      checker_builder:add(C_ASSERT_PRIMITIVE, 'table') -- shunt/quicktype.yue:741
-      if (self.metatable_type ~= nil) then -- shunt/quicktype.yue:742
-        checker_builder:add(C_PUSH_METATABLE) -- shunt/quicktype.yue:743
-        self.metatable_type:checker(checker_builder) -- shunt/quicktype.yue:744
-        checker_builder:add(C_POP) -- shunt/quicktype.yue:745
-      end -- shunt/quicktype.yue:742
-      local _list_0 = self.fields -- shunt/quicktype.yue:746
-      for _index_0 = 1, #_list_0 do -- shunt/quicktype.yue:746
-        local field = _list_0[_index_0] -- shunt/quicktype.yue:746
-        checker_builder:add(C_PUSH, field.name) -- shunt/quicktype.yue:747
-        checker_builder:add(C_GET_FIELD) -- shunt/quicktype.yue:748
-        field:checker(checker_builder) -- shunt/quicktype.yue:749
-        checker_builder:add(C_POP) -- shunt/quicktype.yue:750
-        checker_builder:add(C_POP) -- shunt/quicktype.yue:751
-      end -- shunt/quicktype.yue:751
-      return checker_builder -- shunt/quicktype.yue:740
-    end -- shunt/quicktype.yue:732
-  } -- shunt/quicktype.yue:732
-  local _list_0 = { -- shunt/quicktype.yue:732
-    Is -- shunt/quicktype.yue:732
-  } -- shunt/quicktype.yue:732
-  for _index_0 = 1, #_list_0 do -- shunt/quicktype.yue:751
-    local _item_0 = _list_0[_index_0] -- shunt/quicktype.yue:732
-    local _cls_0, _mixin_0 = (_item_0.__base ~= nil), _item_0.__base or _item_0 -- shunt/quicktype.yue:732
-    for _key_0, _val_0 in pairs(_mixin_0) do -- shunt/quicktype.yue:751
-      if _base_0[_key_0] == nil and (not _cls_0 or not _key_0:match("^__")) then -- shunt/quicktype.yue:732
-        _base_0[_key_0] = _val_0 -- shunt/quicktype.yue:732
-      end -- shunt/quicktype.yue:732
-    end -- shunt/quicktype.yue:751
-  end -- shunt/quicktype.yue:751
-  if _base_0.__index == nil then -- shunt/quicktype.yue:732
-    _base_0.__index = _base_0 -- shunt/quicktype.yue:732
-  end -- shunt/quicktype.yue:751
-  _class_0 = setmetatable({ -- shunt/quicktype.yue:732
-    __init = function(self, metatable_type, fields) -- shunt/quicktype.yue:733
-      self.metatable_type = metatable_type -- shunt/quicktype.yue:733
-      self.fields = fields -- shunt/quicktype.yue:733
-    end, -- shunt/quicktype.yue:732
-    __base = _base_0, -- shunt/quicktype.yue:732
-    __name = "Struct" -- shunt/quicktype.yue:732
-  }, { -- shunt/quicktype.yue:732
-    __index = _base_0, -- shunt/quicktype.yue:732
-    __call = function(cls, ...) -- shunt/quicktype.yue:732
-      local _self_0 = setmetatable({ }, _base_0) -- shunt/quicktype.yue:732
-      cls.__init(_self_0, ...) -- shunt/quicktype.yue:732
-      return _self_0 -- shunt/quicktype.yue:732
-    end -- shunt/quicktype.yue:732
-  }) -- shunt/quicktype.yue:732
-  _base_0.__class = _class_0 -- shunt/quicktype.yue:732
-  Struct = _class_0 -- shunt/quicktype.yue:732
-end -- shunt/quicktype.yue:751
-do -- shunt/quicktype.yue:753
-  local _class_0 -- shunt/quicktype.yue:753
-  local _base_0 = { -- shunt/quicktype.yue:753
-    __tostring = function(self) -- shunt/quicktype.yue:756
-      return tostring(self.name) .. ": " .. tostring(self.type) -- shunt/quicktype.yue:757
-    end, -- shunt/quicktype.yue:759
-    checker = function(self, checker_builder) -- shunt/quicktype.yue:759
-      if checker_builder == nil then -- shunt/quicktype.yue:759
-        checker_builder = CheckerBuilder() -- shunt/quicktype.yue:759
+      if self._table_like then -- shunt/quicktype.yue:731
+        error("table-like arrays are not supported") -- shunt/quicktype.yue:732
+      end -- shunt/quicktype.yue:731
+      checker_builder:add(C_ASSERT_PRIMITIVE, 'table') -- shunt/quicktype.yue:734
+      checker_builder:add(C_PUSH, 1) -- shunt/quicktype.yue:735
+      local loop_start = checker_builder:add_labelled(C_GET_FIELD) -- shunt/quicktype.yue:737
+      local loop_exit_target = checker_builder:add_with_unresolved_target(C_JMP_IF_NIL) -- shunt/quicktype.yue:739
+      self.elem_type:checker(checker_builder) -- shunt/quicktype.yue:740
+      checker_builder:add(C_POP) -- shunt/quicktype.yue:741
+      checker_builder:add(C_INCR) -- shunt/quicktype.yue:742
+      checker_builder:add(C_JMP, loop_start.index) -- shunt/quicktype.yue:743
+      loop_exit_target:resolve_here() -- shunt/quicktype.yue:745
+      checker_builder:add(C_POP) -- shunt/quicktype.yue:746
+      checker_builder:add(C_DECR) -- shunt/quicktype.yue:747
+      checker_builder:add(C_ASSERT_LEN) -- shunt/quicktype.yue:748
+      checker_builder:add(C_POP) -- shunt/quicktype.yue:749
+      return checker_builder -- shunt/quicktype.yue:733
+    end -- shunt/quicktype.yue:720
+  } -- shunt/quicktype.yue:720
+  local _list_0 = { -- shunt/quicktype.yue:720
+    Is -- shunt/quicktype.yue:720
+  } -- shunt/quicktype.yue:720
+  for _index_0 = 1, #_list_0 do -- shunt/quicktype.yue:749
+    local _item_0 = _list_0[_index_0] -- shunt/quicktype.yue:720
+    local _cls_0, _mixin_0 = (_item_0.__base ~= nil), _item_0.__base or _item_0 -- shunt/quicktype.yue:720
+    for _key_0, _val_0 in pairs(_mixin_0) do -- shunt/quicktype.yue:749
+      if _base_0[_key_0] == nil and (not _cls_0 or not _key_0:match("^__")) then -- shunt/quicktype.yue:720
+        _base_0[_key_0] = _val_0 -- shunt/quicktype.yue:720
+      end -- shunt/quicktype.yue:720
+    end -- shunt/quicktype.yue:749
+  end -- shunt/quicktype.yue:749
+  if _base_0.__index == nil then -- shunt/quicktype.yue:720
+    _base_0.__index = _base_0 -- shunt/quicktype.yue:720
+  end -- shunt/quicktype.yue:749
+  _class_0 = setmetatable({ -- shunt/quicktype.yue:720
+    __init = function(self, elem_type) -- shunt/quicktype.yue:721
+      self.elem_type = elem_type -- shunt/quicktype.yue:721
+      self._table_like = false -- shunt/quicktype.yue:722
+    end, -- shunt/quicktype.yue:720
+    __base = _base_0, -- shunt/quicktype.yue:720
+    __name = "Array" -- shunt/quicktype.yue:720
+  }, { -- shunt/quicktype.yue:720
+    __index = _base_0, -- shunt/quicktype.yue:720
+    __call = function(cls, ...) -- shunt/quicktype.yue:720
+      local _self_0 = setmetatable({ }, _base_0) -- shunt/quicktype.yue:720
+      cls.__init(_self_0, ...) -- shunt/quicktype.yue:720
+      return _self_0 -- shunt/quicktype.yue:720
+    end -- shunt/quicktype.yue:720
+  }) -- shunt/quicktype.yue:720
+  _base_0.__class = _class_0 -- shunt/quicktype.yue:720
+  Array = _class_0 -- shunt/quicktype.yue:720
+end -- shunt/quicktype.yue:749
+do -- shunt/quicktype.yue:751
+  local _class_0 -- shunt/quicktype.yue:751
+  local _base_0 = { -- shunt/quicktype.yue:751
+    table_like = function(self, _table_like) -- shunt/quicktype.yue:755
+      self._table_like = _table_like -- shunt/quicktype.yue:755
+      return self -- shunt/quicktype.yue:756
+    end, -- shunt/quicktype.yue:758
+    __tostring = function(self) -- shunt/quicktype.yue:758
+      local elem_type_reprs -- shunt/quicktype.yue:759
+      do -- shunt/quicktype.yue:759
+        local _accum_0 = { } -- shunt/quicktype.yue:759
+        local _len_0 = 1 -- shunt/quicktype.yue:759
+        local _list_0 = self.elem_types -- shunt/quicktype.yue:759
+        for _index_0 = 1, #_list_0 do -- shunt/quicktype.yue:759
+          local elem_type = _list_0[_index_0] -- shunt/quicktype.yue:759
+          _accum_0[_len_0] = tostring(elem_type) -- shunt/quicktype.yue:759
+          _len_0 = _len_0 + 1 -- shunt/quicktype.yue:759
+        end -- shunt/quicktype.yue:759
+        elem_type_reprs = _accum_0 -- shunt/quicktype.yue:759
       end -- shunt/quicktype.yue:759
-      return self.type:checker(checker_builder) -- shunt/quicktype.yue:760
-    end -- shunt/quicktype.yue:753
-  } -- shunt/quicktype.yue:753
-  local _list_0 = { -- shunt/quicktype.yue:753
-    Is -- shunt/quicktype.yue:753
-  } -- shunt/quicktype.yue:753
-  for _index_0 = 1, #_list_0 do -- shunt/quicktype.yue:760
-    local _item_0 = _list_0[_index_0] -- shunt/quicktype.yue:753
-    local _cls_0, _mixin_0 = (_item_0.__base ~= nil), _item_0.__base or _item_0 -- shunt/quicktype.yue:753
-    for _key_0, _val_0 in pairs(_mixin_0) do -- shunt/quicktype.yue:760
-      if _base_0[_key_0] == nil and (not _cls_0 or not _key_0:match("^__")) then -- shunt/quicktype.yue:753
-        _base_0[_key_0] = _val_0 -- shunt/quicktype.yue:753
-      end -- shunt/quicktype.yue:753
-    end -- shunt/quicktype.yue:760
-  end -- shunt/quicktype.yue:760
-  if _base_0.__index == nil then -- shunt/quicktype.yue:753
-    _base_0.__index = _base_0 -- shunt/quicktype.yue:753
-  end -- shunt/quicktype.yue:760
-  _class_0 = setmetatable({ -- shunt/quicktype.yue:753
-    __init = function(self, name, type) -- shunt/quicktype.yue:754
-      self.name = name -- shunt/quicktype.yue:754
-      self.type = type -- shunt/quicktype.yue:754
-    end, -- shunt/quicktype.yue:753
-    __base = _base_0, -- shunt/quicktype.yue:753
-    __name = "Field" -- shunt/quicktype.yue:753
-  }, { -- shunt/quicktype.yue:753
-    __index = _base_0, -- shunt/quicktype.yue:753
-    __call = function(cls, ...) -- shunt/quicktype.yue:753
-      local _self_0 = setmetatable({ }, _base_0) -- shunt/quicktype.yue:753
-      cls.__init(_self_0, ...) -- shunt/quicktype.yue:753
-      return _self_0 -- shunt/quicktype.yue:753
-    end -- shunt/quicktype.yue:753
-  }) -- shunt/quicktype.yue:753
-  _base_0.__class = _class_0 -- shunt/quicktype.yue:753
-  Field = _class_0 -- shunt/quicktype.yue:753
-end -- shunt/quicktype.yue:760
-do -- shunt/quicktype.yue:762
-  local _class_0 -- shunt/quicktype.yue:762
-  local _base_0 = { -- shunt/quicktype.yue:762
-    __tostring = function(self) -- shunt/quicktype.yue:765
-      return "{" .. tostring(self.elem_type) .. "}" -- shunt/quicktype.yue:766
-    end, -- shunt/quicktype.yue:768
-    checker = function(self, checker_builder) -- shunt/quicktype.yue:768
-      if checker_builder == nil then -- shunt/quicktype.yue:768
-        checker_builder = CheckerBuilder() -- shunt/quicktype.yue:768
-      end -- shunt/quicktype.yue:768
-      checker_builder:add(C_ASSERT_PRIMITIVE, 'table') -- shunt/quicktype.yue:770
-      if (self.metatable_type ~= nil) then -- shunt/quicktype.yue:772
-        checker_builder:add(C_PUSH_METATABLE) -- shunt/quicktype.yue:773
-        self.metatable_type:checker(checker_builder) -- shunt/quicktype.yue:774
-        checker_builder:add(C_POP) -- shunt/quicktype.yue:775
-      end -- shunt/quicktype.yue:772
-      checker_builder:add(C_PUSH, V_NIL) -- shunt/quicktype.yue:777
-      checker_builder:add(C_NEXT) -- shunt/quicktype.yue:778
-      local loop_start_label = checker_builder:add_with_unresolved_target(C_JMP_IF_NIL) -- shunt/quicktype.yue:780
-      checker_builder:add(C_ASSERT_TRUTHY) -- shunt/quicktype.yue:781
-      checker_builder:add(C_POP) -- shunt/quicktype.yue:782
-      self.elem_type:checker(checker_builder) -- shunt/quicktype.yue:783
-      checker_builder:add(C_NEXT) -- shunt/quicktype.yue:785
-      checker_builder:add(C_JMP, loop_start_label.index) -- shunt/quicktype.yue:786
-      loop_start_label:resolve_here() -- shunt/quicktype.yue:788
-      checker_builder:add(C_POP) -- shunt/quicktype.yue:789
-      checker_builder:add(C_POP) -- shunt/quicktype.yue:790
-      return checker_builder -- shunt/quicktype.yue:769
-    end -- shunt/quicktype.yue:762
-  } -- shunt/quicktype.yue:762
-  local _list_0 = { -- shunt/quicktype.yue:762
-    Is -- shunt/quicktype.yue:762
-  } -- shunt/quicktype.yue:762
-  for _index_0 = 1, #_list_0 do -- shunt/quicktype.yue:790
-    local _item_0 = _list_0[_index_0] -- shunt/quicktype.yue:762
-    local _cls_0, _mixin_0 = (_item_0.__base ~= nil), _item_0.__base or _item_0 -- shunt/quicktype.yue:762
-    for _key_0, _val_0 in pairs(_mixin_0) do -- shunt/quicktype.yue:790
-      if _base_0[_key_0] == nil and (not _cls_0 or not _key_0:match("^__")) then -- shunt/quicktype.yue:762
-        _base_0[_key_0] = _val_0 -- shunt/quicktype.yue:762
-      end -- shunt/quicktype.yue:762
-    end -- shunt/quicktype.yue:790
-  end -- shunt/quicktype.yue:790
-  if _base_0.__index == nil then -- shunt/quicktype.yue:762
-    _base_0.__index = _base_0 -- shunt/quicktype.yue:762
-  end -- shunt/quicktype.yue:790
-  _class_0 = setmetatable({ -- shunt/quicktype.yue:762
-    __init = function(self, metatable_type, elem_type) -- shunt/quicktype.yue:763
-      self.metatable_type = metatable_type -- shunt/quicktype.yue:763
-      self.elem_type = elem_type -- shunt/quicktype.yue:763
+      return "(" .. tostring(table.concat(elem_type_reprs, ', ')) .. ")" -- shunt/quicktype.yue:760
     end, -- shunt/quicktype.yue:762
-    __base = _base_0, -- shunt/quicktype.yue:762
-    __name = "Set" -- shunt/quicktype.yue:762
-  }, { -- shunt/quicktype.yue:762
-    __index = _base_0, -- shunt/quicktype.yue:762
-    __call = function(cls, ...) -- shunt/quicktype.yue:762
-      local _self_0 = setmetatable({ }, _base_0) -- shunt/quicktype.yue:762
-      cls.__init(_self_0, ...) -- shunt/quicktype.yue:762
-      return _self_0 -- shunt/quicktype.yue:762
-    end -- shunt/quicktype.yue:762
-  }) -- shunt/quicktype.yue:762
-  _base_0.__class = _class_0 -- shunt/quicktype.yue:762
-  Set = _class_0 -- shunt/quicktype.yue:762
-end -- shunt/quicktype.yue:790
-do -- shunt/quicktype.yue:792
-  local _class_0 -- shunt/quicktype.yue:792
-  local _base_0 = { -- shunt/quicktype.yue:792
-    __tostring = function(self) -- shunt/quicktype.yue:795
-      return "{" .. tostring(self.in_type) .. " -> " .. tostring(self.out_type) .. "}" -- shunt/quicktype.yue:796
-    end, -- shunt/quicktype.yue:798
-    checker = function(self, checker_builder) -- shunt/quicktype.yue:798
-      if checker_builder == nil then -- shunt/quicktype.yue:798
-        checker_builder = CheckerBuilder() -- shunt/quicktype.yue:798
-      end -- shunt/quicktype.yue:798
-      checker_builder:add(C_ASSERT_PRIMITIVE, 'table') -- shunt/quicktype.yue:800
-      if (self.metatable_type ~= nil) then -- shunt/quicktype.yue:802
-        checker_builder:add(C_PUSH_METATABLE) -- shunt/quicktype.yue:803
-        self.metatable_type:checker(checker_builder) -- shunt/quicktype.yue:804
-        checker_builder:add(C_POP) -- shunt/quicktype.yue:805
+    checker = function(self, checker_builder) -- shunt/quicktype.yue:762
+      if checker_builder == nil then -- shunt/quicktype.yue:762
+        checker_builder = CheckerBuilder() -- shunt/quicktype.yue:762
+      end -- shunt/quicktype.yue:762
+      if self._table_like then -- shunt/quicktype.yue:763
+        error("table-like arrays are not supported") -- shunt/quicktype.yue:764
+      end -- shunt/quicktype.yue:763
+      checker_builder:add(C_ASSERT_PRIMITIVE, 'table') -- shunt/quicktype.yue:766
+      for i = 1, #self.elem_types do -- shunt/quicktype.yue:768
+        checker_builder:add(C_PUSH, i) -- shunt/quicktype.yue:769
+        checker_builder:add(C_GET_FIELD) -- shunt/quicktype.yue:770
+        self.elem_types[i]:checker(checker_builder) -- shunt/quicktype.yue:771
+        checker_builder:add(C_POP) -- shunt/quicktype.yue:772
+        checker_builder:add(C_POP) -- shunt/quicktype.yue:773
+      end -- shunt/quicktype.yue:773
+      return checker_builder -- shunt/quicktype.yue:765
+    end -- shunt/quicktype.yue:751
+  } -- shunt/quicktype.yue:751
+  local _list_0 = { -- shunt/quicktype.yue:751
+    Is -- shunt/quicktype.yue:751
+  } -- shunt/quicktype.yue:751
+  for _index_0 = 1, #_list_0 do -- shunt/quicktype.yue:773
+    local _item_0 = _list_0[_index_0] -- shunt/quicktype.yue:751
+    local _cls_0, _mixin_0 = (_item_0.__base ~= nil), _item_0.__base or _item_0 -- shunt/quicktype.yue:751
+    for _key_0, _val_0 in pairs(_mixin_0) do -- shunt/quicktype.yue:773
+      if _base_0[_key_0] == nil and (not _cls_0 or not _key_0:match("^__")) then -- shunt/quicktype.yue:751
+        _base_0[_key_0] = _val_0 -- shunt/quicktype.yue:751
+      end -- shunt/quicktype.yue:751
+    end -- shunt/quicktype.yue:773
+  end -- shunt/quicktype.yue:773
+  if _base_0.__index == nil then -- shunt/quicktype.yue:751
+    _base_0.__index = _base_0 -- shunt/quicktype.yue:751
+  end -- shunt/quicktype.yue:773
+  _class_0 = setmetatable({ -- shunt/quicktype.yue:751
+    __init = function(self, elem_types) -- shunt/quicktype.yue:752
+      self.elem_types = elem_types -- shunt/quicktype.yue:752
+      self._table_like = false -- shunt/quicktype.yue:753
+    end, -- shunt/quicktype.yue:751
+    __base = _base_0, -- shunt/quicktype.yue:751
+    __name = "Tuple" -- shunt/quicktype.yue:751
+  }, { -- shunt/quicktype.yue:751
+    __index = _base_0, -- shunt/quicktype.yue:751
+    __call = function(cls, ...) -- shunt/quicktype.yue:751
+      local _self_0 = setmetatable({ }, _base_0) -- shunt/quicktype.yue:751
+      cls.__init(_self_0, ...) -- shunt/quicktype.yue:751
+      return _self_0 -- shunt/quicktype.yue:751
+    end -- shunt/quicktype.yue:751
+  }) -- shunt/quicktype.yue:751
+  _base_0.__class = _class_0 -- shunt/quicktype.yue:751
+  Tuple = _class_0 -- shunt/quicktype.yue:751
+end -- shunt/quicktype.yue:773
+do -- shunt/quicktype.yue:775
+  local _class_0 -- shunt/quicktype.yue:775
+  local _base_0 = { -- shunt/quicktype.yue:775
+    table_like = function(self, _table_like) -- shunt/quicktype.yue:779
+      self._table_like = _table_like -- shunt/quicktype.yue:779
+      return self -- shunt/quicktype.yue:780
+    end, -- shunt/quicktype.yue:782
+    __tostring = function(self) -- shunt/quicktype.yue:782
+      local field_reprs -- shunt/quicktype.yue:783
+      do -- shunt/quicktype.yue:783
+        local _accum_0 = { } -- shunt/quicktype.yue:783
+        local _len_0 = 1 -- shunt/quicktype.yue:783
+        local _list_0 = self.fields -- shunt/quicktype.yue:783
+        for _index_0 = 1, #_list_0 do -- shunt/quicktype.yue:783
+          local field = _list_0[_index_0] -- shunt/quicktype.yue:783
+          _accum_0[_len_0] = tostring(field) -- shunt/quicktype.yue:783
+          _len_0 = _len_0 + 1 -- shunt/quicktype.yue:783
+        end -- shunt/quicktype.yue:783
+        field_reprs = _accum_0 -- shunt/quicktype.yue:783
+      end -- shunt/quicktype.yue:783
+      return "{" .. tostring(table.concat(field_reprs, ', ')) .. "}" -- shunt/quicktype.yue:784
+    end, -- shunt/quicktype.yue:786
+    checker = function(self, checker_builder) -- shunt/quicktype.yue:786
+      if checker_builder == nil then -- shunt/quicktype.yue:786
+        checker_builder = CheckerBuilder() -- shunt/quicktype.yue:786
+      end -- shunt/quicktype.yue:786
+      if self._table_like then -- shunt/quicktype.yue:788
+        checker_builder:add(C_ASSERT_TABLE_LIKE) -- shunt/quicktype.yue:789
+      else -- shunt/quicktype.yue:791
+        checker_builder:add(C_ASSERT_PRIMITIVE, 'table') -- shunt/quicktype.yue:791
+      end -- shunt/quicktype.yue:788
+      if (self.metatable_type ~= nil) then -- shunt/quicktype.yue:793
+        checker_builder:add(C_PUSH_METATABLE) -- shunt/quicktype.yue:794
+        self.metatable_type:checker(checker_builder) -- shunt/quicktype.yue:795
+        checker_builder:add(C_POP) -- shunt/quicktype.yue:796
+      end -- shunt/quicktype.yue:793
+      local _list_0 = self.fields -- shunt/quicktype.yue:797
+      for _index_0 = 1, #_list_0 do -- shunt/quicktype.yue:797
+        local field = _list_0[_index_0] -- shunt/quicktype.yue:797
+        checker_builder:add(C_PUSH, field.name) -- shunt/quicktype.yue:798
+        checker_builder:add(C_GET_FIELD) -- shunt/quicktype.yue:799
+        field:checker(checker_builder) -- shunt/quicktype.yue:800
+        checker_builder:add(C_POP) -- shunt/quicktype.yue:801
+        checker_builder:add(C_POP) -- shunt/quicktype.yue:802
       end -- shunt/quicktype.yue:802
-      checker_builder:add(C_PUSH, V_NIL) -- shunt/quicktype.yue:807
-      checker_builder:add(C_NEXT) -- shunt/quicktype.yue:808
-      local loop_start_label = checker_builder:add_with_unresolved_target(C_JMP_IF_NIL) -- shunt/quicktype.yue:810
-      self.out_type:checker(checker_builder) -- shunt/quicktype.yue:812
-      checker_builder:add(C_POP) -- shunt/quicktype.yue:813
-      self.in_type:checker(checker_builder) -- shunt/quicktype.yue:814
-      checker_builder:add(C_NEXT) -- shunt/quicktype.yue:816
-      checker_builder:add(C_JMP, loop_start_label.index) -- shunt/quicktype.yue:817
-      loop_start_label:resolve_here() -- shunt/quicktype.yue:819
-      checker_builder:add(C_POP) -- shunt/quicktype.yue:820
-      checker_builder:add(C_POP) -- shunt/quicktype.yue:821
-      return checker_builder -- shunt/quicktype.yue:799
-    end -- shunt/quicktype.yue:792
-  } -- shunt/quicktype.yue:792
-  local _list_0 = { -- shunt/quicktype.yue:792
-    Is -- shunt/quicktype.yue:792
-  } -- shunt/quicktype.yue:792
-  for _index_0 = 1, #_list_0 do -- shunt/quicktype.yue:821
-    local _item_0 = _list_0[_index_0] -- shunt/quicktype.yue:792
-    local _cls_0, _mixin_0 = (_item_0.__base ~= nil), _item_0.__base or _item_0 -- shunt/quicktype.yue:792
-    for _key_0, _val_0 in pairs(_mixin_0) do -- shunt/quicktype.yue:821
-      if _base_0[_key_0] == nil and (not _cls_0 or not _key_0:match("^__")) then -- shunt/quicktype.yue:792
-        _base_0[_key_0] = _val_0 -- shunt/quicktype.yue:792
-      end -- shunt/quicktype.yue:792
-    end -- shunt/quicktype.yue:821
-  end -- shunt/quicktype.yue:821
-  if _base_0.__index == nil then -- shunt/quicktype.yue:792
-    _base_0.__index = _base_0 -- shunt/quicktype.yue:792
-  end -- shunt/quicktype.yue:821
-  _class_0 = setmetatable({ -- shunt/quicktype.yue:792
-    __init = function(self, metatable_type, in_type, out_type) -- shunt/quicktype.yue:793
-      self.metatable_type = metatable_type -- shunt/quicktype.yue:793
-      self.in_type = in_type -- shunt/quicktype.yue:793
-      self.out_type = out_type -- shunt/quicktype.yue:793
-    end, -- shunt/quicktype.yue:792
-    __base = _base_0, -- shunt/quicktype.yue:792
-    __name = "Mapping" -- shunt/quicktype.yue:792
-  }, { -- shunt/quicktype.yue:792
-    __index = _base_0, -- shunt/quicktype.yue:792
-    __call = function(cls, ...) -- shunt/quicktype.yue:792
-      local _self_0 = setmetatable({ }, _base_0) -- shunt/quicktype.yue:792
-      cls.__init(_self_0, ...) -- shunt/quicktype.yue:792
-      return _self_0 -- shunt/quicktype.yue:792
-    end -- shunt/quicktype.yue:792
-  }) -- shunt/quicktype.yue:792
-  _base_0.__class = _class_0 -- shunt/quicktype.yue:792
-  Mapping = _class_0 -- shunt/quicktype.yue:792
-end -- shunt/quicktype.yue:821
-do -- shunt/quicktype.yue:823
-  local _class_0 -- shunt/quicktype.yue:823
-  local _base_0 = { -- shunt/quicktype.yue:823
-    param_checkers = function(self) -- shunt/quicktype.yue:830
-      do -- shunt/quicktype.yue:831
-        local param_checkers = self._param_checkers -- shunt/quicktype.yue:831
-        if param_checkers then -- shunt/quicktype.yue:831
-          return param_checkers -- shunt/quicktype.yue:832
-        end -- shunt/quicktype.yue:831
-      end -- shunt/quicktype.yue:831
-      local param_checkers -- shunt/quicktype.yue:833
-      do -- shunt/quicktype.yue:833
-        local _with_0 = setmetatable({ }, { }) -- shunt/quicktype.yue:833
-        local _list_0 = self.param_types -- shunt/quicktype.yue:834
-        for _index_0 = 1, #_list_0 do -- shunt/quicktype.yue:834
-          local param_type = _list_0[_index_0] -- shunt/quicktype.yue:834
-          _with_0[#_with_0 + 1] = param_type:checker():build() -- shunt/quicktype.yue:835
-        end -- shunt/quicktype.yue:835
-        if (getmetatable(self.param_types) ~= nil) then -- shunt/quicktype.yue:836
-          do -- shunt/quicktype.yue:837
-            local remainder_type = self.remainder_param_type -- shunt/quicktype.yue:837
-            if remainder_type then -- shunt/quicktype.yue:837
-              local remainder_type_checker = remainder_type:checker():build() -- shunt/quicktype.yue:838
-              getmetatable(_with_0).__index = function(self) -- shunt/quicktype.yue:839
-                return remainder_type_checker -- shunt/quicktype.yue:839
-              end -- shunt/quicktype.yue:839
-            end -- shunt/quicktype.yue:837
-          end -- shunt/quicktype.yue:837
-        end -- shunt/quicktype.yue:836
-        param_checkers = _with_0 -- shunt/quicktype.yue:833
-      end -- shunt/quicktype.yue:833
-      self._param_checkers = param_checkers -- shunt/quicktype.yue:840
-      return param_checkers -- shunt/quicktype.yue:841
-    end, -- shunt/quicktype.yue:843
-    return_checkers = function(self) -- shunt/quicktype.yue:843
-      do -- shunt/quicktype.yue:844
-        local return_checkers = self._return_checkers -- shunt/quicktype.yue:844
-        if return_checkers then -- shunt/quicktype.yue:844
-          return return_checkers -- shunt/quicktype.yue:845
-        end -- shunt/quicktype.yue:844
-      end -- shunt/quicktype.yue:844
-      local return_checkers -- shunt/quicktype.yue:846
-      do -- shunt/quicktype.yue:846
-        local _with_0 = setmetatable({ }, { }) -- shunt/quicktype.yue:846
-        local _list_0 = self.return_types -- shunt/quicktype.yue:847
-        for _index_0 = 1, #_list_0 do -- shunt/quicktype.yue:847
-          local return_type = _list_0[_index_0] -- shunt/quicktype.yue:847
-          _with_0[#_with_0 + 1] = return_type:checker():build() -- shunt/quicktype.yue:848
-        end -- shunt/quicktype.yue:848
-        if (getmetatable(self.return_types) ~= nil) then -- shunt/quicktype.yue:849
-          do -- shunt/quicktype.yue:850
-            local remainder_type = self.remainder_return_type -- shunt/quicktype.yue:850
-            if remainder_type then -- shunt/quicktype.yue:850
-              local remainder_type_checker = remainder_type:checker():build() -- shunt/quicktype.yue:851
-              getmetatable(_with_0).__index = function(self) -- shunt/quicktype.yue:852
-                return remainder_type_checker -- shunt/quicktype.yue:852
-              end -- shunt/quicktype.yue:852
-            end -- shunt/quicktype.yue:850
-          end -- shunt/quicktype.yue:850
-        end -- shunt/quicktype.yue:849
-        return_checkers = _with_0 -- shunt/quicktype.yue:846
-      end -- shunt/quicktype.yue:846
-      self._return_checkers = return_checkers -- shunt/quicktype.yue:853
-      return return_checkers -- shunt/quicktype.yue:854
+      return checker_builder -- shunt/quicktype.yue:787
+    end -- shunt/quicktype.yue:775
+  } -- shunt/quicktype.yue:775
+  local _list_0 = { -- shunt/quicktype.yue:775
+    Is -- shunt/quicktype.yue:775
+  } -- shunt/quicktype.yue:775
+  for _index_0 = 1, #_list_0 do -- shunt/quicktype.yue:802
+    local _item_0 = _list_0[_index_0] -- shunt/quicktype.yue:775
+    local _cls_0, _mixin_0 = (_item_0.__base ~= nil), _item_0.__base or _item_0 -- shunt/quicktype.yue:775
+    for _key_0, _val_0 in pairs(_mixin_0) do -- shunt/quicktype.yue:802
+      if _base_0[_key_0] == nil and (not _cls_0 or not _key_0:match("^__")) then -- shunt/quicktype.yue:775
+        _base_0[_key_0] = _val_0 -- shunt/quicktype.yue:775
+      end -- shunt/quicktype.yue:775
+    end -- shunt/quicktype.yue:802
+  end -- shunt/quicktype.yue:802
+  if _base_0.__index == nil then -- shunt/quicktype.yue:775
+    _base_0.__index = _base_0 -- shunt/quicktype.yue:775
+  end -- shunt/quicktype.yue:802
+  _class_0 = setmetatable({ -- shunt/quicktype.yue:775
+    __init = function(self, metatable_type, fields) -- shunt/quicktype.yue:776
+      self.metatable_type = metatable_type -- shunt/quicktype.yue:776
+      self.fields = fields -- shunt/quicktype.yue:776
+      self._table_like = false -- shunt/quicktype.yue:777
+    end, -- shunt/quicktype.yue:775
+    __base = _base_0, -- shunt/quicktype.yue:775
+    __name = "Struct" -- shunt/quicktype.yue:775
+  }, { -- shunt/quicktype.yue:775
+    __index = _base_0, -- shunt/quicktype.yue:775
+    __call = function(cls, ...) -- shunt/quicktype.yue:775
+      local _self_0 = setmetatable({ }, _base_0) -- shunt/quicktype.yue:775
+      cls.__init(_self_0, ...) -- shunt/quicktype.yue:775
+      return _self_0 -- shunt/quicktype.yue:775
+    end -- shunt/quicktype.yue:775
+  }) -- shunt/quicktype.yue:775
+  _base_0.__class = _class_0 -- shunt/quicktype.yue:775
+  Struct = _class_0 -- shunt/quicktype.yue:775
+end -- shunt/quicktype.yue:802
+do -- shunt/quicktype.yue:804
+  local _class_0 -- shunt/quicktype.yue:804
+  local _base_0 = { -- shunt/quicktype.yue:804
+    __tostring = function(self) -- shunt/quicktype.yue:807
+      return tostring(self.name) .. ": " .. tostring(self.type) -- shunt/quicktype.yue:808
+    end, -- shunt/quicktype.yue:810
+    checker = function(self, checker_builder) -- shunt/quicktype.yue:810
+      if checker_builder == nil then -- shunt/quicktype.yue:810
+        checker_builder = CheckerBuilder() -- shunt/quicktype.yue:810
+      end -- shunt/quicktype.yue:810
+      return self.type:checker(checker_builder) -- shunt/quicktype.yue:811
+    end -- shunt/quicktype.yue:804
+  } -- shunt/quicktype.yue:804
+  local _list_0 = { -- shunt/quicktype.yue:804
+    Is -- shunt/quicktype.yue:804
+  } -- shunt/quicktype.yue:804
+  for _index_0 = 1, #_list_0 do -- shunt/quicktype.yue:811
+    local _item_0 = _list_0[_index_0] -- shunt/quicktype.yue:804
+    local _cls_0, _mixin_0 = (_item_0.__base ~= nil), _item_0.__base or _item_0 -- shunt/quicktype.yue:804
+    for _key_0, _val_0 in pairs(_mixin_0) do -- shunt/quicktype.yue:811
+      if _base_0[_key_0] == nil and (not _cls_0 or not _key_0:match("^__")) then -- shunt/quicktype.yue:804
+        _base_0[_key_0] = _val_0 -- shunt/quicktype.yue:804
+      end -- shunt/quicktype.yue:804
+    end -- shunt/quicktype.yue:811
+  end -- shunt/quicktype.yue:811
+  if _base_0.__index == nil then -- shunt/quicktype.yue:804
+    _base_0.__index = _base_0 -- shunt/quicktype.yue:804
+  end -- shunt/quicktype.yue:811
+  _class_0 = setmetatable({ -- shunt/quicktype.yue:804
+    __init = function(self, name, type) -- shunt/quicktype.yue:805
+      self.name = name -- shunt/quicktype.yue:805
+      self.type = type -- shunt/quicktype.yue:805
+    end, -- shunt/quicktype.yue:804
+    __base = _base_0, -- shunt/quicktype.yue:804
+    __name = "Field" -- shunt/quicktype.yue:804
+  }, { -- shunt/quicktype.yue:804
+    __index = _base_0, -- shunt/quicktype.yue:804
+    __call = function(cls, ...) -- shunt/quicktype.yue:804
+      local _self_0 = setmetatable({ }, _base_0) -- shunt/quicktype.yue:804
+      cls.__init(_self_0, ...) -- shunt/quicktype.yue:804
+      return _self_0 -- shunt/quicktype.yue:804
+    end -- shunt/quicktype.yue:804
+  }) -- shunt/quicktype.yue:804
+  _base_0.__class = _class_0 -- shunt/quicktype.yue:804
+  Field = _class_0 -- shunt/quicktype.yue:804
+end -- shunt/quicktype.yue:811
+do -- shunt/quicktype.yue:813
+  local _class_0 -- shunt/quicktype.yue:813
+  local _base_0 = { -- shunt/quicktype.yue:813
+    table_like = function(self, _table_like) -- shunt/quicktype.yue:817
+      self._table_like = _table_like -- shunt/quicktype.yue:817
+      return self -- shunt/quicktype.yue:818
+    end, -- shunt/quicktype.yue:820
+    __tostring = function(self) -- shunt/quicktype.yue:820
+      return "{" .. tostring(self.elem_type) .. "}" -- shunt/quicktype.yue:821
+    end, -- shunt/quicktype.yue:823
+    checker = function(self, checker_builder) -- shunt/quicktype.yue:823
+      if checker_builder == nil then -- shunt/quicktype.yue:823
+        checker_builder = CheckerBuilder() -- shunt/quicktype.yue:823
+      end -- shunt/quicktype.yue:823
+      if self._table_like then -- shunt/quicktype.yue:824
+        error("table-like arrays are not supported") -- shunt/quicktype.yue:825
+      end -- shunt/quicktype.yue:824
+      checker_builder:add(C_ASSERT_PRIMITIVE, 'table') -- shunt/quicktype.yue:827
+      if (self.metatable_type ~= nil) then -- shunt/quicktype.yue:829
+        checker_builder:add(C_PUSH_METATABLE) -- shunt/quicktype.yue:830
+        self.metatable_type:checker(checker_builder) -- shunt/quicktype.yue:831
+        checker_builder:add(C_POP) -- shunt/quicktype.yue:832
+      end -- shunt/quicktype.yue:829
+      checker_builder:add(C_PUSH, V_NIL) -- shunt/quicktype.yue:834
+      checker_builder:add(C_NEXT) -- shunt/quicktype.yue:835
+      local loop_start_label = checker_builder:add_with_unresolved_target(C_JMP_IF_NIL) -- shunt/quicktype.yue:837
+      checker_builder:add(C_ASSERT_TRUTHY) -- shunt/quicktype.yue:838
+      checker_builder:add(C_POP) -- shunt/quicktype.yue:839
+      self.elem_type:checker(checker_builder) -- shunt/quicktype.yue:840
+      checker_builder:add(C_NEXT) -- shunt/quicktype.yue:842
+      checker_builder:add(C_JMP, loop_start_label.index) -- shunt/quicktype.yue:843
+      loop_start_label:resolve_here() -- shunt/quicktype.yue:845
+      checker_builder:add(C_POP) -- shunt/quicktype.yue:846
+      checker_builder:add(C_POP) -- shunt/quicktype.yue:847
+      return checker_builder -- shunt/quicktype.yue:826
+    end -- shunt/quicktype.yue:813
+  } -- shunt/quicktype.yue:813
+  local _list_0 = { -- shunt/quicktype.yue:813
+    Is -- shunt/quicktype.yue:813
+  } -- shunt/quicktype.yue:813
+  for _index_0 = 1, #_list_0 do -- shunt/quicktype.yue:847
+    local _item_0 = _list_0[_index_0] -- shunt/quicktype.yue:813
+    local _cls_0, _mixin_0 = (_item_0.__base ~= nil), _item_0.__base or _item_0 -- shunt/quicktype.yue:813
+    for _key_0, _val_0 in pairs(_mixin_0) do -- shunt/quicktype.yue:847
+      if _base_0[_key_0] == nil and (not _cls_0 or not _key_0:match("^__")) then -- shunt/quicktype.yue:813
+        _base_0[_key_0] = _val_0 -- shunt/quicktype.yue:813
+      end -- shunt/quicktype.yue:813
+    end -- shunt/quicktype.yue:847
+  end -- shunt/quicktype.yue:847
+  if _base_0.__index == nil then -- shunt/quicktype.yue:813
+    _base_0.__index = _base_0 -- shunt/quicktype.yue:813
+  end -- shunt/quicktype.yue:847
+  _class_0 = setmetatable({ -- shunt/quicktype.yue:813
+    __init = function(self, metatable_type, elem_type) -- shunt/quicktype.yue:814
+      self.metatable_type = metatable_type -- shunt/quicktype.yue:814
+      self.elem_type = elem_type -- shunt/quicktype.yue:814
+      self._table_like = false -- shunt/quicktype.yue:815
+    end, -- shunt/quicktype.yue:813
+    __base = _base_0, -- shunt/quicktype.yue:813
+    __name = "Set" -- shunt/quicktype.yue:813
+  }, { -- shunt/quicktype.yue:813
+    __index = _base_0, -- shunt/quicktype.yue:813
+    __call = function(cls, ...) -- shunt/quicktype.yue:813
+      local _self_0 = setmetatable({ }, _base_0) -- shunt/quicktype.yue:813
+      cls.__init(_self_0, ...) -- shunt/quicktype.yue:813
+      return _self_0 -- shunt/quicktype.yue:813
+    end -- shunt/quicktype.yue:813
+  }) -- shunt/quicktype.yue:813
+  _base_0.__class = _class_0 -- shunt/quicktype.yue:813
+  Set = _class_0 -- shunt/quicktype.yue:813
+end -- shunt/quicktype.yue:847
+do -- shunt/quicktype.yue:849
+  local _class_0 -- shunt/quicktype.yue:849
+  local _base_0 = { -- shunt/quicktype.yue:849
+    table_like = function(self, _table_like) -- shunt/quicktype.yue:853
+      self._table_like = _table_like -- shunt/quicktype.yue:853
+      return self -- shunt/quicktype.yue:854
     end, -- shunt/quicktype.yue:856
     __tostring = function(self) -- shunt/quicktype.yue:856
-      return table.concat((function() -- shunt/quicktype.yue:857
-        local _with_0 = { } -- shunt/quicktype.yue:857
-        _with_0[#_with_0 + 1] = '(' -- shunt/quicktype.yue:858
-        local first_param = true -- shunt/quicktype.yue:859
-        local _list_0 = self.param_types -- shunt/quicktype.yue:860
-        for _index_0 = 1, #_list_0 do -- shunt/quicktype.yue:860
-          local param_type = _list_0[_index_0] -- shunt/quicktype.yue:860
-          if not first_param then -- shunt/quicktype.yue:861
-            _with_0[#_with_0 + 1] = ", " -- shunt/quicktype.yue:862
-          end -- shunt/quicktype.yue:861
-          first_param = false -- shunt/quicktype.yue:863
-          _with_0[#_with_0 + 1] = tostring(param_type) -- shunt/quicktype.yue:865
-        end -- shunt/quicktype.yue:865
-        if (self.remainder_param_type ~= nil) then -- shunt/quicktype.yue:866
-          if not first_param then -- shunt/quicktype.yue:867
-            _with_0[#_with_0 + 1] = ', ' -- shunt/quicktype.yue:868
-          end -- shunt/quicktype.yue:867
-          _with_0[#_with_0 + 1] = tostring(self.remainder_param_type) -- shunt/quicktype.yue:869
-          _with_0[#_with_0 + 1] = '...' -- shunt/quicktype.yue:870
-        end -- shunt/quicktype.yue:866
-        _with_0[#_with_0 + 1] = ') -> ' -- shunt/quicktype.yue:871
-        if #self.return_types == 1 then -- shunt/quicktype.yue:872
-          if (self.remainder_return_type ~= nil) then -- shunt/quicktype.yue:873
-            _with_0[#_with_0 + 1] = tostring(self.remainder_return_type) -- shunt/quicktype.yue:874
-            _with_0[#_with_0 + 1] = '...' -- shunt/quicktype.yue:875
-          else -- shunt/quicktype.yue:877
-            _with_0[#_with_0 + 1] = tostring(self.return_types[1]) -- shunt/quicktype.yue:877
-          end -- shunt/quicktype.yue:873
-        else -- shunt/quicktype.yue:879
-          _with_0[#_with_0 + 1] = '<' -- shunt/quicktype.yue:879
-          local first_ret = true -- shunt/quicktype.yue:880
-          local _list_1 = self.return_types -- shunt/quicktype.yue:881
-          for _index_0 = 1, #_list_1 do -- shunt/quicktype.yue:881
-            local return_type = _list_1[_index_0] -- shunt/quicktype.yue:881
-            if not first_ret then -- shunt/quicktype.yue:882
-              _with_0[#_with_0 + 1] = ", " -- shunt/quicktype.yue:883
-            end -- shunt/quicktype.yue:882
-            first_ret = false -- shunt/quicktype.yue:884
-            _with_0[#_with_0 + 1] = tostring(return_type) -- shunt/quicktype.yue:885
-          end -- shunt/quicktype.yue:885
-          if (self.remainder_return_type ~= nil) then -- shunt/quicktype.yue:886
-            if not first_ret then -- shunt/quicktype.yue:887
-              _with_0[#_with_0 + 1] = ', ' -- shunt/quicktype.yue:888
-            end -- shunt/quicktype.yue:887
-            _with_0[#_with_0 + 1] = tostring(self.remainder_return_type) -- shunt/quicktype.yue:889
-            _with_0[#_with_0 + 1] = '...' -- shunt/quicktype.yue:890
-          end -- shunt/quicktype.yue:886
-          _with_0[#_with_0 + 1] = '>' -- shunt/quicktype.yue:891
-        end -- shunt/quicktype.yue:872
-        return _with_0 -- shunt/quicktype.yue:857
-      end)()) -- shunt/quicktype.yue:891
-    end, -- shunt/quicktype.yue:893
-    checker = function(self, checker_builder) -- shunt/quicktype.yue:893
-      if checker_builder == nil then -- shunt/quicktype.yue:893
-        checker_builder = CheckerBuilder() -- shunt/quicktype.yue:893
-      end -- shunt/quicktype.yue:893
-      checker_builder:add(C_ASSERT_PRIMITIVE, 'function') -- shunt/quicktype.yue:895
-      return checker_builder -- shunt/quicktype.yue:894
-    end -- shunt/quicktype.yue:823
-  } -- shunt/quicktype.yue:823
-  local _list_0 = { -- shunt/quicktype.yue:823
-    Is -- shunt/quicktype.yue:823
-  } -- shunt/quicktype.yue:823
-  for _index_0 = 1, #_list_0 do -- shunt/quicktype.yue:895
-    local _item_0 = _list_0[_index_0] -- shunt/quicktype.yue:823
-    local _cls_0, _mixin_0 = (_item_0.__base ~= nil), _item_0.__base or _item_0 -- shunt/quicktype.yue:823
-    for _key_0, _val_0 in pairs(_mixin_0) do -- shunt/quicktype.yue:895
-      if _base_0[_key_0] == nil and (not _cls_0 or not _key_0:match("^__")) then -- shunt/quicktype.yue:823
-        _base_0[_key_0] = _val_0 -- shunt/quicktype.yue:823
-      end -- shunt/quicktype.yue:823
-    end -- shunt/quicktype.yue:895
-  end -- shunt/quicktype.yue:895
-  if _base_0.__index == nil then -- shunt/quicktype.yue:823
-    _base_0.__index = _base_0 -- shunt/quicktype.yue:823
-  end -- shunt/quicktype.yue:895
-  _class_0 = setmetatable({ -- shunt/quicktype.yue:823
-    __init = function(self, param_types, return_types) -- shunt/quicktype.yue:824
-      self.param_types = param_types -- shunt/quicktype.yue:824
-      self.return_types = return_types -- shunt/quicktype.yue:824
-      do -- shunt/quicktype.yue:825
-        local _obj_0 = getmetatable(param_types) -- shunt/quicktype.yue:825
-        if _obj_0 ~= nil then -- shunt/quicktype.yue:825
-          do -- shunt/quicktype.yue:825
-            local _obj_1 = _obj_0.__index -- shunt/quicktype.yue:825
-            if _obj_1 ~= nil then -- shunt/quicktype.yue:825
-              self.remainder_param_type = _obj_1() -- shunt/quicktype.yue:825
-            end -- shunt/quicktype.yue:825
-          end -- shunt/quicktype.yue:825
-        end -- shunt/quicktype.yue:825
-      end -- shunt/quicktype.yue:825
-      do -- shunt/quicktype.yue:826
-        local _obj_0 = getmetatable(return_types) -- shunt/quicktype.yue:826
-        if _obj_0 ~= nil then -- shunt/quicktype.yue:826
-          do -- shunt/quicktype.yue:826
-            local _obj_1 = _obj_0.__index -- shunt/quicktype.yue:826
-            if _obj_1 ~= nil then -- shunt/quicktype.yue:826
-              self.remainder_return_type = _obj_1() -- shunt/quicktype.yue:826
-            end -- shunt/quicktype.yue:826
-          end -- shunt/quicktype.yue:826
-        end -- shunt/quicktype.yue:826
-      end -- shunt/quicktype.yue:826
-      self._param_checkers = nil -- shunt/quicktype.yue:827
-      self._return_checkers = nil -- shunt/quicktype.yue:828
-    end, -- shunt/quicktype.yue:823
-    __base = _base_0, -- shunt/quicktype.yue:823
-    __name = "Function" -- shunt/quicktype.yue:823
-  }, { -- shunt/quicktype.yue:823
-    __index = _base_0, -- shunt/quicktype.yue:823
-    __call = function(cls, ...) -- shunt/quicktype.yue:823
-      local _self_0 = setmetatable({ }, _base_0) -- shunt/quicktype.yue:823
-      cls.__init(_self_0, ...) -- shunt/quicktype.yue:823
-      return _self_0 -- shunt/quicktype.yue:823
-    end -- shunt/quicktype.yue:823
-  }) -- shunt/quicktype.yue:823
-  _base_0.__class = _class_0 -- shunt/quicktype.yue:823
-  Function = _class_0 -- shunt/quicktype.yue:823
-end -- shunt/quicktype.yue:895
-do -- shunt/quicktype.yue:897
-  local _class_0 -- shunt/quicktype.yue:897
-  local _parent_0 = Function -- shunt/quicktype.yue:897
-  local _base_0 = { -- shunt/quicktype.yue:897
-    __tostring = function(self) -- shunt/quicktype.yue:901
-      return table.concat((function() -- shunt/quicktype.yue:902
-        local _with_0 = { } -- shunt/quicktype.yue:902
-        _with_0[#_with_0 + 1] = '(' -- shunt/quicktype.yue:903
-        local first_param = true -- shunt/quicktype.yue:904
-        do -- shunt/quicktype.yue:905
-          local _list_0 = self.param_types -- shunt/quicktype.yue:905
-          for _index_0 = 2, #_list_0 do -- shunt/quicktype.yue:905
-            local param_type = _list_0[_index_0] -- shunt/quicktype.yue:905
-            if not first_param then -- shunt/quicktype.yue:906
-              _with_0[#_with_0 + 1] = ", " -- shunt/quicktype.yue:907
-            end -- shunt/quicktype.yue:906
-            first_param = false -- shunt/quicktype.yue:908
-            _with_0[#_with_0 + 1] = tostring(param_type) -- shunt/quicktype.yue:910
-          end -- shunt/quicktype.yue:910
-        end -- shunt/quicktype.yue:910
-        if (self.remainder_param_type ~= nil) then -- shunt/quicktype.yue:911
-          if not first_param then -- shunt/quicktype.yue:912
-            _with_0[#_with_0 + 1] = ', ' -- shunt/quicktype.yue:913
-          end -- shunt/quicktype.yue:912
-          _with_0[#_with_0 + 1] = tostring(self.remainder_param_type) -- shunt/quicktype.yue:914
-          _with_0[#_with_0 + 1] = '...' -- shunt/quicktype.yue:915
-        end -- shunt/quicktype.yue:911
-        _with_0[#_with_0 + 1] = ') => ' -- shunt/quicktype.yue:916
-        if #self.return_types == 1 then -- shunt/quicktype.yue:917
-          if (self.remainder_return_type ~= nil) then -- shunt/quicktype.yue:918
-            _with_0[#_with_0 + 1] = tostring(self.remainder_return_type) -- shunt/quicktype.yue:919
-            _with_0[#_with_0 + 1] = '...' -- shunt/quicktype.yue:920
-          else -- shunt/quicktype.yue:922
-            _with_0[#_with_0 + 1] = tostring(self.return_types[1]) -- shunt/quicktype.yue:922
-          end -- shunt/quicktype.yue:918
-        else -- shunt/quicktype.yue:924
-          _with_0[#_with_0 + 1] = '<' -- shunt/quicktype.yue:924
-          local first_ret = true -- shunt/quicktype.yue:925
-          local _list_0 = self.return_types -- shunt/quicktype.yue:926
-          for _index_0 = 1, #_list_0 do -- shunt/quicktype.yue:926
-            local return_type = _list_0[_index_0] -- shunt/quicktype.yue:926
-            if not first_ret then -- shunt/quicktype.yue:927
-              _with_0[#_with_0 + 1] = ", " -- shunt/quicktype.yue:928
-            end -- shunt/quicktype.yue:927
-            first_ret = false -- shunt/quicktype.yue:929
-            _with_0[#_with_0 + 1] = tostring(return_type) -- shunt/quicktype.yue:930
-          end -- shunt/quicktype.yue:930
-          if (self.remainder_return_type ~= nil) then -- shunt/quicktype.yue:931
-            if not first_ret then -- shunt/quicktype.yue:932
-              _with_0[#_with_0 + 1] = ', ' -- shunt/quicktype.yue:933
-            end -- shunt/quicktype.yue:932
-            _with_0[#_with_0 + 1] = tostring(self.remainder_return_type) -- shunt/quicktype.yue:934
-            _with_0[#_with_0 + 1] = '...' -- shunt/quicktype.yue:935
-          end -- shunt/quicktype.yue:931
-          _with_0[#_with_0 + 1] = '>' -- shunt/quicktype.yue:936
-        end -- shunt/quicktype.yue:917
-        return _with_0 -- shunt/quicktype.yue:902
-      end)()) -- shunt/quicktype.yue:936
-    end -- shunt/quicktype.yue:897
-  } -- shunt/quicktype.yue:897
-  for _key_0, _val_0 in pairs(_parent_0.__base) do -- shunt/quicktype.yue:936
-    if _base_0[_key_0] == nil and _key_0:match("^__") and not (_key_0 == "__index" and _val_0 == _parent_0.__base) then -- shunt/quicktype.yue:897
-      _base_0[_key_0] = _val_0 -- shunt/quicktype.yue:897
-    end -- shunt/quicktype.yue:897
-  end -- shunt/quicktype.yue:936
-  if _base_0.__index == nil then -- shunt/quicktype.yue:897
-    _base_0.__index = _base_0 -- shunt/quicktype.yue:897
-  end -- shunt/quicktype.yue:936
-  setmetatable(_base_0, _parent_0.__base) -- shunt/quicktype.yue:897
-  _class_0 = setmetatable({ -- shunt/quicktype.yue:897
-    __init = function(self, param_types, return_types) -- shunt/quicktype.yue:898
-      return _class_0.__parent.__init(self, (function() -- shunt/quicktype.yue:899
-        local _tab_0 = { -- shunt/quicktype.yue:899
-          Some() -- shunt/quicktype.yue:899
-        } -- shunt/quicktype.yue:899
-        local _idx_0 = 1 -- shunt/quicktype.yue:899
-        for _key_0, _value_0 in pairs(param_types) do -- shunt/quicktype.yue:899
-          if _idx_0 == _key_0 then -- shunt/quicktype.yue:899
-            _tab_0[#_tab_0 + 1] = _value_0 -- shunt/quicktype.yue:899
-            _idx_0 = _idx_0 + 1 -- shunt/quicktype.yue:899
-          else -- shunt/quicktype.yue:899
-            _tab_0[_key_0] = _value_0 -- shunt/quicktype.yue:899
-          end -- shunt/quicktype.yue:899
+      return "{" .. tostring(self.in_type) .. " -> " .. tostring(self.out_type) .. "}" -- shunt/quicktype.yue:857
+    end, -- shunt/quicktype.yue:859
+    checker = function(self, checker_builder) -- shunt/quicktype.yue:859
+      if checker_builder == nil then -- shunt/quicktype.yue:859
+        checker_builder = CheckerBuilder() -- shunt/quicktype.yue:859
+      end -- shunt/quicktype.yue:859
+      if self._table_like then -- shunt/quicktype.yue:860
+        error("table-like arrays are not supported") -- shunt/quicktype.yue:861
+      end -- shunt/quicktype.yue:860
+      checker_builder:add(C_ASSERT_PRIMITIVE, 'table') -- shunt/quicktype.yue:863
+      if (self.metatable_type ~= nil) then -- shunt/quicktype.yue:865
+        checker_builder:add(C_PUSH_METATABLE) -- shunt/quicktype.yue:866
+        self.metatable_type:checker(checker_builder) -- shunt/quicktype.yue:867
+        checker_builder:add(C_POP) -- shunt/quicktype.yue:868
+      end -- shunt/quicktype.yue:865
+      checker_builder:add(C_PUSH, V_NIL) -- shunt/quicktype.yue:870
+      checker_builder:add(C_NEXT) -- shunt/quicktype.yue:871
+      local loop_start_label = checker_builder:add_with_unresolved_target(C_JMP_IF_NIL) -- shunt/quicktype.yue:873
+      self.out_type:checker(checker_builder) -- shunt/quicktype.yue:875
+      checker_builder:add(C_POP) -- shunt/quicktype.yue:876
+      self.in_type:checker(checker_builder) -- shunt/quicktype.yue:877
+      checker_builder:add(C_NEXT) -- shunt/quicktype.yue:879
+      checker_builder:add(C_JMP, loop_start_label.index) -- shunt/quicktype.yue:880
+      loop_start_label:resolve_here() -- shunt/quicktype.yue:882
+      checker_builder:add(C_POP) -- shunt/quicktype.yue:883
+      checker_builder:add(C_POP) -- shunt/quicktype.yue:884
+      return checker_builder -- shunt/quicktype.yue:862
+    end -- shunt/quicktype.yue:849
+  } -- shunt/quicktype.yue:849
+  local _list_0 = { -- shunt/quicktype.yue:849
+    Is -- shunt/quicktype.yue:849
+  } -- shunt/quicktype.yue:849
+  for _index_0 = 1, #_list_0 do -- shunt/quicktype.yue:884
+    local _item_0 = _list_0[_index_0] -- shunt/quicktype.yue:849
+    local _cls_0, _mixin_0 = (_item_0.__base ~= nil), _item_0.__base or _item_0 -- shunt/quicktype.yue:849
+    for _key_0, _val_0 in pairs(_mixin_0) do -- shunt/quicktype.yue:884
+      if _base_0[_key_0] == nil and (not _cls_0 or not _key_0:match("^__")) then -- shunt/quicktype.yue:849
+        _base_0[_key_0] = _val_0 -- shunt/quicktype.yue:849
+      end -- shunt/quicktype.yue:849
+    end -- shunt/quicktype.yue:884
+  end -- shunt/quicktype.yue:884
+  if _base_0.__index == nil then -- shunt/quicktype.yue:849
+    _base_0.__index = _base_0 -- shunt/quicktype.yue:849
+  end -- shunt/quicktype.yue:884
+  _class_0 = setmetatable({ -- shunt/quicktype.yue:849
+    __init = function(self, metatable_type, in_type, out_type) -- shunt/quicktype.yue:850
+      self.metatable_type = metatable_type -- shunt/quicktype.yue:850
+      self.in_type = in_type -- shunt/quicktype.yue:850
+      self.out_type = out_type -- shunt/quicktype.yue:850
+      self._table_like = false -- shunt/quicktype.yue:851
+    end, -- shunt/quicktype.yue:849
+    __base = _base_0, -- shunt/quicktype.yue:849
+    __name = "Mapping" -- shunt/quicktype.yue:849
+  }, { -- shunt/quicktype.yue:849
+    __index = _base_0, -- shunt/quicktype.yue:849
+    __call = function(cls, ...) -- shunt/quicktype.yue:849
+      local _self_0 = setmetatable({ }, _base_0) -- shunt/quicktype.yue:849
+      cls.__init(_self_0, ...) -- shunt/quicktype.yue:849
+      return _self_0 -- shunt/quicktype.yue:849
+    end -- shunt/quicktype.yue:849
+  }) -- shunt/quicktype.yue:849
+  _base_0.__class = _class_0 -- shunt/quicktype.yue:849
+  Mapping = _class_0 -- shunt/quicktype.yue:849
+end -- shunt/quicktype.yue:884
+do -- shunt/quicktype.yue:886
+  local _class_0 -- shunt/quicktype.yue:886
+  local _base_0 = { -- shunt/quicktype.yue:886
+    param_checkers = function(self) -- shunt/quicktype.yue:893
+      do -- shunt/quicktype.yue:894
+        local param_checkers = self._param_checkers -- shunt/quicktype.yue:894
+        if param_checkers then -- shunt/quicktype.yue:894
+          return param_checkers -- shunt/quicktype.yue:895
+        end -- shunt/quicktype.yue:894
+      end -- shunt/quicktype.yue:894
+      local param_checkers -- shunt/quicktype.yue:896
+      do -- shunt/quicktype.yue:896
+        local _with_0 = setmetatable({ }, { }) -- shunt/quicktype.yue:896
+        local _list_0 = self.param_types -- shunt/quicktype.yue:897
+        for _index_0 = 1, #_list_0 do -- shunt/quicktype.yue:897
+          local param_type = _list_0[_index_0] -- shunt/quicktype.yue:897
+          _with_0[#_with_0 + 1] = param_type:checker():build() -- shunt/quicktype.yue:898
+        end -- shunt/quicktype.yue:898
+        if (getmetatable(self.param_types) ~= nil) then -- shunt/quicktype.yue:899
+          do -- shunt/quicktype.yue:900
+            local remainder_type = self.remainder_param_type -- shunt/quicktype.yue:900
+            if remainder_type then -- shunt/quicktype.yue:900
+              local remainder_type_checker = remainder_type:checker():build() -- shunt/quicktype.yue:901
+              getmetatable(_with_0).__index = function(self) -- shunt/quicktype.yue:902
+                return remainder_type_checker -- shunt/quicktype.yue:902
+              end -- shunt/quicktype.yue:902
+            end -- shunt/quicktype.yue:900
+          end -- shunt/quicktype.yue:900
         end -- shunt/quicktype.yue:899
-        return _tab_0 -- shunt/quicktype.yue:899
-      end)(), return_types) -- shunt/quicktype.yue:899
-    end, -- shunt/quicktype.yue:897
-    __base = _base_0, -- shunt/quicktype.yue:897
-    __name = "Method", -- shunt/quicktype.yue:897
-    __parent = _parent_0 -- shunt/quicktype.yue:897
-  }, { -- shunt/quicktype.yue:897
-    __index = function(cls, name) -- shunt/quicktype.yue:897
-      local val = rawget(_base_0, name) -- shunt/quicktype.yue:897
-      if val == nil then -- shunt/quicktype.yue:897
-        local parent = rawget(cls, "__parent") -- shunt/quicktype.yue:897
-        if parent then -- shunt/quicktype.yue:897
-          return parent[name] -- shunt/quicktype.yue:897
-        end -- shunt/quicktype.yue:897
-      else -- shunt/quicktype.yue:897
-        return val -- shunt/quicktype.yue:897
-      end -- shunt/quicktype.yue:897
-    end, -- shunt/quicktype.yue:897
-    __call = function(cls, ...) -- shunt/quicktype.yue:897
-      local _self_0 = setmetatable({ }, _base_0) -- shunt/quicktype.yue:897
-      cls.__init(_self_0, ...) -- shunt/quicktype.yue:897
-      return _self_0 -- shunt/quicktype.yue:897
-    end -- shunt/quicktype.yue:897
-  }) -- shunt/quicktype.yue:897
-  _base_0.__class = _class_0 -- shunt/quicktype.yue:897
-  if _parent_0.__inherited then -- shunt/quicktype.yue:897
-    _parent_0.__inherited(_parent_0, _class_0) -- shunt/quicktype.yue:897
-  end -- shunt/quicktype.yue:897
-  Method = _class_0 -- shunt/quicktype.yue:897
-end -- shunt/quicktype.yue:936
-do -- shunt/quicktype.yue:938
-  local _class_0 -- shunt/quicktype.yue:938
-  local _base_0 = { -- shunt/quicktype.yue:938
-    __tostring = function(self) -- shunt/quicktype.yue:941
-      return tostring(self.type) .. "..." -- shunt/quicktype.yue:942
-    end, -- shunt/quicktype.yue:944
-    checker = function(self, checker_builder) -- shunt/quicktype.yue:944
-      if checker_builder == nil then -- shunt/quicktype.yue:944
-        checker_builder = CheckerBuilder() -- shunt/quicktype.yue:944
-      end -- shunt/quicktype.yue:944
-      return error('internal error: Remainder unresolved in AST') -- shunt/quicktype.yue:945
-    end -- shunt/quicktype.yue:938
-  } -- shunt/quicktype.yue:938
-  local _list_0 = { -- shunt/quicktype.yue:938
-    Is -- shunt/quicktype.yue:938
-  } -- shunt/quicktype.yue:938
-  for _index_0 = 1, #_list_0 do -- shunt/quicktype.yue:945
-    local _item_0 = _list_0[_index_0] -- shunt/quicktype.yue:938
-    local _cls_0, _mixin_0 = (_item_0.__base ~= nil), _item_0.__base or _item_0 -- shunt/quicktype.yue:938
-    for _key_0, _val_0 in pairs(_mixin_0) do -- shunt/quicktype.yue:945
-      if _base_0[_key_0] == nil and (not _cls_0 or not _key_0:match("^__")) then -- shunt/quicktype.yue:938
-        _base_0[_key_0] = _val_0 -- shunt/quicktype.yue:938
-      end -- shunt/quicktype.yue:938
-    end -- shunt/quicktype.yue:945
-  end -- shunt/quicktype.yue:945
-  if _base_0.__index == nil then -- shunt/quicktype.yue:938
-    _base_0.__index = _base_0 -- shunt/quicktype.yue:938
-  end -- shunt/quicktype.yue:945
-  _class_0 = setmetatable({ -- shunt/quicktype.yue:938
-    __init = function(self, type) -- shunt/quicktype.yue:939
-      self.type = type -- shunt/quicktype.yue:939
-    end, -- shunt/quicktype.yue:938
-    __base = _base_0, -- shunt/quicktype.yue:938
-    __name = "Remainder" -- shunt/quicktype.yue:938
-  }, { -- shunt/quicktype.yue:938
-    __index = _base_0, -- shunt/quicktype.yue:938
-    __call = function(cls, ...) -- shunt/quicktype.yue:938
-      local _self_0 = setmetatable({ }, _base_0) -- shunt/quicktype.yue:938
-      cls.__init(_self_0, ...) -- shunt/quicktype.yue:938
-      return _self_0 -- shunt/quicktype.yue:938
-    end -- shunt/quicktype.yue:938
-  }) -- shunt/quicktype.yue:938
-  _base_0.__class = _class_0 -- shunt/quicktype.yue:938
-  Remainder = _class_0 -- shunt/quicktype.yue:938
-end -- shunt/quicktype.yue:945
-do -- shunt/quicktype.yue:947
-  local _class_0 -- shunt/quicktype.yue:947
-  local _base_0 = { -- shunt/quicktype.yue:947
-    __tostring = function(self) -- shunt/quicktype.yue:952
-      return table.concat((function() -- shunt/quicktype.yue:953
-        local _accum_0 = { } -- shunt/quicktype.yue:953
-        local _len_0 = 1 -- shunt/quicktype.yue:953
-        local _list_0 = self.types -- shunt/quicktype.yue:953
-        for _index_0 = 1, #_list_0 do -- shunt/quicktype.yue:953
-          local ty = _list_0[_index_0] -- shunt/quicktype.yue:953
-          _accum_0[_len_0] = tostring(ty) -- shunt/quicktype.yue:953
-          _len_0 = _len_0 + 1 -- shunt/quicktype.yue:953
-        end -- shunt/quicktype.yue:953
-        return _accum_0 -- shunt/quicktype.yue:953
-      end)(), '|') -- shunt/quicktype.yue:953
-    end, -- shunt/quicktype.yue:955
-    checker = function(self, checker_builder) -- shunt/quicktype.yue:955
-      if checker_builder == nil then -- shunt/quicktype.yue:955
-        checker_builder = CheckerBuilder() -- shunt/quicktype.yue:955
-      end -- shunt/quicktype.yue:955
-      checker_builder:add(C_PUSH_UNION_CTX, self) -- shunt/quicktype.yue:957
-      local next_variant_jump = checker_builder:add_with_unresolved_target(C_SET_UNION_BAIL_TARGET) -- shunt/quicktype.yue:958
-      self.types[1]:checker(checker_builder) -- shunt/quicktype.yue:959
-      local ok_jumps = { } -- shunt/quicktype.yue:961
-      do -- shunt/quicktype.yue:962
-        local _list_0 = self.types -- shunt/quicktype.yue:962
-        for _index_0 = 2, #_list_0 do -- shunt/quicktype.yue:962
-          local ty = _list_0[_index_0] -- shunt/quicktype.yue:962
-          ok_jumps[#ok_jumps + 1] = checker_builder:add_with_unresolved_target(C_JMP) -- shunt/quicktype.yue:963
-          next_variant_jump:resolve_here() -- shunt/quicktype.yue:965
-          checker_builder:add(C_CLEAR_BAILING) -- shunt/quicktype.yue:966
-          next_variant_jump = checker_builder:add_with_unresolved_target(C_SET_UNION_BAIL_TARGET) -- shunt/quicktype.yue:967
-          ty:checker(checker_builder) -- shunt/quicktype.yue:968
-        end -- shunt/quicktype.yue:968
-      end -- shunt/quicktype.yue:968
-      next_variant_jump:resolve_here() -- shunt/quicktype.yue:970
-      for _index_0 = 1, #ok_jumps do -- shunt/quicktype.yue:971
-        local ok_jump = ok_jumps[_index_0] -- shunt/quicktype.yue:971
-        ok_jump:resolve_here() -- shunt/quicktype.yue:972
-      end -- shunt/quicktype.yue:972
-      checker_builder:add(C_POP_UNION_CTX) -- shunt/quicktype.yue:973
-      return checker_builder -- shunt/quicktype.yue:956
-    end -- shunt/quicktype.yue:947
-  } -- shunt/quicktype.yue:947
-  local _list_0 = { -- shunt/quicktype.yue:947
-    Is -- shunt/quicktype.yue:947
-  } -- shunt/quicktype.yue:947
-  for _index_0 = 1, #_list_0 do -- shunt/quicktype.yue:973
-    local _item_0 = _list_0[_index_0] -- shunt/quicktype.yue:947
-    local _cls_0, _mixin_0 = (_item_0.__base ~= nil), _item_0.__base or _item_0 -- shunt/quicktype.yue:947
-    for _key_0, _val_0 in pairs(_mixin_0) do -- shunt/quicktype.yue:973
-      if _base_0[_key_0] == nil and (not _cls_0 or not _key_0:match("^__")) then -- shunt/quicktype.yue:947
-        _base_0[_key_0] = _val_0 -- shunt/quicktype.yue:947
-      end -- shunt/quicktype.yue:947
-    end -- shunt/quicktype.yue:973
-  end -- shunt/quicktype.yue:973
-  if _base_0.__index == nil then -- shunt/quicktype.yue:947
-    _base_0.__index = _base_0 -- shunt/quicktype.yue:947
-  end -- shunt/quicktype.yue:973
-  _class_0 = setmetatable({ -- shunt/quicktype.yue:947
-    __init = function(self, types) -- shunt/quicktype.yue:948
-      self.types = types -- shunt/quicktype.yue:948
-      if #self.types <= 1 then -- shunt/quicktype.yue:949
-        return error('internal error: disjunction has too few elements') -- shunt/quicktype.yue:950
-      end -- shunt/quicktype.yue:949
-    end, -- shunt/quicktype.yue:947
-    __base = _base_0, -- shunt/quicktype.yue:947
-    __name = "Disjunction" -- shunt/quicktype.yue:947
-  }, { -- shunt/quicktype.yue:947
-    __index = _base_0, -- shunt/quicktype.yue:947
-    __call = function(cls, ...) -- shunt/quicktype.yue:947
-      local _self_0 = setmetatable({ }, _base_0) -- shunt/quicktype.yue:947
-      cls.__init(_self_0, ...) -- shunt/quicktype.yue:947
-      return _self_0 -- shunt/quicktype.yue:947
-    end -- shunt/quicktype.yue:947
-  }) -- shunt/quicktype.yue:947
-  _base_0.__class = _class_0 -- shunt/quicktype.yue:947
-  Disjunction = _class_0 -- shunt/quicktype.yue:947
-end -- shunt/quicktype.yue:973
-do -- shunt/quicktype.yue:975
-  local _class_0 -- shunt/quicktype.yue:975
-  local _base_0 = { -- shunt/quicktype.yue:975
-    __tostring = function(self) -- shunt/quicktype.yue:978
-      return table.concat((function() -- shunt/quicktype.yue:979
-        local _accum_0 = { } -- shunt/quicktype.yue:979
-        local _len_0 = 1 -- shunt/quicktype.yue:979
-        local _list_0 = self.types -- shunt/quicktype.yue:979
-        for _index_0 = 1, #_list_0 do -- shunt/quicktype.yue:979
-          local ty = _list_0[_index_0] -- shunt/quicktype.yue:979
-          _accum_0[_len_0] = tostring(ty) -- shunt/quicktype.yue:979
-          _len_0 = _len_0 + 1 -- shunt/quicktype.yue:979
-        end -- shunt/quicktype.yue:979
-        return _accum_0 -- shunt/quicktype.yue:979
-      end)(), '+') -- shunt/quicktype.yue:979
-    end, -- shunt/quicktype.yue:981
-    checker = function(self, checker_builder) -- shunt/quicktype.yue:981
-      if checker_builder == nil then -- shunt/quicktype.yue:981
-        checker_builder = CheckerBuilder() -- shunt/quicktype.yue:981
-      end -- shunt/quicktype.yue:981
-      local _list_0 = self.types -- shunt/quicktype.yue:983
-      for _index_0 = 1, #_list_0 do -- shunt/quicktype.yue:983
-        local ty = _list_0[_index_0] -- shunt/quicktype.yue:983
-        ty:checker(checker_builder) -- shunt/quicktype.yue:984
-      end -- shunt/quicktype.yue:984
-      return checker_builder -- shunt/quicktype.yue:982
-    end -- shunt/quicktype.yue:975
-  } -- shunt/quicktype.yue:975
-  local _list_0 = { -- shunt/quicktype.yue:975
-    Is -- shunt/quicktype.yue:975
-  } -- shunt/quicktype.yue:975
-  for _index_0 = 1, #_list_0 do -- shunt/quicktype.yue:984
-    local _item_0 = _list_0[_index_0] -- shunt/quicktype.yue:975
-    local _cls_0, _mixin_0 = (_item_0.__base ~= nil), _item_0.__base or _item_0 -- shunt/quicktype.yue:975
-    for _key_0, _val_0 in pairs(_mixin_0) do -- shunt/quicktype.yue:984
-      if _base_0[_key_0] == nil and (not _cls_0 or not _key_0:match("^__")) then -- shunt/quicktype.yue:975
-        _base_0[_key_0] = _val_0 -- shunt/quicktype.yue:975
-      end -- shunt/quicktype.yue:975
-    end -- shunt/quicktype.yue:984
-  end -- shunt/quicktype.yue:984
-  if _base_0.__index == nil then -- shunt/quicktype.yue:975
-    _base_0.__index = _base_0 -- shunt/quicktype.yue:975
-  end -- shunt/quicktype.yue:984
-  _class_0 = setmetatable({ -- shunt/quicktype.yue:975
-    __init = function(self, types) -- shunt/quicktype.yue:976
-      self.types = types -- shunt/quicktype.yue:976
-    end, -- shunt/quicktype.yue:975
-    __base = _base_0, -- shunt/quicktype.yue:975
-    __name = "Conjunction" -- shunt/quicktype.yue:975
-  }, { -- shunt/quicktype.yue:975
-    __index = _base_0, -- shunt/quicktype.yue:975
-    __call = function(cls, ...) -- shunt/quicktype.yue:975
-      local _self_0 = setmetatable({ }, _base_0) -- shunt/quicktype.yue:975
-      cls.__init(_self_0, ...) -- shunt/quicktype.yue:975
-      return _self_0 -- shunt/quicktype.yue:975
-    end -- shunt/quicktype.yue:975
-  }) -- shunt/quicktype.yue:975
-  _base_0.__class = _class_0 -- shunt/quicktype.yue:975
-  Conjunction = _class_0 -- shunt/quicktype.yue:975
-end -- shunt/quicktype.yue:984
-do -- shunt/quicktype.yue:986
-  local _class_0 -- shunt/quicktype.yue:986
-  local _base_0 = { -- shunt/quicktype.yue:986
-    add = function(self, op, arg) -- shunt/quicktype.yue:991
-      if arg == nil then -- shunt/quicktype.yue:991
-        arg = '_' -- shunt/quicktype.yue:991
-      end -- shunt/quicktype.yue:991
-      do -- shunt/quicktype.yue:992
-        local _obj_0 = self.instructions -- shunt/quicktype.yue:992
-        _obj_0[#_obj_0 + 1] = op -- shunt/quicktype.yue:992
-      end -- shunt/quicktype.yue:992
-      do -- shunt/quicktype.yue:993
-        local _obj_0 = self.instructions -- shunt/quicktype.yue:993
-        _obj_0[#_obj_0 + 1] = arg -- shunt/quicktype.yue:993
-      end -- shunt/quicktype.yue:993
-    end, -- shunt/quicktype.yue:995
-    add_labelled = function(self, op, arg) -- shunt/quicktype.yue:995
-      if arg == nil then -- shunt/quicktype.yue:995
-        arg = '_' -- shunt/quicktype.yue:995
-      end -- shunt/quicktype.yue:995
-      local label = self:make_label() -- shunt/quicktype.yue:996
-      self:add(op, arg) -- shunt/quicktype.yue:997
-      return label -- shunt/quicktype.yue:998
-    end, -- shunt/quicktype.yue:1000
-    add_with_unresolved_target = function(self, op) -- shunt/quicktype.yue:1000
-      local label = self:make_label() -- shunt/quicktype.yue:1001
-      self:add(op, LABEL_PLACEHOLDER) -- shunt/quicktype.yue:1002
-      return label -- shunt/quicktype.yue:1003
-    end, -- shunt/quicktype.yue:1005
-    make_label = function(self) -- shunt/quicktype.yue:1005
-      return Label(self.instructions) -- shunt/quicktype.yue:1006
-    end, -- shunt/quicktype.yue:1008
-    build = function(self) -- shunt/quicktype.yue:1008
-      self:validate() -- shunt/quicktype.yue:1009
-      return self.instructions -- shunt/quicktype.yue:1010
-    end, -- shunt/quicktype.yue:1012
-    validate = function(self) -- shunt/quicktype.yue:1012
-      local _list_0 = self.instructions -- shunt/quicktype.yue:1013
-      for _index_0 = 1, #_list_0 do -- shunt/quicktype.yue:1013
-        local instruction = _list_0[_index_0] -- shunt/quicktype.yue:1013
-        if instruction == LABEL_PLACEHOLDER then -- shunt/quicktype.yue:1014
-          error("unresolved placeholder in check program:\n" .. tostring(repr(self.instructions))) -- shunt/quicktype.yue:1015
-        end -- shunt/quicktype.yue:1014
-      end -- shunt/quicktype.yue:1015
-    end, -- shunt/quicktype.yue:1017
-    already_building = function(self, user_type) -- shunt/quicktype.yue:1017
-      local _list_0 = self.user_type_stack -- shunt/quicktype.yue:1018
-      for _index_0 = 1, #_list_0 do -- shunt/quicktype.yue:1018
-        local user_type_being_checked = _list_0[_index_0] -- shunt/quicktype.yue:1018
-        if user_type.name == user_type_being_checked.name then -- shunt/quicktype.yue:1019
-          return true -- shunt/quicktype.yue:1020
-        end -- shunt/quicktype.yue:1019
-      end -- shunt/quicktype.yue:1020
-      return false -- shunt/quicktype.yue:1021
-    end, -- shunt/quicktype.yue:1023
-    push_building = function(self, user_type) -- shunt/quicktype.yue:1023
-      do -- shunt/quicktype.yue:1024
-        local _obj_0 = self.user_type_stack -- shunt/quicktype.yue:1024
-        _obj_0[#_obj_0 + 1] = user_type -- shunt/quicktype.yue:1024
-      end -- shunt/quicktype.yue:1024
-    end, -- shunt/quicktype.yue:1026
-    pop_building = function(self, user_type) -- shunt/quicktype.yue:1026
-      if self.user_type_stack[#self.user_type_stack] ~= user_type then -- shunt/quicktype.yue:1027
-        error("internal error: user type stack mismanaged, expected " .. tostring(user_type.name) .. " at the top of " .. tostring(repr(self.user_type_stack))) -- shunt/quicktype.yue:1028
-      end -- shunt/quicktype.yue:1027
-      self.user_type_stack[#self.user_type_stack] = nil -- shunt/quicktype.yue:1029
-    end -- shunt/quicktype.yue:986
-  } -- shunt/quicktype.yue:986
-  if _base_0.__index == nil then -- shunt/quicktype.yue:986
-    _base_0.__index = _base_0 -- shunt/quicktype.yue:986
-  end -- shunt/quicktype.yue:1029
-  _class_0 = setmetatable({ -- shunt/quicktype.yue:986
-    __init = function(self) -- shunt/quicktype.yue:987
-      self.instructions = { } -- shunt/quicktype.yue:988
-      self.user_type_stack = { } -- shunt/quicktype.yue:989
-    end, -- shunt/quicktype.yue:986
-    __base = _base_0, -- shunt/quicktype.yue:986
-    __name = "CheckerBuilder" -- shunt/quicktype.yue:986
-  }, { -- shunt/quicktype.yue:986
-    __index = _base_0, -- shunt/quicktype.yue:986
-    __call = function(cls, ...) -- shunt/quicktype.yue:986
-      local _self_0 = setmetatable({ }, _base_0) -- shunt/quicktype.yue:986
-      cls.__init(_self_0, ...) -- shunt/quicktype.yue:986
-      return _self_0 -- shunt/quicktype.yue:986
-    end -- shunt/quicktype.yue:986
-  }) -- shunt/quicktype.yue:986
-  _base_0.__class = _class_0 -- shunt/quicktype.yue:986
-  CheckerBuilder = _class_0 -- shunt/quicktype.yue:986
-end -- shunt/quicktype.yue:1029
-do -- shunt/quicktype.yue:1031
-  local _class_0 -- shunt/quicktype.yue:1031
-  local _base_0 = { -- shunt/quicktype.yue:1031
-    resolve_here = function(self) -- shunt/quicktype.yue:1035
-      self.instructions[self.index + 1] = #self.instructions + 1 -- shunt/quicktype.yue:1036
-    end -- shunt/quicktype.yue:1031
-  } -- shunt/quicktype.yue:1031
-  if _base_0.__index == nil then -- shunt/quicktype.yue:1031
-    _base_0.__index = _base_0 -- shunt/quicktype.yue:1031
+        param_checkers = _with_0 -- shunt/quicktype.yue:896
+      end -- shunt/quicktype.yue:896
+      self._param_checkers = param_checkers -- shunt/quicktype.yue:903
+      return param_checkers -- shunt/quicktype.yue:904
+    end, -- shunt/quicktype.yue:906
+    return_checkers = function(self) -- shunt/quicktype.yue:906
+      do -- shunt/quicktype.yue:907
+        local return_checkers = self._return_checkers -- shunt/quicktype.yue:907
+        if return_checkers then -- shunt/quicktype.yue:907
+          return return_checkers -- shunt/quicktype.yue:908
+        end -- shunt/quicktype.yue:907
+      end -- shunt/quicktype.yue:907
+      local return_checkers -- shunt/quicktype.yue:909
+      do -- shunt/quicktype.yue:909
+        local _with_0 = setmetatable({ }, { }) -- shunt/quicktype.yue:909
+        local _list_0 = self.return_types -- shunt/quicktype.yue:910
+        for _index_0 = 1, #_list_0 do -- shunt/quicktype.yue:910
+          local return_type = _list_0[_index_0] -- shunt/quicktype.yue:910
+          _with_0[#_with_0 + 1] = return_type:checker():build() -- shunt/quicktype.yue:911
+        end -- shunt/quicktype.yue:911
+        if (getmetatable(self.return_types) ~= nil) then -- shunt/quicktype.yue:912
+          do -- shunt/quicktype.yue:913
+            local remainder_type = self.remainder_return_type -- shunt/quicktype.yue:913
+            if remainder_type then -- shunt/quicktype.yue:913
+              local remainder_type_checker = remainder_type:checker():build() -- shunt/quicktype.yue:914
+              getmetatable(_with_0).__index = function(self) -- shunt/quicktype.yue:915
+                return remainder_type_checker -- shunt/quicktype.yue:915
+              end -- shunt/quicktype.yue:915
+            end -- shunt/quicktype.yue:913
+          end -- shunt/quicktype.yue:913
+        end -- shunt/quicktype.yue:912
+        return_checkers = _with_0 -- shunt/quicktype.yue:909
+      end -- shunt/quicktype.yue:909
+      self._return_checkers = return_checkers -- shunt/quicktype.yue:916
+      return return_checkers -- shunt/quicktype.yue:917
+    end, -- shunt/quicktype.yue:919
+    __tostring = function(self) -- shunt/quicktype.yue:919
+      return table.concat((function() -- shunt/quicktype.yue:920
+        local _with_0 = { } -- shunt/quicktype.yue:920
+        _with_0[#_with_0 + 1] = '(' -- shunt/quicktype.yue:921
+        local first_param = true -- shunt/quicktype.yue:922
+        local _list_0 = self.param_types -- shunt/quicktype.yue:923
+        for _index_0 = 1, #_list_0 do -- shunt/quicktype.yue:923
+          local param_type = _list_0[_index_0] -- shunt/quicktype.yue:923
+          if not first_param then -- shunt/quicktype.yue:924
+            _with_0[#_with_0 + 1] = ", " -- shunt/quicktype.yue:925
+          end -- shunt/quicktype.yue:924
+          first_param = false -- shunt/quicktype.yue:926
+          _with_0[#_with_0 + 1] = tostring(param_type) -- shunt/quicktype.yue:928
+        end -- shunt/quicktype.yue:928
+        if (self.remainder_param_type ~= nil) then -- shunt/quicktype.yue:929
+          if not first_param then -- shunt/quicktype.yue:930
+            _with_0[#_with_0 + 1] = ', ' -- shunt/quicktype.yue:931
+          end -- shunt/quicktype.yue:930
+          _with_0[#_with_0 + 1] = tostring(self.remainder_param_type) -- shunt/quicktype.yue:932
+          _with_0[#_with_0 + 1] = '...' -- shunt/quicktype.yue:933
+        end -- shunt/quicktype.yue:929
+        _with_0[#_with_0 + 1] = ') -> ' -- shunt/quicktype.yue:934
+        if #self.return_types == 1 then -- shunt/quicktype.yue:935
+          if (self.remainder_return_type ~= nil) then -- shunt/quicktype.yue:936
+            _with_0[#_with_0 + 1] = tostring(self.remainder_return_type) -- shunt/quicktype.yue:937
+            _with_0[#_with_0 + 1] = '...' -- shunt/quicktype.yue:938
+          else -- shunt/quicktype.yue:940
+            _with_0[#_with_0 + 1] = tostring(self.return_types[1]) -- shunt/quicktype.yue:940
+          end -- shunt/quicktype.yue:936
+        else -- shunt/quicktype.yue:942
+          _with_0[#_with_0 + 1] = '<' -- shunt/quicktype.yue:942
+          local first_ret = true -- shunt/quicktype.yue:943
+          local _list_1 = self.return_types -- shunt/quicktype.yue:944
+          for _index_0 = 1, #_list_1 do -- shunt/quicktype.yue:944
+            local return_type = _list_1[_index_0] -- shunt/quicktype.yue:944
+            if not first_ret then -- shunt/quicktype.yue:945
+              _with_0[#_with_0 + 1] = ", " -- shunt/quicktype.yue:946
+            end -- shunt/quicktype.yue:945
+            first_ret = false -- shunt/quicktype.yue:947
+            _with_0[#_with_0 + 1] = tostring(return_type) -- shunt/quicktype.yue:948
+          end -- shunt/quicktype.yue:948
+          if (self.remainder_return_type ~= nil) then -- shunt/quicktype.yue:949
+            if not first_ret then -- shunt/quicktype.yue:950
+              _with_0[#_with_0 + 1] = ', ' -- shunt/quicktype.yue:951
+            end -- shunt/quicktype.yue:950
+            _with_0[#_with_0 + 1] = tostring(self.remainder_return_type) -- shunt/quicktype.yue:952
+            _with_0[#_with_0 + 1] = '...' -- shunt/quicktype.yue:953
+          end -- shunt/quicktype.yue:949
+          _with_0[#_with_0 + 1] = '>' -- shunt/quicktype.yue:954
+        end -- shunt/quicktype.yue:935
+        return _with_0 -- shunt/quicktype.yue:920
+      end)()) -- shunt/quicktype.yue:954
+    end, -- shunt/quicktype.yue:956
+    checker = function(self, checker_builder) -- shunt/quicktype.yue:956
+      if checker_builder == nil then -- shunt/quicktype.yue:956
+        checker_builder = CheckerBuilder() -- shunt/quicktype.yue:956
+      end -- shunt/quicktype.yue:956
+      checker_builder:add(C_ASSERT_PRIMITIVE, 'function') -- shunt/quicktype.yue:958
+      return checker_builder -- shunt/quicktype.yue:957
+    end -- shunt/quicktype.yue:886
+  } -- shunt/quicktype.yue:886
+  local _list_0 = { -- shunt/quicktype.yue:886
+    Is -- shunt/quicktype.yue:886
+  } -- shunt/quicktype.yue:886
+  for _index_0 = 1, #_list_0 do -- shunt/quicktype.yue:958
+    local _item_0 = _list_0[_index_0] -- shunt/quicktype.yue:886
+    local _cls_0, _mixin_0 = (_item_0.__base ~= nil), _item_0.__base or _item_0 -- shunt/quicktype.yue:886
+    for _key_0, _val_0 in pairs(_mixin_0) do -- shunt/quicktype.yue:958
+      if _base_0[_key_0] == nil and (not _cls_0 or not _key_0:match("^__")) then -- shunt/quicktype.yue:886
+        _base_0[_key_0] = _val_0 -- shunt/quicktype.yue:886
+      end -- shunt/quicktype.yue:886
+    end -- shunt/quicktype.yue:958
+  end -- shunt/quicktype.yue:958
+  if _base_0.__index == nil then -- shunt/quicktype.yue:886
+    _base_0.__index = _base_0 -- shunt/quicktype.yue:886
+  end -- shunt/quicktype.yue:958
+  _class_0 = setmetatable({ -- shunt/quicktype.yue:886
+    __init = function(self, param_types, return_types) -- shunt/quicktype.yue:887
+      self.param_types = param_types -- shunt/quicktype.yue:887
+      self.return_types = return_types -- shunt/quicktype.yue:887
+      do -- shunt/quicktype.yue:888
+        local _obj_0 = getmetatable(param_types) -- shunt/quicktype.yue:888
+        if _obj_0 ~= nil then -- shunt/quicktype.yue:888
+          do -- shunt/quicktype.yue:888
+            local _obj_1 = _obj_0.__index -- shunt/quicktype.yue:888
+            if _obj_1 ~= nil then -- shunt/quicktype.yue:888
+              self.remainder_param_type = _obj_1() -- shunt/quicktype.yue:888
+            end -- shunt/quicktype.yue:888
+          end -- shunt/quicktype.yue:888
+        end -- shunt/quicktype.yue:888
+      end -- shunt/quicktype.yue:888
+      do -- shunt/quicktype.yue:889
+        local _obj_0 = getmetatable(return_types) -- shunt/quicktype.yue:889
+        if _obj_0 ~= nil then -- shunt/quicktype.yue:889
+          do -- shunt/quicktype.yue:889
+            local _obj_1 = _obj_0.__index -- shunt/quicktype.yue:889
+            if _obj_1 ~= nil then -- shunt/quicktype.yue:889
+              self.remainder_return_type = _obj_1() -- shunt/quicktype.yue:889
+            end -- shunt/quicktype.yue:889
+          end -- shunt/quicktype.yue:889
+        end -- shunt/quicktype.yue:889
+      end -- shunt/quicktype.yue:889
+      self._param_checkers = nil -- shunt/quicktype.yue:890
+      self._return_checkers = nil -- shunt/quicktype.yue:891
+    end, -- shunt/quicktype.yue:886
+    __base = _base_0, -- shunt/quicktype.yue:886
+    __name = "Function" -- shunt/quicktype.yue:886
+  }, { -- shunt/quicktype.yue:886
+    __index = _base_0, -- shunt/quicktype.yue:886
+    __call = function(cls, ...) -- shunt/quicktype.yue:886
+      local _self_0 = setmetatable({ }, _base_0) -- shunt/quicktype.yue:886
+      cls.__init(_self_0, ...) -- shunt/quicktype.yue:886
+      return _self_0 -- shunt/quicktype.yue:886
+    end -- shunt/quicktype.yue:886
+  }) -- shunt/quicktype.yue:886
+  _base_0.__class = _class_0 -- shunt/quicktype.yue:886
+  Function = _class_0 -- shunt/quicktype.yue:886
+end -- shunt/quicktype.yue:958
+do -- shunt/quicktype.yue:960
+  local _class_0 -- shunt/quicktype.yue:960
+  local _parent_0 = Function -- shunt/quicktype.yue:960
+  local _base_0 = { -- shunt/quicktype.yue:960
+    __tostring = function(self) -- shunt/quicktype.yue:964
+      return table.concat((function() -- shunt/quicktype.yue:965
+        local _with_0 = { } -- shunt/quicktype.yue:965
+        _with_0[#_with_0 + 1] = '(' -- shunt/quicktype.yue:966
+        local first_param = true -- shunt/quicktype.yue:967
+        do -- shunt/quicktype.yue:968
+          local _list_0 = self.param_types -- shunt/quicktype.yue:968
+          for _index_0 = 2, #_list_0 do -- shunt/quicktype.yue:968
+            local param_type = _list_0[_index_0] -- shunt/quicktype.yue:968
+            if not first_param then -- shunt/quicktype.yue:969
+              _with_0[#_with_0 + 1] = ", " -- shunt/quicktype.yue:970
+            end -- shunt/quicktype.yue:969
+            first_param = false -- shunt/quicktype.yue:971
+            _with_0[#_with_0 + 1] = tostring(param_type) -- shunt/quicktype.yue:973
+          end -- shunt/quicktype.yue:973
+        end -- shunt/quicktype.yue:973
+        if (self.remainder_param_type ~= nil) then -- shunt/quicktype.yue:974
+          if not first_param then -- shunt/quicktype.yue:975
+            _with_0[#_with_0 + 1] = ', ' -- shunt/quicktype.yue:976
+          end -- shunt/quicktype.yue:975
+          _with_0[#_with_0 + 1] = tostring(self.remainder_param_type) -- shunt/quicktype.yue:977
+          _with_0[#_with_0 + 1] = '...' -- shunt/quicktype.yue:978
+        end -- shunt/quicktype.yue:974
+        _with_0[#_with_0 + 1] = ') => ' -- shunt/quicktype.yue:979
+        if #self.return_types == 1 then -- shunt/quicktype.yue:980
+          if (self.remainder_return_type ~= nil) then -- shunt/quicktype.yue:981
+            _with_0[#_with_0 + 1] = tostring(self.remainder_return_type) -- shunt/quicktype.yue:982
+            _with_0[#_with_0 + 1] = '...' -- shunt/quicktype.yue:983
+          else -- shunt/quicktype.yue:985
+            _with_0[#_with_0 + 1] = tostring(self.return_types[1]) -- shunt/quicktype.yue:985
+          end -- shunt/quicktype.yue:981
+        else -- shunt/quicktype.yue:987
+          _with_0[#_with_0 + 1] = '<' -- shunt/quicktype.yue:987
+          local first_ret = true -- shunt/quicktype.yue:988
+          local _list_0 = self.return_types -- shunt/quicktype.yue:989
+          for _index_0 = 1, #_list_0 do -- shunt/quicktype.yue:989
+            local return_type = _list_0[_index_0] -- shunt/quicktype.yue:989
+            if not first_ret then -- shunt/quicktype.yue:990
+              _with_0[#_with_0 + 1] = ", " -- shunt/quicktype.yue:991
+            end -- shunt/quicktype.yue:990
+            first_ret = false -- shunt/quicktype.yue:992
+            _with_0[#_with_0 + 1] = tostring(return_type) -- shunt/quicktype.yue:993
+          end -- shunt/quicktype.yue:993
+          if (self.remainder_return_type ~= nil) then -- shunt/quicktype.yue:994
+            if not first_ret then -- shunt/quicktype.yue:995
+              _with_0[#_with_0 + 1] = ', ' -- shunt/quicktype.yue:996
+            end -- shunt/quicktype.yue:995
+            _with_0[#_with_0 + 1] = tostring(self.remainder_return_type) -- shunt/quicktype.yue:997
+            _with_0[#_with_0 + 1] = '...' -- shunt/quicktype.yue:998
+          end -- shunt/quicktype.yue:994
+          _with_0[#_with_0 + 1] = '>' -- shunt/quicktype.yue:999
+        end -- shunt/quicktype.yue:980
+        return _with_0 -- shunt/quicktype.yue:965
+      end)()) -- shunt/quicktype.yue:999
+    end -- shunt/quicktype.yue:960
+  } -- shunt/quicktype.yue:960
+  for _key_0, _val_0 in pairs(_parent_0.__base) do -- shunt/quicktype.yue:999
+    if _base_0[_key_0] == nil and _key_0:match("^__") and not (_key_0 == "__index" and _val_0 == _parent_0.__base) then -- shunt/quicktype.yue:960
+      _base_0[_key_0] = _val_0 -- shunt/quicktype.yue:960
+    end -- shunt/quicktype.yue:960
+  end -- shunt/quicktype.yue:999
+  if _base_0.__index == nil then -- shunt/quicktype.yue:960
+    _base_0.__index = _base_0 -- shunt/quicktype.yue:960
+  end -- shunt/quicktype.yue:999
+  setmetatable(_base_0, _parent_0.__base) -- shunt/quicktype.yue:960
+  _class_0 = setmetatable({ -- shunt/quicktype.yue:960
+    __init = function(self, param_types, return_types) -- shunt/quicktype.yue:961
+      return _class_0.__parent.__init(self, (function() -- shunt/quicktype.yue:962
+        local _tab_0 = { -- shunt/quicktype.yue:962
+          Some() -- shunt/quicktype.yue:962
+        } -- shunt/quicktype.yue:962
+        local _idx_0 = 1 -- shunt/quicktype.yue:962
+        for _key_0, _value_0 in pairs(param_types) do -- shunt/quicktype.yue:962
+          if _idx_0 == _key_0 then -- shunt/quicktype.yue:962
+            _tab_0[#_tab_0 + 1] = _value_0 -- shunt/quicktype.yue:962
+            _idx_0 = _idx_0 + 1 -- shunt/quicktype.yue:962
+          else -- shunt/quicktype.yue:962
+            _tab_0[_key_0] = _value_0 -- shunt/quicktype.yue:962
+          end -- shunt/quicktype.yue:962
+        end -- shunt/quicktype.yue:962
+        return _tab_0 -- shunt/quicktype.yue:962
+      end)(), return_types) -- shunt/quicktype.yue:962
+    end, -- shunt/quicktype.yue:960
+    __base = _base_0, -- shunt/quicktype.yue:960
+    __name = "Method", -- shunt/quicktype.yue:960
+    __parent = _parent_0 -- shunt/quicktype.yue:960
+  }, { -- shunt/quicktype.yue:960
+    __index = function(cls, name) -- shunt/quicktype.yue:960
+      local val = rawget(_base_0, name) -- shunt/quicktype.yue:960
+      if val == nil then -- shunt/quicktype.yue:960
+        local parent = rawget(cls, "__parent") -- shunt/quicktype.yue:960
+        if parent then -- shunt/quicktype.yue:960
+          return parent[name] -- shunt/quicktype.yue:960
+        end -- shunt/quicktype.yue:960
+      else -- shunt/quicktype.yue:960
+        return val -- shunt/quicktype.yue:960
+      end -- shunt/quicktype.yue:960
+    end, -- shunt/quicktype.yue:960
+    __call = function(cls, ...) -- shunt/quicktype.yue:960
+      local _self_0 = setmetatable({ }, _base_0) -- shunt/quicktype.yue:960
+      cls.__init(_self_0, ...) -- shunt/quicktype.yue:960
+      return _self_0 -- shunt/quicktype.yue:960
+    end -- shunt/quicktype.yue:960
+  }) -- shunt/quicktype.yue:960
+  _base_0.__class = _class_0 -- shunt/quicktype.yue:960
+  if _parent_0.__inherited then -- shunt/quicktype.yue:960
+    _parent_0.__inherited(_parent_0, _class_0) -- shunt/quicktype.yue:960
+  end -- shunt/quicktype.yue:960
+  Method = _class_0 -- shunt/quicktype.yue:960
+end -- shunt/quicktype.yue:999
+do -- shunt/quicktype.yue:1001
+  local _class_0 -- shunt/quicktype.yue:1001
+  local _base_0 = { -- shunt/quicktype.yue:1001
+    __tostring = function(self) -- shunt/quicktype.yue:1004
+      return tostring(self.type) .. "..." -- shunt/quicktype.yue:1005
+    end, -- shunt/quicktype.yue:1007
+    checker = function(self, checker_builder) -- shunt/quicktype.yue:1007
+      if checker_builder == nil then -- shunt/quicktype.yue:1007
+        checker_builder = CheckerBuilder() -- shunt/quicktype.yue:1007
+      end -- shunt/quicktype.yue:1007
+      return error('internal error: Remainder unresolved in AST') -- shunt/quicktype.yue:1008
+    end -- shunt/quicktype.yue:1001
+  } -- shunt/quicktype.yue:1001
+  local _list_0 = { -- shunt/quicktype.yue:1001
+    Is -- shunt/quicktype.yue:1001
+  } -- shunt/quicktype.yue:1001
+  for _index_0 = 1, #_list_0 do -- shunt/quicktype.yue:1008
+    local _item_0 = _list_0[_index_0] -- shunt/quicktype.yue:1001
+    local _cls_0, _mixin_0 = (_item_0.__base ~= nil), _item_0.__base or _item_0 -- shunt/quicktype.yue:1001
+    for _key_0, _val_0 in pairs(_mixin_0) do -- shunt/quicktype.yue:1008
+      if _base_0[_key_0] == nil and (not _cls_0 or not _key_0:match("^__")) then -- shunt/quicktype.yue:1001
+        _base_0[_key_0] = _val_0 -- shunt/quicktype.yue:1001
+      end -- shunt/quicktype.yue:1001
+    end -- shunt/quicktype.yue:1008
+  end -- shunt/quicktype.yue:1008
+  if _base_0.__index == nil then -- shunt/quicktype.yue:1001
+    _base_0.__index = _base_0 -- shunt/quicktype.yue:1001
+  end -- shunt/quicktype.yue:1008
+  _class_0 = setmetatable({ -- shunt/quicktype.yue:1001
+    __init = function(self, type) -- shunt/quicktype.yue:1002
+      self.type = type -- shunt/quicktype.yue:1002
+    end, -- shunt/quicktype.yue:1001
+    __base = _base_0, -- shunt/quicktype.yue:1001
+    __name = "Remainder" -- shunt/quicktype.yue:1001
+  }, { -- shunt/quicktype.yue:1001
+    __index = _base_0, -- shunt/quicktype.yue:1001
+    __call = function(cls, ...) -- shunt/quicktype.yue:1001
+      local _self_0 = setmetatable({ }, _base_0) -- shunt/quicktype.yue:1001
+      cls.__init(_self_0, ...) -- shunt/quicktype.yue:1001
+      return _self_0 -- shunt/quicktype.yue:1001
+    end -- shunt/quicktype.yue:1001
+  }) -- shunt/quicktype.yue:1001
+  _base_0.__class = _class_0 -- shunt/quicktype.yue:1001
+  Remainder = _class_0 -- shunt/quicktype.yue:1001
+end -- shunt/quicktype.yue:1008
+do -- shunt/quicktype.yue:1010
+  local _class_0 -- shunt/quicktype.yue:1010
+  local _base_0 = { -- shunt/quicktype.yue:1010
+    __tostring = function(self) -- shunt/quicktype.yue:1015
+      return table.concat((function() -- shunt/quicktype.yue:1016
+        local _accum_0 = { } -- shunt/quicktype.yue:1016
+        local _len_0 = 1 -- shunt/quicktype.yue:1016
+        local _list_0 = self.types -- shunt/quicktype.yue:1016
+        for _index_0 = 1, #_list_0 do -- shunt/quicktype.yue:1016
+          local ty = _list_0[_index_0] -- shunt/quicktype.yue:1016
+          _accum_0[_len_0] = tostring(ty) -- shunt/quicktype.yue:1016
+          _len_0 = _len_0 + 1 -- shunt/quicktype.yue:1016
+        end -- shunt/quicktype.yue:1016
+        return _accum_0 -- shunt/quicktype.yue:1016
+      end)(), '|') -- shunt/quicktype.yue:1016
+    end, -- shunt/quicktype.yue:1018
+    checker = function(self, checker_builder) -- shunt/quicktype.yue:1018
+      if checker_builder == nil then -- shunt/quicktype.yue:1018
+        checker_builder = CheckerBuilder() -- shunt/quicktype.yue:1018
+      end -- shunt/quicktype.yue:1018
+      checker_builder:add(C_PUSH_UNION_CTX, self) -- shunt/quicktype.yue:1020
+      local next_variant_jump = checker_builder:add_with_unresolved_target(C_SET_UNION_BAIL_TARGET) -- shunt/quicktype.yue:1021
+      self.types[1]:checker(checker_builder) -- shunt/quicktype.yue:1022
+      local ok_jumps = { } -- shunt/quicktype.yue:1024
+      do -- shunt/quicktype.yue:1025
+        local _list_0 = self.types -- shunt/quicktype.yue:1025
+        for _index_0 = 2, #_list_0 do -- shunt/quicktype.yue:1025
+          local ty = _list_0[_index_0] -- shunt/quicktype.yue:1025
+          ok_jumps[#ok_jumps + 1] = checker_builder:add_with_unresolved_target(C_JMP) -- shunt/quicktype.yue:1026
+          next_variant_jump:resolve_here() -- shunt/quicktype.yue:1028
+          checker_builder:add(C_CLEAR_BAILING) -- shunt/quicktype.yue:1029
+          next_variant_jump = checker_builder:add_with_unresolved_target(C_SET_UNION_BAIL_TARGET) -- shunt/quicktype.yue:1030
+          ty:checker(checker_builder) -- shunt/quicktype.yue:1031
+        end -- shunt/quicktype.yue:1031
+      end -- shunt/quicktype.yue:1031
+      next_variant_jump:resolve_here() -- shunt/quicktype.yue:1033
+      for _index_0 = 1, #ok_jumps do -- shunt/quicktype.yue:1034
+        local ok_jump = ok_jumps[_index_0] -- shunt/quicktype.yue:1034
+        ok_jump:resolve_here() -- shunt/quicktype.yue:1035
+      end -- shunt/quicktype.yue:1035
+      checker_builder:add(C_POP_UNION_CTX) -- shunt/quicktype.yue:1036
+      return checker_builder -- shunt/quicktype.yue:1019
+    end -- shunt/quicktype.yue:1010
+  } -- shunt/quicktype.yue:1010
+  local _list_0 = { -- shunt/quicktype.yue:1010
+    Is -- shunt/quicktype.yue:1010
+  } -- shunt/quicktype.yue:1010
+  for _index_0 = 1, #_list_0 do -- shunt/quicktype.yue:1036
+    local _item_0 = _list_0[_index_0] -- shunt/quicktype.yue:1010
+    local _cls_0, _mixin_0 = (_item_0.__base ~= nil), _item_0.__base or _item_0 -- shunt/quicktype.yue:1010
+    for _key_0, _val_0 in pairs(_mixin_0) do -- shunt/quicktype.yue:1036
+      if _base_0[_key_0] == nil and (not _cls_0 or not _key_0:match("^__")) then -- shunt/quicktype.yue:1010
+        _base_0[_key_0] = _val_0 -- shunt/quicktype.yue:1010
+      end -- shunt/quicktype.yue:1010
+    end -- shunt/quicktype.yue:1036
   end -- shunt/quicktype.yue:1036
-  _class_0 = setmetatable({ -- shunt/quicktype.yue:1031
-    __init = function(self, instructions) -- shunt/quicktype.yue:1032
-      self.instructions = instructions -- shunt/quicktype.yue:1032
-      self.index = #self.instructions + 1 -- shunt/quicktype.yue:1033
-    end, -- shunt/quicktype.yue:1031
-    __base = _base_0, -- shunt/quicktype.yue:1031
-    __name = "Label" -- shunt/quicktype.yue:1031
-  }, { -- shunt/quicktype.yue:1031
-    __index = _base_0, -- shunt/quicktype.yue:1031
-    __call = function(cls, ...) -- shunt/quicktype.yue:1031
-      local _self_0 = setmetatable({ }, _base_0) -- shunt/quicktype.yue:1031
-      cls.__init(_self_0, ...) -- shunt/quicktype.yue:1031
-      return _self_0 -- shunt/quicktype.yue:1031
-    end -- shunt/quicktype.yue:1031
-  }) -- shunt/quicktype.yue:1031
-  _base_0.__class = _class_0 -- shunt/quicktype.yue:1031
-  Label = _class_0 -- shunt/quicktype.yue:1031
+  if _base_0.__index == nil then -- shunt/quicktype.yue:1010
+    _base_0.__index = _base_0 -- shunt/quicktype.yue:1010
+  end -- shunt/quicktype.yue:1036
+  _class_0 = setmetatable({ -- shunt/quicktype.yue:1010
+    __init = function(self, types) -- shunt/quicktype.yue:1011
+      self.types = types -- shunt/quicktype.yue:1011
+      if #self.types <= 1 then -- shunt/quicktype.yue:1012
+        return error('internal error: disjunction has too few elements') -- shunt/quicktype.yue:1013
+      end -- shunt/quicktype.yue:1012
+    end, -- shunt/quicktype.yue:1010
+    __base = _base_0, -- shunt/quicktype.yue:1010
+    __name = "Disjunction" -- shunt/quicktype.yue:1010
+  }, { -- shunt/quicktype.yue:1010
+    __index = _base_0, -- shunt/quicktype.yue:1010
+    __call = function(cls, ...) -- shunt/quicktype.yue:1010
+      local _self_0 = setmetatable({ }, _base_0) -- shunt/quicktype.yue:1010
+      cls.__init(_self_0, ...) -- shunt/quicktype.yue:1010
+      return _self_0 -- shunt/quicktype.yue:1010
+    end -- shunt/quicktype.yue:1010
+  }) -- shunt/quicktype.yue:1010
+  _base_0.__class = _class_0 -- shunt/quicktype.yue:1010
+  Disjunction = _class_0 -- shunt/quicktype.yue:1010
 end -- shunt/quicktype.yue:1036
-C_PUSH = setmetatable({ }, { -- shunt/quicktype.yue:1038
-  __tostring = function(self) -- shunt/quicktype.yue:1038
-    return '<push>' -- shunt/quicktype.yue:1038
-  end -- shunt/quicktype.yue:1038
-}) -- shunt/quicktype.yue:1038
-C_PUSH_METATABLE = setmetatable({ }, { -- shunt/quicktype.yue:1039
-  __tostring = function(self) -- shunt/quicktype.yue:1039
-    return '<push-metatable>' -- shunt/quicktype.yue:1039
-  end -- shunt/quicktype.yue:1039
-}) -- shunt/quicktype.yue:1039
-C_POP = setmetatable({ }, { -- shunt/quicktype.yue:1040
-  __tostring = function(self) -- shunt/quicktype.yue:1040
-    return '<pop>' -- shunt/quicktype.yue:1040
-  end -- shunt/quicktype.yue:1040
-}) -- shunt/quicktype.yue:1040
-C_ASSERT_NON_NIL = setmetatable({ }, { -- shunt/quicktype.yue:1041
-  __tostring = function(self) -- shunt/quicktype.yue:1041
-    return '<assert-non-nil>' -- shunt/quicktype.yue:1041
-  end -- shunt/quicktype.yue:1041
-}) -- shunt/quicktype.yue:1041
-C_ASSERT_PRIMITIVE = setmetatable({ }, { -- shunt/quicktype.yue:1042
-  __tostring = function(self) -- shunt/quicktype.yue:1042
-    return '<assert-primitive>' -- shunt/quicktype.yue:1042
-  end -- shunt/quicktype.yue:1042
-}) -- shunt/quicktype.yue:1042
-C_ASSERT_TRUTHY = setmetatable({ }, { -- shunt/quicktype.yue:1043
-  __tostring = function(self) -- shunt/quicktype.yue:1043
-    return '<assert-truthy>' -- shunt/quicktype.yue:1043
-  end -- shunt/quicktype.yue:1043
-}) -- shunt/quicktype.yue:1043
-C_ASSERT_LEN = setmetatable({ }, { -- shunt/quicktype.yue:1044
-  __tostring = function(self) -- shunt/quicktype.yue:1044
-    return '<assert-len>' -- shunt/quicktype.yue:1044
-  end -- shunt/quicktype.yue:1044
-}) -- shunt/quicktype.yue:1044
-C_ASSERT_EQ = setmetatable({ }, { -- shunt/quicktype.yue:1045
-  __tostring = function(self) -- shunt/quicktype.yue:1045
-    return '<assert-eq>' -- shunt/quicktype.yue:1045
-  end -- shunt/quicktype.yue:1045
-}) -- shunt/quicktype.yue:1045
-C_ASSERT_NEVER = setmetatable({ }, { -- shunt/quicktype.yue:1046
-  __tostring = function(self) -- shunt/quicktype.yue:1046
-    return '<assert-never>' -- shunt/quicktype.yue:1046
-  end -- shunt/quicktype.yue:1046
-}) -- shunt/quicktype.yue:1046
-C_GET_FIELD = setmetatable({ }, { -- shunt/quicktype.yue:1047
-  __tostring = function(self) -- shunt/quicktype.yue:1047
-    return '<field>' -- shunt/quicktype.yue:1047
+do -- shunt/quicktype.yue:1038
+  local _class_0 -- shunt/quicktype.yue:1038
+  local _base_0 = { -- shunt/quicktype.yue:1038
+    __tostring = function(self) -- shunt/quicktype.yue:1041
+      return table.concat((function() -- shunt/quicktype.yue:1042
+        local _accum_0 = { } -- shunt/quicktype.yue:1042
+        local _len_0 = 1 -- shunt/quicktype.yue:1042
+        local _list_0 = self.types -- shunt/quicktype.yue:1042
+        for _index_0 = 1, #_list_0 do -- shunt/quicktype.yue:1042
+          local ty = _list_0[_index_0] -- shunt/quicktype.yue:1042
+          _accum_0[_len_0] = tostring(ty) -- shunt/quicktype.yue:1042
+          _len_0 = _len_0 + 1 -- shunt/quicktype.yue:1042
+        end -- shunt/quicktype.yue:1042
+        return _accum_0 -- shunt/quicktype.yue:1042
+      end)(), '+') -- shunt/quicktype.yue:1042
+    end, -- shunt/quicktype.yue:1044
+    checker = function(self, checker_builder) -- shunt/quicktype.yue:1044
+      if checker_builder == nil then -- shunt/quicktype.yue:1044
+        checker_builder = CheckerBuilder() -- shunt/quicktype.yue:1044
+      end -- shunt/quicktype.yue:1044
+      local _list_0 = self.types -- shunt/quicktype.yue:1046
+      for _index_0 = 1, #_list_0 do -- shunt/quicktype.yue:1046
+        local ty = _list_0[_index_0] -- shunt/quicktype.yue:1046
+        ty:checker(checker_builder) -- shunt/quicktype.yue:1047
+      end -- shunt/quicktype.yue:1047
+      return checker_builder -- shunt/quicktype.yue:1045
+    end -- shunt/quicktype.yue:1038
+  } -- shunt/quicktype.yue:1038
+  local _list_0 = { -- shunt/quicktype.yue:1038
+    Is -- shunt/quicktype.yue:1038
+  } -- shunt/quicktype.yue:1038
+  for _index_0 = 1, #_list_0 do -- shunt/quicktype.yue:1047
+    local _item_0 = _list_0[_index_0] -- shunt/quicktype.yue:1038
+    local _cls_0, _mixin_0 = (_item_0.__base ~= nil), _item_0.__base or _item_0 -- shunt/quicktype.yue:1038
+    for _key_0, _val_0 in pairs(_mixin_0) do -- shunt/quicktype.yue:1047
+      if _base_0[_key_0] == nil and (not _cls_0 or not _key_0:match("^__")) then -- shunt/quicktype.yue:1038
+        _base_0[_key_0] = _val_0 -- shunt/quicktype.yue:1038
+      end -- shunt/quicktype.yue:1038
+    end -- shunt/quicktype.yue:1047
   end -- shunt/quicktype.yue:1047
-}) -- shunt/quicktype.yue:1047
-C_INCR = setmetatable({ }, { -- shunt/quicktype.yue:1048
-  __tostring = function(self) -- shunt/quicktype.yue:1048
-    return '<incr>' -- shunt/quicktype.yue:1048
-  end -- shunt/quicktype.yue:1048
-}) -- shunt/quicktype.yue:1048
-C_DECR = setmetatable({ }, { -- shunt/quicktype.yue:1049
-  __tostring = function(self) -- shunt/quicktype.yue:1049
-    return '<decr>' -- shunt/quicktype.yue:1049
-  end -- shunt/quicktype.yue:1049
-}) -- shunt/quicktype.yue:1049
-C_NEXT = setmetatable({ }, { -- shunt/quicktype.yue:1050
-  __tostring = function(self) -- shunt/quicktype.yue:1050
-    return '<next>' -- shunt/quicktype.yue:1050
-  end -- shunt/quicktype.yue:1050
-}) -- shunt/quicktype.yue:1050
-C_JMP = setmetatable({ }, { -- shunt/quicktype.yue:1051
-  __tostring = function(self) -- shunt/quicktype.yue:1051
-    return '<jmp>' -- shunt/quicktype.yue:1051
-  end -- shunt/quicktype.yue:1051
-}) -- shunt/quicktype.yue:1051
-C_JMP_IF_NIL = setmetatable({ }, { -- shunt/quicktype.yue:1052
-  __tostring = function(self) -- shunt/quicktype.yue:1052
-    return '<jnil>' -- shunt/quicktype.yue:1052
-  end -- shunt/quicktype.yue:1052
-}) -- shunt/quicktype.yue:1052
-C_PUSH_CHECKER = setmetatable({ }, { -- shunt/quicktype.yue:1053
-  __tostring = function(self) -- shunt/quicktype.yue:1053
-    return '<push-checker>' -- shunt/quicktype.yue:1053
-  end -- shunt/quicktype.yue:1053
-}) -- shunt/quicktype.yue:1053
-C_PUSH_UNION_CTX = setmetatable({ }, { -- shunt/quicktype.yue:1054
-  __tostring = function(self) -- shunt/quicktype.yue:1054
-    return '<push-union-ctx>' -- shunt/quicktype.yue:1054
-  end -- shunt/quicktype.yue:1054
-}) -- shunt/quicktype.yue:1054
-C_CLEAR_BAILING = setmetatable({ }, { -- shunt/quicktype.yue:1055
-  __tostring = function(self) -- shunt/quicktype.yue:1055
-    return '<clear-bailing>' -- shunt/quicktype.yue:1055
-  end -- shunt/quicktype.yue:1055
-}) -- shunt/quicktype.yue:1055
-C_SET_UNION_BAIL_TARGET = setmetatable({ }, { -- shunt/quicktype.yue:1056
-  __tostring = function(self) -- shunt/quicktype.yue:1056
-    return '<set-union-bail-target>' -- shunt/quicktype.yue:1056
-  end -- shunt/quicktype.yue:1056
-}) -- shunt/quicktype.yue:1056
-C_POP_UNION_CTX = setmetatable({ }, { -- shunt/quicktype.yue:1057
-  __tostring = function(self) -- shunt/quicktype.yue:1057
-    return '<pop-union-ctx>' -- shunt/quicktype.yue:1057
-  end -- shunt/quicktype.yue:1057
-}) -- shunt/quicktype.yue:1057
-V_NIL = setmetatable({ }, { -- shunt/quicktype.yue:1058
-  __tostring = function(self) -- shunt/quicktype.yue:1058
-    return 'nil' -- shunt/quicktype.yue:1058
-  end -- shunt/quicktype.yue:1058
-}) -- shunt/quicktype.yue:1058
-checker_program_repr = function(checker) -- shunt/quicktype.yue:1060
-  return table.concat((function() -- shunt/quicktype.yue:1061
-    local _accum_0 = { } -- shunt/quicktype.yue:1061
-    local _len_0 = 1 -- shunt/quicktype.yue:1061
-    for i = 1, #checker, 2 do -- shunt/quicktype.yue:1061
-      _accum_0[_len_0] = tostring(i) .. ":\t" .. tostring(repr(checker[i])) .. "\t" .. tostring(checker[i + 1]) -- shunt/quicktype.yue:1061
-      _len_0 = _len_0 + 1 -- shunt/quicktype.yue:1061
-    end -- shunt/quicktype.yue:1061
-    return _accum_0 -- shunt/quicktype.yue:1061
-  end)(), '\n\t') -- shunt/quicktype.yue:1061
-end -- shunt/quicktype.yue:1060
-LABEL_PLACEHOLDER = setmetatable({ }, { -- shunt/quicktype.yue:1063
-  __tostring = function(self) -- shunt/quicktype.yue:1063
-    return '<LABEL-PLACEHOLDER>' -- shunt/quicktype.yue:1063
-  end -- shunt/quicktype.yue:1063
-}) -- shunt/quicktype.yue:1063
-MAX_CHECKER_DEPTH = 1000 -- shunt/quicktype.yue:1065
-_module_0["MAX_CHECKER_DEPTH"] = MAX_CHECKER_DEPTH -- shunt/quicktype.yue:1065
-stack_size = 0 -- shunt/quicktype.yue:1066
-stack = { } -- shunt/quicktype.yue:1067
-keys_used = { } -- shunt/quicktype.yue:1068
-num_unions = 0 -- shunt/quicktype.yue:1069
-union_depths = { } -- shunt/quicktype.yue:1070
-union_bail_jumps = { } -- shunt/quicktype.yue:1071
-root_union = nil -- shunt/quicktype.yue:1072
-num_running_checkers = 0 -- shunt/quicktype.yue:1073
-instruction_counts = { } -- shunt/quicktype.yue:1074
-check = function(check_prog, value, root) -- shunt/quicktype.yue:1099
-  if root == nil then -- shunt/quicktype.yue:1099
-    root = true -- shunt/quicktype.yue:1099
+  if _base_0.__index == nil then -- shunt/quicktype.yue:1038
+    _base_0.__index = _base_0 -- shunt/quicktype.yue:1038
+  end -- shunt/quicktype.yue:1047
+  _class_0 = setmetatable({ -- shunt/quicktype.yue:1038
+    __init = function(self, types) -- shunt/quicktype.yue:1039
+      self.types = types -- shunt/quicktype.yue:1039
+    end, -- shunt/quicktype.yue:1038
+    __base = _base_0, -- shunt/quicktype.yue:1038
+    __name = "Conjunction" -- shunt/quicktype.yue:1038
+  }, { -- shunt/quicktype.yue:1038
+    __index = _base_0, -- shunt/quicktype.yue:1038
+    __call = function(cls, ...) -- shunt/quicktype.yue:1038
+      local _self_0 = setmetatable({ }, _base_0) -- shunt/quicktype.yue:1038
+      cls.__init(_self_0, ...) -- shunt/quicktype.yue:1038
+      return _self_0 -- shunt/quicktype.yue:1038
+    end -- shunt/quicktype.yue:1038
+  }) -- shunt/quicktype.yue:1038
+  _base_0.__class = _class_0 -- shunt/quicktype.yue:1038
+  Conjunction = _class_0 -- shunt/quicktype.yue:1038
+end -- shunt/quicktype.yue:1047
+do -- shunt/quicktype.yue:1049
+  local _class_0 -- shunt/quicktype.yue:1049
+  local _base_0 = { -- shunt/quicktype.yue:1049
+    add = function(self, op, arg) -- shunt/quicktype.yue:1054
+      if arg == nil then -- shunt/quicktype.yue:1054
+        arg = '_' -- shunt/quicktype.yue:1054
+      end -- shunt/quicktype.yue:1054
+      do -- shunt/quicktype.yue:1055
+        local _obj_0 = self.instructions -- shunt/quicktype.yue:1055
+        _obj_0[#_obj_0 + 1] = op -- shunt/quicktype.yue:1055
+      end -- shunt/quicktype.yue:1055
+      do -- shunt/quicktype.yue:1056
+        local _obj_0 = self.instructions -- shunt/quicktype.yue:1056
+        _obj_0[#_obj_0 + 1] = arg -- shunt/quicktype.yue:1056
+      end -- shunt/quicktype.yue:1056
+    end, -- shunt/quicktype.yue:1058
+    add_labelled = function(self, op, arg) -- shunt/quicktype.yue:1058
+      if arg == nil then -- shunt/quicktype.yue:1058
+        arg = '_' -- shunt/quicktype.yue:1058
+      end -- shunt/quicktype.yue:1058
+      local label = self:make_label() -- shunt/quicktype.yue:1059
+      self:add(op, arg) -- shunt/quicktype.yue:1060
+      return label -- shunt/quicktype.yue:1061
+    end, -- shunt/quicktype.yue:1063
+    add_with_unresolved_target = function(self, op) -- shunt/quicktype.yue:1063
+      local label = self:make_label() -- shunt/quicktype.yue:1064
+      self:add(op, LABEL_PLACEHOLDER) -- shunt/quicktype.yue:1065
+      return label -- shunt/quicktype.yue:1066
+    end, -- shunt/quicktype.yue:1068
+    make_label = function(self) -- shunt/quicktype.yue:1068
+      return Label(self.instructions) -- shunt/quicktype.yue:1069
+    end, -- shunt/quicktype.yue:1071
+    build = function(self) -- shunt/quicktype.yue:1071
+      self:validate() -- shunt/quicktype.yue:1072
+      return self.instructions -- shunt/quicktype.yue:1073
+    end, -- shunt/quicktype.yue:1075
+    validate = function(self) -- shunt/quicktype.yue:1075
+      local _list_0 = self.instructions -- shunt/quicktype.yue:1076
+      for _index_0 = 1, #_list_0 do -- shunt/quicktype.yue:1076
+        local instruction = _list_0[_index_0] -- shunt/quicktype.yue:1076
+        if instruction == LABEL_PLACEHOLDER then -- shunt/quicktype.yue:1077
+          error("unresolved placeholder in check program:\n" .. tostring(repr(self.instructions))) -- shunt/quicktype.yue:1078
+        end -- shunt/quicktype.yue:1077
+      end -- shunt/quicktype.yue:1078
+    end, -- shunt/quicktype.yue:1080
+    already_building = function(self, user_type) -- shunt/quicktype.yue:1080
+      local _list_0 = self.user_type_stack -- shunt/quicktype.yue:1081
+      for _index_0 = 1, #_list_0 do -- shunt/quicktype.yue:1081
+        local user_type_being_checked = _list_0[_index_0] -- shunt/quicktype.yue:1081
+        if user_type.name == user_type_being_checked.name then -- shunt/quicktype.yue:1082
+          return true -- shunt/quicktype.yue:1083
+        end -- shunt/quicktype.yue:1082
+      end -- shunt/quicktype.yue:1083
+      return false -- shunt/quicktype.yue:1084
+    end, -- shunt/quicktype.yue:1086
+    push_building = function(self, user_type) -- shunt/quicktype.yue:1086
+      do -- shunt/quicktype.yue:1087
+        local _obj_0 = self.user_type_stack -- shunt/quicktype.yue:1087
+        _obj_0[#_obj_0 + 1] = user_type -- shunt/quicktype.yue:1087
+      end -- shunt/quicktype.yue:1087
+    end, -- shunt/quicktype.yue:1089
+    pop_building = function(self, user_type) -- shunt/quicktype.yue:1089
+      if self.user_type_stack[#self.user_type_stack] ~= user_type then -- shunt/quicktype.yue:1090
+        error("internal error: user type stack mismanaged, expected " .. tostring(user_type.name) .. " at the top of " .. tostring(repr(self.user_type_stack))) -- shunt/quicktype.yue:1091
+      end -- shunt/quicktype.yue:1090
+      self.user_type_stack[#self.user_type_stack] = nil -- shunt/quicktype.yue:1092
+    end -- shunt/quicktype.yue:1049
+  } -- shunt/quicktype.yue:1049
+  if _base_0.__index == nil then -- shunt/quicktype.yue:1049
+    _base_0.__index = _base_0 -- shunt/quicktype.yue:1049
+  end -- shunt/quicktype.yue:1092
+  _class_0 = setmetatable({ -- shunt/quicktype.yue:1049
+    __init = function(self) -- shunt/quicktype.yue:1050
+      self.instructions = { } -- shunt/quicktype.yue:1051
+      self.user_type_stack = { } -- shunt/quicktype.yue:1052
+    end, -- shunt/quicktype.yue:1049
+    __base = _base_0, -- shunt/quicktype.yue:1049
+    __name = "CheckerBuilder" -- shunt/quicktype.yue:1049
+  }, { -- shunt/quicktype.yue:1049
+    __index = _base_0, -- shunt/quicktype.yue:1049
+    __call = function(cls, ...) -- shunt/quicktype.yue:1049
+      local _self_0 = setmetatable({ }, _base_0) -- shunt/quicktype.yue:1049
+      cls.__init(_self_0, ...) -- shunt/quicktype.yue:1049
+      return _self_0 -- shunt/quicktype.yue:1049
+    end -- shunt/quicktype.yue:1049
+  }) -- shunt/quicktype.yue:1049
+  _base_0.__class = _class_0 -- shunt/quicktype.yue:1049
+  CheckerBuilder = _class_0 -- shunt/quicktype.yue:1049
+end -- shunt/quicktype.yue:1092
+do -- shunt/quicktype.yue:1094
+  local _class_0 -- shunt/quicktype.yue:1094
+  local _base_0 = { -- shunt/quicktype.yue:1094
+    resolve_here = function(self) -- shunt/quicktype.yue:1098
+      self.instructions[self.index + 1] = #self.instructions + 1 -- shunt/quicktype.yue:1099
+    end -- shunt/quicktype.yue:1094
+  } -- shunt/quicktype.yue:1094
+  if _base_0.__index == nil then -- shunt/quicktype.yue:1094
+    _base_0.__index = _base_0 -- shunt/quicktype.yue:1094
   end -- shunt/quicktype.yue:1099
-  if root then -- shunt/quicktype.yue:1106
-    stack_size = 1 -- shunt/quicktype.yue:1108
-    stack[1] = value -- shunt/quicktype.yue:1109
-    num_running_checkers = 1 -- shunt/quicktype.yue:1110
-    root_union = 0 -- shunt/quicktype.yue:1111
-    num_unions = 0 -- shunt/quicktype.yue:1112
-    local initial_unions = 0 -- shunt/quicktype.yue:1113
-  end -- shunt/quicktype.yue:1106
-  local initial_stack_size = stack_size -- shunt/quicktype.yue:1114
-  local initial_num_running_checkers = num_running_checkers -- shunt/quicktype.yue:1115
-  local initial_unions = num_unions -- shunt/quicktype.yue:1116
-  if num_running_checkers >= MAX_CHECKER_DEPTH then -- shunt/quicktype.yue:1118
-    return "type checker recursed too many times (" .. tostring(num_running_checkers) .. " times). If this is okay, increase the MAX_CHECKER_DEPTH" -- shunt/quicktype.yue:1119
-  end -- shunt/quicktype.yue:1118
-  do -- shunt/quicktype.yue:1123
-    local pc -- shunt/quicktype.yue:1124
-    local bailing = false -- shunt/quicktype.yue:1125
-    pc = -1 -- shunt/quicktype.yue:1127
-    while true do -- shunt/quicktype.yue:1128
-      pc = pc + 2 -- shunt/quicktype.yue:1129
-      local instruction = check_prog[pc] -- shunt/quicktype.yue:1130
-      if instruction == nil then -- shunt/quicktype.yue:1131
-        break -- shunt/quicktype.yue:1132
-      end -- shunt/quicktype.yue:1131
-      if COLLECT_STATS then -- shunt/quicktype.yue:1134
-        do -- shunt/quicktype.yue:1135
-          local v = instruction_counts[instruction] -- shunt/quicktype.yue:1135
-          if v then -- shunt/quicktype.yue:1135
-            instruction_counts[instruction] = v + 1 -- shunt/quicktype.yue:1136
-          else -- shunt/quicktype.yue:1138
-            instruction_counts[instruction] = 1 -- shunt/quicktype.yue:1138
-          end -- shunt/quicktype.yue:1135
-        end -- shunt/quicktype.yue:1135
-      end -- shunt/quicktype.yue:1134
-      if C_PUSH == instruction then -- shunt/quicktype.yue:1144
-        local arg = check_prog[pc + 1] -- shunt/quicktype.yue:1145
-        if arg == V_NIL then -- shunt/quicktype.yue:1146
-          arg = nil -- shunt/quicktype.yue:1147
-        end -- shunt/quicktype.yue:1146
-        stack_size = stack_size + 1 -- shunt/quicktype.yue:1148
-        stack[stack_size] = arg -- shunt/quicktype.yue:1149
-      elseif C_PUSH_METATABLE == instruction then -- shunt/quicktype.yue:1150
-        local mt = getmetatable(stack[stack_size]) -- shunt/quicktype.yue:1151
-        stack_size = stack_size + 1 -- shunt/quicktype.yue:1152
-        stack[stack_size] = mt -- shunt/quicktype.yue:1153
-        keys_used[stack_size] = '<>' -- shunt/quicktype.yue:1154
-      elseif C_POP == instruction then -- shunt/quicktype.yue:1155
-        stack[stack_size] = nil -- shunt/quicktype.yue:1156
-        keys_used[stack_size] = nil -- shunt/quicktype.yue:1157
-        stack_size = stack_size - 1 -- shunt/quicktype.yue:1158
-      elseif C_ASSERT_NON_NIL == instruction then -- shunt/quicktype.yue:1159
-        if stack[stack_size] == nil then -- shunt/quicktype.yue:1160
-          local msg -- shunt/quicktype.yue:1161
-          if num_unions == 0 then -- shunt/quicktype.yue:1161
-            local pretty_key_parts = { } -- shunt/quicktype.yue:1161
-            for i = 1, stack_size do -- shunt/quicktype.yue:1161
-              pretty_key_parts[#pretty_key_parts + 1] = keys_used[i] -- shunt/quicktype.yue:1161
-            end -- shunt/quicktype.yue:1161
-            if #pretty_key_parts > 0 then -- shunt/quicktype.yue:1161
-              local pretty_key = "(at field ." .. tostring(table.concat(pretty_key_parts, ".")) .. ")" -- shunt/quicktype.yue:1161
-              msg = "incorrect type: expected some but got nil" .. ' ' .. pretty_key -- shunt/quicktype.yue:1161
-            else -- shunt/quicktype.yue:1161
-              msg = "incorrect type: expected some but got nil" -- shunt/quicktype.yue:1161
-            end -- shunt/quicktype.yue:1161
-          else -- shunt/quicktype.yue:1161
-            msg = nil -- shunt/quicktype.yue:1161
-          end -- shunt/quicktype.yue:1161
-          local new_size -- shunt/quicktype.yue:1161
-          do -- shunt/quicktype.yue:1161
-            local _exp_0 = union_depths[num_unions] -- shunt/quicktype.yue:1161
-            if _exp_0 ~= nil then -- shunt/quicktype.yue:1161
-              new_size = _exp_0 -- shunt/quicktype.yue:1161
-            else -- shunt/quicktype.yue:1161
-              new_size = 0 -- shunt/quicktype.yue:1161
-            end -- shunt/quicktype.yue:1161
-          end -- shunt/quicktype.yue:1161
-          for i = new_size + 1, stack_size do -- shunt/quicktype.yue:1161
-            stack[i] = nil -- shunt/quicktype.yue:1161
-          end -- shunt/quicktype.yue:1161
-          stack_size = new_size -- shunt/quicktype.yue:1161
-          if num_unions == initial_unions then -- shunt/quicktype.yue:1161
-            return msg -- shunt/quicktype.yue:1161
-          end -- shunt/quicktype.yue:1161
-          pc = union_bail_jumps[num_unions] - 2 -- shunt/quicktype.yue:1161
-          bailing = true -- shunt/quicktype.yue:1161
-        end -- shunt/quicktype.yue:1160
-      elseif C_ASSERT_PRIMITIVE == instruction then -- shunt/quicktype.yue:1162
-        local ty = type(stack[stack_size]) -- shunt/quicktype.yue:1163
-        local arg = check_prog[pc + 1] -- shunt/quicktype.yue:1164
-        if ty ~= arg then -- shunt/quicktype.yue:1165
-          local msg -- shunt/quicktype.yue:1166
-          if num_unions == 0 then -- shunt/quicktype.yue:1166
-            local pretty_key_parts = { } -- shunt/quicktype.yue:1166
-            for i = 1, stack_size do -- shunt/quicktype.yue:1166
-              pretty_key_parts[#pretty_key_parts + 1] = keys_used[i] -- shunt/quicktype.yue:1166
-            end -- shunt/quicktype.yue:1166
-            if #pretty_key_parts > 0 then -- shunt/quicktype.yue:1166
-              local pretty_key = "(at field ." .. tostring(table.concat(pretty_key_parts, ".")) .. ")" -- shunt/quicktype.yue:1166
-              msg = "incorrect type: expected " .. tostring(arg) .. " but got " .. tostring(ty) .. " (" .. tostring(repr(stack[stack_size])) .. ")" .. ' ' .. pretty_key -- shunt/quicktype.yue:1166
-            else -- shunt/quicktype.yue:1166
-              msg = "incorrect type: expected " .. tostring(arg) .. " but got " .. tostring(ty) .. " (" .. tostring(repr(stack[stack_size])) .. ")" -- shunt/quicktype.yue:1166
-            end -- shunt/quicktype.yue:1166
-          else -- shunt/quicktype.yue:1166
-            msg = nil -- shunt/quicktype.yue:1166
-          end -- shunt/quicktype.yue:1166
-          local new_size -- shunt/quicktype.yue:1166
-          do -- shunt/quicktype.yue:1166
-            local _exp_0 = union_depths[num_unions] -- shunt/quicktype.yue:1166
-            if _exp_0 ~= nil then -- shunt/quicktype.yue:1166
-              new_size = _exp_0 -- shunt/quicktype.yue:1166
-            else -- shunt/quicktype.yue:1166
-              new_size = 0 -- shunt/quicktype.yue:1166
-            end -- shunt/quicktype.yue:1166
-          end -- shunt/quicktype.yue:1166
-          for i = new_size + 1, stack_size do -- shunt/quicktype.yue:1166
-            stack[i] = nil -- shunt/quicktype.yue:1166
-          end -- shunt/quicktype.yue:1166
-          stack_size = new_size -- shunt/quicktype.yue:1166
-          if num_unions == initial_unions then -- shunt/quicktype.yue:1166
-            return msg -- shunt/quicktype.yue:1166
-          end -- shunt/quicktype.yue:1166
-          pc = union_bail_jumps[num_unions] - 2 -- shunt/quicktype.yue:1166
-          bailing = true -- shunt/quicktype.yue:1166
-        end -- shunt/quicktype.yue:1165
-      elseif C_ASSERT_TRUTHY == instruction then -- shunt/quicktype.yue:1167
-        if not stack[stack_size] then -- shunt/quicktype.yue:1168
-          local msg -- shunt/quicktype.yue:1169
-          if num_unions == 0 then -- shunt/quicktype.yue:1169
-            local pretty_key_parts = { } -- shunt/quicktype.yue:1169
-            for i = 1, stack_size do -- shunt/quicktype.yue:1169
-              pretty_key_parts[#pretty_key_parts + 1] = keys_used[i] -- shunt/quicktype.yue:1169
-            end -- shunt/quicktype.yue:1169
-            if #pretty_key_parts > 0 then -- shunt/quicktype.yue:1169
-              local pretty_key = "(at field ." .. tostring(table.concat(pretty_key_parts, ".")) .. ")" -- shunt/quicktype.yue:1169
-              msg = "incorrect type: expected a truthy value but got " .. tostring(stack[stack_size]) .. ' ' .. pretty_key -- shunt/quicktype.yue:1169
-            else -- shunt/quicktype.yue:1169
-              msg = "incorrect type: expected a truthy value but got " .. tostring(stack[stack_size]) -- shunt/quicktype.yue:1169
-            end -- shunt/quicktype.yue:1169
-          else -- shunt/quicktype.yue:1169
-            msg = nil -- shunt/quicktype.yue:1169
-          end -- shunt/quicktype.yue:1169
-          local new_size -- shunt/quicktype.yue:1169
-          do -- shunt/quicktype.yue:1169
-            local _exp_0 = union_depths[num_unions] -- shunt/quicktype.yue:1169
-            if _exp_0 ~= nil then -- shunt/quicktype.yue:1169
-              new_size = _exp_0 -- shunt/quicktype.yue:1169
-            else -- shunt/quicktype.yue:1169
-              new_size = 0 -- shunt/quicktype.yue:1169
-            end -- shunt/quicktype.yue:1169
-          end -- shunt/quicktype.yue:1169
-          for i = new_size + 1, stack_size do -- shunt/quicktype.yue:1169
-            stack[i] = nil -- shunt/quicktype.yue:1169
-          end -- shunt/quicktype.yue:1169
-          stack_size = new_size -- shunt/quicktype.yue:1169
-          if num_unions == initial_unions then -- shunt/quicktype.yue:1169
-            return msg -- shunt/quicktype.yue:1169
-          end -- shunt/quicktype.yue:1169
-          pc = union_bail_jumps[num_unions] - 2 -- shunt/quicktype.yue:1169
-          bailing = true -- shunt/quicktype.yue:1169
-        end -- shunt/quicktype.yue:1168
-      elseif C_ASSERT_LEN == instruction then -- shunt/quicktype.yue:1170
-        local actual_len = #stack[stack_size - 1] -- shunt/quicktype.yue:1171
-        local counted_len = stack[stack_size] -- shunt/quicktype.yue:1172
-        if counted_len ~= actual_len then -- shunt/quicktype.yue:1173
-          local msg -- shunt/quicktype.yue:1174
-          if num_unions == 0 then -- shunt/quicktype.yue:1174
-            local pretty_key_parts = { } -- shunt/quicktype.yue:1174
-            for i = 1, stack_size do -- shunt/quicktype.yue:1174
-              pretty_key_parts[#pretty_key_parts + 1] = keys_used[i] -- shunt/quicktype.yue:1174
-            end -- shunt/quicktype.yue:1174
-            if #pretty_key_parts > 0 then -- shunt/quicktype.yue:1174
-              local pretty_key = "(at field ." .. tostring(table.concat(pretty_key_parts, ".")) .. ")" -- shunt/quicktype.yue:1174
-              msg = "incorrect type: expected array but got table (" .. tostring(repr(stack[stack_size])) .. ")" .. ' ' .. pretty_key -- shunt/quicktype.yue:1174
-            else -- shunt/quicktype.yue:1174
-              msg = "incorrect type: expected array but got table (" .. tostring(repr(stack[stack_size])) .. ")" -- shunt/quicktype.yue:1174
-            end -- shunt/quicktype.yue:1174
-          else -- shunt/quicktype.yue:1174
-            msg = nil -- shunt/quicktype.yue:1174
-          end -- shunt/quicktype.yue:1174
-          local new_size -- shunt/quicktype.yue:1174
-          do -- shunt/quicktype.yue:1174
-            local _exp_0 = union_depths[num_unions] -- shunt/quicktype.yue:1174
-            if _exp_0 ~= nil then -- shunt/quicktype.yue:1174
-              new_size = _exp_0 -- shunt/quicktype.yue:1174
-            else -- shunt/quicktype.yue:1174
-              new_size = 0 -- shunt/quicktype.yue:1174
-            end -- shunt/quicktype.yue:1174
-          end -- shunt/quicktype.yue:1174
-          for i = new_size + 1, stack_size do -- shunt/quicktype.yue:1174
-            stack[i] = nil -- shunt/quicktype.yue:1174
-          end -- shunt/quicktype.yue:1174
-          stack_size = new_size -- shunt/quicktype.yue:1174
-          if num_unions == initial_unions then -- shunt/quicktype.yue:1174
-            return msg -- shunt/quicktype.yue:1174
-          end -- shunt/quicktype.yue:1174
-          pc = union_bail_jumps[num_unions] - 2 -- shunt/quicktype.yue:1174
-          bailing = true -- shunt/quicktype.yue:1174
-        end -- shunt/quicktype.yue:1173
-      elseif C_ASSERT_EQ == instruction then -- shunt/quicktype.yue:1175
-        if stack[stack_size] ~= check_prog[pc + 1] then -- shunt/quicktype.yue:1176
-          local msg -- shunt/quicktype.yue:1177
-          if num_unions == 0 then -- shunt/quicktype.yue:1177
-            local pretty_key_parts = { } -- shunt/quicktype.yue:1177
-            for i = 1, stack_size do -- shunt/quicktype.yue:1177
-              pretty_key_parts[#pretty_key_parts + 1] = keys_used[i] -- shunt/quicktype.yue:1177
-            end -- shunt/quicktype.yue:1177
-            if #pretty_key_parts > 0 then -- shunt/quicktype.yue:1177
-              local pretty_key = "(at field ." .. tostring(table.concat(pretty_key_parts, ".")) .. ")" -- shunt/quicktype.yue:1177
-              msg = "incorrect type: expected " .. tostring(type(check_prog[pc + 1])) .. " " .. tostring(repr(check_prog[pc + 1])) .. " but got " .. tostring(repr(stack[stack_size])) .. ' ' .. pretty_key -- shunt/quicktype.yue:1177
-            else -- shunt/quicktype.yue:1177
-              msg = "incorrect type: expected " .. tostring(type(check_prog[pc + 1])) .. " " .. tostring(repr(check_prog[pc + 1])) .. " but got " .. tostring(repr(stack[stack_size])) -- shunt/quicktype.yue:1177
-            end -- shunt/quicktype.yue:1177
-          else -- shunt/quicktype.yue:1177
-            msg = nil -- shunt/quicktype.yue:1177
-          end -- shunt/quicktype.yue:1177
-          local new_size -- shunt/quicktype.yue:1177
-          do -- shunt/quicktype.yue:1177
-            local _exp_0 = union_depths[num_unions] -- shunt/quicktype.yue:1177
-            if _exp_0 ~= nil then -- shunt/quicktype.yue:1177
-              new_size = _exp_0 -- shunt/quicktype.yue:1177
-            else -- shunt/quicktype.yue:1177
-              new_size = 0 -- shunt/quicktype.yue:1177
-            end -- shunt/quicktype.yue:1177
-          end -- shunt/quicktype.yue:1177
-          for i = new_size + 1, stack_size do -- shunt/quicktype.yue:1177
-            stack[i] = nil -- shunt/quicktype.yue:1177
-          end -- shunt/quicktype.yue:1177
-          stack_size = new_size -- shunt/quicktype.yue:1177
-          if num_unions == initial_unions then -- shunt/quicktype.yue:1177
-            return msg -- shunt/quicktype.yue:1177
-          end -- shunt/quicktype.yue:1177
-          pc = union_bail_jumps[num_unions] - 2 -- shunt/quicktype.yue:1177
-          bailing = true -- shunt/quicktype.yue:1177
-        end -- shunt/quicktype.yue:1176
-      elseif C_ASSERT_NEVER == instruction then -- shunt/quicktype.yue:1178
-        local msg -- shunt/quicktype.yue:1179
-        if num_unions == 0 then -- shunt/quicktype.yue:1179
-          local pretty_key_parts = { } -- shunt/quicktype.yue:1179
-          for i = 1, stack_size do -- shunt/quicktype.yue:1179
-            pretty_key_parts[#pretty_key_parts + 1] = keys_used[i] -- shunt/quicktype.yue:1179
-          end -- shunt/quicktype.yue:1179
-          if #pretty_key_parts > 0 then -- shunt/quicktype.yue:1179
-            local pretty_key = "(at field ." .. tostring(table.concat(pretty_key_parts, ".")) .. ")" -- shunt/quicktype.yue:1179
-            msg = 'never expected a value here' .. ' ' .. pretty_key -- shunt/quicktype.yue:1179
-          else -- shunt/quicktype.yue:1179
-            msg = 'never expected a value here' -- shunt/quicktype.yue:1179
-          end -- shunt/quicktype.yue:1179
-        else -- shunt/quicktype.yue:1179
-          msg = nil -- shunt/quicktype.yue:1179
-        end -- shunt/quicktype.yue:1179
-        local new_size -- shunt/quicktype.yue:1179
-        do -- shunt/quicktype.yue:1179
-          local _exp_0 = union_depths[num_unions] -- shunt/quicktype.yue:1179
-          if _exp_0 ~= nil then -- shunt/quicktype.yue:1179
-            new_size = _exp_0 -- shunt/quicktype.yue:1179
-          else -- shunt/quicktype.yue:1179
-            new_size = 0 -- shunt/quicktype.yue:1179
-          end -- shunt/quicktype.yue:1179
-        end -- shunt/quicktype.yue:1179
-        for i = new_size + 1, stack_size do -- shunt/quicktype.yue:1179
-          stack[i] = nil -- shunt/quicktype.yue:1179
-        end -- shunt/quicktype.yue:1179
-        stack_size = new_size -- shunt/quicktype.yue:1179
-        if num_unions == initial_unions then -- shunt/quicktype.yue:1179
-          return msg -- shunt/quicktype.yue:1179
-        end -- shunt/quicktype.yue:1179
-        pc = union_bail_jumps[num_unions] - 2 -- shunt/quicktype.yue:1179
-        bailing = true -- shunt/quicktype.yue:1179
-      elseif C_GET_FIELD == instruction then -- shunt/quicktype.yue:1180
-        stack_size = stack_size + 1 -- shunt/quicktype.yue:1181
-        stack[stack_size] = stack[stack_size - 2][stack[stack_size - 1]] -- shunt/quicktype.yue:1182
-        keys_used[stack_size] = stack[stack_size - 1] -- shunt/quicktype.yue:1183
-      elseif C_INCR == instruction then -- shunt/quicktype.yue:1184
-        stack[stack_size] = stack[stack_size] + 1 -- shunt/quicktype.yue:1185
-      elseif C_DECR == instruction then -- shunt/quicktype.yue:1186
-        stack[stack_size] = stack[stack_size] - 1 -- shunt/quicktype.yue:1187
-      elseif C_NEXT == instruction then -- shunt/quicktype.yue:1188
-        local tab = stack[stack_size - 1] -- shunt/quicktype.yue:1189
-        local idx = stack[stack_size] -- shunt/quicktype.yue:1190
-        local next_idx -- shunt/quicktype.yue:1191
-        next_idx, value = next(tab, idx) -- shunt/quicktype.yue:1191
-        stack[stack_size] = next_idx -- shunt/quicktype.yue:1192
-        stack_size = stack_size + 1 -- shunt/quicktype.yue:1193
-        stack[stack_size] = value -- shunt/quicktype.yue:1194
-      elseif C_JMP == instruction then -- shunt/quicktype.yue:1195
-        pc = check_prog[pc + 1] - 2 -- shunt/quicktype.yue:1196
-      elseif C_JMP_IF_NIL == instruction then -- shunt/quicktype.yue:1197
-        if not (stack[stack_size] ~= nil) then -- shunt/quicktype.yue:1198
-          pc = check_prog[pc + 1] - 2 -- shunt/quicktype.yue:1199
-        end -- shunt/quicktype.yue:1198
-      elseif C_PUSH_CHECKER == instruction then -- shunt/quicktype.yue:1200
-        local arg = check_prog[pc + 1] -- shunt/quicktype.yue:1201
-        local checker = type_checkers[arg] -- shunt/quicktype.yue:1202
-        if not (checker ~= nil) then -- shunt/quicktype.yue:1203
-          return "cannot typecheck: type " .. tostring(arg) .. " not defined" -- shunt/quicktype.yue:1204
-        end -- shunt/quicktype.yue:1203
-        if #checker == 2 and #check_prog == 2 then -- shunt/quicktype.yue:1205
-          local ccmd, carg = checker[1], checker[2] -- shunt/quicktype.yue:1207
-          if check_prog[pc] == ccmd and arg == carg then -- shunt/quicktype.yue:1208
-            return "cannot typecheck: type " .. tostring(arg) .. " not defined" -- shunt/quicktype.yue:1209
-          end -- shunt/quicktype.yue:1208
-        end -- shunt/quicktype.yue:1205
-        num_running_checkers = num_running_checkers + 1 -- shunt/quicktype.yue:1211
-        local err = check(checker, nil, false) -- shunt/quicktype.yue:1212
-        num_running_checkers = num_running_checkers - 1 -- shunt/quicktype.yue:1213
-        if (err ~= nil) then -- shunt/quicktype.yue:1215
-          if num_unions == 0 then -- shunt/quicktype.yue:1216
-            return err -- shunt/quicktype.yue:1217
-          end -- shunt/quicktype.yue:1216
-          bailing = true -- shunt/quicktype.yue:1219
-          pc = union_bail_jumps[num_unions] - 2 -- shunt/quicktype.yue:1220
-        end -- shunt/quicktype.yue:1215
-      elseif C_CLEAR_BAILING == instruction then -- shunt/quicktype.yue:1221
-        bailing = false -- shunt/quicktype.yue:1222
-      elseif C_SET_UNION_BAIL_TARGET == instruction then -- shunt/quicktype.yue:1223
-        union_bail_jumps[num_unions] = check_prog[pc + 1] -- shunt/quicktype.yue:1224
-      elseif C_PUSH_UNION_CTX == instruction then -- shunt/quicktype.yue:1225
-        num_unions = num_unions + 1 -- shunt/quicktype.yue:1226
-        union_depths[num_unions] = #stack -- shunt/quicktype.yue:1227
-        if num_unions == 1 then -- shunt/quicktype.yue:1228
-          root_union = check_prog[pc + 1] -- shunt/quicktype.yue:1229
-        end -- shunt/quicktype.yue:1228
-      elseif C_POP_UNION_CTX == instruction then -- shunt/quicktype.yue:1230
-        union_bail_jumps[num_unions] = nil -- shunt/quicktype.yue:1231
-        union_depths[num_unions] = nil -- shunt/quicktype.yue:1232
-        num_unions = num_unions - 1 -- shunt/quicktype.yue:1233
-        local tmp_root_union = root_union -- shunt/quicktype.yue:1235
-        if num_unions == 0 then -- shunt/quicktype.yue:1236
-          root_union = nil -- shunt/quicktype.yue:1237
-        end -- shunt/quicktype.yue:1236
-        if bailing then -- shunt/quicktype.yue:1238
-          if num_unions == 0 then -- shunt/quicktype.yue:1239
-            local msg -- shunt/quicktype.yue:1240
-            if num_unions == 0 then -- shunt/quicktype.yue:1240
-              local pretty_key_parts = { } -- shunt/quicktype.yue:1240
-              for i = 1, stack_size do -- shunt/quicktype.yue:1240
-                pretty_key_parts[#pretty_key_parts + 1] = keys_used[i] -- shunt/quicktype.yue:1240
-              end -- shunt/quicktype.yue:1240
-              if #pretty_key_parts > 0 then -- shunt/quicktype.yue:1240
-                local pretty_key = "(at field ." .. tostring(table.concat(pretty_key_parts, ".")) .. ")" -- shunt/quicktype.yue:1240
-                msg = "incorrect type: expected " .. tostring(tmp_root_union) .. " but got " .. tostring(type(stack[stack_size])) .. " (" .. tostring(repr(stack[stack_size])) .. ")" .. ' ' .. pretty_key -- shunt/quicktype.yue:1240
-              else -- shunt/quicktype.yue:1240
-                msg = "incorrect type: expected " .. tostring(tmp_root_union) .. " but got " .. tostring(type(stack[stack_size])) .. " (" .. tostring(repr(stack[stack_size])) .. ")" -- shunt/quicktype.yue:1240
-              end -- shunt/quicktype.yue:1240
-            else -- shunt/quicktype.yue:1240
-              msg = nil -- shunt/quicktype.yue:1240
-            end -- shunt/quicktype.yue:1240
-            local new_size -- shunt/quicktype.yue:1240
-            do -- shunt/quicktype.yue:1240
-              local _exp_0 = union_depths[num_unions] -- shunt/quicktype.yue:1240
-              if _exp_0 ~= nil then -- shunt/quicktype.yue:1240
-                new_size = _exp_0 -- shunt/quicktype.yue:1240
-              else -- shunt/quicktype.yue:1240
-                new_size = 0 -- shunt/quicktype.yue:1240
-              end -- shunt/quicktype.yue:1240
-            end -- shunt/quicktype.yue:1240
-            for i = new_size + 1, stack_size do -- shunt/quicktype.yue:1240
-              stack[i] = nil -- shunt/quicktype.yue:1240
-            end -- shunt/quicktype.yue:1240
-            stack_size = new_size -- shunt/quicktype.yue:1240
-            if num_unions == initial_unions then -- shunt/quicktype.yue:1240
-              return msg -- shunt/quicktype.yue:1240
-            end -- shunt/quicktype.yue:1240
-            pc = union_bail_jumps[num_unions] - 2 -- shunt/quicktype.yue:1240
-            bailing = true -- shunt/quicktype.yue:1240
-          else -- shunt/quicktype.yue:1242
-            local msg -- shunt/quicktype.yue:1242
-            if num_unions == 0 then -- shunt/quicktype.yue:1242
-              local pretty_key_parts = { } -- shunt/quicktype.yue:1242
-              for i = 1, stack_size do -- shunt/quicktype.yue:1242
-                pretty_key_parts[#pretty_key_parts + 1] = keys_used[i] -- shunt/quicktype.yue:1242
-              end -- shunt/quicktype.yue:1242
-              if #pretty_key_parts > 0 then -- shunt/quicktype.yue:1242
-                local pretty_key = "(at field ." .. tostring(table.concat(pretty_key_parts, ".")) .. ")" -- shunt/quicktype.yue:1242
-                msg = nil .. ' ' .. pretty_key -- shunt/quicktype.yue:1242
-              else -- shunt/quicktype.yue:1242
-                msg = nil -- shunt/quicktype.yue:1242
-              end -- shunt/quicktype.yue:1242
-            else -- shunt/quicktype.yue:1242
-              msg = nil -- shunt/quicktype.yue:1242
-            end -- shunt/quicktype.yue:1242
-            local new_size -- shunt/quicktype.yue:1242
-            do -- shunt/quicktype.yue:1242
-              local _exp_0 = union_depths[num_unions] -- shunt/quicktype.yue:1242
-              if _exp_0 ~= nil then -- shunt/quicktype.yue:1242
-                new_size = _exp_0 -- shunt/quicktype.yue:1242
-              else -- shunt/quicktype.yue:1242
-                new_size = 0 -- shunt/quicktype.yue:1242
-              end -- shunt/quicktype.yue:1242
-            end -- shunt/quicktype.yue:1242
-            for i = new_size + 1, stack_size do -- shunt/quicktype.yue:1242
-              stack[i] = nil -- shunt/quicktype.yue:1242
-            end -- shunt/quicktype.yue:1242
-            stack_size = new_size -- shunt/quicktype.yue:1242
-            if num_unions == initial_unions then -- shunt/quicktype.yue:1242
-              return msg -- shunt/quicktype.yue:1242
-            end -- shunt/quicktype.yue:1242
-            pc = union_bail_jumps[num_unions] - 2 -- shunt/quicktype.yue:1242
-            bailing = true -- shunt/quicktype.yue:1242
-          end -- shunt/quicktype.yue:1239
-        end -- shunt/quicktype.yue:1238
-      else -- shunt/quicktype.yue:1244
-        error("internal error: illegal type-checker VM instruction " .. tostring(check_prog[pc]) .. "@" .. tostring(pc)) -- shunt/quicktype.yue:1244
-      end -- shunt/quicktype.yue:1244
-    end -- shunt/quicktype.yue:1244
-    local ending_stack_size = stack_size -- shunt/quicktype.yue:1248
-    if root then -- shunt/quicktype.yue:1249
-      stack[1] = nil -- shunt/quicktype.yue:1251
-      stack_size = 0 -- shunt/quicktype.yue:1252
-    end -- shunt/quicktype.yue:1249
-    if num_running_checkers ~= initial_num_running_checkers then -- shunt/quicktype.yue:1253
-      error("internal error: checker depth incorrectly handled: expected " .. tostring(initial_num_running_checkers) .. " but got " .. tostring(num_running_checkers)) -- shunt/quicktype.yue:1254
-    end -- shunt/quicktype.yue:1253
-    if ending_stack_size ~= initial_stack_size then -- shunt/quicktype.yue:1255
-      error("internal error: value stack incorrectly handled (" .. tostring(repr(check_prog)) .. ")") -- shunt/quicktype.yue:1256
-    end -- shunt/quicktype.yue:1255
-  end -- shunt/quicktype.yue:1123
-  return nil -- shunt/quicktype.yue:1257
+  _class_0 = setmetatable({ -- shunt/quicktype.yue:1094
+    __init = function(self, instructions) -- shunt/quicktype.yue:1095
+      self.instructions = instructions -- shunt/quicktype.yue:1095
+      self.index = #self.instructions + 1 -- shunt/quicktype.yue:1096
+    end, -- shunt/quicktype.yue:1094
+    __base = _base_0, -- shunt/quicktype.yue:1094
+    __name = "Label" -- shunt/quicktype.yue:1094
+  }, { -- shunt/quicktype.yue:1094
+    __index = _base_0, -- shunt/quicktype.yue:1094
+    __call = function(cls, ...) -- shunt/quicktype.yue:1094
+      local _self_0 = setmetatable({ }, _base_0) -- shunt/quicktype.yue:1094
+      cls.__init(_self_0, ...) -- shunt/quicktype.yue:1094
+      return _self_0 -- shunt/quicktype.yue:1094
+    end -- shunt/quicktype.yue:1094
+  }) -- shunt/quicktype.yue:1094
+  _base_0.__class = _class_0 -- shunt/quicktype.yue:1094
+  Label = _class_0 -- shunt/quicktype.yue:1094
 end -- shunt/quicktype.yue:1099
-user_types = { } -- shunt/quicktype.yue:1259
-declare_type = function(name, type_spec) -- shunt/quicktype.yue:1260
-  if not (name ~= nil) then -- shunt/quicktype.yue:1261
-    error("declare_type requires a name") -- shunt/quicktype.yue:1262
-  end -- shunt/quicktype.yue:1261
-  if 'string' ~= type(name) then -- shunt/quicktype.yue:1263
-    error("declare_type requires a string name") -- shunt/quicktype.yue:1264
-  end -- shunt/quicktype.yue:1263
-  if not (type_spec ~= nil) then -- shunt/quicktype.yue:1265
-    error("declare_type requires a type_spec") -- shunt/quicktype.yue:1266
-  end -- shunt/quicktype.yue:1265
-  if 'string' ~= type(type_spec) then -- shunt/quicktype.yue:1267
-    error("declare_type requires a string type_spec") -- shunt/quicktype.yue:1268
-  end -- shunt/quicktype.yue:1267
-  local prefix, unprefixed_name = name:match('^([^.]+)%.([^.]*)$') -- shunt/quicktype.yue:1270
-  if unprefixed_name == nil then -- shunt/quicktype.yue:1271
-    unprefixed_name = name -- shunt/quicktype.yue:1271
-  end -- shunt/quicktype.yue:1271
-  if (prefix ~= nil) then -- shunt/quicktype.yue:1273
-    if (known_primitives[prefix] ~= nil) then -- shunt/quicktype.yue:1274
-      error("cannot use '" .. tostring(prefix) .. "' as type-prefix: must not be a primitive") -- shunt/quicktype.yue:1275
-    end -- shunt/quicktype.yue:1274
-    if not prefix:match('^[a-z]') then -- shunt/quicktype.yue:1276
-      error("cannot use '" .. tostring(prefix) .. "' as type-prefix: must start with a lowercase letter") -- shunt/quicktype.yue:1277
-    end -- shunt/quicktype.yue:1276
-  end -- shunt/quicktype.yue:1273
-  if #unprefixed_name < 2 then -- shunt/quicktype.yue:1279
-    error("cannot declare type '" .. tostring(unprefixed_name) .. "': name too short") -- shunt/quicktype.yue:1280
-  end -- shunt/quicktype.yue:1279
-  if not (unprefixed_name:sub(1, 1)):match('^[A-Z_]$') then -- shunt/quicktype.yue:1281
-    error("cannot declare type '" .. tostring(unprefixed_name) .. "': user types must start with uppercase or '_'") -- shunt/quicktype.yue:1282
-  end -- shunt/quicktype.yue:1281
-  if not unprefixed_name:match('^[a-zA-Z0-9_-]*[a-zA-Z0-9_]$') then -- shunt/quicktype.yue:1283
-    error("cannot declare type '" .. tostring(unprefixed_name) .. "': not a valid identifier") -- shunt/quicktype.yue:1284
-  end -- shunt/quicktype.yue:1283
-  if (user_types[name] ~= nil) then -- shunt/quicktype.yue:1286
-    error("cannot redefine type '" .. tostring(unprefixed_name) .. "'") -- shunt/quicktype.yue:1287
-  end -- shunt/quicktype.yue:1286
-  local parsed_type = parse(type_spec) -- shunt/quicktype.yue:1288
-  user_types[name] = parsed_type -- shunt/quicktype.yue:1289
-  type_checkers[name] = parsed_type:checker():build() -- shunt/quicktype.yue:1290
-end -- shunt/quicktype.yue:1260
-_module_0["declare_type"] = declare_type -- shunt/quicktype.yue:1290
-declare_type('Self', 'some') -- shunt/quicktype.yue:1292
-declare_singleton_type = function(value) -- shunt/quicktype.yue:1294
-  if not (value ~= nil) then -- shunt/quicktype.yue:1295
-    error("declare_singleton_type requires a value") -- shunt/quicktype.yue:1296
-  end -- shunt/quicktype.yue:1295
-  if 'table' ~= type(value) then -- shunt/quicktype.yue:1297
-    error("declare_singleton_type requires a table value") -- shunt/quicktype.yue:1298
-  end -- shunt/quicktype.yue:1297
-  local name = tostring(value) -- shunt/quicktype.yue:1300
-  if #name < 2 then -- shunt/quicktype.yue:1301
-    error("cannot declare type '" .. tostring(name) .. "': name too short") -- shunt/quicktype.yue:1302
-  end -- shunt/quicktype.yue:1301
-  if not (name:sub(1, 1)):match('^[A-Z_]$') then -- shunt/quicktype.yue:1303
-    error("cannot declare type '" .. tostring(name) .. "': user types must start with an uppercase letter or '_'") -- shunt/quicktype.yue:1304
-  end -- shunt/quicktype.yue:1303
-  if not name:match('^[a-zA-Z0-9_-]*[a-zA-Z0-9_]$') then -- shunt/quicktype.yue:1305
-    error("cannot declare type '" .. tostring(name) .. "': not a valid identifier") -- shunt/quicktype.yue:1306
-  end -- shunt/quicktype.yue:1305
-  if (user_types[name] ~= nil) then -- shunt/quicktype.yue:1307
-    error("cannot redefine type '" .. tostring(name) .. "'") -- shunt/quicktype.yue:1308
-  end -- shunt/quicktype.yue:1307
-  local ty = SingletonType(name, value) -- shunt/quicktype.yue:1310
-  user_types[name] = ty -- shunt/quicktype.yue:1311
-  type_checkers[name] = ty:checker():build() -- shunt/quicktype.yue:1312
-end -- shunt/quicktype.yue:1294
-_module_0["declare_singleton_type"] = declare_singleton_type -- shunt/quicktype.yue:1312
-skip_typechecking = false -- shunt/quicktype.yue:1314
-deactivate_typechecks = function() -- shunt/quicktype.yue:1315
-  skip_typechecking = true -- shunt/quicktype.yue:1316
-end -- shunt/quicktype.yue:1315
-_module_0["deactivate_typechecks"] = deactivate_typechecks -- shunt/quicktype.yue:1316
-stats = function() -- shunt/quicktype.yue:1318
-  local stats_arr -- shunt/quicktype.yue:1319
-  do -- shunt/quicktype.yue:1319
-    local _accum_0 = { } -- shunt/quicktype.yue:1319
-    local _len_0 = 1 -- shunt/quicktype.yue:1319
-    for instruction, count in pairs(instruction_counts) do -- shunt/quicktype.yue:1319
-      _accum_0[_len_0] = { -- shunt/quicktype.yue:1319
-        instruction = instruction, -- shunt/quicktype.yue:1319
-        count = count -- shunt/quicktype.yue:1319
-      } -- shunt/quicktype.yue:1319
-      _len_0 = _len_0 + 1 -- shunt/quicktype.yue:1319
-    end -- shunt/quicktype.yue:1319
-    stats_arr = _accum_0 -- shunt/quicktype.yue:1319
-  end -- shunt/quicktype.yue:1319
-  table.sort(stats_arr, function(a, b) -- shunt/quicktype.yue:1320
-    return a.count > b.count -- shunt/quicktype.yue:1320
-  end) -- shunt/quicktype.yue:1320
-  return stats_arr -- shunt/quicktype.yue:1321
-end -- shunt/quicktype.yue:1318
-_module_0["stats"] = stats -- shunt/quicktype.yue:1321
-spec(function() -- shunt/quicktype.yue:1323
+C_PUSH = setmetatable({ }, { -- shunt/quicktype.yue:1101
+  __tostring = function(self) -- shunt/quicktype.yue:1101
+    return '<push>' -- shunt/quicktype.yue:1101
+  end -- shunt/quicktype.yue:1101
+}) -- shunt/quicktype.yue:1101
+C_PUSH_METATABLE = setmetatable({ }, { -- shunt/quicktype.yue:1102
+  __tostring = function(self) -- shunt/quicktype.yue:1102
+    return '<push-metatable>' -- shunt/quicktype.yue:1102
+  end -- shunt/quicktype.yue:1102
+}) -- shunt/quicktype.yue:1102
+C_POP = setmetatable({ }, { -- shunt/quicktype.yue:1103
+  __tostring = function(self) -- shunt/quicktype.yue:1103
+    return '<pop>' -- shunt/quicktype.yue:1103
+  end -- shunt/quicktype.yue:1103
+}) -- shunt/quicktype.yue:1103
+C_ASSERT_NON_NIL = setmetatable({ }, { -- shunt/quicktype.yue:1104
+  __tostring = function(self) -- shunt/quicktype.yue:1104
+    return '<assert-non-nil>' -- shunt/quicktype.yue:1104
+  end -- shunt/quicktype.yue:1104
+}) -- shunt/quicktype.yue:1104
+C_ASSERT_PRIMITIVE = setmetatable({ }, { -- shunt/quicktype.yue:1105
+  __tostring = function(self) -- shunt/quicktype.yue:1105
+    return '<assert-primitive>' -- shunt/quicktype.yue:1105
+  end -- shunt/quicktype.yue:1105
+}) -- shunt/quicktype.yue:1105
+C_ASSERT_TABLE_LIKE = setmetatable({ }, { -- shunt/quicktype.yue:1106
+  __tostring = function(self) -- shunt/quicktype.yue:1106
+    return '<assert-table-like>' -- shunt/quicktype.yue:1106
+  end -- shunt/quicktype.yue:1106
+}) -- shunt/quicktype.yue:1106
+C_ASSERT_TRUTHY = setmetatable({ }, { -- shunt/quicktype.yue:1107
+  __tostring = function(self) -- shunt/quicktype.yue:1107
+    return '<assert-truthy>' -- shunt/quicktype.yue:1107
+  end -- shunt/quicktype.yue:1107
+}) -- shunt/quicktype.yue:1107
+C_ASSERT_LEN = setmetatable({ }, { -- shunt/quicktype.yue:1108
+  __tostring = function(self) -- shunt/quicktype.yue:1108
+    return '<assert-len>' -- shunt/quicktype.yue:1108
+  end -- shunt/quicktype.yue:1108
+}) -- shunt/quicktype.yue:1108
+C_ASSERT_EQ = setmetatable({ }, { -- shunt/quicktype.yue:1109
+  __tostring = function(self) -- shunt/quicktype.yue:1109
+    return '<assert-eq>' -- shunt/quicktype.yue:1109
+  end -- shunt/quicktype.yue:1109
+}) -- shunt/quicktype.yue:1109
+C_ASSERT_NEVER = setmetatable({ }, { -- shunt/quicktype.yue:1110
+  __tostring = function(self) -- shunt/quicktype.yue:1110
+    return '<assert-never>' -- shunt/quicktype.yue:1110
+  end -- shunt/quicktype.yue:1110
+}) -- shunt/quicktype.yue:1110
+C_GET_FIELD = setmetatable({ }, { -- shunt/quicktype.yue:1111
+  __tostring = function(self) -- shunt/quicktype.yue:1111
+    return '<field>' -- shunt/quicktype.yue:1111
+  end -- shunt/quicktype.yue:1111
+}) -- shunt/quicktype.yue:1111
+C_INCR = setmetatable({ }, { -- shunt/quicktype.yue:1112
+  __tostring = function(self) -- shunt/quicktype.yue:1112
+    return '<incr>' -- shunt/quicktype.yue:1112
+  end -- shunt/quicktype.yue:1112
+}) -- shunt/quicktype.yue:1112
+C_DECR = setmetatable({ }, { -- shunt/quicktype.yue:1113
+  __tostring = function(self) -- shunt/quicktype.yue:1113
+    return '<decr>' -- shunt/quicktype.yue:1113
+  end -- shunt/quicktype.yue:1113
+}) -- shunt/quicktype.yue:1113
+C_NEXT = setmetatable({ }, { -- shunt/quicktype.yue:1114
+  __tostring = function(self) -- shunt/quicktype.yue:1114
+    return '<next>' -- shunt/quicktype.yue:1114
+  end -- shunt/quicktype.yue:1114
+}) -- shunt/quicktype.yue:1114
+C_JMP = setmetatable({ }, { -- shunt/quicktype.yue:1115
+  __tostring = function(self) -- shunt/quicktype.yue:1115
+    return '<jmp>' -- shunt/quicktype.yue:1115
+  end -- shunt/quicktype.yue:1115
+}) -- shunt/quicktype.yue:1115
+C_JMP_IF_NIL = setmetatable({ }, { -- shunt/quicktype.yue:1116
+  __tostring = function(self) -- shunt/quicktype.yue:1116
+    return '<jnil>' -- shunt/quicktype.yue:1116
+  end -- shunt/quicktype.yue:1116
+}) -- shunt/quicktype.yue:1116
+C_PUSH_CHECKER = setmetatable({ }, { -- shunt/quicktype.yue:1117
+  __tostring = function(self) -- shunt/quicktype.yue:1117
+    return '<push-checker>' -- shunt/quicktype.yue:1117
+  end -- shunt/quicktype.yue:1117
+}) -- shunt/quicktype.yue:1117
+C_PUSH_UNION_CTX = setmetatable({ }, { -- shunt/quicktype.yue:1118
+  __tostring = function(self) -- shunt/quicktype.yue:1118
+    return '<push-union-ctx>' -- shunt/quicktype.yue:1118
+  end -- shunt/quicktype.yue:1118
+}) -- shunt/quicktype.yue:1118
+C_CLEAR_BAILING = setmetatable({ }, { -- shunt/quicktype.yue:1119
+  __tostring = function(self) -- shunt/quicktype.yue:1119
+    return '<clear-bailing>' -- shunt/quicktype.yue:1119
+  end -- shunt/quicktype.yue:1119
+}) -- shunt/quicktype.yue:1119
+C_SET_UNION_BAIL_TARGET = setmetatable({ }, { -- shunt/quicktype.yue:1120
+  __tostring = function(self) -- shunt/quicktype.yue:1120
+    return '<set-union-bail-target>' -- shunt/quicktype.yue:1120
+  end -- shunt/quicktype.yue:1120
+}) -- shunt/quicktype.yue:1120
+C_POP_UNION_CTX = setmetatable({ }, { -- shunt/quicktype.yue:1121
+  __tostring = function(self) -- shunt/quicktype.yue:1121
+    return '<pop-union-ctx>' -- shunt/quicktype.yue:1121
+  end -- shunt/quicktype.yue:1121
+}) -- shunt/quicktype.yue:1121
+V_NIL = setmetatable({ }, { -- shunt/quicktype.yue:1122
+  __tostring = function(self) -- shunt/quicktype.yue:1122
+    return 'nil' -- shunt/quicktype.yue:1122
+  end -- shunt/quicktype.yue:1122
+}) -- shunt/quicktype.yue:1122
+checker_program_repr = function(checker) -- shunt/quicktype.yue:1124
+  return table.concat((function() -- shunt/quicktype.yue:1125
+    local _accum_0 = { } -- shunt/quicktype.yue:1125
+    local _len_0 = 1 -- shunt/quicktype.yue:1125
+    for i = 1, #checker, 2 do -- shunt/quicktype.yue:1125
+      _accum_0[_len_0] = tostring(i) .. ":\t" .. tostring(repr(checker[i])) .. "\t" .. tostring(checker[i + 1]) -- shunt/quicktype.yue:1125
+      _len_0 = _len_0 + 1 -- shunt/quicktype.yue:1125
+    end -- shunt/quicktype.yue:1125
+    return _accum_0 -- shunt/quicktype.yue:1125
+  end)(), '\n\t') -- shunt/quicktype.yue:1125
+end -- shunt/quicktype.yue:1124
+LABEL_PLACEHOLDER = setmetatable({ }, { -- shunt/quicktype.yue:1127
+  __tostring = function(self) -- shunt/quicktype.yue:1127
+    return '<LABEL-PLACEHOLDER>' -- shunt/quicktype.yue:1127
+  end -- shunt/quicktype.yue:1127
+}) -- shunt/quicktype.yue:1127
+MAX_CHECKER_DEPTH = 1000 -- shunt/quicktype.yue:1129
+_module_0["MAX_CHECKER_DEPTH"] = MAX_CHECKER_DEPTH -- shunt/quicktype.yue:1129
+stack_size = 0 -- shunt/quicktype.yue:1130
+stack = { } -- shunt/quicktype.yue:1131
+keys_used = { } -- shunt/quicktype.yue:1132
+num_unions = 0 -- shunt/quicktype.yue:1133
+union_depths = { } -- shunt/quicktype.yue:1134
+union_bail_jumps = { } -- shunt/quicktype.yue:1135
+root_union = nil -- shunt/quicktype.yue:1136
+num_running_checkers = 0 -- shunt/quicktype.yue:1137
+instruction_counts = { } -- shunt/quicktype.yue:1138
+check = function(check_prog, value, root) -- shunt/quicktype.yue:1163
+  if root == nil then -- shunt/quicktype.yue:1163
+    root = true -- shunt/quicktype.yue:1163
+  end -- shunt/quicktype.yue:1163
+  if root then -- shunt/quicktype.yue:1170
+    stack_size = 1 -- shunt/quicktype.yue:1172
+    stack[1] = value -- shunt/quicktype.yue:1173
+    num_running_checkers = 1 -- shunt/quicktype.yue:1174
+    root_union = 0 -- shunt/quicktype.yue:1175
+    num_unions = 0 -- shunt/quicktype.yue:1176
+    local initial_unions = 0 -- shunt/quicktype.yue:1177
+  end -- shunt/quicktype.yue:1170
+  local initial_stack_size = stack_size -- shunt/quicktype.yue:1178
+  local initial_num_running_checkers = num_running_checkers -- shunt/quicktype.yue:1179
+  local initial_unions = num_unions -- shunt/quicktype.yue:1180
+  if num_running_checkers >= MAX_CHECKER_DEPTH then -- shunt/quicktype.yue:1182
+    return "type checker recursed too many times (" .. tostring(num_running_checkers) .. " times). If this is okay, increase the MAX_CHECKER_DEPTH" -- shunt/quicktype.yue:1183
+  end -- shunt/quicktype.yue:1182
+  do -- shunt/quicktype.yue:1187
+    local pc -- shunt/quicktype.yue:1188
+    local bailing = false -- shunt/quicktype.yue:1189
+    pc = -1 -- shunt/quicktype.yue:1191
+    while true do -- shunt/quicktype.yue:1192
+      pc = pc + 2 -- shunt/quicktype.yue:1193
+      local instruction = check_prog[pc] -- shunt/quicktype.yue:1194
+      if instruction == nil then -- shunt/quicktype.yue:1195
+        break -- shunt/quicktype.yue:1196
+      end -- shunt/quicktype.yue:1195
+      if COLLECT_STATS then -- shunt/quicktype.yue:1198
+        do -- shunt/quicktype.yue:1199
+          local v = instruction_counts[instruction] -- shunt/quicktype.yue:1199
+          if v then -- shunt/quicktype.yue:1199
+            instruction_counts[instruction] = v + 1 -- shunt/quicktype.yue:1200
+          else -- shunt/quicktype.yue:1202
+            instruction_counts[instruction] = 1 -- shunt/quicktype.yue:1202
+          end -- shunt/quicktype.yue:1199
+        end -- shunt/quicktype.yue:1199
+      end -- shunt/quicktype.yue:1198
+      if C_PUSH == instruction then -- shunt/quicktype.yue:1208
+        local arg = check_prog[pc + 1] -- shunt/quicktype.yue:1209
+        if arg == V_NIL then -- shunt/quicktype.yue:1210
+          arg = nil -- shunt/quicktype.yue:1211
+        end -- shunt/quicktype.yue:1210
+        stack_size = stack_size + 1 -- shunt/quicktype.yue:1212
+        stack[stack_size] = arg -- shunt/quicktype.yue:1213
+      elseif C_PUSH_METATABLE == instruction then -- shunt/quicktype.yue:1214
+        local mt = getmetatable(stack[stack_size]) -- shunt/quicktype.yue:1215
+        stack_size = stack_size + 1 -- shunt/quicktype.yue:1216
+        stack[stack_size] = mt -- shunt/quicktype.yue:1217
+        keys_used[stack_size] = '<>' -- shunt/quicktype.yue:1218
+      elseif C_POP == instruction then -- shunt/quicktype.yue:1219
+        stack[stack_size] = nil -- shunt/quicktype.yue:1220
+        keys_used[stack_size] = nil -- shunt/quicktype.yue:1221
+        stack_size = stack_size - 1 -- shunt/quicktype.yue:1222
+      elseif C_ASSERT_NON_NIL == instruction then -- shunt/quicktype.yue:1223
+        if stack[stack_size] == nil then -- shunt/quicktype.yue:1224
+          local msg -- shunt/quicktype.yue:1225
+          if num_unions == 0 then -- shunt/quicktype.yue:1225
+            local pretty_key_parts = { } -- shunt/quicktype.yue:1225
+            for i = 1, stack_size do -- shunt/quicktype.yue:1225
+              pretty_key_parts[#pretty_key_parts + 1] = keys_used[i] -- shunt/quicktype.yue:1225
+            end -- shunt/quicktype.yue:1225
+            if #pretty_key_parts > 0 then -- shunt/quicktype.yue:1225
+              local pretty_key = "(at field ." .. tostring(table.concat(pretty_key_parts, ".")) .. ")" -- shunt/quicktype.yue:1225
+              msg = "incorrect type: expected some but got nil" .. ' ' .. pretty_key -- shunt/quicktype.yue:1225
+            else -- shunt/quicktype.yue:1225
+              msg = "incorrect type: expected some but got nil" -- shunt/quicktype.yue:1225
+            end -- shunt/quicktype.yue:1225
+          else -- shunt/quicktype.yue:1225
+            msg = nil -- shunt/quicktype.yue:1225
+          end -- shunt/quicktype.yue:1225
+          local new_size -- shunt/quicktype.yue:1225
+          do -- shunt/quicktype.yue:1225
+            local _exp_0 = union_depths[num_unions] -- shunt/quicktype.yue:1225
+            if _exp_0 ~= nil then -- shunt/quicktype.yue:1225
+              new_size = _exp_0 -- shunt/quicktype.yue:1225
+            else -- shunt/quicktype.yue:1225
+              new_size = 0 -- shunt/quicktype.yue:1225
+            end -- shunt/quicktype.yue:1225
+          end -- shunt/quicktype.yue:1225
+          for i = new_size + 1, stack_size do -- shunt/quicktype.yue:1225
+            stack[i] = nil -- shunt/quicktype.yue:1225
+          end -- shunt/quicktype.yue:1225
+          stack_size = new_size -- shunt/quicktype.yue:1225
+          if num_unions == initial_unions then -- shunt/quicktype.yue:1225
+            return msg -- shunt/quicktype.yue:1225
+          end -- shunt/quicktype.yue:1225
+          pc = union_bail_jumps[num_unions] - 2 -- shunt/quicktype.yue:1225
+          bailing = true -- shunt/quicktype.yue:1225
+        end -- shunt/quicktype.yue:1224
+      elseif C_ASSERT_PRIMITIVE == instruction then -- shunt/quicktype.yue:1226
+        local ty = type(stack[stack_size]) -- shunt/quicktype.yue:1227
+        local arg = check_prog[pc + 1] -- shunt/quicktype.yue:1228
+        if ty ~= arg then -- shunt/quicktype.yue:1229
+          local msg -- shunt/quicktype.yue:1230
+          if num_unions == 0 then -- shunt/quicktype.yue:1230
+            local pretty_key_parts = { } -- shunt/quicktype.yue:1230
+            for i = 1, stack_size do -- shunt/quicktype.yue:1230
+              pretty_key_parts[#pretty_key_parts + 1] = keys_used[i] -- shunt/quicktype.yue:1230
+            end -- shunt/quicktype.yue:1230
+            if #pretty_key_parts > 0 then -- shunt/quicktype.yue:1230
+              local pretty_key = "(at field ." .. tostring(table.concat(pretty_key_parts, ".")) .. ")" -- shunt/quicktype.yue:1230
+              msg = "incorrect type: expected " .. tostring(arg) .. " but got " .. tostring(ty) .. " (" .. tostring(repr(stack[stack_size])) .. ")" .. ' ' .. pretty_key -- shunt/quicktype.yue:1230
+            else -- shunt/quicktype.yue:1230
+              msg = "incorrect type: expected " .. tostring(arg) .. " but got " .. tostring(ty) .. " (" .. tostring(repr(stack[stack_size])) .. ")" -- shunt/quicktype.yue:1230
+            end -- shunt/quicktype.yue:1230
+          else -- shunt/quicktype.yue:1230
+            msg = nil -- shunt/quicktype.yue:1230
+          end -- shunt/quicktype.yue:1230
+          local new_size -- shunt/quicktype.yue:1230
+          do -- shunt/quicktype.yue:1230
+            local _exp_0 = union_depths[num_unions] -- shunt/quicktype.yue:1230
+            if _exp_0 ~= nil then -- shunt/quicktype.yue:1230
+              new_size = _exp_0 -- shunt/quicktype.yue:1230
+            else -- shunt/quicktype.yue:1230
+              new_size = 0 -- shunt/quicktype.yue:1230
+            end -- shunt/quicktype.yue:1230
+          end -- shunt/quicktype.yue:1230
+          for i = new_size + 1, stack_size do -- shunt/quicktype.yue:1230
+            stack[i] = nil -- shunt/quicktype.yue:1230
+          end -- shunt/quicktype.yue:1230
+          stack_size = new_size -- shunt/quicktype.yue:1230
+          if num_unions == initial_unions then -- shunt/quicktype.yue:1230
+            return msg -- shunt/quicktype.yue:1230
+          end -- shunt/quicktype.yue:1230
+          pc = union_bail_jumps[num_unions] - 2 -- shunt/quicktype.yue:1230
+          bailing = true -- shunt/quicktype.yue:1230
+        end -- shunt/quicktype.yue:1229
+      elseif C_ASSERT_TABLE_LIKE == instruction then -- shunt/quicktype.yue:1231
+        value = stack[stack_size] -- shunt/quicktype.yue:1232
+        local ty = type(value) -- shunt/quicktype.yue:1233
+        if 'table' ~= ty and 'string' ~= ty and (not (getmetatable(value) ~= nil) or not (getmetatable(value).__index ~= nil)) then -- shunt/quicktype.yue:1234
+          local msg -- shunt/quicktype.yue:1237
+          if num_unions == 0 then -- shunt/quicktype.yue:1237
+            local pretty_key_parts = { } -- shunt/quicktype.yue:1237
+            for i = 1, stack_size do -- shunt/quicktype.yue:1237
+              pretty_key_parts[#pretty_key_parts + 1] = keys_used[i] -- shunt/quicktype.yue:1237
+            end -- shunt/quicktype.yue:1237
+            if #pretty_key_parts > 0 then -- shunt/quicktype.yue:1237
+              local pretty_key = "(at field ." .. tostring(table.concat(pretty_key_parts, ".")) .. ")" -- shunt/quicktype.yue:1237
+              msg = "incorrect type: expected indexable but got " .. tostring(ty) .. ' ' .. pretty_key -- shunt/quicktype.yue:1237
+            else -- shunt/quicktype.yue:1237
+              msg = "incorrect type: expected indexable but got " .. tostring(ty) -- shunt/quicktype.yue:1237
+            end -- shunt/quicktype.yue:1237
+          else -- shunt/quicktype.yue:1237
+            msg = nil -- shunt/quicktype.yue:1237
+          end -- shunt/quicktype.yue:1237
+          local new_size -- shunt/quicktype.yue:1237
+          do -- shunt/quicktype.yue:1237
+            local _exp_0 = union_depths[num_unions] -- shunt/quicktype.yue:1237
+            if _exp_0 ~= nil then -- shunt/quicktype.yue:1237
+              new_size = _exp_0 -- shunt/quicktype.yue:1237
+            else -- shunt/quicktype.yue:1237
+              new_size = 0 -- shunt/quicktype.yue:1237
+            end -- shunt/quicktype.yue:1237
+          end -- shunt/quicktype.yue:1237
+          for i = new_size + 1, stack_size do -- shunt/quicktype.yue:1237
+            stack[i] = nil -- shunt/quicktype.yue:1237
+          end -- shunt/quicktype.yue:1237
+          stack_size = new_size -- shunt/quicktype.yue:1237
+          if num_unions == initial_unions then -- shunt/quicktype.yue:1237
+            return msg -- shunt/quicktype.yue:1237
+          end -- shunt/quicktype.yue:1237
+          pc = union_bail_jumps[num_unions] - 2 -- shunt/quicktype.yue:1237
+          bailing = true -- shunt/quicktype.yue:1237
+        end -- shunt/quicktype.yue:1234
+      elseif C_ASSERT_TRUTHY == instruction then -- shunt/quicktype.yue:1238
+        if not stack[stack_size] then -- shunt/quicktype.yue:1239
+          local msg -- shunt/quicktype.yue:1240
+          if num_unions == 0 then -- shunt/quicktype.yue:1240
+            local pretty_key_parts = { } -- shunt/quicktype.yue:1240
+            for i = 1, stack_size do -- shunt/quicktype.yue:1240
+              pretty_key_parts[#pretty_key_parts + 1] = keys_used[i] -- shunt/quicktype.yue:1240
+            end -- shunt/quicktype.yue:1240
+            if #pretty_key_parts > 0 then -- shunt/quicktype.yue:1240
+              local pretty_key = "(at field ." .. tostring(table.concat(pretty_key_parts, ".")) .. ")" -- shunt/quicktype.yue:1240
+              msg = "incorrect type: expected a truthy value but got " .. tostring(stack[stack_size]) .. ' ' .. pretty_key -- shunt/quicktype.yue:1240
+            else -- shunt/quicktype.yue:1240
+              msg = "incorrect type: expected a truthy value but got " .. tostring(stack[stack_size]) -- shunt/quicktype.yue:1240
+            end -- shunt/quicktype.yue:1240
+          else -- shunt/quicktype.yue:1240
+            msg = nil -- shunt/quicktype.yue:1240
+          end -- shunt/quicktype.yue:1240
+          local new_size -- shunt/quicktype.yue:1240
+          do -- shunt/quicktype.yue:1240
+            local _exp_0 = union_depths[num_unions] -- shunt/quicktype.yue:1240
+            if _exp_0 ~= nil then -- shunt/quicktype.yue:1240
+              new_size = _exp_0 -- shunt/quicktype.yue:1240
+            else -- shunt/quicktype.yue:1240
+              new_size = 0 -- shunt/quicktype.yue:1240
+            end -- shunt/quicktype.yue:1240
+          end -- shunt/quicktype.yue:1240
+          for i = new_size + 1, stack_size do -- shunt/quicktype.yue:1240
+            stack[i] = nil -- shunt/quicktype.yue:1240
+          end -- shunt/quicktype.yue:1240
+          stack_size = new_size -- shunt/quicktype.yue:1240
+          if num_unions == initial_unions then -- shunt/quicktype.yue:1240
+            return msg -- shunt/quicktype.yue:1240
+          end -- shunt/quicktype.yue:1240
+          pc = union_bail_jumps[num_unions] - 2 -- shunt/quicktype.yue:1240
+          bailing = true -- shunt/quicktype.yue:1240
+        end -- shunt/quicktype.yue:1239
+      elseif C_ASSERT_LEN == instruction then -- shunt/quicktype.yue:1241
+        local actual_len = #stack[stack_size - 1] -- shunt/quicktype.yue:1242
+        local counted_len = stack[stack_size] -- shunt/quicktype.yue:1243
+        if counted_len ~= actual_len then -- shunt/quicktype.yue:1244
+          local msg -- shunt/quicktype.yue:1245
+          if num_unions == 0 then -- shunt/quicktype.yue:1245
+            local pretty_key_parts = { } -- shunt/quicktype.yue:1245
+            for i = 1, stack_size do -- shunt/quicktype.yue:1245
+              pretty_key_parts[#pretty_key_parts + 1] = keys_used[i] -- shunt/quicktype.yue:1245
+            end -- shunt/quicktype.yue:1245
+            if #pretty_key_parts > 0 then -- shunt/quicktype.yue:1245
+              local pretty_key = "(at field ." .. tostring(table.concat(pretty_key_parts, ".")) .. ")" -- shunt/quicktype.yue:1245
+              msg = "incorrect type: expected array but got table (" .. tostring(repr(stack[stack_size])) .. ")" .. ' ' .. pretty_key -- shunt/quicktype.yue:1245
+            else -- shunt/quicktype.yue:1245
+              msg = "incorrect type: expected array but got table (" .. tostring(repr(stack[stack_size])) .. ")" -- shunt/quicktype.yue:1245
+            end -- shunt/quicktype.yue:1245
+          else -- shunt/quicktype.yue:1245
+            msg = nil -- shunt/quicktype.yue:1245
+          end -- shunt/quicktype.yue:1245
+          local new_size -- shunt/quicktype.yue:1245
+          do -- shunt/quicktype.yue:1245
+            local _exp_0 = union_depths[num_unions] -- shunt/quicktype.yue:1245
+            if _exp_0 ~= nil then -- shunt/quicktype.yue:1245
+              new_size = _exp_0 -- shunt/quicktype.yue:1245
+            else -- shunt/quicktype.yue:1245
+              new_size = 0 -- shunt/quicktype.yue:1245
+            end -- shunt/quicktype.yue:1245
+          end -- shunt/quicktype.yue:1245
+          for i = new_size + 1, stack_size do -- shunt/quicktype.yue:1245
+            stack[i] = nil -- shunt/quicktype.yue:1245
+          end -- shunt/quicktype.yue:1245
+          stack_size = new_size -- shunt/quicktype.yue:1245
+          if num_unions == initial_unions then -- shunt/quicktype.yue:1245
+            return msg -- shunt/quicktype.yue:1245
+          end -- shunt/quicktype.yue:1245
+          pc = union_bail_jumps[num_unions] - 2 -- shunt/quicktype.yue:1245
+          bailing = true -- shunt/quicktype.yue:1245
+        end -- shunt/quicktype.yue:1244
+      elseif C_ASSERT_EQ == instruction then -- shunt/quicktype.yue:1246
+        if stack[stack_size] ~= check_prog[pc + 1] then -- shunt/quicktype.yue:1247
+          local msg -- shunt/quicktype.yue:1248
+          if num_unions == 0 then -- shunt/quicktype.yue:1248
+            local pretty_key_parts = { } -- shunt/quicktype.yue:1248
+            for i = 1, stack_size do -- shunt/quicktype.yue:1248
+              pretty_key_parts[#pretty_key_parts + 1] = keys_used[i] -- shunt/quicktype.yue:1248
+            end -- shunt/quicktype.yue:1248
+            if #pretty_key_parts > 0 then -- shunt/quicktype.yue:1248
+              local pretty_key = "(at field ." .. tostring(table.concat(pretty_key_parts, ".")) .. ")" -- shunt/quicktype.yue:1248
+              msg = "incorrect type: expected " .. tostring(type(check_prog[pc + 1])) .. " " .. tostring(repr(check_prog[pc + 1])) .. " but got " .. tostring(repr(stack[stack_size])) .. ' ' .. pretty_key -- shunt/quicktype.yue:1248
+            else -- shunt/quicktype.yue:1248
+              msg = "incorrect type: expected " .. tostring(type(check_prog[pc + 1])) .. " " .. tostring(repr(check_prog[pc + 1])) .. " but got " .. tostring(repr(stack[stack_size])) -- shunt/quicktype.yue:1248
+            end -- shunt/quicktype.yue:1248
+          else -- shunt/quicktype.yue:1248
+            msg = nil -- shunt/quicktype.yue:1248
+          end -- shunt/quicktype.yue:1248
+          local new_size -- shunt/quicktype.yue:1248
+          do -- shunt/quicktype.yue:1248
+            local _exp_0 = union_depths[num_unions] -- shunt/quicktype.yue:1248
+            if _exp_0 ~= nil then -- shunt/quicktype.yue:1248
+              new_size = _exp_0 -- shunt/quicktype.yue:1248
+            else -- shunt/quicktype.yue:1248
+              new_size = 0 -- shunt/quicktype.yue:1248
+            end -- shunt/quicktype.yue:1248
+          end -- shunt/quicktype.yue:1248
+          for i = new_size + 1, stack_size do -- shunt/quicktype.yue:1248
+            stack[i] = nil -- shunt/quicktype.yue:1248
+          end -- shunt/quicktype.yue:1248
+          stack_size = new_size -- shunt/quicktype.yue:1248
+          if num_unions == initial_unions then -- shunt/quicktype.yue:1248
+            return msg -- shunt/quicktype.yue:1248
+          end -- shunt/quicktype.yue:1248
+          pc = union_bail_jumps[num_unions] - 2 -- shunt/quicktype.yue:1248
+          bailing = true -- shunt/quicktype.yue:1248
+        end -- shunt/quicktype.yue:1247
+      elseif C_ASSERT_NEVER == instruction then -- shunt/quicktype.yue:1249
+        local msg -- shunt/quicktype.yue:1250
+        if num_unions == 0 then -- shunt/quicktype.yue:1250
+          local pretty_key_parts = { } -- shunt/quicktype.yue:1250
+          for i = 1, stack_size do -- shunt/quicktype.yue:1250
+            pretty_key_parts[#pretty_key_parts + 1] = keys_used[i] -- shunt/quicktype.yue:1250
+          end -- shunt/quicktype.yue:1250
+          if #pretty_key_parts > 0 then -- shunt/quicktype.yue:1250
+            local pretty_key = "(at field ." .. tostring(table.concat(pretty_key_parts, ".")) .. ")" -- shunt/quicktype.yue:1250
+            msg = 'never expected a value here' .. ' ' .. pretty_key -- shunt/quicktype.yue:1250
+          else -- shunt/quicktype.yue:1250
+            msg = 'never expected a value here' -- shunt/quicktype.yue:1250
+          end -- shunt/quicktype.yue:1250
+        else -- shunt/quicktype.yue:1250
+          msg = nil -- shunt/quicktype.yue:1250
+        end -- shunt/quicktype.yue:1250
+        local new_size -- shunt/quicktype.yue:1250
+        do -- shunt/quicktype.yue:1250
+          local _exp_0 = union_depths[num_unions] -- shunt/quicktype.yue:1250
+          if _exp_0 ~= nil then -- shunt/quicktype.yue:1250
+            new_size = _exp_0 -- shunt/quicktype.yue:1250
+          else -- shunt/quicktype.yue:1250
+            new_size = 0 -- shunt/quicktype.yue:1250
+          end -- shunt/quicktype.yue:1250
+        end -- shunt/quicktype.yue:1250
+        for i = new_size + 1, stack_size do -- shunt/quicktype.yue:1250
+          stack[i] = nil -- shunt/quicktype.yue:1250
+        end -- shunt/quicktype.yue:1250
+        stack_size = new_size -- shunt/quicktype.yue:1250
+        if num_unions == initial_unions then -- shunt/quicktype.yue:1250
+          return msg -- shunt/quicktype.yue:1250
+        end -- shunt/quicktype.yue:1250
+        pc = union_bail_jumps[num_unions] - 2 -- shunt/quicktype.yue:1250
+        bailing = true -- shunt/quicktype.yue:1250
+      elseif C_GET_FIELD == instruction then -- shunt/quicktype.yue:1251
+        stack_size = stack_size + 1 -- shunt/quicktype.yue:1252
+        stack[stack_size] = stack[stack_size - 2][stack[stack_size - 1]] -- shunt/quicktype.yue:1253
+        keys_used[stack_size] = stack[stack_size - 1] -- shunt/quicktype.yue:1254
+      elseif C_INCR == instruction then -- shunt/quicktype.yue:1255
+        stack[stack_size] = stack[stack_size] + 1 -- shunt/quicktype.yue:1256
+      elseif C_DECR == instruction then -- shunt/quicktype.yue:1257
+        stack[stack_size] = stack[stack_size] - 1 -- shunt/quicktype.yue:1258
+      elseif C_NEXT == instruction then -- shunt/quicktype.yue:1259
+        local tab = stack[stack_size - 1] -- shunt/quicktype.yue:1260
+        local idx = stack[stack_size] -- shunt/quicktype.yue:1261
+        local next_idx -- shunt/quicktype.yue:1262
+        next_idx, value = next(tab, idx) -- shunt/quicktype.yue:1262
+        stack[stack_size] = next_idx -- shunt/quicktype.yue:1263
+        stack_size = stack_size + 1 -- shunt/quicktype.yue:1264
+        stack[stack_size] = value -- shunt/quicktype.yue:1265
+      elseif C_JMP == instruction then -- shunt/quicktype.yue:1266
+        pc = check_prog[pc + 1] - 2 -- shunt/quicktype.yue:1267
+      elseif C_JMP_IF_NIL == instruction then -- shunt/quicktype.yue:1268
+        if not (stack[stack_size] ~= nil) then -- shunt/quicktype.yue:1269
+          pc = check_prog[pc + 1] - 2 -- shunt/quicktype.yue:1270
+        end -- shunt/quicktype.yue:1269
+      elseif C_PUSH_CHECKER == instruction then -- shunt/quicktype.yue:1271
+        local arg = check_prog[pc + 1] -- shunt/quicktype.yue:1272
+        local checker = type_checkers[arg] -- shunt/quicktype.yue:1273
+        if not (checker ~= nil) then -- shunt/quicktype.yue:1274
+          return "cannot typecheck: type " .. tostring(arg) .. " not defined" -- shunt/quicktype.yue:1275
+        end -- shunt/quicktype.yue:1274
+        if #checker == 2 and #check_prog == 2 then -- shunt/quicktype.yue:1276
+          local ccmd, carg = checker[1], checker[2] -- shunt/quicktype.yue:1278
+          if check_prog[pc] == ccmd and arg == carg then -- shunt/quicktype.yue:1279
+            return "cannot typecheck: type " .. tostring(arg) .. " not defined" -- shunt/quicktype.yue:1280
+          end -- shunt/quicktype.yue:1279
+        end -- shunt/quicktype.yue:1276
+        num_running_checkers = num_running_checkers + 1 -- shunt/quicktype.yue:1282
+        local err = check(checker, nil, false) -- shunt/quicktype.yue:1283
+        num_running_checkers = num_running_checkers - 1 -- shunt/quicktype.yue:1284
+        if (err ~= nil) then -- shunt/quicktype.yue:1286
+          if num_unions == 0 then -- shunt/quicktype.yue:1287
+            return err -- shunt/quicktype.yue:1288
+          end -- shunt/quicktype.yue:1287
+          bailing = true -- shunt/quicktype.yue:1290
+          pc = union_bail_jumps[num_unions] - 2 -- shunt/quicktype.yue:1291
+        end -- shunt/quicktype.yue:1286
+      elseif C_CLEAR_BAILING == instruction then -- shunt/quicktype.yue:1292
+        bailing = false -- shunt/quicktype.yue:1293
+      elseif C_SET_UNION_BAIL_TARGET == instruction then -- shunt/quicktype.yue:1294
+        union_bail_jumps[num_unions] = check_prog[pc + 1] -- shunt/quicktype.yue:1295
+      elseif C_PUSH_UNION_CTX == instruction then -- shunt/quicktype.yue:1296
+        num_unions = num_unions + 1 -- shunt/quicktype.yue:1297
+        union_depths[num_unions] = #stack -- shunt/quicktype.yue:1298
+        if num_unions == 1 then -- shunt/quicktype.yue:1299
+          root_union = check_prog[pc + 1] -- shunt/quicktype.yue:1300
+        end -- shunt/quicktype.yue:1299
+      elseif C_POP_UNION_CTX == instruction then -- shunt/quicktype.yue:1301
+        union_bail_jumps[num_unions] = nil -- shunt/quicktype.yue:1302
+        union_depths[num_unions] = nil -- shunt/quicktype.yue:1303
+        num_unions = num_unions - 1 -- shunt/quicktype.yue:1304
+        local tmp_root_union = root_union -- shunt/quicktype.yue:1306
+        if num_unions == 0 then -- shunt/quicktype.yue:1307
+          root_union = nil -- shunt/quicktype.yue:1308
+        end -- shunt/quicktype.yue:1307
+        if bailing then -- shunt/quicktype.yue:1309
+          if num_unions == 0 then -- shunt/quicktype.yue:1310
+            local msg -- shunt/quicktype.yue:1311
+            if num_unions == 0 then -- shunt/quicktype.yue:1311
+              local pretty_key_parts = { } -- shunt/quicktype.yue:1311
+              for i = 1, stack_size do -- shunt/quicktype.yue:1311
+                pretty_key_parts[#pretty_key_parts + 1] = keys_used[i] -- shunt/quicktype.yue:1311
+              end -- shunt/quicktype.yue:1311
+              if #pretty_key_parts > 0 then -- shunt/quicktype.yue:1311
+                local pretty_key = "(at field ." .. tostring(table.concat(pretty_key_parts, ".")) .. ")" -- shunt/quicktype.yue:1311
+                msg = "incorrect type: expected " .. tostring(tmp_root_union) .. " but got " .. tostring(type(stack[stack_size])) .. " (" .. tostring(repr(stack[stack_size])) .. ")" .. ' ' .. pretty_key -- shunt/quicktype.yue:1311
+              else -- shunt/quicktype.yue:1311
+                msg = "incorrect type: expected " .. tostring(tmp_root_union) .. " but got " .. tostring(type(stack[stack_size])) .. " (" .. tostring(repr(stack[stack_size])) .. ")" -- shunt/quicktype.yue:1311
+              end -- shunt/quicktype.yue:1311
+            else -- shunt/quicktype.yue:1311
+              msg = nil -- shunt/quicktype.yue:1311
+            end -- shunt/quicktype.yue:1311
+            local new_size -- shunt/quicktype.yue:1311
+            do -- shunt/quicktype.yue:1311
+              local _exp_0 = union_depths[num_unions] -- shunt/quicktype.yue:1311
+              if _exp_0 ~= nil then -- shunt/quicktype.yue:1311
+                new_size = _exp_0 -- shunt/quicktype.yue:1311
+              else -- shunt/quicktype.yue:1311
+                new_size = 0 -- shunt/quicktype.yue:1311
+              end -- shunt/quicktype.yue:1311
+            end -- shunt/quicktype.yue:1311
+            for i = new_size + 1, stack_size do -- shunt/quicktype.yue:1311
+              stack[i] = nil -- shunt/quicktype.yue:1311
+            end -- shunt/quicktype.yue:1311
+            stack_size = new_size -- shunt/quicktype.yue:1311
+            if num_unions == initial_unions then -- shunt/quicktype.yue:1311
+              return msg -- shunt/quicktype.yue:1311
+            end -- shunt/quicktype.yue:1311
+            pc = union_bail_jumps[num_unions] - 2 -- shunt/quicktype.yue:1311
+            bailing = true -- shunt/quicktype.yue:1311
+          else -- shunt/quicktype.yue:1313
+            local msg -- shunt/quicktype.yue:1313
+            if num_unions == 0 then -- shunt/quicktype.yue:1313
+              local pretty_key_parts = { } -- shunt/quicktype.yue:1313
+              for i = 1, stack_size do -- shunt/quicktype.yue:1313
+                pretty_key_parts[#pretty_key_parts + 1] = keys_used[i] -- shunt/quicktype.yue:1313
+              end -- shunt/quicktype.yue:1313
+              if #pretty_key_parts > 0 then -- shunt/quicktype.yue:1313
+                local pretty_key = "(at field ." .. tostring(table.concat(pretty_key_parts, ".")) .. ")" -- shunt/quicktype.yue:1313
+                msg = nil .. ' ' .. pretty_key -- shunt/quicktype.yue:1313
+              else -- shunt/quicktype.yue:1313
+                msg = nil -- shunt/quicktype.yue:1313
+              end -- shunt/quicktype.yue:1313
+            else -- shunt/quicktype.yue:1313
+              msg = nil -- shunt/quicktype.yue:1313
+            end -- shunt/quicktype.yue:1313
+            local new_size -- shunt/quicktype.yue:1313
+            do -- shunt/quicktype.yue:1313
+              local _exp_0 = union_depths[num_unions] -- shunt/quicktype.yue:1313
+              if _exp_0 ~= nil then -- shunt/quicktype.yue:1313
+                new_size = _exp_0 -- shunt/quicktype.yue:1313
+              else -- shunt/quicktype.yue:1313
+                new_size = 0 -- shunt/quicktype.yue:1313
+              end -- shunt/quicktype.yue:1313
+            end -- shunt/quicktype.yue:1313
+            for i = new_size + 1, stack_size do -- shunt/quicktype.yue:1313
+              stack[i] = nil -- shunt/quicktype.yue:1313
+            end -- shunt/quicktype.yue:1313
+            stack_size = new_size -- shunt/quicktype.yue:1313
+            if num_unions == initial_unions then -- shunt/quicktype.yue:1313
+              return msg -- shunt/quicktype.yue:1313
+            end -- shunt/quicktype.yue:1313
+            pc = union_bail_jumps[num_unions] - 2 -- shunt/quicktype.yue:1313
+            bailing = true -- shunt/quicktype.yue:1313
+          end -- shunt/quicktype.yue:1310
+        end -- shunt/quicktype.yue:1309
+      else -- shunt/quicktype.yue:1315
+        error("internal error: illegal type-checker VM instruction " .. tostring(check_prog[pc]) .. "@" .. tostring(pc)) -- shunt/quicktype.yue:1315
+      end -- shunt/quicktype.yue:1315
+    end -- shunt/quicktype.yue:1315
+    local ending_stack_size = stack_size -- shunt/quicktype.yue:1319
+    if root then -- shunt/quicktype.yue:1320
+      stack[1] = nil -- shunt/quicktype.yue:1322
+      stack_size = 0 -- shunt/quicktype.yue:1323
+    end -- shunt/quicktype.yue:1320
+    if num_running_checkers ~= initial_num_running_checkers then -- shunt/quicktype.yue:1324
+      error("internal error: checker depth incorrectly handled: expected " .. tostring(initial_num_running_checkers) .. " but got " .. tostring(num_running_checkers)) -- shunt/quicktype.yue:1325
+    end -- shunt/quicktype.yue:1324
+    if ending_stack_size ~= initial_stack_size then -- shunt/quicktype.yue:1326
+      error("internal error: value stack incorrectly handled (" .. tostring(repr(check_prog)) .. ")") -- shunt/quicktype.yue:1327
+    end -- shunt/quicktype.yue:1326
+  end -- shunt/quicktype.yue:1187
+  return nil -- shunt/quicktype.yue:1328
+end -- shunt/quicktype.yue:1163
+user_types = { } -- shunt/quicktype.yue:1330
+declare_type = function(name, type_spec) -- shunt/quicktype.yue:1331
+  if not (name ~= nil) then -- shunt/quicktype.yue:1332
+    error("declare_type requires a name") -- shunt/quicktype.yue:1333
+  end -- shunt/quicktype.yue:1332
+  if 'string' ~= type(name) then -- shunt/quicktype.yue:1334
+    error("declare_type requires a string name") -- shunt/quicktype.yue:1335
+  end -- shunt/quicktype.yue:1334
+  if not (type_spec ~= nil) then -- shunt/quicktype.yue:1336
+    error("declare_type requires a type_spec") -- shunt/quicktype.yue:1337
+  end -- shunt/quicktype.yue:1336
+  if 'string' ~= type(type_spec) then -- shunt/quicktype.yue:1338
+    error("declare_type requires a string type_spec") -- shunt/quicktype.yue:1339
+  end -- shunt/quicktype.yue:1338
+  local prefix, unprefixed_name = name:match('^([^.]+)%.([^.]*)$') -- shunt/quicktype.yue:1341
+  if unprefixed_name == nil then -- shunt/quicktype.yue:1342
+    unprefixed_name = name -- shunt/quicktype.yue:1342
+  end -- shunt/quicktype.yue:1342
+  if (prefix ~= nil) then -- shunt/quicktype.yue:1344
+    if (known_primitives[prefix] ~= nil) then -- shunt/quicktype.yue:1345
+      error("cannot use '" .. tostring(prefix) .. "' as type-prefix: must not be a primitive") -- shunt/quicktype.yue:1346
+    end -- shunt/quicktype.yue:1345
+    if not prefix:match('^[a-z]') then -- shunt/quicktype.yue:1347
+      error("cannot use '" .. tostring(prefix) .. "' as type-prefix: must start with a lowercase letter") -- shunt/quicktype.yue:1348
+    end -- shunt/quicktype.yue:1347
+  end -- shunt/quicktype.yue:1344
+  if #unprefixed_name < 2 then -- shunt/quicktype.yue:1350
+    error("cannot declare type '" .. tostring(unprefixed_name) .. "': name too short") -- shunt/quicktype.yue:1351
+  end -- shunt/quicktype.yue:1350
+  if not (unprefixed_name:sub(1, 1)):match('^[A-Z_]$') then -- shunt/quicktype.yue:1352
+    error("cannot declare type '" .. tostring(unprefixed_name) .. "': user types must start with uppercase or '_'") -- shunt/quicktype.yue:1353
+  end -- shunt/quicktype.yue:1352
+  if not unprefixed_name:match('^[a-zA-Z0-9_-]*[a-zA-Z0-9_]$') then -- shunt/quicktype.yue:1354
+    error("cannot declare type '" .. tostring(unprefixed_name) .. "': not a valid identifier") -- shunt/quicktype.yue:1355
+  end -- shunt/quicktype.yue:1354
+  if (user_types[name] ~= nil) then -- shunt/quicktype.yue:1357
+    error("cannot redefine type '" .. tostring(unprefixed_name) .. "'") -- shunt/quicktype.yue:1358
+  end -- shunt/quicktype.yue:1357
+  local parsed_type = parse(type_spec) -- shunt/quicktype.yue:1359
+  user_types[name] = parsed_type -- shunt/quicktype.yue:1360
+  type_checkers[name] = parsed_type:checker():build() -- shunt/quicktype.yue:1361
+end -- shunt/quicktype.yue:1331
+_module_0["declare_type"] = declare_type -- shunt/quicktype.yue:1361
+declare_type('Self', 'some') -- shunt/quicktype.yue:1363
+declare_singleton_type = function(value) -- shunt/quicktype.yue:1365
+  if not (value ~= nil) then -- shunt/quicktype.yue:1366
+    error("declare_singleton_type requires a value") -- shunt/quicktype.yue:1367
+  end -- shunt/quicktype.yue:1366
+  if 'table' ~= type(value) then -- shunt/quicktype.yue:1368
+    error("declare_singleton_type requires a table value") -- shunt/quicktype.yue:1369
+  end -- shunt/quicktype.yue:1368
+  local name = tostring(value) -- shunt/quicktype.yue:1371
+  if #name < 2 then -- shunt/quicktype.yue:1372
+    error("cannot declare type '" .. tostring(name) .. "': name too short") -- shunt/quicktype.yue:1373
+  end -- shunt/quicktype.yue:1372
+  if not (name:sub(1, 1)):match('^[A-Z_]$') then -- shunt/quicktype.yue:1374
+    error("cannot declare type '" .. tostring(name) .. "': user types must start with an uppercase letter or '_'") -- shunt/quicktype.yue:1375
+  end -- shunt/quicktype.yue:1374
+  if not name:match('^[a-zA-Z0-9_-]*[a-zA-Z0-9_]$') then -- shunt/quicktype.yue:1376
+    error("cannot declare type '" .. tostring(name) .. "': not a valid identifier") -- shunt/quicktype.yue:1377
+  end -- shunt/quicktype.yue:1376
+  if (user_types[name] ~= nil) then -- shunt/quicktype.yue:1378
+    error("cannot redefine type '" .. tostring(name) .. "'") -- shunt/quicktype.yue:1379
+  end -- shunt/quicktype.yue:1378
+  local ty = SingletonType(name, value) -- shunt/quicktype.yue:1381
+  user_types[name] = ty -- shunt/quicktype.yue:1382
+  type_checkers[name] = ty:checker():build() -- shunt/quicktype.yue:1383
+end -- shunt/quicktype.yue:1365
+_module_0["declare_singleton_type"] = declare_singleton_type -- shunt/quicktype.yue:1383
+skip_typechecking = false -- shunt/quicktype.yue:1385
+deactivate_typechecks = function() -- shunt/quicktype.yue:1386
+  skip_typechecking = true -- shunt/quicktype.yue:1387
+end -- shunt/quicktype.yue:1386
+_module_0["deactivate_typechecks"] = deactivate_typechecks -- shunt/quicktype.yue:1387
+stats = function() -- shunt/quicktype.yue:1389
+  local stats_arr -- shunt/quicktype.yue:1390
+  do -- shunt/quicktype.yue:1390
+    local _accum_0 = { } -- shunt/quicktype.yue:1390
+    local _len_0 = 1 -- shunt/quicktype.yue:1390
+    for instruction, count in pairs(instruction_counts) do -- shunt/quicktype.yue:1390
+      _accum_0[_len_0] = { -- shunt/quicktype.yue:1390
+        instruction = instruction, -- shunt/quicktype.yue:1390
+        count = count -- shunt/quicktype.yue:1390
+      } -- shunt/quicktype.yue:1390
+      _len_0 = _len_0 + 1 -- shunt/quicktype.yue:1390
+    end -- shunt/quicktype.yue:1390
+    stats_arr = _accum_0 -- shunt/quicktype.yue:1390
+  end -- shunt/quicktype.yue:1390
+  table.sort(stats_arr, function(a, b) -- shunt/quicktype.yue:1391
+    return a.count > b.count -- shunt/quicktype.yue:1391
+  end) -- shunt/quicktype.yue:1391
+  return stats_arr -- shunt/quicktype.yue:1392
+end -- shunt/quicktype.yue:1389
+_module_0["stats"] = stats -- shunt/quicktype.yue:1392
+spec(function() -- shunt/quicktype.yue:1394
   local describe, it, matchers -- shunt/quicktype.yue:0
   do -- shunt/quicktype.yue:0
     local _obj_0 = require('shunt.spec') -- shunt/quicktype.yue:0
     describe, it, matchers = _obj_0.describe, _obj_0.it, _obj_0.matchers -- shunt/quicktype.yue:0
   end -- shunt/quicktype.yue:0
-  local anything, contains_value, deep_eq, each_value, eq, errors, has_fields, ge, gt, len, match, matches, no_errors = matchers.anything, matchers.contains_value, matchers.deep_eq, matchers.each_value, matchers.eq, matchers.errors, matchers.has_fields, matchers.ge, matchers.gt, matchers.len, matchers.match, matchers.matches, matchers.no_errors -- shunt/quicktype.yue:1328
-  describe('Lexer', function() -- shunt/quicktype.yue:1330
-    local tokens -- shunt/quicktype.yue:1331
-    tokens = function(raw) -- shunt/quicktype.yue:1331
-      assert(raw) -- shunt/quicktype.yue:1332
-      local _with_0 = { } -- shunt/quicktype.yue:1333
-      for token in (Lexer(raw)).tokens do -- shunt/quicktype.yue:1334
-        _with_0[#_with_0 + 1] = token -- shunt/quicktype.yue:1335
-      end -- shunt/quicktype.yue:1335
-      return _with_0 -- shunt/quicktype.yue:1333
-    end -- shunt/quicktype.yue:1331
-    it('emits simple types', function() -- shunt/quicktype.yue:1337
-      local simple_types = { -- shunt/quicktype.yue:1339
-        type(nil), -- shunt/quicktype.yue:1339
-        type(false), -- shunt/quicktype.yue:1340
-        type(0), -- shunt/quicktype.yue:1341
-        type(""), -- shunt/quicktype.yue:1342
-        type(function() end), -- shunt/quicktype.yue:1343
-        type(coroutine.create(function() end)), -- shunt/quicktype.yue:1344
-        'any', -- shunt/quicktype.yue:1345
-        'some' -- shunt/quicktype.yue:1346
-      } -- shunt/quicktype.yue:1338
-      for _index_0 = 1, #simple_types do -- shunt/quicktype.yue:1347
-        local simple_type = simple_types[_index_0] -- shunt/quicktype.yue:1347
-        require('shunt.spec')._expect_that([=[(tokens simple_type)]=], (tokens(simple_type)), (deep_eq({ -- shunt/quicktype.yue:1348
-          Symbol(T_NAME, simple_type) -- shunt/quicktype.yue:1348
-        })), tostring("shunt/quicktype.yue") .. ":" .. tostring(1348)) -- shunt/quicktype.yue:1348
-      end -- shunt/quicktype.yue:1350
-    end) -- shunt/quicktype.yue:1337
-    it('emits prefixed simple type', function() -- shunt/quicktype.yue:1352
-      return require('shunt.spec')._expect_that([=[(tokens 'prefixed.Name')]=], (tokens('prefixed.Name')), (deep_eq({ -- shunt/quicktype.yue:1353
-        Symbol(T_PREFIXED_NAME, 'prefixed.Name') -- shunt/quicktype.yue:1353
-      })), tostring("shunt/quicktype.yue") .. ":" .. tostring(1353)) -- shunt/quicktype.yue:1355
-    end) -- shunt/quicktype.yue:1352
-    it('emits the never type', function() -- shunt/quicktype.yue:1357
-      return require('shunt.spec')._expect_that([=[(tokens '!')]=], (tokens('!')), (deep_eq({ -- shunt/quicktype.yue:1358
-        Symbol(T_BANG) -- shunt/quicktype.yue:1358
-      })), tostring("shunt/quicktype.yue") .. ":" .. tostring(1358)) -- shunt/quicktype.yue:1360
-    end) -- shunt/quicktype.yue:1357
-    it('emits boolean types', function() -- shunt/quicktype.yue:1362
-      return require('shunt.spec')._expect_that([=[(tokens 'true false')]=], (tokens('true false')), (deep_eq({ -- shunt/quicktype.yue:1363
-        Symbol(T_BOOLEAN, true), -- shunt/quicktype.yue:1363
-        Symbol(T_BOOLEAN, false) -- shunt/quicktype.yue:1363
-      })), tostring("shunt/quicktype.yue") .. ":" .. tostring(1363)) -- shunt/quicktype.yue:1365
-    end) -- shunt/quicktype.yue:1362
-    it('emits number types', function() -- shunt/quicktype.yue:1367
-      return require('shunt.spec')._expect_that([=[(tokens '123 456.654 .789 -123 -456.654 -.789')]=], (tokens('123 456.654 .789 -123 -456.654 -.789')), (deep_eq({ -- shunt/quicktype.yue:1368
-        Symbol(T_NUMBER, 123), -- shunt/quicktype.yue:1368
-        Symbol(T_NUMBER, 456.654), -- shunt/quicktype.yue:1368
-        Symbol(T_NUMBER, .789), -- shunt/quicktype.yue:1368
-        Symbol(T_NUMBER, -123), -- shunt/quicktype.yue:1368
-        Symbol(T_NUMBER, -456.654), -- shunt/quicktype.yue:1368
-        Symbol(T_NUMBER, -.789) -- shunt/quicktype.yue:1368
-      })), tostring("shunt/quicktype.yue") .. ":" .. tostring(1368)) -- shunt/quicktype.yue:1375
-    end) -- shunt/quicktype.yue:1367
-    it('emits string types', function() -- shunt/quicktype.yue:1377
-      return require('shunt.spec')._expect_that([=[(tokens '"hello" "world"')]=], (tokens('"hello" "world"')), (deep_eq({ -- shunt/quicktype.yue:1378
-        Symbol(T_STRING, 'hello'), -- shunt/quicktype.yue:1378
-        Symbol(T_STRING, 'world') -- shunt/quicktype.yue:1378
-      })), tostring("shunt/quicktype.yue") .. ":" .. tostring(1378)) -- shunt/quicktype.yue:1381
-    end) -- shunt/quicktype.yue:1377
-    it('emits strucural tokens', function() -- shunt/quicktype.yue:1383
-      return require('shunt.spec')._expect_that([==[(tokens '(),{}[]:->=>...?+|')]==], (tokens('(),{}[]:->=>...?+|')), (deep_eq({ -- shunt/quicktype.yue:1384
-        Symbol(T_PAREN_OPEN), -- shunt/quicktype.yue:1384
-        Symbol(T_PAREN_CLOSE), -- shunt/quicktype.yue:1384
-        Symbol(T_COMMA), -- shunt/quicktype.yue:1384
-        Symbol(T_BRACE_OPEN), -- shunt/quicktype.yue:1384
-        Symbol(T_BRACE_CLOSE), -- shunt/quicktype.yue:1384
-        Symbol(T_BRACKET_OPEN), -- shunt/quicktype.yue:1384
-        Symbol(T_BRACKET_CLOSE), -- shunt/quicktype.yue:1384
-        Symbol(T_COLON), -- shunt/quicktype.yue:1384
-        Symbol(T_THIN_ARROW), -- shunt/quicktype.yue:1384
-        Symbol(T_FAT_ARROW), -- shunt/quicktype.yue:1384
-        Symbol(T_DOTDOTDOT), -- shunt/quicktype.yue:1384
-        Symbol(T_QUESTION), -- shunt/quicktype.yue:1384
-        Symbol(T_PLUS), -- shunt/quicktype.yue:1384
-        Symbol(T_PIPE) -- shunt/quicktype.yue:1384
-      })), tostring("shunt/quicktype.yue") .. ":" .. tostring(1384)) -- shunt/quicktype.yue:1399
-    end) -- shunt/quicktype.yue:1383
-    it('ignores whitespace', function() -- shunt/quicktype.yue:1401
-      return require('shunt.spec')._expect_that([=[(tokens ' (\tstr_ing\r)\n-> str-ing ')]=], (tokens(' (\tstr_ing\r)\n-> str-ing ')), (deep_eq({ -- shunt/quicktype.yue:1402
-        Symbol(T_PAREN_OPEN), -- shunt/quicktype.yue:1402
-        Symbol(T_NAME, "str_ing"), -- shunt/quicktype.yue:1402
-        Symbol(T_PAREN_CLOSE), -- shunt/quicktype.yue:1402
-        Symbol(T_THIN_ARROW), -- shunt/quicktype.yue:1402
-        Symbol(T_NAME, "str-ing") -- shunt/quicktype.yue:1402
-      })), tostring("shunt/quicktype.yue") .. ":" .. tostring(1402)) -- shunt/quicktype.yue:1408
-    end) -- shunt/quicktype.yue:1401
-    it('ignores comments', function() -- shunt/quicktype.yue:1410
-      return require('shunt.spec')._expect_that([=[(tokens '-- hello\n--world!')]=], (tokens('-- hello\n--world!')), (deep_eq({ })), tostring("shunt/quicktype.yue") .. ":" .. tostring(1411)) -- shunt/quicktype.yue:1411
-    end) -- shunt/quicktype.yue:1410
-    it('rejects unexpected characters', function() -- shunt/quicktype.yue:1413
-      return require('shunt.spec')._expect_that([=[(-> tokens '~')]=], (function() -- shunt/quicktype.yue:1414
-        return tokens('~') -- shunt/quicktype.yue:1414
-      end), (errors(matches([[unexpected character '~']]))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1414)) -- shunt/quicktype.yue:1414
-    end) -- shunt/quicktype.yue:1413
-    return describe(':peek', function() -- shunt/quicktype.yue:1416
-      it('matches :next', function() -- shunt/quicktype.yue:1417
-        local lexer = Lexer('()'); -- shunt/quicktype.yue:1418
-        require('shunt.spec')._assert_that([=[lexer\peek!]=], lexer:peek(), (deep_eq(Symbol(T_PAREN_OPEN))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1419)); -- shunt/quicktype.yue:1419
-        require('shunt.spec')._assert_that([=[lexer\peek!]=], lexer:peek(), (deep_eq(Symbol(T_PAREN_OPEN))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1420)); -- shunt/quicktype.yue:1420
-        require('shunt.spec')._assert_that([=[lexer\next!]=], lexer:next(), (deep_eq(Symbol(T_PAREN_OPEN))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1421)); -- shunt/quicktype.yue:1421
-        require('shunt.spec')._assert_that([=[lexer\peek!]=], lexer:peek(), (deep_eq(Symbol(T_PAREN_CLOSE))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1422)); -- shunt/quicktype.yue:1422
-        require('shunt.spec')._assert_that([=[lexer\peek!]=], lexer:peek(), (deep_eq(Symbol(T_PAREN_CLOSE))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1423)); -- shunt/quicktype.yue:1423
-        return require('shunt.spec')._assert_that([=[lexer\next!]=], lexer:next(), (deep_eq(Symbol(T_PAREN_CLOSE))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1424)) -- shunt/quicktype.yue:1424
-      end) -- shunt/quicktype.yue:1417
-      return it('returns nil at EOF', function() -- shunt/quicktype.yue:1426
-        local lexer = Lexer(''); -- shunt/quicktype.yue:1427
-        require('shunt.spec')._expect_that([=[lexer\peek!]=], lexer:peek(), (eq(nil)), tostring("shunt/quicktype.yue") .. ":" .. tostring(1428)); -- shunt/quicktype.yue:1428
-        return require('shunt.spec')._expect_that([=[lexer\peek!]=], lexer:peek(), (eq(nil)), tostring("shunt/quicktype.yue") .. ":" .. tostring(1429)) -- shunt/quicktype.yue:1429
-      end) -- shunt/quicktype.yue:1429
-    end) -- shunt/quicktype.yue:1429
-  end) -- shunt/quicktype.yue:1330
-  describe('TypeSpecParser', function() -- shunt/quicktype.yue:1431
-    describe('run on simple types', function() -- shunt/quicktype.yue:1432
-      it('accepts primitives', function() -- shunt/quicktype.yue:1433
-        require('shunt.spec')._expect_that([=[(parse 'nil')]=], (parse('nil')), (deep_eq(Primitive(type(nil)))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1434)); -- shunt/quicktype.yue:1434
-        require('shunt.spec')._expect_that([=[(parse 'number')]=], (parse('number')), (deep_eq(Primitive(type(0)))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1435)); -- shunt/quicktype.yue:1435
-        require('shunt.spec')._expect_that([=[(parse 'number')]=], (parse('number')), (deep_eq(Primitive(type(0.0)))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1436)); -- shunt/quicktype.yue:1436
-        require('shunt.spec')._expect_that([=[(parse 'string')]=], (parse('string')), (deep_eq(Primitive(type("")))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1437)); -- shunt/quicktype.yue:1437
-        require('shunt.spec')._expect_that([=[(parse 'table')]=], (parse('table')), (deep_eq(Primitive(type({ })))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1438)); -- shunt/quicktype.yue:1438
-        require('shunt.spec')._expect_that([=[(parse 'function')]=], (parse('function')), (deep_eq(Primitive(type(function() end)))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1439)); -- shunt/quicktype.yue:1439
-        require('shunt.spec')._expect_that([=[(parse 'thread')]=], (parse('thread')), (deep_eq(Primitive(type(coroutine.create(function() end))))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1440)); -- shunt/quicktype.yue:1440
-        require('shunt.spec')._expect_that([=[(parse 'userdata')]=], (parse('userdata')), (deep_eq(Primitive('userdata'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1441)); -- shunt/quicktype.yue:1441
-        require('shunt.spec')._expect_that([=[(parse 'any')]=], (parse('any')), (deep_eq(Any())), tostring("shunt/quicktype.yue") .. ":" .. tostring(1442)); -- shunt/quicktype.yue:1442
-        require('shunt.spec')._expect_that([=[(parse 'some')]=], (parse('some')), (deep_eq(Some())), tostring("shunt/quicktype.yue") .. ":" .. tostring(1443)); -- shunt/quicktype.yue:1443
-        return require('shunt.spec')._expect_that([=[(parse '!')]=], (parse('!')), (deep_eq(Never())), tostring("shunt/quicktype.yue") .. ":" .. tostring(1444)) -- shunt/quicktype.yue:1444
-      end) -- shunt/quicktype.yue:1433
-      it('accepts user types', function() -- shunt/quicktype.yue:1446
-        return require('shunt.spec')._expect_that([=[(parse 'UserType')]=], (parse('UserType')), (deep_eq(UserType('UserType'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1447)) -- shunt/quicktype.yue:1447
-      end) -- shunt/quicktype.yue:1446
-      it('accepts prefixed user types', function() -- shunt/quicktype.yue:1449
-        return require('shunt.spec')._expect_that([=[(parse 'prefixed.UserType')]=], (parse('prefixed.UserType')), (deep_eq(UserType('prefixed.UserType'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1450)) -- shunt/quicktype.yue:1450
-      end) -- shunt/quicktype.yue:1449
-      it('accepts boolean types', function() -- shunt/quicktype.yue:1452
-        require('shunt.spec')._expect_that([=[(parse 'true')]=], (parse('true')), (deep_eq(BooleanType(true))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1453)); -- shunt/quicktype.yue:1453
-        return require('shunt.spec')._expect_that([=[(parse 'false')]=], (parse('false')), (deep_eq(BooleanType(false))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1454)) -- shunt/quicktype.yue:1454
-      end) -- shunt/quicktype.yue:1452
-      it('accepts number types', function() -- shunt/quicktype.yue:1456
-        return require('shunt.spec')._expect_that([=[(parse '123')]=], (parse('123')), (deep_eq(NumberType(123))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1457)) -- shunt/quicktype.yue:1457
-      end) -- shunt/quicktype.yue:1456
-      it('accepts string types', function() -- shunt/quicktype.yue:1459
-        return require('shunt.spec')._expect_that([=[(parse '"hello"')]=], (parse('"hello"')), (deep_eq(StringType('hello'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1460)) -- shunt/quicktype.yue:1460
-      end) -- shunt/quicktype.yue:1459
-      it('rejects unknown primitives', function() -- shunt/quicktype.yue:1462
-        return require('shunt.spec')._expect_that([=[(-> parse 'user')]=], (function() -- shunt/quicktype.yue:1463
-          return parse('user') -- shunt/quicktype.yue:1463
-        end), (errors(matches([[cannot use 'user' as user type name: name must start with an uppercase letter]]))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1463)) -- shunt/quicktype.yue:1463
-      end) -- shunt/quicktype.yue:1462
-      it('rejects malformed prefixed identifiers', function() -- shunt/quicktype.yue:1465
-        require('shunt.spec')._expect_that([=[(-> parse 'foo.')]=], (function() -- shunt/quicktype.yue:1466
-          return parse('foo.') -- shunt/quicktype.yue:1466
-        end), (errors(matches('foo'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1466)); -- shunt/quicktype.yue:1466
-        require('shunt.spec')._expect_that([=[(-> parse '.Bar')]=], (function() -- shunt/quicktype.yue:1467
-          return parse('.Bar') -- shunt/quicktype.yue:1467
-        end), (errors(matches("unexpected character '%.'"))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1467)); -- shunt/quicktype.yue:1467
-        require('shunt.spec')._expect_that([=[(-> parse 'Foo.bar')]=], (function() -- shunt/quicktype.yue:1468
-          return parse('Foo.bar') -- shunt/quicktype.yue:1468
-        end), (errors(matches("cannot use 'Foo' as type%-prefix: must start with a lowercase letter"))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1468)); -- shunt/quicktype.yue:1468
-        require('shunt.spec')._expect_that([=[(-> parse 'foo.bar')]=], (function() -- shunt/quicktype.yue:1469
-          return parse('foo.bar') -- shunt/quicktype.yue:1469
-        end), (errors(matches("cannot use 'bar' as disambiguated type name: must start with an uppercase letter"))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1469)); -- shunt/quicktype.yue:1469
-        return require('shunt.spec')._expect_that([=[(-> parse 'number.Bar')]=], (function() -- shunt/quicktype.yue:1470
-          return parse('number.Bar') -- shunt/quicktype.yue:1470
-        end), (errors(matches("cannot use 'number' as type%-prefix: must not be a primitive"))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1470)) -- shunt/quicktype.yue:1470
-      end) -- shunt/quicktype.yue:1465
-      it('rejects incomplete types', function() -- shunt/quicktype.yue:1472
-        return require('shunt.spec')._expect_that([=[(-> parse '[')]=], (function() -- shunt/quicktype.yue:1473
-          return parse('[') -- shunt/quicktype.yue:1473
-        end), (errors(matches([[unexpected EOF]]))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1473)) -- shunt/quicktype.yue:1473
-      end) -- shunt/quicktype.yue:1472
-      return it('rejects inputs with trailing errors', function() -- shunt/quicktype.yue:1475
-        return require('shunt.spec')._expect_that([=[(-> parse 'string]')]=], (function() -- shunt/quicktype.yue:1476
-          return parse('string]') -- shunt/quicktype.yue:1476
-        end), (errors(matches('type spec has trailing characters'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1476)) -- shunt/quicktype.yue:1476
-      end) -- shunt/quicktype.yue:1476
-    end) -- shunt/quicktype.yue:1432
-    return describe('run on composite types', function() -- shunt/quicktype.yue:1478
-      it('accepts optional', function() -- shunt/quicktype.yue:1479
-        require('shunt.spec')._expect_that([=[(parse '?nil')]=], (parse('?nil')), (deep_eq(Optional(Primitive('nil')))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1480)); -- shunt/quicktype.yue:1480
-        require('shunt.spec')._expect_that([=[(parse '?string')]=], (parse('?string')), (deep_eq(Optional(Primitive('string')))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1481)); -- shunt/quicktype.yue:1481
-        return require('shunt.spec')._expect_that([=[(parse '?() -> nil')]=], (parse('?() -> nil')), (deep_eq(Optional(Function({ }, { -- shunt/quicktype.yue:1482
-          Primitive('nil') -- shunt/quicktype.yue:1482
-        })))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1482)) -- shunt/quicktype.yue:1482
-      end) -- shunt/quicktype.yue:1479
-      it('accepts arrays', function() -- shunt/quicktype.yue:1484
-        require('shunt.spec')._expect_that([=[(parse '[string]')]=], (parse('[string]')), (deep_eq(Array(Primitive('string')))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1485)); -- shunt/quicktype.yue:1485
-        return require('shunt.spec')._expect_that([=[(parse '[[string]]')]=], (parse('[[string]]')), (deep_eq(Array(Array(Primitive('string'))))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1486)) -- shunt/quicktype.yue:1486
-      end) -- shunt/quicktype.yue:1484
-      it('accepts tuples', function() -- shunt/quicktype.yue:1488
-        require('shunt.spec')._expect_that([=[(parse '()')]=], (parse('()')), (deep_eq(Tuple({ }))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1489)); -- shunt/quicktype.yue:1489
-        require('shunt.spec')._expect_that([=[(parse '(nil,)')]=], (parse('(nil,)')), (deep_eq(Tuple({ -- shunt/quicktype.yue:1490
-          Primitive('nil') -- shunt/quicktype.yue:1490
-        }))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1490)); -- shunt/quicktype.yue:1490
-        require('shunt.spec')._expect_that([=[(parse '(nil, number)')]=], (parse('(nil, number)')), (deep_eq(Tuple({ -- shunt/quicktype.yue:1491
-          (Primitive('nil')), -- shunt/quicktype.yue:1491
-          Primitive('number') -- shunt/quicktype.yue:1491
-        }))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1491)); -- shunt/quicktype.yue:1491
-        return require('shunt.spec')._expect_that([=[(parse '((nil, number), string, (User, table))')]=], (parse('((nil, number), string, (User, table))')), (deep_eq(Tuple({ -- shunt/quicktype.yue:1492
-          Tuple({ -- shunt/quicktype.yue:1492
-            (Primitive('nil')), -- shunt/quicktype.yue:1492
-            (Primitive('number')) -- shunt/quicktype.yue:1492
-          }), -- shunt/quicktype.yue:1492
-          Primitive('string'), -- shunt/quicktype.yue:1492
-          Tuple({ -- shunt/quicktype.yue:1492
-            (UserType('User')), -- shunt/quicktype.yue:1492
-            (Primitive('table')) -- shunt/quicktype.yue:1492
-          }) -- shunt/quicktype.yue:1492
-        }))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1492)) -- shunt/quicktype.yue:1496
-      end) -- shunt/quicktype.yue:1488
-      it('accepts sets', function() -- shunt/quicktype.yue:1498
-        require('shunt.spec')._expect_that([=[(parse '{string}')]=], (parse('{string}')), (deep_eq(Set(nil, Primitive('string')))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1499)); -- shunt/quicktype.yue:1499
-        require('shunt.spec')._expect_that([=[(parse '{{string}}')]=], (parse('{{string}}')), (deep_eq(Set(nil, Set(nil, Primitive('string'))))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1500)); -- shunt/quicktype.yue:1500
-        return require('shunt.spec')._expect_that([=[(parse '{<>: {}, string}')]=], (parse('{<>: {}, string}')), (deep_eq(Set((Struct(nil, { })), Primitive('string')))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1501)) -- shunt/quicktype.yue:1501
-      end) -- shunt/quicktype.yue:1498
-      it('accepts mappings', function() -- shunt/quicktype.yue:1503
-        require('shunt.spec')._expect_that([=[(parse '{boolean -> number}')]=], (parse('{boolean -> number}')), (deep_eq(Mapping(nil, (Primitive('boolean')), Primitive('number')))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1504)); -- shunt/quicktype.yue:1504
-        require('shunt.spec')._expect_that([=[(parse '{{boolean -> number} -> {string -> thread}}')]=], (parse('{{boolean -> number} -> {string -> thread}}')), (deep_eq(Mapping(nil, (Mapping(nil, (Primitive('boolean')), Primitive('number'))), Mapping(nil, (Primitive('string')), Primitive('thread'))))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1505)); -- shunt/quicktype.yue:1505
-        return require('shunt.spec')._expect_that([=[(parse '{<>: {}, boolean -> number}')]=], (parse('{<>: {}, boolean -> number}')), (deep_eq(Mapping((Struct(nil, { })), (Primitive('boolean')), Primitive('number')))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1506)) -- shunt/quicktype.yue:1506
-      end) -- shunt/quicktype.yue:1503
-      it('accepts structs', function() -- shunt/quicktype.yue:1508
-        require('shunt.spec')._expect_that([=[(parse '{}')]=], (parse('{}')), (deep_eq(Struct(nil, { }))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1509)); -- shunt/quicktype.yue:1509
-        require('shunt.spec')._expect_that([=[(parse '{field: boolean}')]=], (parse('{field: boolean}')), (deep_eq(Struct(nil, { -- shunt/quicktype.yue:1510
-          Field('field', Primitive('boolean')) -- shunt/quicktype.yue:1510
-        }))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1510)); -- shunt/quicktype.yue:1510
-        require('shunt.spec')._expect_that([=[(parse '{field: boolean,}')]=], (parse('{field: boolean,}')), (deep_eq(Struct(nil, { -- shunt/quicktype.yue:1512
-          Field('field', Primitive('boolean')) -- shunt/quicktype.yue:1512
-        }))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1512)); -- shunt/quicktype.yue:1512
-        require('shunt.spec')._expect_that([=[(parse '{field1: number, field2: string}')]=], (parse('{field1: number, field2: string}')), (deep_eq(Struct(nil, { -- shunt/quicktype.yue:1514
-          Field('field1', Primitive('number')), -- shunt/quicktype.yue:1514
-          Field('field2', Primitive('string')) -- shunt/quicktype.yue:1514
-        }))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1514)); -- shunt/quicktype.yue:1514
-        require('shunt.spec')._expect_that([=[(parse '{outer1: {inner1: boolean}, outer2: {inner2: boolean}}')]=], (parse('{outer1: {inner1: boolean}, outer2: {inner2: boolean}}')), (deep_eq(Struct(nil, { -- shunt/quicktype.yue:1517
-          Field('outer1', Struct(nil, { -- shunt/quicktype.yue:1517
-            Field('inner1', Primitive('boolean')) -- shunt/quicktype.yue:1517
-          })), -- shunt/quicktype.yue:1517
-          Field('outer2', Struct(nil, { -- shunt/quicktype.yue:1517
-            Field('inner2', Primitive('boolean')) -- shunt/quicktype.yue:1517
-          })) -- shunt/quicktype.yue:1517
-        }))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1517)); -- shunt/quicktype.yue:1517
-        require('shunt.spec')._expect_that([=[(parse '{<>: {}}')]=], (parse('{<>: {}}')), (deep_eq(Struct((Struct(nil, { })), { }))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1522)); -- shunt/quicktype.yue:1522
-        require('shunt.spec')._expect_that([=[(parse '{<>: {},}')]=], (parse('{<>: {},}')), (deep_eq(Struct((Struct(nil, { })), { }))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1523)); -- shunt/quicktype.yue:1523
-        return require('shunt.spec')._expect_that([=[(parse '{<>: {<>: {__tostring: function}}}')]=], (parse('{<>: {<>: {__tostring: function}}}')), (deep_eq((function() -- shunt/quicktype.yue:1524
-          return Struct((Struct((Struct(nil, { -- shunt/quicktype.yue:1524
-            Field('__tostring', Primitive('function')) -- shunt/quicktype.yue:1524
-          })), { })), { }) -- shunt/quicktype.yue:1524
-        end)())), tostring("shunt/quicktype.yue") .. ":" .. tostring(1524)) -- shunt/quicktype.yue:1525
-      end) -- shunt/quicktype.yue:1508
-      it('accepts functions', function() -- shunt/quicktype.yue:1527
-        require('shunt.spec')._expect_that([=[(parse '() -> <>')]=], (parse('() -> <>')), (deep_eq(Function({ }, { }))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1528)); -- shunt/quicktype.yue:1528
-        require('shunt.spec')._expect_that([=[(parse '() -> nil')]=], (parse('() -> nil')), (deep_eq(Function({ }, { -- shunt/quicktype.yue:1529
-          Primitive('nil') -- shunt/quicktype.yue:1529
-        }))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1529)); -- shunt/quicktype.yue:1529
-        require('shunt.spec')._expect_that([=[(parse '(string) -> number')]=], (parse('(string) -> number')), (deep_eq(Function({ -- shunt/quicktype.yue:1530
-          Primitive('string') -- shunt/quicktype.yue:1530
-        }, { -- shunt/quicktype.yue:1530
-          Primitive('number') -- shunt/quicktype.yue:1530
-        }))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1530)); -- shunt/quicktype.yue:1530
-        require('shunt.spec')._expect_that([=[(parse '(number, string) -> number')]=], (parse('(number, string) -> number')), (deep_eq(Function({ -- shunt/quicktype.yue:1531
-          (Primitive('number')), -- shunt/quicktype.yue:1531
-          (Primitive('string')) -- shunt/quicktype.yue:1531
-        }, { -- shunt/quicktype.yue:1531
-          Primitive('number') -- shunt/quicktype.yue:1531
-        }))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1531)); -- shunt/quicktype.yue:1531
-        require('shunt.spec')._expect_that([=[(parse '(string) -> (number) -> boolean')]=], (parse('(string) -> (number) -> boolean')), (deep_eq(Function({ -- shunt/quicktype.yue:1532
-          Primitive('string') -- shunt/quicktype.yue:1532
-        }, { -- shunt/quicktype.yue:1532
-          Function({ -- shunt/quicktype.yue:1532
-            Primitive('number') -- shunt/quicktype.yue:1532
-          }, { -- shunt/quicktype.yue:1532
-            Primitive('boolean') -- shunt/quicktype.yue:1532
-          }) -- shunt/quicktype.yue:1532
-        }))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1532)); -- shunt/quicktype.yue:1532
-        require('shunt.spec')._expect_that([=[(parse '() -> <string>')]=], (parse('() -> <string>')), (deep_eq(Function({ }, { -- shunt/quicktype.yue:1533
-          (Primitive('string')) -- shunt/quicktype.yue:1533
-        }))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1533)); -- shunt/quicktype.yue:1533
-        require('shunt.spec')._expect_that([=[(parse '() -> <string,>')]=], (parse('() -> <string,>')), (deep_eq(Function({ }, { -- shunt/quicktype.yue:1534
-          Primitive('string') -- shunt/quicktype.yue:1534
-        }))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1534)); -- shunt/quicktype.yue:1534
-        require('shunt.spec')._expect_that([=[(parse '() -> <string, boolean>')]=], (parse('() -> <string, boolean>')), (deep_eq(Function({ }, { -- shunt/quicktype.yue:1535
-          (Primitive('string')), -- shunt/quicktype.yue:1535
-          (Primitive('boolean')) -- shunt/quicktype.yue:1535
-        }))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1535)); -- shunt/quicktype.yue:1535
-        require('shunt.spec')._expect_that([=[(parse '(string...) -> number...')]=], (parse('(string...) -> number...')), (deep_eq(Function(setmetatable({ }, { -- shunt/quicktype.yue:1537
-          __index = function(self) -- shunt/quicktype.yue:1537
-            return Primitive('string') -- shunt/quicktype.yue:1537
-          end -- shunt/quicktype.yue:1537
-        }), setmetatable({ }, { -- shunt/quicktype.yue:1537
-          __index = function(self) -- shunt/quicktype.yue:1537
-            return Primitive('number') -- shunt/quicktype.yue:1537
-          end -- shunt/quicktype.yue:1537
-        })))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1537)); -- shunt/quicktype.yue:1537
-        require('shunt.spec')._expect_that([=[(parse '(string...) -> <number...>')]=], (parse('(string...) -> <number...>')), (deep_eq(Function(setmetatable({ }, { -- shunt/quicktype.yue:1538
-          __index = function(self) -- shunt/quicktype.yue:1538
-            return Primitive('string') -- shunt/quicktype.yue:1538
-          end -- shunt/quicktype.yue:1538
-        }), setmetatable({ }, { -- shunt/quicktype.yue:1538
-          __index = function(self) -- shunt/quicktype.yue:1538
-            return Primitive('number') -- shunt/quicktype.yue:1538
-          end -- shunt/quicktype.yue:1538
-        })))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1538)); -- shunt/quicktype.yue:1538
-        require('shunt.spec')._expect_that([=[(parse '(boolean, string...) -> <thread, number...>')]=], (parse('(boolean, string...) -> <thread, number...>')), (deep_eq(Function(setmetatable({ -- shunt/quicktype.yue:1539
-          (Primitive('boolean')), -- shunt/quicktype.yue:1539
-        }, { -- shunt/quicktype.yue:1539
-          __index = function(self) -- shunt/quicktype.yue:1539
-            return Primitive('string') -- shunt/quicktype.yue:1539
-          end -- shunt/quicktype.yue:1539
-        }), setmetatable({ -- shunt/quicktype.yue:1539
-          (Primitive('thread')), -- shunt/quicktype.yue:1539
-        }, { -- shunt/quicktype.yue:1539
-          __index = function(self) -- shunt/quicktype.yue:1539
-            return Primitive('number') -- shunt/quicktype.yue:1539
-          end -- shunt/quicktype.yue:1539
-        })))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1539)); -- shunt/quicktype.yue:1539
-        return require('shunt.spec')._expect_that([=[(parse '() -> [string]...')]=], (parse('() -> [string]...')), (deep_eq(Function({ }, setmetatable({ }, { -- shunt/quicktype.yue:1540
-          __index = function(self) -- shunt/quicktype.yue:1540
-            return Array(Primitive('string')) -- shunt/quicktype.yue:1540
-          end -- shunt/quicktype.yue:1540
-        })))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1540)) -- shunt/quicktype.yue:1540
-      end) -- shunt/quicktype.yue:1527
-      it('accepts methods', function() -- shunt/quicktype.yue:1542
-        require('shunt.spec')._expect_that([==[(parse '() => <>')]==], (parse('() => <>')), (deep_eq(Method({ }, { }))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1543)); -- shunt/quicktype.yue:1543
-        require('shunt.spec')._expect_that([==[(parse '() => nil')]==], (parse('() => nil')), (deep_eq(Method({ }, { -- shunt/quicktype.yue:1544
-          Primitive('nil') -- shunt/quicktype.yue:1544
-        }))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1544)); -- shunt/quicktype.yue:1544
-        require('shunt.spec')._expect_that([==[(parse '(string) => number')]==], (parse('(string) => number')), (deep_eq(Method({ -- shunt/quicktype.yue:1545
-          Primitive('string') -- shunt/quicktype.yue:1545
-        }, { -- shunt/quicktype.yue:1545
-          Primitive('number') -- shunt/quicktype.yue:1545
-        }))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1545)); -- shunt/quicktype.yue:1545
-        require('shunt.spec')._expect_that([==[(parse '(number, string) => number')]==], (parse('(number, string) => number')), (deep_eq(Method({ -- shunt/quicktype.yue:1546
-          (Primitive('number')), -- shunt/quicktype.yue:1546
-          (Primitive('string')) -- shunt/quicktype.yue:1546
-        }, { -- shunt/quicktype.yue:1546
-          Primitive('number') -- shunt/quicktype.yue:1546
-        }))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1546)); -- shunt/quicktype.yue:1546
-        require('shunt.spec')._expect_that([==[(parse '(string) => (number) => boolean')]==], (parse('(string) => (number) => boolean')), (deep_eq(Method({ -- shunt/quicktype.yue:1547
-          Primitive('string') -- shunt/quicktype.yue:1547
-        }, { -- shunt/quicktype.yue:1547
-          Method({ -- shunt/quicktype.yue:1547
-            Primitive('number') -- shunt/quicktype.yue:1547
-          }, { -- shunt/quicktype.yue:1547
-            Primitive('boolean') -- shunt/quicktype.yue:1547
-          }) -- shunt/quicktype.yue:1547
-        }))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1547)); -- shunt/quicktype.yue:1547
-        require('shunt.spec')._expect_that([==[(parse '() => <string>')]==], (parse('() => <string>')), (deep_eq(Method({ }, { -- shunt/quicktype.yue:1548
-          (Primitive('string')) -- shunt/quicktype.yue:1548
-        }))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1548)); -- shunt/quicktype.yue:1548
-        require('shunt.spec')._expect_that([==[(parse '() => <string,>')]==], (parse('() => <string,>')), (deep_eq(Method({ }, { -- shunt/quicktype.yue:1549
-          Primitive('string') -- shunt/quicktype.yue:1549
-        }))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1549)); -- shunt/quicktype.yue:1549
-        require('shunt.spec')._expect_that([==[(parse '() => <string, boolean>')]==], (parse('() => <string, boolean>')), (deep_eq(Method({ }, { -- shunt/quicktype.yue:1550
-          (Primitive('string')), -- shunt/quicktype.yue:1550
-          (Primitive('boolean')) -- shunt/quicktype.yue:1550
-        }))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1550)); -- shunt/quicktype.yue:1550
-        require('shunt.spec')._expect_that([==[(parse '(string...) => number...')]==], (parse('(string...) => number...')), (deep_eq(Method(setmetatable({ }, { -- shunt/quicktype.yue:1552
-          __index = function(self) -- shunt/quicktype.yue:1552
-            return Primitive('string') -- shunt/quicktype.yue:1552
-          end -- shunt/quicktype.yue:1552
-        }), setmetatable({ }, { -- shunt/quicktype.yue:1552
-          __index = function(self) -- shunt/quicktype.yue:1552
-            return Primitive('number') -- shunt/quicktype.yue:1552
-          end -- shunt/quicktype.yue:1552
-        })))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1552)); -- shunt/quicktype.yue:1552
-        require('shunt.spec')._expect_that([==[(parse '(string...) => <number...>')]==], (parse('(string...) => <number...>')), (deep_eq(Method(setmetatable({ }, { -- shunt/quicktype.yue:1553
-          __index = function(self) -- shunt/quicktype.yue:1553
-            return Primitive('string') -- shunt/quicktype.yue:1553
-          end -- shunt/quicktype.yue:1553
-        }), setmetatable({ }, { -- shunt/quicktype.yue:1553
-          __index = function(self) -- shunt/quicktype.yue:1553
-            return Primitive('number') -- shunt/quicktype.yue:1553
-          end -- shunt/quicktype.yue:1553
-        })))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1553)); -- shunt/quicktype.yue:1553
-        require('shunt.spec')._expect_that([==[(parse '(boolean, string...) => <thread, number...>')]==], (parse('(boolean, string...) => <thread, number...>')), (deep_eq(Method(setmetatable({ -- shunt/quicktype.yue:1554
-          (Primitive('boolean')), -- shunt/quicktype.yue:1554
-        }, { -- shunt/quicktype.yue:1554
-          __index = function(self) -- shunt/quicktype.yue:1554
-            return Primitive('string') -- shunt/quicktype.yue:1554
-          end -- shunt/quicktype.yue:1554
-        }), setmetatable({ -- shunt/quicktype.yue:1554
-          (Primitive('thread')), -- shunt/quicktype.yue:1554
-        }, { -- shunt/quicktype.yue:1554
-          __index = function(self) -- shunt/quicktype.yue:1554
-            return Primitive('number') -- shunt/quicktype.yue:1554
-          end -- shunt/quicktype.yue:1554
-        })))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1554)); -- shunt/quicktype.yue:1554
-        return require('shunt.spec')._expect_that([==[(parse '() => [string]...')]==], (parse('() => [string]...')), (deep_eq(Method({ }, setmetatable({ }, { -- shunt/quicktype.yue:1555
-          __index = function(self) -- shunt/quicktype.yue:1555
-            return Array(Primitive('string')) -- shunt/quicktype.yue:1555
-          end -- shunt/quicktype.yue:1555
-        })))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1555)) -- shunt/quicktype.yue:1555
-      end) -- shunt/quicktype.yue:1542
-      it('accepts conjunctions', function() -- shunt/quicktype.yue:1557
-        return require('shunt.spec')._expect_that([=[(parse '[string]+{number->string}+table+function')]=], (parse('[string]+{number->string}+table+function')), (deep_eq(Conjunction({ -- shunt/quicktype.yue:1558
-          Array(Primitive('string')), -- shunt/quicktype.yue:1558
-          Mapping(nil, (Primitive('number')), Primitive('string')), -- shunt/quicktype.yue:1558
-          Primitive('table'), -- shunt/quicktype.yue:1558
-          Primitive('function') -- shunt/quicktype.yue:1558
-        }))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1558)) -- shunt/quicktype.yue:1562
-      end) -- shunt/quicktype.yue:1557
-      it('accepts disjunctions', function() -- shunt/quicktype.yue:1564
-        require('shunt.spec')._expect_that([=[(parse '[string]|{number->string}|table|function')]=], (parse('[string]|{number->string}|table|function')), (deep_eq(Disjunction({ -- shunt/quicktype.yue:1565
-          Array(Primitive('string')), -- shunt/quicktype.yue:1565
-          Mapping(nil, (Primitive('number')), Primitive('string')), -- shunt/quicktype.yue:1565
-          Primitive('table'), -- shunt/quicktype.yue:1565
-          Primitive('function') -- shunt/quicktype.yue:1565
+  local anything, contains_value, deep_eq, each_value, eq, errors, has_fields, ge, gt, len, match, matches, no_errors = matchers.anything, matchers.contains_value, matchers.deep_eq, matchers.each_value, matchers.eq, matchers.errors, matchers.has_fields, matchers.ge, matchers.gt, matchers.len, matchers.match, matchers.matches, matchers.no_errors -- shunt/quicktype.yue:1399
+  describe('Lexer', function() -- shunt/quicktype.yue:1401
+    local tokens -- shunt/quicktype.yue:1402
+    tokens = function(raw) -- shunt/quicktype.yue:1402
+      assert(raw) -- shunt/quicktype.yue:1403
+      local _with_0 = { } -- shunt/quicktype.yue:1404
+      for token in (Lexer(raw)).tokens do -- shunt/quicktype.yue:1405
+        _with_0[#_with_0 + 1] = token -- shunt/quicktype.yue:1406
+      end -- shunt/quicktype.yue:1406
+      return _with_0 -- shunt/quicktype.yue:1404
+    end -- shunt/quicktype.yue:1402
+    it('emits simple types', function() -- shunt/quicktype.yue:1408
+      local simple_types = { -- shunt/quicktype.yue:1410
+        type(nil), -- shunt/quicktype.yue:1410
+        type(false), -- shunt/quicktype.yue:1411
+        type(0), -- shunt/quicktype.yue:1412
+        type(""), -- shunt/quicktype.yue:1413
+        type(function() end), -- shunt/quicktype.yue:1414
+        type(coroutine.create(function() end)), -- shunt/quicktype.yue:1415
+        'any', -- shunt/quicktype.yue:1416
+        'some' -- shunt/quicktype.yue:1417
+      } -- shunt/quicktype.yue:1409
+      for _index_0 = 1, #simple_types do -- shunt/quicktype.yue:1418
+        local simple_type = simple_types[_index_0] -- shunt/quicktype.yue:1418
+        require('shunt.spec')._expect_that([=[(tokens simple_type)]=], (tokens(simple_type)), (deep_eq({ -- shunt/quicktype.yue:1419
+          Symbol(T_NAME, simple_type) -- shunt/quicktype.yue:1419
+        })), tostring("shunt/quicktype.yue") .. ":" .. tostring(1419)) -- shunt/quicktype.yue:1419
+      end -- shunt/quicktype.yue:1421
+    end) -- shunt/quicktype.yue:1408
+    it('emits prefixed simple type', function() -- shunt/quicktype.yue:1423
+      return require('shunt.spec')._expect_that([=[(tokens 'prefixed.Name')]=], (tokens('prefixed.Name')), (deep_eq({ -- shunt/quicktype.yue:1424
+        Symbol(T_PREFIXED_NAME, 'prefixed.Name') -- shunt/quicktype.yue:1424
+      })), tostring("shunt/quicktype.yue") .. ":" .. tostring(1424)) -- shunt/quicktype.yue:1426
+    end) -- shunt/quicktype.yue:1423
+    it('emits the never type', function() -- shunt/quicktype.yue:1428
+      return require('shunt.spec')._expect_that([=[(tokens '!')]=], (tokens('!')), (deep_eq({ -- shunt/quicktype.yue:1429
+        Symbol(T_BANG) -- shunt/quicktype.yue:1429
+      })), tostring("shunt/quicktype.yue") .. ":" .. tostring(1429)) -- shunt/quicktype.yue:1431
+    end) -- shunt/quicktype.yue:1428
+    it('emits boolean types', function() -- shunt/quicktype.yue:1433
+      return require('shunt.spec')._expect_that([=[(tokens 'true false')]=], (tokens('true false')), (deep_eq({ -- shunt/quicktype.yue:1434
+        Symbol(T_BOOLEAN, true), -- shunt/quicktype.yue:1434
+        Symbol(T_BOOLEAN, false) -- shunt/quicktype.yue:1434
+      })), tostring("shunt/quicktype.yue") .. ":" .. tostring(1434)) -- shunt/quicktype.yue:1436
+    end) -- shunt/quicktype.yue:1433
+    it('emits number types', function() -- shunt/quicktype.yue:1438
+      return require('shunt.spec')._expect_that([=[(tokens '123 456.654 .789 -123 -456.654 -.789')]=], (tokens('123 456.654 .789 -123 -456.654 -.789')), (deep_eq({ -- shunt/quicktype.yue:1439
+        Symbol(T_NUMBER, 123), -- shunt/quicktype.yue:1439
+        Symbol(T_NUMBER, 456.654), -- shunt/quicktype.yue:1439
+        Symbol(T_NUMBER, .789), -- shunt/quicktype.yue:1439
+        Symbol(T_NUMBER, -123), -- shunt/quicktype.yue:1439
+        Symbol(T_NUMBER, -456.654), -- shunt/quicktype.yue:1439
+        Symbol(T_NUMBER, -.789) -- shunt/quicktype.yue:1439
+      })), tostring("shunt/quicktype.yue") .. ":" .. tostring(1439)) -- shunt/quicktype.yue:1446
+    end) -- shunt/quicktype.yue:1438
+    it('emits string types', function() -- shunt/quicktype.yue:1448
+      return require('shunt.spec')._expect_that([=[(tokens '"hello" "world"')]=], (tokens('"hello" "world"')), (deep_eq({ -- shunt/quicktype.yue:1449
+        Symbol(T_STRING, 'hello'), -- shunt/quicktype.yue:1449
+        Symbol(T_STRING, 'world') -- shunt/quicktype.yue:1449
+      })), tostring("shunt/quicktype.yue") .. ":" .. tostring(1449)) -- shunt/quicktype.yue:1452
+    end) -- shunt/quicktype.yue:1448
+    it('emits strucural tokens', function() -- shunt/quicktype.yue:1454
+      return require('shunt.spec')._expect_that([==[(tokens '(),{}[]:->=>...?+|~')]==], (tokens('(),{}[]:->=>...?+|~')), (deep_eq({ -- shunt/quicktype.yue:1455
+        Symbol(T_PAREN_OPEN), -- shunt/quicktype.yue:1455
+        Symbol(T_PAREN_CLOSE), -- shunt/quicktype.yue:1455
+        Symbol(T_COMMA), -- shunt/quicktype.yue:1455
+        Symbol(T_BRACE_OPEN), -- shunt/quicktype.yue:1455
+        Symbol(T_BRACE_CLOSE), -- shunt/quicktype.yue:1455
+        Symbol(T_BRACKET_OPEN), -- shunt/quicktype.yue:1455
+        Symbol(T_BRACKET_CLOSE), -- shunt/quicktype.yue:1455
+        Symbol(T_COLON), -- shunt/quicktype.yue:1455
+        Symbol(T_THIN_ARROW), -- shunt/quicktype.yue:1455
+        Symbol(T_FAT_ARROW), -- shunt/quicktype.yue:1455
+        Symbol(T_DOTDOTDOT), -- shunt/quicktype.yue:1455
+        Symbol(T_QUESTION), -- shunt/quicktype.yue:1455
+        Symbol(T_PLUS), -- shunt/quicktype.yue:1455
+        Symbol(T_PIPE), -- shunt/quicktype.yue:1455
+        Symbol(T_TILDE) -- shunt/quicktype.yue:1455
+      })), tostring("shunt/quicktype.yue") .. ":" .. tostring(1455)) -- shunt/quicktype.yue:1471
+    end) -- shunt/quicktype.yue:1454
+    it('ignores whitespace', function() -- shunt/quicktype.yue:1473
+      return require('shunt.spec')._expect_that([=[(tokens ' (\tstr_ing\r)\n-> str-ing ')]=], (tokens(' (\tstr_ing\r)\n-> str-ing ')), (deep_eq({ -- shunt/quicktype.yue:1474
+        Symbol(T_PAREN_OPEN), -- shunt/quicktype.yue:1474
+        Symbol(T_NAME, "str_ing"), -- shunt/quicktype.yue:1474
+        Symbol(T_PAREN_CLOSE), -- shunt/quicktype.yue:1474
+        Symbol(T_THIN_ARROW), -- shunt/quicktype.yue:1474
+        Symbol(T_NAME, "str-ing") -- shunt/quicktype.yue:1474
+      })), tostring("shunt/quicktype.yue") .. ":" .. tostring(1474)) -- shunt/quicktype.yue:1480
+    end) -- shunt/quicktype.yue:1473
+    it('ignores comments', function() -- shunt/quicktype.yue:1482
+      return require('shunt.spec')._expect_that([=[(tokens '-- hello\n--world!')]=], (tokens('-- hello\n--world!')), (deep_eq({ })), tostring("shunt/quicktype.yue") .. ":" .. tostring(1483)) -- shunt/quicktype.yue:1483
+    end) -- shunt/quicktype.yue:1482
+    it('rejects unexpected characters', function() -- shunt/quicktype.yue:1485
+      return require('shunt.spec')._expect_that([=[(-> tokens '*')]=], (function() -- shunt/quicktype.yue:1486
+        return tokens('*') -- shunt/quicktype.yue:1486
+      end), (errors(matches([[unexpected character '%*']]))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1486)) -- shunt/quicktype.yue:1486
+    end) -- shunt/quicktype.yue:1485
+    return describe(':peek', function() -- shunt/quicktype.yue:1488
+      it('matches :next', function() -- shunt/quicktype.yue:1489
+        local lexer = Lexer('()'); -- shunt/quicktype.yue:1490
+        require('shunt.spec')._assert_that([=[lexer\peek!]=], lexer:peek(), (deep_eq(Symbol(T_PAREN_OPEN))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1491)); -- shunt/quicktype.yue:1491
+        require('shunt.spec')._assert_that([=[lexer\peek!]=], lexer:peek(), (deep_eq(Symbol(T_PAREN_OPEN))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1492)); -- shunt/quicktype.yue:1492
+        require('shunt.spec')._assert_that([=[lexer\next!]=], lexer:next(), (deep_eq(Symbol(T_PAREN_OPEN))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1493)); -- shunt/quicktype.yue:1493
+        require('shunt.spec')._assert_that([=[lexer\peek!]=], lexer:peek(), (deep_eq(Symbol(T_PAREN_CLOSE))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1494)); -- shunt/quicktype.yue:1494
+        require('shunt.spec')._assert_that([=[lexer\peek!]=], lexer:peek(), (deep_eq(Symbol(T_PAREN_CLOSE))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1495)); -- shunt/quicktype.yue:1495
+        return require('shunt.spec')._assert_that([=[lexer\next!]=], lexer:next(), (deep_eq(Symbol(T_PAREN_CLOSE))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1496)) -- shunt/quicktype.yue:1496
+      end) -- shunt/quicktype.yue:1489
+      return it('returns nil at EOF', function() -- shunt/quicktype.yue:1498
+        local lexer = Lexer(''); -- shunt/quicktype.yue:1499
+        require('shunt.spec')._expect_that([=[lexer\peek!]=], lexer:peek(), (eq(nil)), tostring("shunt/quicktype.yue") .. ":" .. tostring(1500)); -- shunt/quicktype.yue:1500
+        return require('shunt.spec')._expect_that([=[lexer\peek!]=], lexer:peek(), (eq(nil)), tostring("shunt/quicktype.yue") .. ":" .. tostring(1501)) -- shunt/quicktype.yue:1501
+      end) -- shunt/quicktype.yue:1501
+    end) -- shunt/quicktype.yue:1501
+  end) -- shunt/quicktype.yue:1401
+  describe('TypeSpecParser', function() -- shunt/quicktype.yue:1503
+    describe('run on simple types', function() -- shunt/quicktype.yue:1504
+      it('accepts primitives', function() -- shunt/quicktype.yue:1505
+        require('shunt.spec')._expect_that([=[(parse 'nil')]=], (parse('nil')), (deep_eq(Primitive(type(nil)))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1506)); -- shunt/quicktype.yue:1506
+        require('shunt.spec')._expect_that([=[(parse 'number')]=], (parse('number')), (deep_eq(Primitive(type(0)))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1507)); -- shunt/quicktype.yue:1507
+        require('shunt.spec')._expect_that([=[(parse 'number')]=], (parse('number')), (deep_eq(Primitive(type(0.0)))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1508)); -- shunt/quicktype.yue:1508
+        require('shunt.spec')._expect_that([=[(parse 'string')]=], (parse('string')), (deep_eq(Primitive(type("")))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1509)); -- shunt/quicktype.yue:1509
+        require('shunt.spec')._expect_that([=[(parse 'table')]=], (parse('table')), (deep_eq(Primitive(type({ })))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1510)); -- shunt/quicktype.yue:1510
+        require('shunt.spec')._expect_that([=[(parse 'function')]=], (parse('function')), (deep_eq(Primitive(type(function() end)))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1511)); -- shunt/quicktype.yue:1511
+        require('shunt.spec')._expect_that([=[(parse 'thread')]=], (parse('thread')), (deep_eq(Primitive(type(coroutine.create(function() end))))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1512)); -- shunt/quicktype.yue:1512
+        require('shunt.spec')._expect_that([=[(parse 'userdata')]=], (parse('userdata')), (deep_eq(Primitive('userdata'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1513)); -- shunt/quicktype.yue:1513
+        require('shunt.spec')._expect_that([=[(parse 'any')]=], (parse('any')), (deep_eq(Any())), tostring("shunt/quicktype.yue") .. ":" .. tostring(1514)); -- shunt/quicktype.yue:1514
+        require('shunt.spec')._expect_that([=[(parse 'some')]=], (parse('some')), (deep_eq(Some())), tostring("shunt/quicktype.yue") .. ":" .. tostring(1515)); -- shunt/quicktype.yue:1515
+        return require('shunt.spec')._expect_that([=[(parse '!')]=], (parse('!')), (deep_eq(Never())), tostring("shunt/quicktype.yue") .. ":" .. tostring(1516)) -- shunt/quicktype.yue:1516
+      end) -- shunt/quicktype.yue:1505
+      it('accepts user types', function() -- shunt/quicktype.yue:1518
+        return require('shunt.spec')._expect_that([=[(parse 'UserType')]=], (parse('UserType')), (deep_eq(UserType('UserType'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1519)) -- shunt/quicktype.yue:1519
+      end) -- shunt/quicktype.yue:1518
+      it('accepts prefixed user types', function() -- shunt/quicktype.yue:1521
+        return require('shunt.spec')._expect_that([=[(parse 'prefixed.UserType')]=], (parse('prefixed.UserType')), (deep_eq(UserType('prefixed.UserType'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1522)) -- shunt/quicktype.yue:1522
+      end) -- shunt/quicktype.yue:1521
+      it('accepts boolean types', function() -- shunt/quicktype.yue:1524
+        require('shunt.spec')._expect_that([=[(parse 'true')]=], (parse('true')), (deep_eq(BooleanType(true))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1525)); -- shunt/quicktype.yue:1525
+        return require('shunt.spec')._expect_that([=[(parse 'false')]=], (parse('false')), (deep_eq(BooleanType(false))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1526)) -- shunt/quicktype.yue:1526
+      end) -- shunt/quicktype.yue:1524
+      it('accepts number types', function() -- shunt/quicktype.yue:1528
+        return require('shunt.spec')._expect_that([=[(parse '123')]=], (parse('123')), (deep_eq(NumberType(123))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1529)) -- shunt/quicktype.yue:1529
+      end) -- shunt/quicktype.yue:1528
+      it('accepts string types', function() -- shunt/quicktype.yue:1531
+        return require('shunt.spec')._expect_that([=[(parse '"hello"')]=], (parse('"hello"')), (deep_eq(StringType('hello'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1532)) -- shunt/quicktype.yue:1532
+      end) -- shunt/quicktype.yue:1531
+      it('rejects unknown primitives', function() -- shunt/quicktype.yue:1534
+        return require('shunt.spec')._expect_that([=[(-> parse 'user')]=], (function() -- shunt/quicktype.yue:1535
+          return parse('user') -- shunt/quicktype.yue:1535
+        end), (errors(matches([[cannot use 'user' as user type name: name must start with an uppercase letter]]))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1535)) -- shunt/quicktype.yue:1535
+      end) -- shunt/quicktype.yue:1534
+      it('rejects malformed prefixed identifiers', function() -- shunt/quicktype.yue:1537
+        require('shunt.spec')._expect_that([=[(-> parse 'foo.')]=], (function() -- shunt/quicktype.yue:1538
+          return parse('foo.') -- shunt/quicktype.yue:1538
+        end), (errors(matches('foo'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1538)); -- shunt/quicktype.yue:1538
+        require('shunt.spec')._expect_that([=[(-> parse '.Bar')]=], (function() -- shunt/quicktype.yue:1539
+          return parse('.Bar') -- shunt/quicktype.yue:1539
+        end), (errors(matches("unexpected character '%.'"))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1539)); -- shunt/quicktype.yue:1539
+        require('shunt.spec')._expect_that([=[(-> parse 'Foo.bar')]=], (function() -- shunt/quicktype.yue:1540
+          return parse('Foo.bar') -- shunt/quicktype.yue:1540
+        end), (errors(matches("cannot use 'Foo' as type%-prefix: must start with a lowercase letter"))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1540)); -- shunt/quicktype.yue:1540
+        require('shunt.spec')._expect_that([=[(-> parse 'foo.bar')]=], (function() -- shunt/quicktype.yue:1541
+          return parse('foo.bar') -- shunt/quicktype.yue:1541
+        end), (errors(matches("cannot use 'bar' as disambiguated type name: must start with an uppercase letter"))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1541)); -- shunt/quicktype.yue:1541
+        return require('shunt.spec')._expect_that([=[(-> parse 'number.Bar')]=], (function() -- shunt/quicktype.yue:1542
+          return parse('number.Bar') -- shunt/quicktype.yue:1542
+        end), (errors(matches("cannot use 'number' as type%-prefix: must not be a primitive"))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1542)) -- shunt/quicktype.yue:1542
+      end) -- shunt/quicktype.yue:1537
+      it('rejects incomplete types', function() -- shunt/quicktype.yue:1544
+        return require('shunt.spec')._expect_that([=[(-> parse '[')]=], (function() -- shunt/quicktype.yue:1545
+          return parse('[') -- shunt/quicktype.yue:1545
+        end), (errors(matches([[unexpected EOF]]))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1545)) -- shunt/quicktype.yue:1545
+      end) -- shunt/quicktype.yue:1544
+      return it('rejects inputs with trailing errors', function() -- shunt/quicktype.yue:1547
+        return require('shunt.spec')._expect_that([=[(-> parse 'string]')]=], (function() -- shunt/quicktype.yue:1548
+          return parse('string]') -- shunt/quicktype.yue:1548
+        end), (errors(matches('type spec has trailing characters'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1548)) -- shunt/quicktype.yue:1548
+      end) -- shunt/quicktype.yue:1548
+    end) -- shunt/quicktype.yue:1504
+    return describe('run on composite types', function() -- shunt/quicktype.yue:1550
+      it('accepts optional', function() -- shunt/quicktype.yue:1551
+        require('shunt.spec')._expect_that([=[(parse '?nil')]=], (parse('?nil')), (deep_eq(Optional(Primitive('nil')))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1552)); -- shunt/quicktype.yue:1552
+        require('shunt.spec')._expect_that([=[(parse '?string')]=], (parse('?string')), (deep_eq(Optional(Primitive('string')))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1553)); -- shunt/quicktype.yue:1553
+        return require('shunt.spec')._expect_that([=[(parse '?() -> nil')]=], (parse('?() -> nil')), (deep_eq(Optional(Function({ }, { -- shunt/quicktype.yue:1554
+          Primitive('nil') -- shunt/quicktype.yue:1554
+        })))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1554)) -- shunt/quicktype.yue:1554
+      end) -- shunt/quicktype.yue:1551
+      it('accepts arrays', function() -- shunt/quicktype.yue:1556
+        require('shunt.spec')._expect_that([=[(parse '[string]')]=], (parse('[string]')), (deep_eq(Array(Primitive('string')))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1557)); -- shunt/quicktype.yue:1557
+        require('shunt.spec')._expect_that([=[(parse '[[string]]')]=], (parse('[[string]]')), (deep_eq(Array(Array(Primitive('string'))))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1558)); -- shunt/quicktype.yue:1558
+        return require('shunt.spec')._expect_that([=[(parse '~[string]')]=], (parse('~[string]')), (deep_eq((Array(Primitive('string'))):table_like(true))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1559)) -- shunt/quicktype.yue:1560
+      end) -- shunt/quicktype.yue:1556
+      it('accepts tuples', function() -- shunt/quicktype.yue:1562
+        require('shunt.spec')._expect_that([=[(parse '()')]=], (parse('()')), (deep_eq(Tuple({ }))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1563)); -- shunt/quicktype.yue:1563
+        require('shunt.spec')._expect_that([=[(parse '(nil,)')]=], (parse('(nil,)')), (deep_eq(Tuple({ -- shunt/quicktype.yue:1564
+          Primitive('nil') -- shunt/quicktype.yue:1564
+        }))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1564)); -- shunt/quicktype.yue:1564
+        require('shunt.spec')._expect_that([=[(parse '(nil, number)')]=], (parse('(nil, number)')), (deep_eq(Tuple({ -- shunt/quicktype.yue:1565
+          (Primitive('nil')), -- shunt/quicktype.yue:1565
+          Primitive('number') -- shunt/quicktype.yue:1565
         }))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1565)); -- shunt/quicktype.yue:1565
-        return require('shunt.spec')._expect_that([=[(parse '{string|number}')]=], (parse('{string|number}')), (deep_eq(Set(nil, Disjunction({ -- shunt/quicktype.yue:1570
-          Primitive('string'), -- shunt/quicktype.yue:1570
-          Primitive('number') -- shunt/quicktype.yue:1570
-        })))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1570)) -- shunt/quicktype.yue:1572
-      end) -- shunt/quicktype.yue:1564
-      return it('gives precedence to conjunctions', function() -- shunt/quicktype.yue:1574
-        require('shunt.spec')._expect_that([=[(parse 'string+number|boolean')]=], (parse('string+number|boolean')), (deep_eq(Disjunction({ -- shunt/quicktype.yue:1575
-          Conjunction({ -- shunt/quicktype.yue:1575
-            Primitive('string'), -- shunt/quicktype.yue:1575
-            Primitive('number') -- shunt/quicktype.yue:1575
-          }), -- shunt/quicktype.yue:1575
-          Primitive('boolean') -- shunt/quicktype.yue:1575
-        }))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1575)); -- shunt/quicktype.yue:1575
-        return require('shunt.spec')._expect_that([=[(parse 'string|number+boolean')]=], (parse('string|number+boolean')), (deep_eq(Disjunction({ -- shunt/quicktype.yue:1580
-          Primitive('string'), -- shunt/quicktype.yue:1580
-          Conjunction({ -- shunt/quicktype.yue:1580
-            Primitive('number'), -- shunt/quicktype.yue:1580
-            Primitive('boolean') -- shunt/quicktype.yue:1580
-          }) -- shunt/quicktype.yue:1580
-        }))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1580)) -- shunt/quicktype.yue:1584
-      end) -- shunt/quicktype.yue:1584
-    end) -- shunt/quicktype.yue:1584
-  end) -- shunt/quicktype.yue:1431
-  describe('T', function() -- shunt/quicktype.yue:1586
-    it('requires two arguments', function() -- shunt/quicktype.yue:1587
-      return require('shunt.spec')._expect_that([=[(-> T!)]=], (function() -- shunt/quicktype.yue:1588
-        return T() -- shunt/quicktype.yue:1588
-      end), (errors(matches('cannot typecheck: no type spec provided'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1588)) -- shunt/quicktype.yue:1588
-    end) -- shunt/quicktype.yue:1587
-    it('returns its second argument', function() -- shunt/quicktype.yue:1590
-      local value = { }; -- shunt/quicktype.yue:1591
-      return require('shunt.spec')._expect_that([=[(T '{}', value)]=], (T('{}', value)), (eq(value)), tostring("shunt/quicktype.yue") .. ":" .. tostring(1592)) -- shunt/quicktype.yue:1592
-    end) -- shunt/quicktype.yue:1590
-    it('checks primitives', function() -- shunt/quicktype.yue:1594
-      require('shunt.spec')._expect_that([=[(-> T 'nil', nil)]=], (function() -- shunt/quicktype.yue:1595
-        return T('nil', nil) -- shunt/quicktype.yue:1595
-      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1595)); -- shunt/quicktype.yue:1595
-      require('shunt.spec')._expect_that([=[(-> T 'number', 123)]=], (function() -- shunt/quicktype.yue:1596
-        return T('number', 123) -- shunt/quicktype.yue:1596
-      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1596)); -- shunt/quicktype.yue:1596
-      require('shunt.spec')._expect_that([=[(-> T 'string', 'some-string')]=], (function() -- shunt/quicktype.yue:1597
-        return T('string', 'some-string') -- shunt/quicktype.yue:1597
-      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1597)); -- shunt/quicktype.yue:1597
-      require('shunt.spec')._expect_that([=[(-> T 'nil', 123)]=], (function() -- shunt/quicktype.yue:1599
-        return T('nil', 123) -- shunt/quicktype.yue:1599
-      end), (errors(matches('incorrect type: expected nil but got number'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1599)); -- shunt/quicktype.yue:1599
-      require('shunt.spec')._expect_that([=[(-> T 'number', nil)]=], (function() -- shunt/quicktype.yue:1600
-        return T('number', nil) -- shunt/quicktype.yue:1600
-      end), (errors(matches('incorrect type: expected number but got nil'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1600)); -- shunt/quicktype.yue:1600
-      return require('shunt.spec')._expect_that([=[(-> T 'string', 123)]=], (function() -- shunt/quicktype.yue:1601
-        return T('string', 123) -- shunt/quicktype.yue:1601
-      end), (errors(matches('incorrect type: expected string but got number'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1601)) -- shunt/quicktype.yue:1601
-    end) -- shunt/quicktype.yue:1594
-    it('checks any', function() -- shunt/quicktype.yue:1603
-      local values = { -- shunt/quicktype.yue:1605
-        123, -- shunt/quicktype.yue:1605
-        'str', -- shunt/quicktype.yue:1606
-        { }, -- shunt/quicktype.yue:1607
-        function() end, -- shunt/quicktype.yue:1608
-        coroutine.create(function() end) -- shunt/quicktype.yue:1609
-      } -- shunt/quicktype.yue:1604
-      for _index_0 = 1, #values do -- shunt/quicktype.yue:1610
-        local value = values[_index_0] -- shunt/quicktype.yue:1610
-        require('shunt.spec')._expect_that([=[(-> T 'any', value)]=], (function() -- shunt/quicktype.yue:1611
-          return T('any', value) -- shunt/quicktype.yue:1611
-        end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1611)) -- shunt/quicktype.yue:1611
-      end -- shunt/quicktype.yue:1611
-      return require('shunt.spec')._expect_that([=[(-> T 'any', nil)]=], (function() -- shunt/quicktype.yue:1612
-        return T('any', nil) -- shunt/quicktype.yue:1612
-      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1612)) -- shunt/quicktype.yue:1612
-    end) -- shunt/quicktype.yue:1603
-    it('checks some', function() -- shunt/quicktype.yue:1614
-      local values = { -- shunt/quicktype.yue:1616
-        123, -- shunt/quicktype.yue:1616
-        'str', -- shunt/quicktype.yue:1617
-        { }, -- shunt/quicktype.yue:1618
-        function() end, -- shunt/quicktype.yue:1619
-        coroutine.create(function() end) -- shunt/quicktype.yue:1620
-      } -- shunt/quicktype.yue:1615
-      for _index_0 = 1, #values do -- shunt/quicktype.yue:1621
-        local value = values[_index_0] -- shunt/quicktype.yue:1621
-        require('shunt.spec')._expect_that([=[(-> T 'some', value)]=], (function() -- shunt/quicktype.yue:1622
-          return T('some', value) -- shunt/quicktype.yue:1622
-        end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1622)) -- shunt/quicktype.yue:1622
-      end -- shunt/quicktype.yue:1622
-      return require('shunt.spec')._expect_that([=[(-> T 'some', nil)]=], (function() -- shunt/quicktype.yue:1623
-        return T('some', nil) -- shunt/quicktype.yue:1623
-      end), (errors(matches("incorrect type: expected some but got nil"))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1623)) -- shunt/quicktype.yue:1623
-    end) -- shunt/quicktype.yue:1614
-    it('rejects never', function() -- shunt/quicktype.yue:1625
-      return require('shunt.spec')._expect_that([=[(-> T '!', 123)]=], (function() -- shunt/quicktype.yue:1626
-        return T('!', 123) -- shunt/quicktype.yue:1626
-      end), (errors(matches('never expected a value here'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1626)) -- shunt/quicktype.yue:1626
-    end) -- shunt/quicktype.yue:1625
-    it('rejects nonexistent types', function() -- shunt/quicktype.yue:1628
-      require('shunt.spec')._expect_that([=[(-> T 'IDoNotExist', 123)]=], (function() -- shunt/quicktype.yue:1629
-        return T('IDoNotExist', 123) -- shunt/quicktype.yue:1629
-      end), (errors(matches('cannot typecheck: type IDoNotExist not defined'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1629)) -- shunt/quicktype.yue:1629
-      declare_type('ChildDoesNotExist', 'IDoNotExist'); -- shunt/quicktype.yue:1631
-      return require('shunt.spec')._expect_that([=[(-> T 'ChildDoesNotExist', 123)]=], (function() -- shunt/quicktype.yue:1632
-        return T('ChildDoesNotExist', 123) -- shunt/quicktype.yue:1632
-      end), (errors(matches('cannot typecheck: type IDoNotExist not defined'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1632)) -- shunt/quicktype.yue:1632
-    end) -- shunt/quicktype.yue:1628
-    it('checks boolean types', function() -- shunt/quicktype.yue:1634
-      require('shunt.spec')._expect_that([=[(-> T 'true', true)]=], (function() -- shunt/quicktype.yue:1635
-        return T('true', true) -- shunt/quicktype.yue:1635
-      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1635)); -- shunt/quicktype.yue:1635
-      require('shunt.spec')._expect_that([=[(-> T 'true', false)]=], (function() -- shunt/quicktype.yue:1636
-        return T('true', false) -- shunt/quicktype.yue:1636
-      end), (errors(matches('incorrect type: expected boolean true but got false'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1636)); -- shunt/quicktype.yue:1636
-      require('shunt.spec')._expect_that([=[(-> T 'true', nil)]=], (function() -- shunt/quicktype.yue:1637
-        return T('true', nil) -- shunt/quicktype.yue:1637
-      end), (errors(matches('incorrect type: expected boolean but got nil'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1637)); -- shunt/quicktype.yue:1637
-      require('shunt.spec')._expect_that([=[(-> T 'false', false)]=], (function() -- shunt/quicktype.yue:1639
-        return T('false', false) -- shunt/quicktype.yue:1639
-      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1639)); -- shunt/quicktype.yue:1639
-      require('shunt.spec')._expect_that([=[(-> T 'false', true)]=], (function() -- shunt/quicktype.yue:1640
-        return T('false', true) -- shunt/quicktype.yue:1640
-      end), (errors(matches('incorrect type: expected boolean false but got true'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1640)); -- shunt/quicktype.yue:1640
-      return require('shunt.spec')._expect_that([=[(-> T 'false', nil)]=], (function() -- shunt/quicktype.yue:1641
-        return T('false', nil) -- shunt/quicktype.yue:1641
-      end), (errors(matches('incorrect type: expected boolean but got nil'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1641)) -- shunt/quicktype.yue:1641
-    end) -- shunt/quicktype.yue:1634
-    it('checks number types', function() -- shunt/quicktype.yue:1643
-      require('shunt.spec')._expect_that([=[(-> T '123', 123)]=], (function() -- shunt/quicktype.yue:1644
-        return T('123', 123) -- shunt/quicktype.yue:1644
-      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1644)); -- shunt/quicktype.yue:1644
-      require('shunt.spec')._expect_that([=[(-> T '123', 0)]=], (function() -- shunt/quicktype.yue:1645
-        return T('123', 0) -- shunt/quicktype.yue:1645
-      end), (errors(matches("incorrect type: expected number 123"))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1645)); -- shunt/quicktype.yue:1645
-      return require('shunt.spec')._expect_that([=[(-> T '123', {})]=], (function() -- shunt/quicktype.yue:1646
-        return T('123', { }) -- shunt/quicktype.yue:1646
-      end), (errors(matches("incorrect type: expected number but got table"))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1646)) -- shunt/quicktype.yue:1646
-    end) -- shunt/quicktype.yue:1643
-    it('checks string types', function() -- shunt/quicktype.yue:1648
-      require('shunt.spec')._expect_that([=[(-> T '"hello"', 'hello')]=], (function() -- shunt/quicktype.yue:1649
-        return T('"hello"', 'hello') -- shunt/quicktype.yue:1649
-      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1649)); -- shunt/quicktype.yue:1649
-      return require('shunt.spec')._expect_that([=[(-> T '"hello"', 'world')]=], (function() -- shunt/quicktype.yue:1650
-        return T('"hello"', 'world') -- shunt/quicktype.yue:1650
-      end), (errors(matches("incorrect type: expected string 'hello'"))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1650)) -- shunt/quicktype.yue:1650
-    end) -- shunt/quicktype.yue:1648
-    it('checks singleton types', function() -- shunt/quicktype.yue:1652
-      local make_singleton -- shunt/quicktype.yue:1653
-      make_singleton = function(name) -- shunt/quicktype.yue:1653
-        return setmetatable({ }, { -- shunt/quicktype.yue:1653
-          __tostring = function(self) -- shunt/quicktype.yue:1653
-            return name -- shunt/quicktype.yue:1653
-          end -- shunt/quicktype.yue:1653
-        }) -- shunt/quicktype.yue:1653
-      end -- shunt/quicktype.yue:1653
-      local SINGLETON = make_singleton('Singleton') -- shunt/quicktype.yue:1654
-      declare_singleton_type(SINGLETON); -- shunt/quicktype.yue:1655
-      require('shunt.spec')._expect_that([=[(-> T 'Singleton', SINGLETON)]=], (function() -- shunt/quicktype.yue:1657
-        return T('Singleton', SINGLETON) -- shunt/quicktype.yue:1657
-      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1657)); -- shunt/quicktype.yue:1657
-      require('shunt.spec')._expect_that([=[(-> T 'Singleton', nil)]=], (function() -- shunt/quicktype.yue:1659
-        return T('Singleton', nil) -- shunt/quicktype.yue:1659
-      end), (errors(matches("incorrect type: expected table Singleton"))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1659)); -- shunt/quicktype.yue:1659
-      require('shunt.spec')._expect_that([=[(-> T 'Singleton', {})]=], (function() -- shunt/quicktype.yue:1660
-        return T('Singleton', { }) -- shunt/quicktype.yue:1660
-      end), (errors(matches("incorrect type: expected table Singleton"))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1660)); -- shunt/quicktype.yue:1660
-      return require('shunt.spec')._expect_that([=[(-> T 'Singleton', make_singleton 'Singleton')]=], (function() -- shunt/quicktype.yue:1661
-        return T('Singleton', make_singleton('Singleton')) -- shunt/quicktype.yue:1661
-      end), (errors(matches("incorrect type: expected table Singleton"))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1661)) -- shunt/quicktype.yue:1661
-    end) -- shunt/quicktype.yue:1652
-    it('checks optionals', function() -- shunt/quicktype.yue:1663
-      require('shunt.spec')._expect_that([=[(-> T '?number', nil)]=], (function() -- shunt/quicktype.yue:1664
-        return T('?number', nil) -- shunt/quicktype.yue:1664
-      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1664)); -- shunt/quicktype.yue:1664
-      require('shunt.spec')._expect_that([=[(-> T '?number', 123)]=], (function() -- shunt/quicktype.yue:1665
-        return T('?number', 123) -- shunt/quicktype.yue:1665
-      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1665)); -- shunt/quicktype.yue:1665
-      require('shunt.spec')._expect_that([=[(-> T '?number', 'str')]=], (function() -- shunt/quicktype.yue:1666
-        return T('?number', 'str') -- shunt/quicktype.yue:1666
-      end), (errors(matches('incorrect type: expected number but got string'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1666)); -- shunt/quicktype.yue:1666
-      return require('shunt.spec')._expect_that([=[(-> T '?(number)', 'str')]=], (function() -- shunt/quicktype.yue:1667
-        return T('?(number)', 'str') -- shunt/quicktype.yue:1667
-      end), (errors(matches('incorrect type: expected table but got string'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1667)) -- shunt/quicktype.yue:1667
-    end) -- shunt/quicktype.yue:1663
-    it('checks arrays', function() -- shunt/quicktype.yue:1669
-      require('shunt.spec')._expect_that([=[(-> T '[number]', {})]=], (function() -- shunt/quicktype.yue:1670
-        return T('[number]', { }) -- shunt/quicktype.yue:1670
-      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1670)); -- shunt/quicktype.yue:1670
-      require('shunt.spec')._expect_that([=[(-> T '[number]', {123, 312})]=], (function() -- shunt/quicktype.yue:1671
-        return T('[number]', { -- shunt/quicktype.yue:1671
-          123, -- shunt/quicktype.yue:1671
-          312 -- shunt/quicktype.yue:1671
-        }) -- shunt/quicktype.yue:1671
-      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1671)); -- shunt/quicktype.yue:1671
-      require('shunt.spec')._expect_that([=[(-> T '[[number]]', {{123}, {312}})]=], (function() -- shunt/quicktype.yue:1672
-        return T('[[number]]', { -- shunt/quicktype.yue:1672
-          { -- shunt/quicktype.yue:1672
-            123 -- shunt/quicktype.yue:1672
-          }, -- shunt/quicktype.yue:1672
-          { -- shunt/quicktype.yue:1672
-            312 -- shunt/quicktype.yue:1672
-          } -- shunt/quicktype.yue:1672
-        }) -- shunt/quicktype.yue:1672
-      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1672)); -- shunt/quicktype.yue:1672
-      require('shunt.spec')._expect_that([=[(-> T '[string]', 123)]=], (function() -- shunt/quicktype.yue:1674
-        return T('[string]', 123) -- shunt/quicktype.yue:1674
-      end), (errors(matches('incorrect type: expected table but got number'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1674)); -- shunt/quicktype.yue:1674
-      require('shunt.spec')._expect_that([=[(-> T '[[number]]', {{123}, {'asdf'}})]=], (function() -- shunt/quicktype.yue:1675
-        return T('[[number]]', { -- shunt/quicktype.yue:1675
-          { -- shunt/quicktype.yue:1675
-            123 -- shunt/quicktype.yue:1675
-          }, -- shunt/quicktype.yue:1675
-          { -- shunt/quicktype.yue:1675
-            'asdf' -- shunt/quicktype.yue:1675
-          } -- shunt/quicktype.yue:1675
-        }) -- shunt/quicktype.yue:1675
-      end), (errors(matches('incorrect type: expected number but got string'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1675)) -- shunt/quicktype.yue:1675
-      local hybrid = { -- shunt/quicktype.yue:1677
-        123, -- shunt/quicktype.yue:1677
-        456, -- shunt/quicktype.yue:1677
-        789, -- shunt/quicktype.yue:1677
-        field = 'a' -- shunt/quicktype.yue:1677
-      } -- shunt/quicktype.yue:1677
-      if #hybrid ~= 3 then -- shunt/quicktype.yue:1678
-        return require('shunt.spec')._expect_that([=[(-> T '[string]', hybrid)]=], (function() -- shunt/quicktype.yue:1679
-          return T('[string]', hybrid) -- shunt/quicktype.yue:1679
-        end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1679)) -- shunt/quicktype.yue:1679
-      else -- shunt/quicktype.yue:1681
-        return require('shunt.spec')._expect_that([=[(-> T '[string]', hybrid)]=], (function() -- shunt/quicktype.yue:1681
-          return T('[string]', hybrid) -- shunt/quicktype.yue:1681
-        end), (errors(matches('incorrect type: expected string but got number'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1681)) -- shunt/quicktype.yue:1681
-      end -- shunt/quicktype.yue:1678
-    end) -- shunt/quicktype.yue:1669
-    it('checks tuples', function() -- shunt/quicktype.yue:1683
-      require('shunt.spec')._expect_that([=[(-> T '()', {})]=], (function() -- shunt/quicktype.yue:1684
-        return T('()', { }) -- shunt/quicktype.yue:1684
-      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1684)); -- shunt/quicktype.yue:1684
-      require('shunt.spec')._expect_that([=[(-> T '(number, boolean, string)', {123, true, 'hello'})]=], (function() -- shunt/quicktype.yue:1685
-        return T('(number, boolean, string)', { -- shunt/quicktype.yue:1685
-          123, -- shunt/quicktype.yue:1685
-          true, -- shunt/quicktype.yue:1685
-          'hello' -- shunt/quicktype.yue:1685
-        }) -- shunt/quicktype.yue:1685
+        require('shunt.spec')._expect_that([=[(parse '((nil, number), string, (User, table))')]=], (parse('((nil, number), string, (User, table))')), (deep_eq(Tuple({ -- shunt/quicktype.yue:1566
+          Tuple({ -- shunt/quicktype.yue:1566
+            (Primitive('nil')), -- shunt/quicktype.yue:1566
+            (Primitive('number')) -- shunt/quicktype.yue:1566
+          }), -- shunt/quicktype.yue:1566
+          Primitive('string'), -- shunt/quicktype.yue:1566
+          Tuple({ -- shunt/quicktype.yue:1566
+            (UserType('User')), -- shunt/quicktype.yue:1566
+            (Primitive('table')) -- shunt/quicktype.yue:1566
+          }) -- shunt/quicktype.yue:1566
+        }))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1566)); -- shunt/quicktype.yue:1566
+        return require('shunt.spec')._expect_that([=[(parse '~()')]=], (parse('~()')), (deep_eq((Tuple({ })):table_like(true))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1572)) -- shunt/quicktype.yue:1573
+      end) -- shunt/quicktype.yue:1562
+      it('accepts sets', function() -- shunt/quicktype.yue:1575
+        require('shunt.spec')._expect_that([=[(parse '{string}')]=], (parse('{string}')), (deep_eq(Set(nil, Primitive('string')))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1576)); -- shunt/quicktype.yue:1576
+        require('shunt.spec')._expect_that([=[(parse '{{string}}')]=], (parse('{{string}}')), (deep_eq(Set(nil, Set(nil, Primitive('string'))))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1577)); -- shunt/quicktype.yue:1577
+        require('shunt.spec')._expect_that([=[(parse '{<>: {}, string}')]=], (parse('{<>: {}, string}')), (deep_eq(Set((Struct(nil, { })), Primitive('string')))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1578)); -- shunt/quicktype.yue:1578
+        return require('shunt.spec')._expect_that([=[(parse '~{string}')]=], (parse('~{string}')), (deep_eq((Set(nil, Primitive('string'))):table_like(true))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1580)) -- shunt/quicktype.yue:1581
+      end) -- shunt/quicktype.yue:1575
+      it('accepts mappings', function() -- shunt/quicktype.yue:1583
+        require('shunt.spec')._expect_that([=[(parse '{boolean -> number}')]=], (parse('{boolean -> number}')), (deep_eq(Mapping(nil, (Primitive('boolean')), Primitive('number')))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1584)); -- shunt/quicktype.yue:1584
+        require('shunt.spec')._expect_that([=[(parse '{{boolean -> number} -> {string -> thread}}')]=], (parse('{{boolean -> number} -> {string -> thread}}')), (deep_eq(Mapping(nil, (Mapping(nil, (Primitive('boolean')), Primitive('number'))), Mapping(nil, (Primitive('string')), Primitive('thread'))))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1585)); -- shunt/quicktype.yue:1585
+        require('shunt.spec')._expect_that([=[(parse '{<>: {}, boolean -> number}')]=], (parse('{<>: {}, boolean -> number}')), (deep_eq(Mapping((Struct(nil, { })), (Primitive('boolean')), Primitive('number')))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1586)); -- shunt/quicktype.yue:1586
+        return require('shunt.spec')._expect_that([=[(parse '~{boolean -> number}')]=], (parse('~{boolean -> number}')), (deep_eq((Mapping(nil, (Primitive('boolean')), Primitive('number'))):table_like(true))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1588)) -- shunt/quicktype.yue:1589
+      end) -- shunt/quicktype.yue:1583
+      it('accepts structs', function() -- shunt/quicktype.yue:1591
+        require('shunt.spec')._expect_that([=[(parse '{}')]=], (parse('{}')), (deep_eq(Struct(nil, { }))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1592)); -- shunt/quicktype.yue:1592
+        require('shunt.spec')._expect_that([=[(parse '{field: boolean}')]=], (parse('{field: boolean}')), (deep_eq(Struct(nil, { -- shunt/quicktype.yue:1593
+          Field('field', Primitive('boolean')) -- shunt/quicktype.yue:1593
+        }))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1593)); -- shunt/quicktype.yue:1593
+        require('shunt.spec')._expect_that([=[(parse '{field: boolean,}')]=], (parse('{field: boolean,}')), (deep_eq(Struct(nil, { -- shunt/quicktype.yue:1595
+          Field('field', Primitive('boolean')) -- shunt/quicktype.yue:1595
+        }))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1595)); -- shunt/quicktype.yue:1595
+        require('shunt.spec')._expect_that([=[(parse '{field1: number, field2: string}')]=], (parse('{field1: number, field2: string}')), (deep_eq(Struct(nil, { -- shunt/quicktype.yue:1597
+          Field('field1', Primitive('number')), -- shunt/quicktype.yue:1597
+          Field('field2', Primitive('string')) -- shunt/quicktype.yue:1597
+        }))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1597)); -- shunt/quicktype.yue:1597
+        require('shunt.spec')._expect_that([=[(parse '{outer1: {inner1: boolean}, outer2: {inner2: boolean}}')]=], (parse('{outer1: {inner1: boolean}, outer2: {inner2: boolean}}')), (deep_eq(Struct(nil, { -- shunt/quicktype.yue:1600
+          Field('outer1', Struct(nil, { -- shunt/quicktype.yue:1600
+            Field('inner1', Primitive('boolean')) -- shunt/quicktype.yue:1600
+          })), -- shunt/quicktype.yue:1600
+          Field('outer2', Struct(nil, { -- shunt/quicktype.yue:1600
+            Field('inner2', Primitive('boolean')) -- shunt/quicktype.yue:1600
+          })) -- shunt/quicktype.yue:1600
+        }))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1600)); -- shunt/quicktype.yue:1600
+        require('shunt.spec')._expect_that([=[(parse '{<>: {}}')]=], (parse('{<>: {}}')), (deep_eq(Struct((Struct(nil, { })), { }))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1605)); -- shunt/quicktype.yue:1605
+        require('shunt.spec')._expect_that([=[(parse '{<>: {},}')]=], (parse('{<>: {},}')), (deep_eq(Struct((Struct(nil, { })), { }))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1606)); -- shunt/quicktype.yue:1606
+        require('shunt.spec')._expect_that([=[(parse '{<>: {<>: {__tostring: function}}}')]=], (parse('{<>: {<>: {__tostring: function}}}')), (deep_eq((function() -- shunt/quicktype.yue:1607
+          return Struct((Struct((Struct(nil, { -- shunt/quicktype.yue:1607
+            Field('__tostring', Primitive('function')) -- shunt/quicktype.yue:1607
+          })), { })), { }) -- shunt/quicktype.yue:1607
+        end)())), tostring("shunt/quicktype.yue") .. ":" .. tostring(1607)); -- shunt/quicktype.yue:1607
+        return require('shunt.spec')._expect_that([=[(parse '~{}')]=], (parse('~{}')), (deep_eq((Struct(nil, { })):table_like(true))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1610)) -- shunt/quicktype.yue:1611
+      end) -- shunt/quicktype.yue:1591
+      it('accepts functions', function() -- shunt/quicktype.yue:1613
+        require('shunt.spec')._expect_that([=[(parse '() -> <>')]=], (parse('() -> <>')), (deep_eq(Function({ }, { }))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1614)); -- shunt/quicktype.yue:1614
+        require('shunt.spec')._expect_that([=[(parse '() -> nil')]=], (parse('() -> nil')), (deep_eq(Function({ }, { -- shunt/quicktype.yue:1615
+          Primitive('nil') -- shunt/quicktype.yue:1615
+        }))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1615)); -- shunt/quicktype.yue:1615
+        require('shunt.spec')._expect_that([=[(parse '(string) -> number')]=], (parse('(string) -> number')), (deep_eq(Function({ -- shunt/quicktype.yue:1616
+          Primitive('string') -- shunt/quicktype.yue:1616
+        }, { -- shunt/quicktype.yue:1616
+          Primitive('number') -- shunt/quicktype.yue:1616
+        }))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1616)); -- shunt/quicktype.yue:1616
+        require('shunt.spec')._expect_that([=[(parse '(number, string) -> number')]=], (parse('(number, string) -> number')), (deep_eq(Function({ -- shunt/quicktype.yue:1617
+          (Primitive('number')), -- shunt/quicktype.yue:1617
+          (Primitive('string')) -- shunt/quicktype.yue:1617
+        }, { -- shunt/quicktype.yue:1617
+          Primitive('number') -- shunt/quicktype.yue:1617
+        }))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1617)); -- shunt/quicktype.yue:1617
+        require('shunt.spec')._expect_that([=[(parse '(string) -> (number) -> boolean')]=], (parse('(string) -> (number) -> boolean')), (deep_eq(Function({ -- shunt/quicktype.yue:1618
+          Primitive('string') -- shunt/quicktype.yue:1618
+        }, { -- shunt/quicktype.yue:1618
+          Function({ -- shunt/quicktype.yue:1618
+            Primitive('number') -- shunt/quicktype.yue:1618
+          }, { -- shunt/quicktype.yue:1618
+            Primitive('boolean') -- shunt/quicktype.yue:1618
+          }) -- shunt/quicktype.yue:1618
+        }))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1618)); -- shunt/quicktype.yue:1618
+        require('shunt.spec')._expect_that([=[(parse '() -> <string>')]=], (parse('() -> <string>')), (deep_eq(Function({ }, { -- shunt/quicktype.yue:1619
+          (Primitive('string')) -- shunt/quicktype.yue:1619
+        }))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1619)); -- shunt/quicktype.yue:1619
+        require('shunt.spec')._expect_that([=[(parse '() -> <string,>')]=], (parse('() -> <string,>')), (deep_eq(Function({ }, { -- shunt/quicktype.yue:1620
+          Primitive('string') -- shunt/quicktype.yue:1620
+        }))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1620)); -- shunt/quicktype.yue:1620
+        require('shunt.spec')._expect_that([=[(parse '() -> <string, boolean>')]=], (parse('() -> <string, boolean>')), (deep_eq(Function({ }, { -- shunt/quicktype.yue:1621
+          (Primitive('string')), -- shunt/quicktype.yue:1621
+          (Primitive('boolean')) -- shunt/quicktype.yue:1621
+        }))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1621)); -- shunt/quicktype.yue:1621
+        require('shunt.spec')._expect_that([=[(parse '(string...) -> number...')]=], (parse('(string...) -> number...')), (deep_eq(Function(setmetatable({ }, { -- shunt/quicktype.yue:1623
+          __index = function(self) -- shunt/quicktype.yue:1623
+            return Primitive('string') -- shunt/quicktype.yue:1623
+          end -- shunt/quicktype.yue:1623
+        }), setmetatable({ }, { -- shunt/quicktype.yue:1623
+          __index = function(self) -- shunt/quicktype.yue:1623
+            return Primitive('number') -- shunt/quicktype.yue:1623
+          end -- shunt/quicktype.yue:1623
+        })))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1623)); -- shunt/quicktype.yue:1623
+        require('shunt.spec')._expect_that([=[(parse '(string...) -> <number...>')]=], (parse('(string...) -> <number...>')), (deep_eq(Function(setmetatable({ }, { -- shunt/quicktype.yue:1624
+          __index = function(self) -- shunt/quicktype.yue:1624
+            return Primitive('string') -- shunt/quicktype.yue:1624
+          end -- shunt/quicktype.yue:1624
+        }), setmetatable({ }, { -- shunt/quicktype.yue:1624
+          __index = function(self) -- shunt/quicktype.yue:1624
+            return Primitive('number') -- shunt/quicktype.yue:1624
+          end -- shunt/quicktype.yue:1624
+        })))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1624)); -- shunt/quicktype.yue:1624
+        require('shunt.spec')._expect_that([=[(parse '(boolean, string...) -> <thread, number...>')]=], (parse('(boolean, string...) -> <thread, number...>')), (deep_eq(Function(setmetatable({ -- shunt/quicktype.yue:1625
+          (Primitive('boolean')), -- shunt/quicktype.yue:1625
+        }, { -- shunt/quicktype.yue:1625
+          __index = function(self) -- shunt/quicktype.yue:1625
+            return Primitive('string') -- shunt/quicktype.yue:1625
+          end -- shunt/quicktype.yue:1625
+        }), setmetatable({ -- shunt/quicktype.yue:1625
+          (Primitive('thread')), -- shunt/quicktype.yue:1625
+        }, { -- shunt/quicktype.yue:1625
+          __index = function(self) -- shunt/quicktype.yue:1625
+            return Primitive('number') -- shunt/quicktype.yue:1625
+          end -- shunt/quicktype.yue:1625
+        })))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1625)); -- shunt/quicktype.yue:1625
+        require('shunt.spec')._expect_that([=[(parse '() -> [string]...')]=], (parse('() -> [string]...')), (deep_eq(Function({ }, setmetatable({ }, { -- shunt/quicktype.yue:1626
+          __index = function(self) -- shunt/quicktype.yue:1626
+            return Array(Primitive('string')) -- shunt/quicktype.yue:1626
+          end -- shunt/quicktype.yue:1626
+        })))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1626)); -- shunt/quicktype.yue:1626
+        return require('shunt.spec')._expect_that([=[(-> parse '~() -> <>')]=], (function() -- shunt/quicktype.yue:1628
+          return parse('~() -> <>') -- shunt/quicktype.yue:1628
+        end), (errors(matches('functions cannot be table%-like'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1628)) -- shunt/quicktype.yue:1628
+      end) -- shunt/quicktype.yue:1613
+      it('accepts methods', function() -- shunt/quicktype.yue:1630
+        require('shunt.spec')._expect_that([==[(parse '() => <>')]==], (parse('() => <>')), (deep_eq(Method({ }, { }))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1631)); -- shunt/quicktype.yue:1631
+        require('shunt.spec')._expect_that([==[(parse '() => nil')]==], (parse('() => nil')), (deep_eq(Method({ }, { -- shunt/quicktype.yue:1632
+          Primitive('nil') -- shunt/quicktype.yue:1632
+        }))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1632)); -- shunt/quicktype.yue:1632
+        require('shunt.spec')._expect_that([==[(parse '(string) => number')]==], (parse('(string) => number')), (deep_eq(Method({ -- shunt/quicktype.yue:1633
+          Primitive('string') -- shunt/quicktype.yue:1633
+        }, { -- shunt/quicktype.yue:1633
+          Primitive('number') -- shunt/quicktype.yue:1633
+        }))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1633)); -- shunt/quicktype.yue:1633
+        require('shunt.spec')._expect_that([==[(parse '(number, string) => number')]==], (parse('(number, string) => number')), (deep_eq(Method({ -- shunt/quicktype.yue:1634
+          (Primitive('number')), -- shunt/quicktype.yue:1634
+          (Primitive('string')) -- shunt/quicktype.yue:1634
+        }, { -- shunt/quicktype.yue:1634
+          Primitive('number') -- shunt/quicktype.yue:1634
+        }))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1634)); -- shunt/quicktype.yue:1634
+        require('shunt.spec')._expect_that([==[(parse '(string) => (number) => boolean')]==], (parse('(string) => (number) => boolean')), (deep_eq(Method({ -- shunt/quicktype.yue:1635
+          Primitive('string') -- shunt/quicktype.yue:1635
+        }, { -- shunt/quicktype.yue:1635
+          Method({ -- shunt/quicktype.yue:1635
+            Primitive('number') -- shunt/quicktype.yue:1635
+          }, { -- shunt/quicktype.yue:1635
+            Primitive('boolean') -- shunt/quicktype.yue:1635
+          }) -- shunt/quicktype.yue:1635
+        }))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1635)); -- shunt/quicktype.yue:1635
+        require('shunt.spec')._expect_that([==[(parse '() => <string>')]==], (parse('() => <string>')), (deep_eq(Method({ }, { -- shunt/quicktype.yue:1636
+          (Primitive('string')) -- shunt/quicktype.yue:1636
+        }))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1636)); -- shunt/quicktype.yue:1636
+        require('shunt.spec')._expect_that([==[(parse '() => <string,>')]==], (parse('() => <string,>')), (deep_eq(Method({ }, { -- shunt/quicktype.yue:1637
+          Primitive('string') -- shunt/quicktype.yue:1637
+        }))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1637)); -- shunt/quicktype.yue:1637
+        require('shunt.spec')._expect_that([==[(parse '() => <string, boolean>')]==], (parse('() => <string, boolean>')), (deep_eq(Method({ }, { -- shunt/quicktype.yue:1638
+          (Primitive('string')), -- shunt/quicktype.yue:1638
+          (Primitive('boolean')) -- shunt/quicktype.yue:1638
+        }))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1638)); -- shunt/quicktype.yue:1638
+        require('shunt.spec')._expect_that([==[(parse '(string...) => number...')]==], (parse('(string...) => number...')), (deep_eq(Method(setmetatable({ }, { -- shunt/quicktype.yue:1640
+          __index = function(self) -- shunt/quicktype.yue:1640
+            return Primitive('string') -- shunt/quicktype.yue:1640
+          end -- shunt/quicktype.yue:1640
+        }), setmetatable({ }, { -- shunt/quicktype.yue:1640
+          __index = function(self) -- shunt/quicktype.yue:1640
+            return Primitive('number') -- shunt/quicktype.yue:1640
+          end -- shunt/quicktype.yue:1640
+        })))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1640)); -- shunt/quicktype.yue:1640
+        require('shunt.spec')._expect_that([==[(parse '(string...) => <number...>')]==], (parse('(string...) => <number...>')), (deep_eq(Method(setmetatable({ }, { -- shunt/quicktype.yue:1641
+          __index = function(self) -- shunt/quicktype.yue:1641
+            return Primitive('string') -- shunt/quicktype.yue:1641
+          end -- shunt/quicktype.yue:1641
+        }), setmetatable({ }, { -- shunt/quicktype.yue:1641
+          __index = function(self) -- shunt/quicktype.yue:1641
+            return Primitive('number') -- shunt/quicktype.yue:1641
+          end -- shunt/quicktype.yue:1641
+        })))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1641)); -- shunt/quicktype.yue:1641
+        require('shunt.spec')._expect_that([==[(parse '(boolean, string...) => <thread, number...>')]==], (parse('(boolean, string...) => <thread, number...>')), (deep_eq(Method(setmetatable({ -- shunt/quicktype.yue:1642
+          (Primitive('boolean')), -- shunt/quicktype.yue:1642
+        }, { -- shunt/quicktype.yue:1642
+          __index = function(self) -- shunt/quicktype.yue:1642
+            return Primitive('string') -- shunt/quicktype.yue:1642
+          end -- shunt/quicktype.yue:1642
+        }), setmetatable({ -- shunt/quicktype.yue:1642
+          (Primitive('thread')), -- shunt/quicktype.yue:1642
+        }, { -- shunt/quicktype.yue:1642
+          __index = function(self) -- shunt/quicktype.yue:1642
+            return Primitive('number') -- shunt/quicktype.yue:1642
+          end -- shunt/quicktype.yue:1642
+        })))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1642)); -- shunt/quicktype.yue:1642
+        require('shunt.spec')._expect_that([==[(parse '() => [string]...')]==], (parse('() => [string]...')), (deep_eq(Method({ }, setmetatable({ }, { -- shunt/quicktype.yue:1643
+          __index = function(self) -- shunt/quicktype.yue:1643
+            return Array(Primitive('string')) -- shunt/quicktype.yue:1643
+          end -- shunt/quicktype.yue:1643
+        })))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1643)); -- shunt/quicktype.yue:1643
+        return require('shunt.spec')._expect_that([==[(-> parse '~() => <>')]==], (function() -- shunt/quicktype.yue:1645
+          return parse('~() => <>') -- shunt/quicktype.yue:1645
+        end), (errors(matches('methods cannot be table%-like'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1645)) -- shunt/quicktype.yue:1645
+      end) -- shunt/quicktype.yue:1630
+      it('accepts conjunctions', function() -- shunt/quicktype.yue:1647
+        return require('shunt.spec')._expect_that([=[(parse '[string]+{number->string}+table+function')]=], (parse('[string]+{number->string}+table+function')), (deep_eq(Conjunction({ -- shunt/quicktype.yue:1648
+          Array(Primitive('string')), -- shunt/quicktype.yue:1648
+          Mapping(nil, (Primitive('number')), Primitive('string')), -- shunt/quicktype.yue:1648
+          Primitive('table'), -- shunt/quicktype.yue:1648
+          Primitive('function') -- shunt/quicktype.yue:1648
+        }))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1648)) -- shunt/quicktype.yue:1652
+      end) -- shunt/quicktype.yue:1647
+      it('accepts disjunctions', function() -- shunt/quicktype.yue:1654
+        require('shunt.spec')._expect_that([=[(parse '[string]|{number->string}|table|function')]=], (parse('[string]|{number->string}|table|function')), (deep_eq(Disjunction({ -- shunt/quicktype.yue:1655
+          Array(Primitive('string')), -- shunt/quicktype.yue:1655
+          Mapping(nil, (Primitive('number')), Primitive('string')), -- shunt/quicktype.yue:1655
+          Primitive('table'), -- shunt/quicktype.yue:1655
+          Primitive('function') -- shunt/quicktype.yue:1655
+        }))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1655)); -- shunt/quicktype.yue:1655
+        return require('shunt.spec')._expect_that([=[(parse '{string|number}')]=], (parse('{string|number}')), (deep_eq(Set(nil, Disjunction({ -- shunt/quicktype.yue:1660
+          Primitive('string'), -- shunt/quicktype.yue:1660
+          Primitive('number') -- shunt/quicktype.yue:1660
+        })))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1660)) -- shunt/quicktype.yue:1662
+      end) -- shunt/quicktype.yue:1654
+      return it('gives precedence to conjunctions', function() -- shunt/quicktype.yue:1664
+        require('shunt.spec')._expect_that([=[(parse 'string+number|boolean')]=], (parse('string+number|boolean')), (deep_eq(Disjunction({ -- shunt/quicktype.yue:1665
+          Conjunction({ -- shunt/quicktype.yue:1665
+            Primitive('string'), -- shunt/quicktype.yue:1665
+            Primitive('number') -- shunt/quicktype.yue:1665
+          }), -- shunt/quicktype.yue:1665
+          Primitive('boolean') -- shunt/quicktype.yue:1665
+        }))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1665)); -- shunt/quicktype.yue:1665
+        return require('shunt.spec')._expect_that([=[(parse 'string|number+boolean')]=], (parse('string|number+boolean')), (deep_eq(Disjunction({ -- shunt/quicktype.yue:1670
+          Primitive('string'), -- shunt/quicktype.yue:1670
+          Conjunction({ -- shunt/quicktype.yue:1670
+            Primitive('number'), -- shunt/quicktype.yue:1670
+            Primitive('boolean') -- shunt/quicktype.yue:1670
+          }) -- shunt/quicktype.yue:1670
+        }))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1670)) -- shunt/quicktype.yue:1674
+      end) -- shunt/quicktype.yue:1674
+    end) -- shunt/quicktype.yue:1674
+  end) -- shunt/quicktype.yue:1503
+  describe('T', function() -- shunt/quicktype.yue:1676
+    it('requires two arguments', function() -- shunt/quicktype.yue:1677
+      return require('shunt.spec')._expect_that([=[(-> T!)]=], (function() -- shunt/quicktype.yue:1678
+        return T() -- shunt/quicktype.yue:1678
+      end), (errors(matches('cannot typecheck: no type spec provided'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1678)) -- shunt/quicktype.yue:1678
+    end) -- shunt/quicktype.yue:1677
+    it('returns its second argument', function() -- shunt/quicktype.yue:1680
+      local value = { }; -- shunt/quicktype.yue:1681
+      return require('shunt.spec')._expect_that([=[(T '{}', value)]=], (T('{}', value)), (eq(value)), tostring("shunt/quicktype.yue") .. ":" .. tostring(1682)) -- shunt/quicktype.yue:1682
+    end) -- shunt/quicktype.yue:1680
+    it('checks primitives', function() -- shunt/quicktype.yue:1684
+      require('shunt.spec')._expect_that([=[(-> T 'nil', nil)]=], (function() -- shunt/quicktype.yue:1685
+        return T('nil', nil) -- shunt/quicktype.yue:1685
       end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1685)); -- shunt/quicktype.yue:1685
-      require('shunt.spec')._expect_that([=[(-> T '(number, boolean, string)', {123, true, 'hello', coroutine.create ->})]=], (function() -- shunt/quicktype.yue:1686
-        return T('(number, boolean, string)', { -- shunt/quicktype.yue:1686
-          123, -- shunt/quicktype.yue:1686
-          true, -- shunt/quicktype.yue:1686
-          'hello', -- shunt/quicktype.yue:1686
-          coroutine.create(function() end) -- shunt/quicktype.yue:1686
-        }) -- shunt/quicktype.yue:1686
+      require('shunt.spec')._expect_that([=[(-> T 'number', 123)]=], (function() -- shunt/quicktype.yue:1686
+        return T('number', 123) -- shunt/quicktype.yue:1686
       end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1686)); -- shunt/quicktype.yue:1686
-      require('shunt.spec')._expect_that([=[(-> T '((number, boolean), (string, thread))', {{123, true}, {'hello', coroutine.create ->}})]=], (function() -- shunt/quicktype.yue:1687
-        return T('((number, boolean), (string, thread))', { -- shunt/quicktype.yue:1687
-          { -- shunt/quicktype.yue:1687
-            123, -- shunt/quicktype.yue:1687
-            true -- shunt/quicktype.yue:1687
-          }, -- shunt/quicktype.yue:1687
-          { -- shunt/quicktype.yue:1687
-            'hello', -- shunt/quicktype.yue:1687
-            coroutine.create(function() end) -- shunt/quicktype.yue:1687
-          } -- shunt/quicktype.yue:1687
-        }) -- shunt/quicktype.yue:1687
+      require('shunt.spec')._expect_that([=[(-> T 'string', 'some-string')]=], (function() -- shunt/quicktype.yue:1687
+        return T('string', 'some-string') -- shunt/quicktype.yue:1687
       end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1687)); -- shunt/quicktype.yue:1687
-      require('shunt.spec')._expect_that([=[(-> T '(number, boolean, string)', nil)]=], (function() -- shunt/quicktype.yue:1689
-        return T('(number, boolean, string)', nil) -- shunt/quicktype.yue:1689
-      end), (errors(matches('incorrect type: expected table but got nil'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1689)); -- shunt/quicktype.yue:1689
-      require('shunt.spec')._expect_that([=[(-> T '(number, boolean, string)', {})]=], (function() -- shunt/quicktype.yue:1690
-        return T('(number, boolean, string)', { }) -- shunt/quicktype.yue:1690
+      require('shunt.spec')._expect_that([=[(-> T 'nil', 123)]=], (function() -- shunt/quicktype.yue:1689
+        return T('nil', 123) -- shunt/quicktype.yue:1689
+      end), (errors(matches('incorrect type: expected nil but got number'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1689)); -- shunt/quicktype.yue:1689
+      require('shunt.spec')._expect_that([=[(-> T 'number', nil)]=], (function() -- shunt/quicktype.yue:1690
+        return T('number', nil) -- shunt/quicktype.yue:1690
       end), (errors(matches('incorrect type: expected number but got nil'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1690)); -- shunt/quicktype.yue:1690
-      require('shunt.spec')._expect_that([=[(-> T '(number, boolean, string)', {123})]=], (function() -- shunt/quicktype.yue:1691
-        return T('(number, boolean, string)', { -- shunt/quicktype.yue:1691
-          123 -- shunt/quicktype.yue:1691
-        }) -- shunt/quicktype.yue:1691
-      end), (errors(matches('incorrect type: expected boolean but got nil'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1691)); -- shunt/quicktype.yue:1691
-      return require('shunt.spec')._expect_that([=[(-> T '(number, boolean, string)', {'interloper'})]=], (function() -- shunt/quicktype.yue:1692
-        return T('(number, boolean, string)', { -- shunt/quicktype.yue:1692
-          'interloper' -- shunt/quicktype.yue:1692
-        }) -- shunt/quicktype.yue:1692
-      end), (errors(matches('incorrect type: expected number but got string'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1692)) -- shunt/quicktype.yue:1692
-    end) -- shunt/quicktype.yue:1683
-    it('checks sets', function() -- shunt/quicktype.yue:1694
-      require('shunt.spec')._expect_that([=[(-> T '{number}', {})]=], (function() -- shunt/quicktype.yue:1695
-        return T('{number}', { }) -- shunt/quicktype.yue:1695
-      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1695)); -- shunt/quicktype.yue:1695
-      require('shunt.spec')._expect_that([=[(-> T '{number}', {[123]: true, [321]: {}})]=], (function() -- shunt/quicktype.yue:1696
-        return T('{number}', { -- shunt/quicktype.yue:1696
-          [123] = true, -- shunt/quicktype.yue:1696
-          [321] = { } -- shunt/quicktype.yue:1696
-        }) -- shunt/quicktype.yue:1696
-      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1696)); -- shunt/quicktype.yue:1696
-      require('shunt.spec')._expect_that([=[(-> T '{{number}}', {[{123}]: true})]=], (function() -- shunt/quicktype.yue:1697
-        return T('{{number}}', { -- shunt/quicktype.yue:1697
-          [{ -- shunt/quicktype.yue:1697
-            123 -- shunt/quicktype.yue:1697
-          }] = true -- shunt/quicktype.yue:1697
-        }) -- shunt/quicktype.yue:1697
-      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1697)); -- shunt/quicktype.yue:1697
-      require('shunt.spec')._expect_that([=[(-> T '{<>: {}, number}', <>: {})]=], (function() -- shunt/quicktype.yue:1698
-        return T('{<>: {}, number}', setmetatable({ }, { })) -- shunt/quicktype.yue:1698
-      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1698)); -- shunt/quicktype.yue:1698
-      require('shunt.spec')._expect_that([=[(-> T '{number}', nil)]=], (function() -- shunt/quicktype.yue:1700
-        return T('{number}', nil) -- shunt/quicktype.yue:1700
-      end), (errors(matches('incorrect type: expected table but got nil'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1700)); -- shunt/quicktype.yue:1700
-      require('shunt.spec')._expect_that([=[(-> T '{number}', {[123]: false})]=], (function() -- shunt/quicktype.yue:1701
-        return T('{number}', { -- shunt/quicktype.yue:1701
-          [123] = false -- shunt/quicktype.yue:1701
-        }) -- shunt/quicktype.yue:1701
-      end), (errors(matches('incorrect type: expected a truthy value but got false'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1701)); -- shunt/quicktype.yue:1701
-      require('shunt.spec')._expect_that([=[(-> T '{{number}}', {[{['asdf']: true}]: true})]=], (function() -- shunt/quicktype.yue:1702
-        return T('{{number}}', { -- shunt/quicktype.yue:1702
-          [{ -- shunt/quicktype.yue:1702
-            ['asdf'] = true -- shunt/quicktype.yue:1702
-          }] = true -- shunt/quicktype.yue:1702
-        }) -- shunt/quicktype.yue:1702
-      end), (errors(matches('incorrect type: expected number but got string'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1702)); -- shunt/quicktype.yue:1702
-      return require('shunt.spec')._expect_that([=[(-> T '{<>: {}, number}', {})]=], (function() -- shunt/quicktype.yue:1703
-        return T('{<>: {}, number}', { }) -- shunt/quicktype.yue:1703
-      end), (errors(matches('incorrect type: expected table but got nil'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1703)) -- shunt/quicktype.yue:1703
-    end) -- shunt/quicktype.yue:1694
-    it('checks mappings', function() -- shunt/quicktype.yue:1705
-      require('shunt.spec')._expect_that([=[(-> T '{string -> number}', {})]=], (function() -- shunt/quicktype.yue:1706
-        return T('{string -> number}', { }) -- shunt/quicktype.yue:1706
-      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1706)); -- shunt/quicktype.yue:1706
-      require('shunt.spec')._expect_that([=[(-> T '{number -> string}', {'hello', [10]: 'world'})]=], (function() -- shunt/quicktype.yue:1707
-        return T('{number -> string}', { -- shunt/quicktype.yue:1707
-          'hello', -- shunt/quicktype.yue:1707
-          [10] = 'world' -- shunt/quicktype.yue:1707
-        }) -- shunt/quicktype.yue:1707
-      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1707)); -- shunt/quicktype.yue:1707
-      require('shunt.spec')._expect_that([=[(-> T '{{boolean -> number} -> {string -> thread}}', {[{[true]: 123}]: {asdf: coroutine.create ->}})]=], (function() -- shunt/quicktype.yue:1708
-        return T('{{boolean -> number} -> {string -> thread}}', { -- shunt/quicktype.yue:1708
-          [{ -- shunt/quicktype.yue:1708
-            [true] = 123 -- shunt/quicktype.yue:1708
-          }] = { -- shunt/quicktype.yue:1708
-            asdf = coroutine.create(function() end) -- shunt/quicktype.yue:1708
-          } -- shunt/quicktype.yue:1708
-        }) -- shunt/quicktype.yue:1708
-      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1708)); -- shunt/quicktype.yue:1708
-      require('shunt.spec')._expect_that([=[(-> T '{<>: {}, string -> number}', <>: {})]=], (function() -- shunt/quicktype.yue:1709
-        return T('{<>: {}, string -> number}', setmetatable({ }, { })) -- shunt/quicktype.yue:1709
-      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1709)); -- shunt/quicktype.yue:1709
-      require('shunt.spec')._expect_that([=[(-> T '{number -> string}', nil)]=], (function() -- shunt/quicktype.yue:1711
-        return T('{number -> string}', nil) -- shunt/quicktype.yue:1711
-      end), (errors(matches('incorrect type: expected table but got nil'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1711)); -- shunt/quicktype.yue:1711
-      require('shunt.spec')._expect_that([=[(-> T '{number -> string}', {123})]=], (function() -- shunt/quicktype.yue:1712
-        return T('{number -> string}', { -- shunt/quicktype.yue:1712
-          123 -- shunt/quicktype.yue:1712
-        }) -- shunt/quicktype.yue:1712
-      end), (errors(matches('incorrect type: expected string but got number'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1712)); -- shunt/quicktype.yue:1712
-      require('shunt.spec')._expect_that([=[(-> T '{number -> string}', {'hello', 'world', 'foo', 'bar', 'baz', 123})]=], (function() -- shunt/quicktype.yue:1713
-        return T('{number -> string}', { -- shunt/quicktype.yue:1713
-          'hello', -- shunt/quicktype.yue:1713
-          'world', -- shunt/quicktype.yue:1713
-          'foo', -- shunt/quicktype.yue:1713
-          'bar', -- shunt/quicktype.yue:1713
-          'baz', -- shunt/quicktype.yue:1713
-          123 -- shunt/quicktype.yue:1713
-        }) -- shunt/quicktype.yue:1713
-      end), (errors(matches('incorrect type: expected string but got number'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1713)); -- shunt/quicktype.yue:1713
-      return require('shunt.spec')._expect_that([=[(-> T '{<>: {}, string -> number}', {})]=], (function() -- shunt/quicktype.yue:1714
-        return T('{<>: {}, string -> number}', { }) -- shunt/quicktype.yue:1714
-      end), (errors(matches('incorrect type: expected table but got nil'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1714)) -- shunt/quicktype.yue:1714
-    end) -- shunt/quicktype.yue:1705
-    it('checks structs', function() -- shunt/quicktype.yue:1716
-      require('shunt.spec')._expect_that([=[(-> T '{}', {})]=], (function() -- shunt/quicktype.yue:1717
-        return T('{}', { }) -- shunt/quicktype.yue:1717
-      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1717)); -- shunt/quicktype.yue:1717
-      require('shunt.spec')._expect_that([=[(-> T '{}', {123})]=], (function() -- shunt/quicktype.yue:1718
-        return T('{}', { -- shunt/quicktype.yue:1718
-          123 -- shunt/quicktype.yue:1718
-        }) -- shunt/quicktype.yue:1718
-      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1718)); -- shunt/quicktype.yue:1718
-      require('shunt.spec')._expect_that([=[(-> T '{}', {hello: 123})]=], (function() -- shunt/quicktype.yue:1719
-        return T('{}', { -- shunt/quicktype.yue:1719
-          hello = 123 -- shunt/quicktype.yue:1719
-        }) -- shunt/quicktype.yue:1719
-      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1719)); -- shunt/quicktype.yue:1719
-      require('shunt.spec')._expect_that([=[(-> T '{hello: string}', {hello: 'hello'})]=], (function() -- shunt/quicktype.yue:1720
-        return T('{hello: string}', { -- shunt/quicktype.yue:1720
-          hello = 'hello' -- shunt/quicktype.yue:1720
-        }) -- shunt/quicktype.yue:1720
-      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1720)); -- shunt/quicktype.yue:1720
-      require('shunt.spec')._expect_that([=[(-> T '{hello: {world: string}}', {hello: world: 'world'})]=], (function() -- shunt/quicktype.yue:1721
-        return T('{hello: {world: string}}', { -- shunt/quicktype.yue:1721
-          hello = { -- shunt/quicktype.yue:1721
-            world = 'world' -- shunt/quicktype.yue:1721
-          } -- shunt/quicktype.yue:1721
-        }) -- shunt/quicktype.yue:1721
-      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1721)); -- shunt/quicktype.yue:1721
-      require('shunt.spec')._expect_that([=[(-> T '{hello: {world: string}, foo: boolean}', hello: {world:'asdf'}, foo: true)]=], (function() -- shunt/quicktype.yue:1722
-        return T('{hello: {world: string}, foo: boolean}', { -- shunt/quicktype.yue:1722
-          hello = { -- shunt/quicktype.yue:1722
-            world = 'asdf' -- shunt/quicktype.yue:1722
-          }, -- shunt/quicktype.yue:1722
-          foo = true -- shunt/quicktype.yue:1722
-        }) -- shunt/quicktype.yue:1722
-      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1722)); -- shunt/quicktype.yue:1722
-      require('shunt.spec')._expect_that([=[(-> T '{<>: {}}', <>: {})]=], (function() -- shunt/quicktype.yue:1723
-        return T('{<>: {}}', setmetatable({ }, { })) -- shunt/quicktype.yue:1723
-      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1723)); -- shunt/quicktype.yue:1723
-      require('shunt.spec')._expect_that([=[(-> T '{}', 132)]=], (function() -- shunt/quicktype.yue:1725
-        return T('{}', 132) -- shunt/quicktype.yue:1725
-      end), (errors(matches('incorrect type: expected table but got number'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1725)); -- shunt/quicktype.yue:1725
-      require('shunt.spec')._expect_that([=[(-> T '{hello: string}', {})]=], (function() -- shunt/quicktype.yue:1726
-        return T('{hello: string}', { }) -- shunt/quicktype.yue:1726
-      end), (errors(matches('incorrect type: expected string but got nil'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1726)); -- shunt/quicktype.yue:1726
-      require('shunt.spec')._expect_that([=[(-> T '{hello: string}', hello: 123)]=], (function() -- shunt/quicktype.yue:1727
-        return T('{hello: string}', { -- shunt/quicktype.yue:1727
-          hello = 123 -- shunt/quicktype.yue:1727
-        }) -- shunt/quicktype.yue:1727
-      end), (errors(matches('incorrect type: expected string but got number'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1727)); -- shunt/quicktype.yue:1727
-      require('shunt.spec')._expect_that([=[(-> T '{hello: {world: string}}', hello: 123)]=], (function() -- shunt/quicktype.yue:1728
-        return T('{hello: {world: string}}', { -- shunt/quicktype.yue:1728
-          hello = 123 -- shunt/quicktype.yue:1728
-        }) -- shunt/quicktype.yue:1728
-      end), (errors(matches('incorrect type: expected table but got number'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1728)); -- shunt/quicktype.yue:1728
-      require('shunt.spec')._expect_that([=[(-> T '{hello: {world: string}}', hello: {})]=], (function() -- shunt/quicktype.yue:1729
-        return T('{hello: {world: string}}', { -- shunt/quicktype.yue:1729
-          hello = { } -- shunt/quicktype.yue:1729
-        }) -- shunt/quicktype.yue:1729
-      end), (errors(matches('incorrect type: expected string but got nil'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1729)); -- shunt/quicktype.yue:1729
-      require('shunt.spec')._expect_that([=[(-> T '{hello: {world: string}}', hello: world: 123)]=], (function() -- shunt/quicktype.yue:1730
-        return T('{hello: {world: string}}', { -- shunt/quicktype.yue:1730
-          hello = { -- shunt/quicktype.yue:1730
-            world = 123 -- shunt/quicktype.yue:1730
-          } -- shunt/quicktype.yue:1730
-        }) -- shunt/quicktype.yue:1730
-      end), (errors(matches('incorrect type: expected string but got number'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1730)); -- shunt/quicktype.yue:1730
-      require('shunt.spec')._expect_that([=[(-> T '{hello: {world: string}, foo: boolean}', hello: {world:'asdf'}, foo: 123)]=], (function() -- shunt/quicktype.yue:1731
-        return T('{hello: {world: string}, foo: boolean}', { -- shunt/quicktype.yue:1731
-          hello = { -- shunt/quicktype.yue:1731
-            world = 'asdf' -- shunt/quicktype.yue:1731
-          }, -- shunt/quicktype.yue:1731
-          foo = 123 -- shunt/quicktype.yue:1731
-        }) -- shunt/quicktype.yue:1731
-      end), (errors(matches('incorrect type: expected boolean but got number'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1731)); -- shunt/quicktype.yue:1731
-      return require('shunt.spec')._expect_that([=[(-> T '{<>: {}}', {})]=], (function() -- shunt/quicktype.yue:1732
-        return T('{<>: {}}', { }) -- shunt/quicktype.yue:1732
-      end), (errors(matches('incorrect type: expected table but got nil'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1732)) -- shunt/quicktype.yue:1732
-    end) -- shunt/quicktype.yue:1716
-    it('checks functions', function() -- shunt/quicktype.yue:1734
-      require('shunt.spec')._expect_that([=[(-> T '() -> nil', ->)]=], (function() -- shunt/quicktype.yue:1735
-        return T('() -> nil', function() end) -- shunt/quicktype.yue:1735
-      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1735)); -- shunt/quicktype.yue:1735
-      require('shunt.spec')._expect_that([=[(-> T '() -> nil', -> nil)]=], (function() -- shunt/quicktype.yue:1736
-        return T('() -> nil', function() -- shunt/quicktype.yue:1736
-          return nil -- shunt/quicktype.yue:1736
-        end) -- shunt/quicktype.yue:1736
-      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1736)); -- shunt/quicktype.yue:1736
-      return require('shunt.spec')._expect_that([=[(-> T '() -> nil', {})]=], (function() -- shunt/quicktype.yue:1737
-        return T('() -> nil', { }) -- shunt/quicktype.yue:1737
-      end), (errors(matches('incorrect type: expected function but got table'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1737)) -- shunt/quicktype.yue:1737
-    end) -- shunt/quicktype.yue:1734
-    it('checks conjunctions', function() -- shunt/quicktype.yue:1739
-      require('shunt.spec')._expect_that([=[(-> T '[string]+{number}', {'a', 'b', 'c'})]=], (function() -- shunt/quicktype.yue:1740
-        return T('[string]+{number}', { -- shunt/quicktype.yue:1740
-          'a', -- shunt/quicktype.yue:1740
-          'b', -- shunt/quicktype.yue:1740
-          'c' -- shunt/quicktype.yue:1740
-        }) -- shunt/quicktype.yue:1740
-      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1740)); -- shunt/quicktype.yue:1740
-      require('shunt.spec')._expect_that([=[(-> T 'string+number', 123)]=], (function() -- shunt/quicktype.yue:1742
-        return T('string+number', 123) -- shunt/quicktype.yue:1742
-      end), (errors(matches('incorrect type: expected string but got number'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1742)); -- shunt/quicktype.yue:1742
-      return require('shunt.spec')._expect_that([=[(-> T 'string+number', 'hello')]=], (function() -- shunt/quicktype.yue:1743
-        return T('string+number', 'hello') -- shunt/quicktype.yue:1743
-      end), (errors(matches('incorrect type: expected number but got string'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1743)) -- shunt/quicktype.yue:1743
-    end) -- shunt/quicktype.yue:1739
-    it('checks disjunctions', function() -- shunt/quicktype.yue:1745
-      require('shunt.spec')._expect_that([=[(-> T 'string|number', 'hello')]=], (function() -- shunt/quicktype.yue:1746
-        return T('string|number', 'hello') -- shunt/quicktype.yue:1746
-      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1746)); -- shunt/quicktype.yue:1746
-      require('shunt.spec')._expect_that([=[(-> T 'string|number', 123)]=], (function() -- shunt/quicktype.yue:1747
-        return T('string|number', 123) -- shunt/quicktype.yue:1747
+      return require('shunt.spec')._expect_that([=[(-> T 'string', 123)]=], (function() -- shunt/quicktype.yue:1691
+        return T('string', 123) -- shunt/quicktype.yue:1691
+      end), (errors(matches('incorrect type: expected string but got number'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1691)) -- shunt/quicktype.yue:1691
+    end) -- shunt/quicktype.yue:1684
+    it('checks any', function() -- shunt/quicktype.yue:1693
+      local values = { -- shunt/quicktype.yue:1695
+        123, -- shunt/quicktype.yue:1695
+        'str', -- shunt/quicktype.yue:1696
+        { }, -- shunt/quicktype.yue:1697
+        function() end, -- shunt/quicktype.yue:1698
+        coroutine.create(function() end) -- shunt/quicktype.yue:1699
+      } -- shunt/quicktype.yue:1694
+      for _index_0 = 1, #values do -- shunt/quicktype.yue:1700
+        local value = values[_index_0] -- shunt/quicktype.yue:1700
+        require('shunt.spec')._expect_that([=[(-> T 'any', value)]=], (function() -- shunt/quicktype.yue:1701
+          return T('any', value) -- shunt/quicktype.yue:1701
+        end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1701)) -- shunt/quicktype.yue:1701
+      end -- shunt/quicktype.yue:1701
+      return require('shunt.spec')._expect_that([=[(-> T 'any', nil)]=], (function() -- shunt/quicktype.yue:1702
+        return T('any', nil) -- shunt/quicktype.yue:1702
+      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1702)) -- shunt/quicktype.yue:1702
+    end) -- shunt/quicktype.yue:1693
+    it('checks some', function() -- shunt/quicktype.yue:1704
+      local values = { -- shunt/quicktype.yue:1706
+        123, -- shunt/quicktype.yue:1706
+        'str', -- shunt/quicktype.yue:1707
+        { }, -- shunt/quicktype.yue:1708
+        function() end, -- shunt/quicktype.yue:1709
+        coroutine.create(function() end) -- shunt/quicktype.yue:1710
+      } -- shunt/quicktype.yue:1705
+      for _index_0 = 1, #values do -- shunt/quicktype.yue:1711
+        local value = values[_index_0] -- shunt/quicktype.yue:1711
+        require('shunt.spec')._expect_that([=[(-> T 'some', value)]=], (function() -- shunt/quicktype.yue:1712
+          return T('some', value) -- shunt/quicktype.yue:1712
+        end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1712)) -- shunt/quicktype.yue:1712
+      end -- shunt/quicktype.yue:1712
+      return require('shunt.spec')._expect_that([=[(-> T 'some', nil)]=], (function() -- shunt/quicktype.yue:1713
+        return T('some', nil) -- shunt/quicktype.yue:1713
+      end), (errors(matches("incorrect type: expected some but got nil"))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1713)) -- shunt/quicktype.yue:1713
+    end) -- shunt/quicktype.yue:1704
+    it('rejects never', function() -- shunt/quicktype.yue:1715
+      return require('shunt.spec')._expect_that([=[(-> T '!', 123)]=], (function() -- shunt/quicktype.yue:1716
+        return T('!', 123) -- shunt/quicktype.yue:1716
+      end), (errors(matches('never expected a value here'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1716)) -- shunt/quicktype.yue:1716
+    end) -- shunt/quicktype.yue:1715
+    it('rejects nonexistent types', function() -- shunt/quicktype.yue:1718
+      require('shunt.spec')._expect_that([=[(-> T 'IDoNotExist', 123)]=], (function() -- shunt/quicktype.yue:1719
+        return T('IDoNotExist', 123) -- shunt/quicktype.yue:1719
+      end), (errors(matches('cannot typecheck: type IDoNotExist not defined'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1719)) -- shunt/quicktype.yue:1719
+      declare_type('ChildDoesNotExist', 'IDoNotExist'); -- shunt/quicktype.yue:1721
+      return require('shunt.spec')._expect_that([=[(-> T 'ChildDoesNotExist', 123)]=], (function() -- shunt/quicktype.yue:1722
+        return T('ChildDoesNotExist', 123) -- shunt/quicktype.yue:1722
+      end), (errors(matches('cannot typecheck: type IDoNotExist not defined'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1722)) -- shunt/quicktype.yue:1722
+    end) -- shunt/quicktype.yue:1718
+    it('checks boolean types', function() -- shunt/quicktype.yue:1724
+      require('shunt.spec')._expect_that([=[(-> T 'true', true)]=], (function() -- shunt/quicktype.yue:1725
+        return T('true', true) -- shunt/quicktype.yue:1725
+      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1725)); -- shunt/quicktype.yue:1725
+      require('shunt.spec')._expect_that([=[(-> T 'true', false)]=], (function() -- shunt/quicktype.yue:1726
+        return T('true', false) -- shunt/quicktype.yue:1726
+      end), (errors(matches('incorrect type: expected boolean true but got false'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1726)); -- shunt/quicktype.yue:1726
+      require('shunt.spec')._expect_that([=[(-> T 'true', nil)]=], (function() -- shunt/quicktype.yue:1727
+        return T('true', nil) -- shunt/quicktype.yue:1727
+      end), (errors(matches('incorrect type: expected boolean but got nil'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1727)); -- shunt/quicktype.yue:1727
+      require('shunt.spec')._expect_that([=[(-> T 'false', false)]=], (function() -- shunt/quicktype.yue:1729
+        return T('false', false) -- shunt/quicktype.yue:1729
+      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1729)); -- shunt/quicktype.yue:1729
+      require('shunt.spec')._expect_that([=[(-> T 'false', true)]=], (function() -- shunt/quicktype.yue:1730
+        return T('false', true) -- shunt/quicktype.yue:1730
+      end), (errors(matches('incorrect type: expected boolean false but got true'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1730)); -- shunt/quicktype.yue:1730
+      return require('shunt.spec')._expect_that([=[(-> T 'false', nil)]=], (function() -- shunt/quicktype.yue:1731
+        return T('false', nil) -- shunt/quicktype.yue:1731
+      end), (errors(matches('incorrect type: expected boolean but got nil'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1731)) -- shunt/quicktype.yue:1731
+    end) -- shunt/quicktype.yue:1724
+    it('checks number types', function() -- shunt/quicktype.yue:1733
+      require('shunt.spec')._expect_that([=[(-> T '123', 123)]=], (function() -- shunt/quicktype.yue:1734
+        return T('123', 123) -- shunt/quicktype.yue:1734
+      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1734)); -- shunt/quicktype.yue:1734
+      require('shunt.spec')._expect_that([=[(-> T '123', 0)]=], (function() -- shunt/quicktype.yue:1735
+        return T('123', 0) -- shunt/quicktype.yue:1735
+      end), (errors(matches("incorrect type: expected number 123"))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1735)); -- shunt/quicktype.yue:1735
+      return require('shunt.spec')._expect_that([=[(-> T '123', {})]=], (function() -- shunt/quicktype.yue:1736
+        return T('123', { }) -- shunt/quicktype.yue:1736
+      end), (errors(matches("incorrect type: expected number but got table"))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1736)) -- shunt/quicktype.yue:1736
+    end) -- shunt/quicktype.yue:1733
+    it('checks string types', function() -- shunt/quicktype.yue:1738
+      require('shunt.spec')._expect_that([=[(-> T '"hello"', 'hello')]=], (function() -- shunt/quicktype.yue:1739
+        return T('"hello"', 'hello') -- shunt/quicktype.yue:1739
+      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1739)); -- shunt/quicktype.yue:1739
+      return require('shunt.spec')._expect_that([=[(-> T '"hello"', 'world')]=], (function() -- shunt/quicktype.yue:1740
+        return T('"hello"', 'world') -- shunt/quicktype.yue:1740
+      end), (errors(matches("incorrect type: expected string 'hello'"))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1740)) -- shunt/quicktype.yue:1740
+    end) -- shunt/quicktype.yue:1738
+    it('checks singleton types', function() -- shunt/quicktype.yue:1742
+      local make_singleton -- shunt/quicktype.yue:1743
+      make_singleton = function(name) -- shunt/quicktype.yue:1743
+        return setmetatable({ }, { -- shunt/quicktype.yue:1743
+          __tostring = function(self) -- shunt/quicktype.yue:1743
+            return name -- shunt/quicktype.yue:1743
+          end -- shunt/quicktype.yue:1743
+        }) -- shunt/quicktype.yue:1743
+      end -- shunt/quicktype.yue:1743
+      local SINGLETON = make_singleton('Singleton') -- shunt/quicktype.yue:1744
+      declare_singleton_type(SINGLETON); -- shunt/quicktype.yue:1745
+      require('shunt.spec')._expect_that([=[(-> T 'Singleton', SINGLETON)]=], (function() -- shunt/quicktype.yue:1747
+        return T('Singleton', SINGLETON) -- shunt/quicktype.yue:1747
       end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1747)); -- shunt/quicktype.yue:1747
-      return require('shunt.spec')._expect_that([=[(-> T 'string|number', true)]=], (function() -- shunt/quicktype.yue:1748
-        return T('string|number', true) -- shunt/quicktype.yue:1748
-      end), (errors(matches('incorrect type: expected string|number but got boolean'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1748)) -- shunt/quicktype.yue:1748
-    end) -- shunt/quicktype.yue:1745
-    it('checks nested inline disjunctions', function() -- shunt/quicktype.yue:1750
-      require('shunt.spec')._expect_that([=[(-> T 'number|{string|number}|string', 'hello')]=], (function() -- shunt/quicktype.yue:1751
-        return T('number|{string|number}|string', 'hello') -- shunt/quicktype.yue:1751
-      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1751)); -- shunt/quicktype.yue:1751
-      require('shunt.spec')._expect_that([=[(-> T 'number|{string|number}|string', {hello: true})]=], (function() -- shunt/quicktype.yue:1752
-        return T('number|{string|number}|string', { -- shunt/quicktype.yue:1752
-          hello = true -- shunt/quicktype.yue:1752
-        }) -- shunt/quicktype.yue:1752
-      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1752)); -- shunt/quicktype.yue:1752
-      require('shunt.spec')._expect_that([=[(-> T 'number|{string|number}|string', {[1]: true})]=], (function() -- shunt/quicktype.yue:1753
-        return T('number|{string|number}|string', { -- shunt/quicktype.yue:1753
-          [1] = true -- shunt/quicktype.yue:1753
-        }) -- shunt/quicktype.yue:1753
-      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1753)); -- shunt/quicktype.yue:1753
-      return require('shunt.spec')._expect_that([=[(-> T 'number|{string|number}|string', ->)]=], (function() -- shunt/quicktype.yue:1754
-        return T('number|{string|number}|string', function() end) -- shunt/quicktype.yue:1754
-      end), (errors(matches('incorrect type: expected number|{string|number}|string but got function'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1754)) -- shunt/quicktype.yue:1754
-    end) -- shunt/quicktype.yue:1750
-    return it('checks nested recursive disjunctions', function() -- shunt/quicktype.yue:1756
-      declare_type('InnerDisjunction', 'string|number'); -- shunt/quicktype.yue:1757
-      require('shunt.spec')._expect_that([=[(-> T 'boolean|InnerDisjunction|function', true)]=], (function() -- shunt/quicktype.yue:1758
-        return T('boolean|InnerDisjunction|function', true) -- shunt/quicktype.yue:1758
-      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1758)); -- shunt/quicktype.yue:1758
-      require('shunt.spec')._expect_that([=[(-> T 'boolean|InnerDisjunction|function', 'hello')]=], (function() -- shunt/quicktype.yue:1759
-        return T('boolean|InnerDisjunction|function', 'hello') -- shunt/quicktype.yue:1759
-      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1759)); -- shunt/quicktype.yue:1759
-      require('shunt.spec')._expect_that([=[(-> T 'boolean|InnerDisjunction|function', 123)]=], (function() -- shunt/quicktype.yue:1760
-        return T('boolean|InnerDisjunction|function', 123) -- shunt/quicktype.yue:1760
+      require('shunt.spec')._expect_that([=[(-> T 'Singleton', nil)]=], (function() -- shunt/quicktype.yue:1749
+        return T('Singleton', nil) -- shunt/quicktype.yue:1749
+      end), (errors(matches("incorrect type: expected table Singleton"))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1749)); -- shunt/quicktype.yue:1749
+      require('shunt.spec')._expect_that([=[(-> T 'Singleton', {})]=], (function() -- shunt/quicktype.yue:1750
+        return T('Singleton', { }) -- shunt/quicktype.yue:1750
+      end), (errors(matches("incorrect type: expected table Singleton"))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1750)); -- shunt/quicktype.yue:1750
+      return require('shunt.spec')._expect_that([=[(-> T 'Singleton', make_singleton 'Singleton')]=], (function() -- shunt/quicktype.yue:1751
+        return T('Singleton', make_singleton('Singleton')) -- shunt/quicktype.yue:1751
+      end), (errors(matches("incorrect type: expected table Singleton"))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1751)) -- shunt/quicktype.yue:1751
+    end) -- shunt/quicktype.yue:1742
+    it('checks optionals', function() -- shunt/quicktype.yue:1753
+      require('shunt.spec')._expect_that([=[(-> T '?number', nil)]=], (function() -- shunt/quicktype.yue:1754
+        return T('?number', nil) -- shunt/quicktype.yue:1754
+      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1754)); -- shunt/quicktype.yue:1754
+      require('shunt.spec')._expect_that([=[(-> T '?number', 123)]=], (function() -- shunt/quicktype.yue:1755
+        return T('?number', 123) -- shunt/quicktype.yue:1755
+      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1755)); -- shunt/quicktype.yue:1755
+      require('shunt.spec')._expect_that([=[(-> T '?number', 'str')]=], (function() -- shunt/quicktype.yue:1756
+        return T('?number', 'str') -- shunt/quicktype.yue:1756
+      end), (errors(matches('incorrect type: expected number but got string'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1756)); -- shunt/quicktype.yue:1756
+      return require('shunt.spec')._expect_that([=[(-> T '?(number)', 'str')]=], (function() -- shunt/quicktype.yue:1757
+        return T('?(number)', 'str') -- shunt/quicktype.yue:1757
+      end), (errors(matches('incorrect type: expected table but got string'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1757)) -- shunt/quicktype.yue:1757
+    end) -- shunt/quicktype.yue:1753
+    it('checks arrays', function() -- shunt/quicktype.yue:1759
+      require('shunt.spec')._expect_that([=[(-> T '[number]', {})]=], (function() -- shunt/quicktype.yue:1760
+        return T('[number]', { }) -- shunt/quicktype.yue:1760
       end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1760)); -- shunt/quicktype.yue:1760
-      require('shunt.spec')._expect_that([=[(-> T 'boolean|InnerDisjunction|function', ->)]=], (function() -- shunt/quicktype.yue:1761
-        return T('boolean|InnerDisjunction|function', function() end) -- shunt/quicktype.yue:1761
+      require('shunt.spec')._expect_that([=[(-> T '[number]', {123, 312})]=], (function() -- shunt/quicktype.yue:1761
+        return T('[number]', { -- shunt/quicktype.yue:1761
+          123, -- shunt/quicktype.yue:1761
+          312 -- shunt/quicktype.yue:1761
+        }) -- shunt/quicktype.yue:1761
       end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1761)); -- shunt/quicktype.yue:1761
-      return require('shunt.spec')._expect_that([=[(-> T 'boolean|InnerDisjunction|function', {})]=], (function() -- shunt/quicktype.yue:1763
-        return T('boolean|InnerDisjunction|function', { }) -- shunt/quicktype.yue:1763
-      end), (errors(matches('incorrect type: expected boolean|InnerDisjunction|function but got table'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1763)) -- shunt/quicktype.yue:1763
-    end) -- shunt/quicktype.yue:1763
-  end) -- shunt/quicktype.yue:1586
-  describe('is', function() -- shunt/quicktype.yue:1765
-    it('requires two arguments', function() -- shunt/quicktype.yue:1766
-      return require('shunt.spec')._expect_that([=[(-> is!)]=], (function() -- shunt/quicktype.yue:1767
-        return is() -- shunt/quicktype.yue:1767
-      end), (errors(matches('cannot typecheck: no type spec provided'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1767)) -- shunt/quicktype.yue:1767
-    end) -- shunt/quicktype.yue:1766
-    it('returns correctly in matching case', function() -- shunt/quicktype.yue:1769
-      local ok, err = is('string', 'asdf'); -- shunt/quicktype.yue:1770
-      require('shunt.spec')._expect_that([=[ok]=], ok, (eq(true)), tostring("shunt/quicktype.yue") .. ":" .. tostring(1771)); -- shunt/quicktype.yue:1771
-      return require('shunt.spec')._expect_that([=[err]=], err, (eq(nil)), tostring("shunt/quicktype.yue") .. ":" .. tostring(1772)) -- shunt/quicktype.yue:1772
-    end) -- shunt/quicktype.yue:1769
-    return it('returns correctly in non-matching case', function() -- shunt/quicktype.yue:1774
-      local ok, err = is('nil', 'asdf'); -- shunt/quicktype.yue:1775
-      require('shunt.spec')._expect_that([=[ok]=], ok, (eq(false)), tostring("shunt/quicktype.yue") .. ":" .. tostring(1776)); -- shunt/quicktype.yue:1776
-      return require('shunt.spec')._expect_that([=[err]=], err, (matches('incorrect type')), tostring("shunt/quicktype.yue") .. ":" .. tostring(1777)) -- shunt/quicktype.yue:1777
-    end) -- shunt/quicktype.yue:1777
-  end) -- shunt/quicktype.yue:1765
-  describe('declare_type', function() -- shunt/quicktype.yue:1779
-    it('requires two arguments', function() -- shunt/quicktype.yue:1780
-      require('shunt.spec')._expect_that([=[(-> declare_type!)]=], (function() -- shunt/quicktype.yue:1781
-        return declare_type() -- shunt/quicktype.yue:1781
-      end), (errors(matches('declare_type requires a name'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1781)); -- shunt/quicktype.yue:1781
-      require('shunt.spec')._expect_that([=[(-> declare_type 'TwoArgs')]=], (function() -- shunt/quicktype.yue:1782
-        return declare_type('TwoArgs') -- shunt/quicktype.yue:1782
-      end), (errors(matches('declare_type requires a type_spec'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1782)); -- shunt/quicktype.yue:1782
-      require('shunt.spec')._expect_that([=[(-> declare_type 123, 'string')]=], (function() -- shunt/quicktype.yue:1783
-        return declare_type(123, 'string') -- shunt/quicktype.yue:1783
-      end), (errors(matches('declare_type requires a string name'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1783)); -- shunt/quicktype.yue:1783
-      return require('shunt.spec')._expect_that([=[(-> declare_type 'TwoArgs', 123)]=], (function() -- shunt/quicktype.yue:1784
-        return declare_type('TwoArgs', 123) -- shunt/quicktype.yue:1784
-      end), (errors(matches('declare_type requires a string type_spec'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1784)) -- shunt/quicktype.yue:1784
-    end) -- shunt/quicktype.yue:1780
-    it('rejects false primitives', function() -- shunt/quicktype.yue:1786
-      return require('shunt.spec')._expect_that([=[(-> declare_type 'user', 'string')]=], (function() -- shunt/quicktype.yue:1787
-        return declare_type('user', 'string') -- shunt/quicktype.yue:1787
-      end), (errors(matches('user types must start with uppercase'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1787)) -- shunt/quicktype.yue:1787
-    end) -- shunt/quicktype.yue:1786
-    it('rejects redefinition', function() -- shunt/quicktype.yue:1789
-      declare_type('AlreadyDefined', 'number'); -- shunt/quicktype.yue:1790
-      return require('shunt.spec')._expect_that([=[(-> declare_type 'AlreadyDefined', 'string')]=], (function() -- shunt/quicktype.yue:1791
-        return declare_type('AlreadyDefined', 'string') -- shunt/quicktype.yue:1791
-      end), (errors(matches([[cannot redefine type 'AlreadyDefined']]))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1791)) -- shunt/quicktype.yue:1791
-    end) -- shunt/quicktype.yue:1789
-    it('supports non-recursive types', function() -- shunt/quicktype.yue:1793
-      declare_type('NonRecursive', '[string]'); -- shunt/quicktype.yue:1794
-      require('shunt.spec')._expect_that([=[(-> T '[NonRecursive]', {{'hello'}})]=], (function() -- shunt/quicktype.yue:1795
-        return T('[NonRecursive]', { -- shunt/quicktype.yue:1795
-          { -- shunt/quicktype.yue:1795
-            'hello' -- shunt/quicktype.yue:1795
-          } -- shunt/quicktype.yue:1795
-        }) -- shunt/quicktype.yue:1795
-      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1795)) -- shunt/quicktype.yue:1795
-      declare_type('prefixed.NonRecursive', '[string]'); -- shunt/quicktype.yue:1797
-      return require('shunt.spec')._expect_that([=[(-> T '[prefixed.NonRecursive]', {{'hello'}})]=], (function() -- shunt/quicktype.yue:1798
-        return T('[prefixed.NonRecursive]', { -- shunt/quicktype.yue:1798
-          { -- shunt/quicktype.yue:1798
-            'hello' -- shunt/quicktype.yue:1798
+      require('shunt.spec')._expect_that([=[(-> T '[[number]]', {{123}, {312}})]=], (function() -- shunt/quicktype.yue:1762
+        return T('[[number]]', { -- shunt/quicktype.yue:1762
+          { -- shunt/quicktype.yue:1762
+            123 -- shunt/quicktype.yue:1762
+          }, -- shunt/quicktype.yue:1762
+          { -- shunt/quicktype.yue:1762
+            312 -- shunt/quicktype.yue:1762
+          } -- shunt/quicktype.yue:1762
+        }) -- shunt/quicktype.yue:1762
+      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1762)); -- shunt/quicktype.yue:1762
+      require('shunt.spec')._expect_that([=[(-> T '[string]', 123)]=], (function() -- shunt/quicktype.yue:1764
+        return T('[string]', 123) -- shunt/quicktype.yue:1764
+      end), (errors(matches('incorrect type: expected table but got number'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1764)); -- shunt/quicktype.yue:1764
+      require('shunt.spec')._expect_that([=[(-> T '[[number]]', {{123}, {'asdf'}})]=], (function() -- shunt/quicktype.yue:1765
+        return T('[[number]]', { -- shunt/quicktype.yue:1765
+          { -- shunt/quicktype.yue:1765
+            123 -- shunt/quicktype.yue:1765
+          }, -- shunt/quicktype.yue:1765
+          { -- shunt/quicktype.yue:1765
+            'asdf' -- shunt/quicktype.yue:1765
+          } -- shunt/quicktype.yue:1765
+        }) -- shunt/quicktype.yue:1765
+      end), (errors(matches('incorrect type: expected number but got string'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1765)) -- shunt/quicktype.yue:1765
+      local hybrid = { -- shunt/quicktype.yue:1767
+        123, -- shunt/quicktype.yue:1767
+        456, -- shunt/quicktype.yue:1767
+        789, -- shunt/quicktype.yue:1767
+        field = 'a' -- shunt/quicktype.yue:1767
+      } -- shunt/quicktype.yue:1767
+      if #hybrid ~= 3 then -- shunt/quicktype.yue:1768
+        return require('shunt.spec')._expect_that([=[(-> T '[string]', hybrid)]=], (function() -- shunt/quicktype.yue:1769
+          return T('[string]', hybrid) -- shunt/quicktype.yue:1769
+        end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1769)) -- shunt/quicktype.yue:1769
+      else -- shunt/quicktype.yue:1771
+        return require('shunt.spec')._expect_that([=[(-> T '[string]', hybrid)]=], (function() -- shunt/quicktype.yue:1771
+          return T('[string]', hybrid) -- shunt/quicktype.yue:1771
+        end), (errors(matches('incorrect type: expected string but got number'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1771)) -- shunt/quicktype.yue:1771
+      end -- shunt/quicktype.yue:1768
+    end) -- shunt/quicktype.yue:1759
+    it('checks tuples', function() -- shunt/quicktype.yue:1773
+      require('shunt.spec')._expect_that([=[(-> T '()', {})]=], (function() -- shunt/quicktype.yue:1774
+        return T('()', { }) -- shunt/quicktype.yue:1774
+      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1774)); -- shunt/quicktype.yue:1774
+      require('shunt.spec')._expect_that([=[(-> T '(number, boolean, string)', {123, true, 'hello'})]=], (function() -- shunt/quicktype.yue:1775
+        return T('(number, boolean, string)', { -- shunt/quicktype.yue:1775
+          123, -- shunt/quicktype.yue:1775
+          true, -- shunt/quicktype.yue:1775
+          'hello' -- shunt/quicktype.yue:1775
+        }) -- shunt/quicktype.yue:1775
+      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1775)); -- shunt/quicktype.yue:1775
+      require('shunt.spec')._expect_that([=[(-> T '(number, boolean, string)', {123, true, 'hello', coroutine.create ->})]=], (function() -- shunt/quicktype.yue:1776
+        return T('(number, boolean, string)', { -- shunt/quicktype.yue:1776
+          123, -- shunt/quicktype.yue:1776
+          true, -- shunt/quicktype.yue:1776
+          'hello', -- shunt/quicktype.yue:1776
+          coroutine.create(function() end) -- shunt/quicktype.yue:1776
+        }) -- shunt/quicktype.yue:1776
+      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1776)); -- shunt/quicktype.yue:1776
+      require('shunt.spec')._expect_that([=[(-> T '((number, boolean), (string, thread))', {{123, true}, {'hello', coroutine.create ->}})]=], (function() -- shunt/quicktype.yue:1777
+        return T('((number, boolean), (string, thread))', { -- shunt/quicktype.yue:1777
+          { -- shunt/quicktype.yue:1777
+            123, -- shunt/quicktype.yue:1777
+            true -- shunt/quicktype.yue:1777
+          }, -- shunt/quicktype.yue:1777
+          { -- shunt/quicktype.yue:1777
+            'hello', -- shunt/quicktype.yue:1777
+            coroutine.create(function() end) -- shunt/quicktype.yue:1777
+          } -- shunt/quicktype.yue:1777
+        }) -- shunt/quicktype.yue:1777
+      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1777)); -- shunt/quicktype.yue:1777
+      require('shunt.spec')._expect_that([=[(-> T '(number, boolean, string)', nil)]=], (function() -- shunt/quicktype.yue:1779
+        return T('(number, boolean, string)', nil) -- shunt/quicktype.yue:1779
+      end), (errors(matches('incorrect type: expected table but got nil'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1779)); -- shunt/quicktype.yue:1779
+      require('shunt.spec')._expect_that([=[(-> T '(number, boolean, string)', {})]=], (function() -- shunt/quicktype.yue:1780
+        return T('(number, boolean, string)', { }) -- shunt/quicktype.yue:1780
+      end), (errors(matches('incorrect type: expected number but got nil'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1780)); -- shunt/quicktype.yue:1780
+      require('shunt.spec')._expect_that([=[(-> T '(number, boolean, string)', {123})]=], (function() -- shunt/quicktype.yue:1781
+        return T('(number, boolean, string)', { -- shunt/quicktype.yue:1781
+          123 -- shunt/quicktype.yue:1781
+        }) -- shunt/quicktype.yue:1781
+      end), (errors(matches('incorrect type: expected boolean but got nil'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1781)); -- shunt/quicktype.yue:1781
+      return require('shunt.spec')._expect_that([=[(-> T '(number, boolean, string)', {'interloper'})]=], (function() -- shunt/quicktype.yue:1782
+        return T('(number, boolean, string)', { -- shunt/quicktype.yue:1782
+          'interloper' -- shunt/quicktype.yue:1782
+        }) -- shunt/quicktype.yue:1782
+      end), (errors(matches('incorrect type: expected number but got string'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1782)) -- shunt/quicktype.yue:1782
+    end) -- shunt/quicktype.yue:1773
+    it('checks sets', function() -- shunt/quicktype.yue:1784
+      require('shunt.spec')._expect_that([=[(-> T '{number}', {})]=], (function() -- shunt/quicktype.yue:1785
+        return T('{number}', { }) -- shunt/quicktype.yue:1785
+      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1785)); -- shunt/quicktype.yue:1785
+      require('shunt.spec')._expect_that([=[(-> T '{number}', {[123]: true, [321]: {}})]=], (function() -- shunt/quicktype.yue:1786
+        return T('{number}', { -- shunt/quicktype.yue:1786
+          [123] = true, -- shunt/quicktype.yue:1786
+          [321] = { } -- shunt/quicktype.yue:1786
+        }) -- shunt/quicktype.yue:1786
+      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1786)); -- shunt/quicktype.yue:1786
+      require('shunt.spec')._expect_that([=[(-> T '{{number}}', {[{123}]: true})]=], (function() -- shunt/quicktype.yue:1787
+        return T('{{number}}', { -- shunt/quicktype.yue:1787
+          [{ -- shunt/quicktype.yue:1787
+            123 -- shunt/quicktype.yue:1787
+          }] = true -- shunt/quicktype.yue:1787
+        }) -- shunt/quicktype.yue:1787
+      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1787)); -- shunt/quicktype.yue:1787
+      require('shunt.spec')._expect_that([=[(-> T '{<>: {}, number}', <>: {})]=], (function() -- shunt/quicktype.yue:1788
+        return T('{<>: {}, number}', setmetatable({ }, { })) -- shunt/quicktype.yue:1788
+      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1788)); -- shunt/quicktype.yue:1788
+      require('shunt.spec')._expect_that([=[(-> T '{number}', nil)]=], (function() -- shunt/quicktype.yue:1790
+        return T('{number}', nil) -- shunt/quicktype.yue:1790
+      end), (errors(matches('incorrect type: expected table but got nil'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1790)); -- shunt/quicktype.yue:1790
+      require('shunt.spec')._expect_that([=[(-> T '{number}', {[123]: false})]=], (function() -- shunt/quicktype.yue:1791
+        return T('{number}', { -- shunt/quicktype.yue:1791
+          [123] = false -- shunt/quicktype.yue:1791
+        }) -- shunt/quicktype.yue:1791
+      end), (errors(matches('incorrect type: expected a truthy value but got false'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1791)); -- shunt/quicktype.yue:1791
+      require('shunt.spec')._expect_that([=[(-> T '{{number}}', {[{['asdf']: true}]: true})]=], (function() -- shunt/quicktype.yue:1792
+        return T('{{number}}', { -- shunt/quicktype.yue:1792
+          [{ -- shunt/quicktype.yue:1792
+            ['asdf'] = true -- shunt/quicktype.yue:1792
+          }] = true -- shunt/quicktype.yue:1792
+        }) -- shunt/quicktype.yue:1792
+      end), (errors(matches('incorrect type: expected number but got string'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1792)); -- shunt/quicktype.yue:1792
+      return require('shunt.spec')._expect_that([=[(-> T '{<>: {}, number}', {})]=], (function() -- shunt/quicktype.yue:1793
+        return T('{<>: {}, number}', { }) -- shunt/quicktype.yue:1793
+      end), (errors(matches('incorrect type: expected table but got nil'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1793)) -- shunt/quicktype.yue:1793
+    end) -- shunt/quicktype.yue:1784
+    it('checks mappings', function() -- shunt/quicktype.yue:1795
+      require('shunt.spec')._expect_that([=[(-> T '{string -> number}', {})]=], (function() -- shunt/quicktype.yue:1796
+        return T('{string -> number}', { }) -- shunt/quicktype.yue:1796
+      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1796)); -- shunt/quicktype.yue:1796
+      require('shunt.spec')._expect_that([=[(-> T '{number -> string}', {'hello', [10]: 'world'})]=], (function() -- shunt/quicktype.yue:1797
+        return T('{number -> string}', { -- shunt/quicktype.yue:1797
+          'hello', -- shunt/quicktype.yue:1797
+          [10] = 'world' -- shunt/quicktype.yue:1797
+        }) -- shunt/quicktype.yue:1797
+      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1797)); -- shunt/quicktype.yue:1797
+      require('shunt.spec')._expect_that([=[(-> T '{{boolean -> number} -> {string -> thread}}', {[{[true]: 123}]: {asdf: coroutine.create ->}})]=], (function() -- shunt/quicktype.yue:1798
+        return T('{{boolean -> number} -> {string -> thread}}', { -- shunt/quicktype.yue:1798
+          [{ -- shunt/quicktype.yue:1798
+            [true] = 123 -- shunt/quicktype.yue:1798
+          }] = { -- shunt/quicktype.yue:1798
+            asdf = coroutine.create(function() end) -- shunt/quicktype.yue:1798
           } -- shunt/quicktype.yue:1798
         }) -- shunt/quicktype.yue:1798
-      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1798)) -- shunt/quicktype.yue:1798
-    end) -- shunt/quicktype.yue:1793
-    return it('supports recursive types', function() -- shunt/quicktype.yue:1800
-      declare_type('Recursive', '[?Recursive]'); -- shunt/quicktype.yue:1801
-      require('shunt.spec')._expect_that([=[(-> T 'Recursive', {{{{{nil}}}}})]=], (function() -- shunt/quicktype.yue:1802
-        return T('Recursive', { -- shunt/quicktype.yue:1802
-          { -- shunt/quicktype.yue:1802
-            { -- shunt/quicktype.yue:1802
-              { -- shunt/quicktype.yue:1802
-                { -- shunt/quicktype.yue:1802
-                  nil -- shunt/quicktype.yue:1802
-                } -- shunt/quicktype.yue:1802
-              } -- shunt/quicktype.yue:1802
-            } -- shunt/quicktype.yue:1802
-          } -- shunt/quicktype.yue:1802
+      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1798)); -- shunt/quicktype.yue:1798
+      require('shunt.spec')._expect_that([=[(-> T '{<>: {}, string -> number}', <>: {})]=], (function() -- shunt/quicktype.yue:1799
+        return T('{<>: {}, string -> number}', setmetatable({ }, { })) -- shunt/quicktype.yue:1799
+      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1799)); -- shunt/quicktype.yue:1799
+      require('shunt.spec')._expect_that([=[(-> T '{number -> string}', nil)]=], (function() -- shunt/quicktype.yue:1801
+        return T('{number -> string}', nil) -- shunt/quicktype.yue:1801
+      end), (errors(matches('incorrect type: expected table but got nil'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1801)); -- shunt/quicktype.yue:1801
+      require('shunt.spec')._expect_that([=[(-> T '{number -> string}', {123})]=], (function() -- shunt/quicktype.yue:1802
+        return T('{number -> string}', { -- shunt/quicktype.yue:1802
+          123 -- shunt/quicktype.yue:1802
         }) -- shunt/quicktype.yue:1802
-      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1802)); -- shunt/quicktype.yue:1802
-      require('shunt.spec')._expect_that([=[(-> T 'Recursive', {{{{{'asdf'}}}}})]=], (function() -- shunt/quicktype.yue:1803
-        return T('Recursive', { -- shunt/quicktype.yue:1803
-          { -- shunt/quicktype.yue:1803
-            { -- shunt/quicktype.yue:1803
-              { -- shunt/quicktype.yue:1803
-                { -- shunt/quicktype.yue:1803
-                  'asdf' -- shunt/quicktype.yue:1803
-                } -- shunt/quicktype.yue:1803
-              } -- shunt/quicktype.yue:1803
-            } -- shunt/quicktype.yue:1803
-          } -- shunt/quicktype.yue:1803
+      end), (errors(matches('incorrect type: expected string but got number'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1802)); -- shunt/quicktype.yue:1802
+      require('shunt.spec')._expect_that([=[(-> T '{number -> string}', {'hello', 'world', 'foo', 'bar', 'baz', 123})]=], (function() -- shunt/quicktype.yue:1803
+        return T('{number -> string}', { -- shunt/quicktype.yue:1803
+          'hello', -- shunt/quicktype.yue:1803
+          'world', -- shunt/quicktype.yue:1803
+          'foo', -- shunt/quicktype.yue:1803
+          'bar', -- shunt/quicktype.yue:1803
+          'baz', -- shunt/quicktype.yue:1803
+          123 -- shunt/quicktype.yue:1803
         }) -- shunt/quicktype.yue:1803
-      end), (errors(matches('incorrect type: expected table but got string'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1803)) -- shunt/quicktype.yue:1803
-      declare_type('MutuallyRecursive1', '?MutuallyRecursive2') -- shunt/quicktype.yue:1805
-      declare_type('MutuallyRecursive2', 'MutuallyRecursive1'); -- shunt/quicktype.yue:1806
-      require('shunt.spec')._expect_that([=[(-> T 'MutuallyRecursive1', nil)]=], (function() -- shunt/quicktype.yue:1807
-        return T('MutuallyRecursive1', nil) -- shunt/quicktype.yue:1807
+      end), (errors(matches('incorrect type: expected string but got number'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1803)); -- shunt/quicktype.yue:1803
+      return require('shunt.spec')._expect_that([=[(-> T '{<>: {}, string -> number}', {})]=], (function() -- shunt/quicktype.yue:1804
+        return T('{<>: {}, string -> number}', { }) -- shunt/quicktype.yue:1804
+      end), (errors(matches('incorrect type: expected table but got nil'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1804)) -- shunt/quicktype.yue:1804
+    end) -- shunt/quicktype.yue:1795
+    it('checks structs', function() -- shunt/quicktype.yue:1806
+      require('shunt.spec')._expect_that([=[(-> T '{}', {})]=], (function() -- shunt/quicktype.yue:1807
+        return T('{}', { }) -- shunt/quicktype.yue:1807
       end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1807)); -- shunt/quicktype.yue:1807
-      return require('shunt.spec')._expect_that([=[(-> T 'MutuallyRecursive1', 'asdf')]=], (function() -- shunt/quicktype.yue:1808
-        return T('MutuallyRecursive1', 'asdf') -- shunt/quicktype.yue:1808
-      end), (errors(matches('type checker recursed too many times'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1808)) -- shunt/quicktype.yue:1808
-    end) -- shunt/quicktype.yue:1808
-  end) -- shunt/quicktype.yue:1779
-  describe('declare_singleton_type', function() -- shunt/quicktype.yue:1810
-    it('requires a valid name', function() -- shunt/quicktype.yue:1811
-      require('shunt.spec')._expect_that([=[declare_singleton_type]=], declare_singleton_type, (errors(matches('requires a value'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1812)); -- shunt/quicktype.yue:1812
-      require('shunt.spec')._expect_that([=[(-> declare_singleton_type {})]=], (function() -- shunt/quicktype.yue:1814
-        return declare_singleton_type({ }) -- shunt/quicktype.yue:1814
-      end), (errors(matches("user types must start with an uppercase letter"))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1814)); -- shunt/quicktype.yue:1814
-      require('shunt.spec')._expect_that([==[(-> declare_singleton_type <tostring>: => 'Has space')]==], (function() -- shunt/quicktype.yue:1815
-        return declare_singleton_type(setmetatable({ }, { -- shunt/quicktype.yue:1815
-          __tostring = function(self) -- shunt/quicktype.yue:1815
-            return 'Has space' -- shunt/quicktype.yue:1815
-          end -- shunt/quicktype.yue:1815
-        })) -- shunt/quicktype.yue:1815
-      end), (errors(matches("cannot declare type 'Has space': not a valid identifier"))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1815)); -- shunt/quicktype.yue:1815
-      return require('shunt.spec')._expect_that([==[(-> declare_singleton_type <tostring>: => 'SingletonTable')]==], (function() -- shunt/quicktype.yue:1816
-        return declare_singleton_type(setmetatable({ }, { -- shunt/quicktype.yue:1816
-          __tostring = function(self) -- shunt/quicktype.yue:1816
-            return 'SingletonTable' -- shunt/quicktype.yue:1816
-          end -- shunt/quicktype.yue:1816
-        })) -- shunt/quicktype.yue:1816
-      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1816)) -- shunt/quicktype.yue:1816
-    end) -- shunt/quicktype.yue:1811
-    it('requires a unique name', function() -- shunt/quicktype.yue:1818
-      local NAME = 'UniqueSingleton' -- shunt/quicktype.yue:1819
-      declare_singleton_type(setmetatable({ }, { -- shunt/quicktype.yue:1820
-        __tostring = function(self) -- shunt/quicktype.yue:1820
-          return NAME -- shunt/quicktype.yue:1820
-        end -- shunt/quicktype.yue:1820
-      })); -- shunt/quicktype.yue:1820
-      return require('shunt.spec')._expect_that([==[(-> declare_singleton_type <tostring>: => NAME)]==], (function() -- shunt/quicktype.yue:1821
-        return declare_singleton_type(setmetatable({ }, { -- shunt/quicktype.yue:1821
-          __tostring = function(self) -- shunt/quicktype.yue:1821
-            return NAME -- shunt/quicktype.yue:1821
-          end -- shunt/quicktype.yue:1821
-        })) -- shunt/quicktype.yue:1821
-      end), (errors(matches("cannot redefine type '" .. tostring(NAME) .. "'"))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1821)) -- shunt/quicktype.yue:1821
-    end) -- shunt/quicktype.yue:1818
-    return it('rejects primitives', function() -- shunt/quicktype.yue:1823
-      require('shunt.spec')._expect_that([=[(-> declare_singleton_type 123)]=], (function() -- shunt/quicktype.yue:1824
-        return declare_singleton_type(123) -- shunt/quicktype.yue:1824
-      end), (errors(matches('declare_singleton_type requires a table value'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1824)); -- shunt/quicktype.yue:1824
-      return require('shunt.spec')._expect_that([=[(-> declare_singleton_type 'hello')]=], (function() -- shunt/quicktype.yue:1825
-        return declare_singleton_type('hello') -- shunt/quicktype.yue:1825
-      end), (errors(matches('declare_singleton_type requires a table value'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1825)) -- shunt/quicktype.yue:1825
-    end) -- shunt/quicktype.yue:1825
-  end) -- shunt/quicktype.yue:1810
-  describe('F', function() -- shunt/quicktype.yue:1827
-    it('requires two arguments', function() -- shunt/quicktype.yue:1828
-      require('shunt.spec')._expect_that([=[(-> F!)]=], (function() -- shunt/quicktype.yue:1829
-        return F() -- shunt/quicktype.yue:1829
-      end), (errors(matches('cannot typecheck: no type spec provided'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1829)); -- shunt/quicktype.yue:1829
-      require('shunt.spec')._expect_that([=[(-> F '() -> nil')]=], (function() -- shunt/quicktype.yue:1830
-        return F('() -> nil') -- shunt/quicktype.yue:1830
-      end), (errors(matches('cannot typecheck: no function provided'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1830)); -- shunt/quicktype.yue:1830
-      return require('shunt.spec')._expect_that([=[(-> F '() -> nil', 'interloper')]=], (function() -- shunt/quicktype.yue:1831
-        return F('() -> nil', 'interloper') -- shunt/quicktype.yue:1831
-      end), (errors(matches('cannot typecheck: no function provided'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1831)) -- shunt/quicktype.yue:1831
-    end) -- shunt/quicktype.yue:1828
-    it('returns its second argument', function() -- shunt/quicktype.yue:1833
-      local f = F('(number, number) -> number', function(a, b) -- shunt/quicktype.yue:1834
-        return a + b -- shunt/quicktype.yue:1834
-      end); -- shunt/quicktype.yue:1834
-      return require('shunt.spec')._expect_that([=[(f 1, 2)]=], (f(1, 2)), (eq(3)), tostring("shunt/quicktype.yue") .. ":" .. tostring(1835)) -- shunt/quicktype.yue:1835
-    end) -- shunt/quicktype.yue:1833
-    it('accepts none returns', function() -- shunt/quicktype.yue:1837
-      return require('shunt.spec')._expect_that([=[(-> (F '() -> <>', ->)!)]=], (function() -- shunt/quicktype.yue:1838
-        return (F('() -> <>', function() end))() -- shunt/quicktype.yue:1838
-      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1838)) -- shunt/quicktype.yue:1838
-    end) -- shunt/quicktype.yue:1837
-    it('accepts nil returns', function() -- shunt/quicktype.yue:1840
-      return require('shunt.spec')._expect_that([=[(-> (F '() -> nil', -> nil)!)]=], (function() -- shunt/quicktype.yue:1841
-        return (F('() -> nil', function() -- shunt/quicktype.yue:1841
-          return nil -- shunt/quicktype.yue:1841
-        end))() -- shunt/quicktype.yue:1841
-      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1841)) -- shunt/quicktype.yue:1841
-    end) -- shunt/quicktype.yue:1840
-    it('accepts absent optional arguments', function() -- shunt/quicktype.yue:1843
-      return require('shunt.spec')._expect_that([=[(-> (F '() -> ?string', ->)!)]=], (function() -- shunt/quicktype.yue:1844
-        return (F('() -> ?string', function() end))() -- shunt/quicktype.yue:1844
-      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1844)) -- shunt/quicktype.yue:1844
-    end) -- shunt/quicktype.yue:1843
-    it('accepts remainder arguments', function() -- shunt/quicktype.yue:1846
-      require('shunt.spec')._expect_that([=[(-> (F '(string...) -> nil', ->)!)]=], (function() -- shunt/quicktype.yue:1847
-        return (F('(string...) -> nil', function() end))() -- shunt/quicktype.yue:1847
-      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1847)); -- shunt/quicktype.yue:1847
-      require('shunt.spec')._expect_that([=[(-> (F '(string...) -> nil', ->) 'hello', 'world')]=], (function() -- shunt/quicktype.yue:1848
-        return (F('(string...) -> nil', function() end))('hello', 'world') -- shunt/quicktype.yue:1848
+      require('shunt.spec')._expect_that([=[(-> T '{}', {123})]=], (function() -- shunt/quicktype.yue:1808
+        return T('{}', { -- shunt/quicktype.yue:1808
+          123 -- shunt/quicktype.yue:1808
+        }) -- shunt/quicktype.yue:1808
+      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1808)); -- shunt/quicktype.yue:1808
+      require('shunt.spec')._expect_that([=[(-> T '{}', {hello: 123})]=], (function() -- shunt/quicktype.yue:1809
+        return T('{}', { -- shunt/quicktype.yue:1809
+          hello = 123 -- shunt/quicktype.yue:1809
+        }) -- shunt/quicktype.yue:1809
+      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1809)); -- shunt/quicktype.yue:1809
+      require('shunt.spec')._expect_that([=[(-> T '{hello: string}', {hello: 'hello'})]=], (function() -- shunt/quicktype.yue:1810
+        return T('{hello: string}', { -- shunt/quicktype.yue:1810
+          hello = 'hello' -- shunt/quicktype.yue:1810
+        }) -- shunt/quicktype.yue:1810
+      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1810)); -- shunt/quicktype.yue:1810
+      require('shunt.spec')._expect_that([=[(-> T '{hello: {world: string}}', {hello: world: 'world'})]=], (function() -- shunt/quicktype.yue:1811
+        return T('{hello: {world: string}}', { -- shunt/quicktype.yue:1811
+          hello = { -- shunt/quicktype.yue:1811
+            world = 'world' -- shunt/quicktype.yue:1811
+          } -- shunt/quicktype.yue:1811
+        }) -- shunt/quicktype.yue:1811
+      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1811)); -- shunt/quicktype.yue:1811
+      require('shunt.spec')._expect_that([=[(-> T '{hello: {world: string}, foo: boolean}', hello: {world:'asdf'}, foo: true)]=], (function() -- shunt/quicktype.yue:1812
+        return T('{hello: {world: string}, foo: boolean}', { -- shunt/quicktype.yue:1812
+          hello = { -- shunt/quicktype.yue:1812
+            world = 'asdf' -- shunt/quicktype.yue:1812
+          }, -- shunt/quicktype.yue:1812
+          foo = true -- shunt/quicktype.yue:1812
+        }) -- shunt/quicktype.yue:1812
+      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1812)); -- shunt/quicktype.yue:1812
+      require('shunt.spec')._expect_that([=[(-> T '{<>: {}}', <>: {})]=], (function() -- shunt/quicktype.yue:1813
+        return T('{<>: {}}', setmetatable({ }, { })) -- shunt/quicktype.yue:1813
+      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1813)); -- shunt/quicktype.yue:1813
+      require('shunt.spec')._expect_that([=[(-> T '{}', 132)]=], (function() -- shunt/quicktype.yue:1815
+        return T('{}', 132) -- shunt/quicktype.yue:1815
+      end), (errors(matches('incorrect type: expected table but got number'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1815)); -- shunt/quicktype.yue:1815
+      require('shunt.spec')._expect_that([=[(-> T '{hello: string}', {})]=], (function() -- shunt/quicktype.yue:1816
+        return T('{hello: string}', { }) -- shunt/quicktype.yue:1816
+      end), (errors(matches('incorrect type: expected string but got nil'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1816)); -- shunt/quicktype.yue:1816
+      require('shunt.spec')._expect_that([=[(-> T '{hello: string}', hello: 123)]=], (function() -- shunt/quicktype.yue:1817
+        return T('{hello: string}', { -- shunt/quicktype.yue:1817
+          hello = 123 -- shunt/quicktype.yue:1817
+        }) -- shunt/quicktype.yue:1817
+      end), (errors(matches('incorrect type: expected string but got number'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1817)); -- shunt/quicktype.yue:1817
+      require('shunt.spec')._expect_that([=[(-> T '{hello: {world: string}}', hello: 123)]=], (function() -- shunt/quicktype.yue:1818
+        return T('{hello: {world: string}}', { -- shunt/quicktype.yue:1818
+          hello = 123 -- shunt/quicktype.yue:1818
+        }) -- shunt/quicktype.yue:1818
+      end), (errors(matches('incorrect type: expected table but got number'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1818)); -- shunt/quicktype.yue:1818
+      require('shunt.spec')._expect_that([=[(-> T '{hello: {world: string}}', hello: {})]=], (function() -- shunt/quicktype.yue:1819
+        return T('{hello: {world: string}}', { -- shunt/quicktype.yue:1819
+          hello = { } -- shunt/quicktype.yue:1819
+        }) -- shunt/quicktype.yue:1819
+      end), (errors(matches('incorrect type: expected string but got nil'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1819)); -- shunt/quicktype.yue:1819
+      require('shunt.spec')._expect_that([=[(-> T '{hello: {world: string}}', hello: world: 123)]=], (function() -- shunt/quicktype.yue:1820
+        return T('{hello: {world: string}}', { -- shunt/quicktype.yue:1820
+          hello = { -- shunt/quicktype.yue:1820
+            world = 123 -- shunt/quicktype.yue:1820
+          } -- shunt/quicktype.yue:1820
+        }) -- shunt/quicktype.yue:1820
+      end), (errors(matches('incorrect type: expected string but got number'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1820)); -- shunt/quicktype.yue:1820
+      require('shunt.spec')._expect_that([=[(-> T '{hello: {world: string}, foo: boolean}', hello: {world:'asdf'}, foo: 123)]=], (function() -- shunt/quicktype.yue:1821
+        return T('{hello: {world: string}, foo: boolean}', { -- shunt/quicktype.yue:1821
+          hello = { -- shunt/quicktype.yue:1821
+            world = 'asdf' -- shunt/quicktype.yue:1821
+          }, -- shunt/quicktype.yue:1821
+          foo = 123 -- shunt/quicktype.yue:1821
+        }) -- shunt/quicktype.yue:1821
+      end), (errors(matches('incorrect type: expected boolean but got number'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1821)); -- shunt/quicktype.yue:1821
+      return require('shunt.spec')._expect_that([=[(-> T '{<>: {}}', {})]=], (function() -- shunt/quicktype.yue:1822
+        return T('{<>: {}}', { }) -- shunt/quicktype.yue:1822
+      end), (errors(matches('incorrect type: expected table but got nil'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1822)) -- shunt/quicktype.yue:1822
+    end) -- shunt/quicktype.yue:1806
+    it('checks table-likes', function() -- shunt/quicktype.yue:1824
+      return require('shunt.spec')._expect_that([=[(-> T '~{char: function}', '')]=], (function() -- shunt/quicktype.yue:1829
+        return T('~{char: function}', '') -- shunt/quicktype.yue:1829
+      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1829)) -- shunt/quicktype.yue:1829
+    end) -- shunt/quicktype.yue:1824
+    it('checks functions', function() -- shunt/quicktype.yue:1831
+      require('shunt.spec')._expect_that([=[(-> T '() -> nil', ->)]=], (function() -- shunt/quicktype.yue:1832
+        return T('() -> nil', function() end) -- shunt/quicktype.yue:1832
+      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1832)); -- shunt/quicktype.yue:1832
+      require('shunt.spec')._expect_that([=[(-> T '() -> nil', -> nil)]=], (function() -- shunt/quicktype.yue:1833
+        return T('() -> nil', function() -- shunt/quicktype.yue:1833
+          return nil -- shunt/quicktype.yue:1833
+        end) -- shunt/quicktype.yue:1833
+      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1833)); -- shunt/quicktype.yue:1833
+      return require('shunt.spec')._expect_that([=[(-> T '() -> nil', {})]=], (function() -- shunt/quicktype.yue:1834
+        return T('() -> nil', { }) -- shunt/quicktype.yue:1834
+      end), (errors(matches('incorrect type: expected function but got table'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1834)) -- shunt/quicktype.yue:1834
+    end) -- shunt/quicktype.yue:1831
+    it('checks conjunctions', function() -- shunt/quicktype.yue:1836
+      require('shunt.spec')._expect_that([=[(-> T '[string]+{number}', {'a', 'b', 'c'})]=], (function() -- shunt/quicktype.yue:1837
+        return T('[string]+{number}', { -- shunt/quicktype.yue:1837
+          'a', -- shunt/quicktype.yue:1837
+          'b', -- shunt/quicktype.yue:1837
+          'c' -- shunt/quicktype.yue:1837
+        }) -- shunt/quicktype.yue:1837
+      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1837)); -- shunt/quicktype.yue:1837
+      require('shunt.spec')._expect_that([=[(-> T 'string+number', 123)]=], (function() -- shunt/quicktype.yue:1839
+        return T('string+number', 123) -- shunt/quicktype.yue:1839
+      end), (errors(matches('incorrect type: expected string but got number'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1839)); -- shunt/quicktype.yue:1839
+      return require('shunt.spec')._expect_that([=[(-> T 'string+number', 'hello')]=], (function() -- shunt/quicktype.yue:1840
+        return T('string+number', 'hello') -- shunt/quicktype.yue:1840
+      end), (errors(matches('incorrect type: expected number but got string'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1840)) -- shunt/quicktype.yue:1840
+    end) -- shunt/quicktype.yue:1836
+    it('checks disjunctions', function() -- shunt/quicktype.yue:1842
+      require('shunt.spec')._expect_that([=[(-> T 'string|number', 'hello')]=], (function() -- shunt/quicktype.yue:1843
+        return T('string|number', 'hello') -- shunt/quicktype.yue:1843
+      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1843)); -- shunt/quicktype.yue:1843
+      require('shunt.spec')._expect_that([=[(-> T 'string|number', 123)]=], (function() -- shunt/quicktype.yue:1844
+        return T('string|number', 123) -- shunt/quicktype.yue:1844
+      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1844)); -- shunt/quicktype.yue:1844
+      return require('shunt.spec')._expect_that([=[(-> T 'string|number', true)]=], (function() -- shunt/quicktype.yue:1845
+        return T('string|number', true) -- shunt/quicktype.yue:1845
+      end), (errors(matches('incorrect type: expected string|number but got boolean'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1845)) -- shunt/quicktype.yue:1845
+    end) -- shunt/quicktype.yue:1842
+    it('checks nested inline disjunctions', function() -- shunt/quicktype.yue:1847
+      require('shunt.spec')._expect_that([=[(-> T 'number|{string|number}|string', 'hello')]=], (function() -- shunt/quicktype.yue:1848
+        return T('number|{string|number}|string', 'hello') -- shunt/quicktype.yue:1848
       end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1848)); -- shunt/quicktype.yue:1848
-      require('shunt.spec')._expect_that([=[(-> (F '(number, string...) -> nil', ->) 123, 'hello', 'world')]=], (function() -- shunt/quicktype.yue:1849
-        return (F('(number, string...) -> nil', function() end))(123, 'hello', 'world') -- shunt/quicktype.yue:1849
+      require('shunt.spec')._expect_that([=[(-> T 'number|{string|number}|string', {hello: true})]=], (function() -- shunt/quicktype.yue:1849
+        return T('number|{string|number}|string', { -- shunt/quicktype.yue:1849
+          hello = true -- shunt/quicktype.yue:1849
+        }) -- shunt/quicktype.yue:1849
       end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1849)); -- shunt/quicktype.yue:1849
-      return require('shunt.spec')._expect_that([=[(-> (F '(number, string...) -> nil', (...) ->) 123, 'hello', true)]=], (function() -- shunt/quicktype.yue:1851
-        return (F('(number, string...) -> nil', function(...) end))(123, 'hello', true) -- shunt/quicktype.yue:1851
-      end), (errors(matches('incorrect type: expected string but got boolean'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1851)) -- shunt/quicktype.yue:1851
-    end) -- shunt/quicktype.yue:1846
-    it('accepts absent optional returns', function() -- shunt/quicktype.yue:1853
-      return require('shunt.spec')._expect_that([=[(-> (F '() -> nil', ->)!)]=], (function() -- shunt/quicktype.yue:1854
-        return (F('() -> nil', function() end))() -- shunt/quicktype.yue:1854
-      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1854)) -- shunt/quicktype.yue:1854
-    end) -- shunt/quicktype.yue:1853
-    it('accepts multiple return values', function() -- shunt/quicktype.yue:1856
-      return require('shunt.spec')._expect_that([=[(-> (F '() -> <string, boolean>', -> 'a', true)!)]=], (function() -- shunt/quicktype.yue:1857
-        return (F('() -> <string, boolean>', function() -- shunt/quicktype.yue:1857
-          return 'a', true -- shunt/quicktype.yue:1857
-        end))() -- shunt/quicktype.yue:1857
-      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1857)) -- shunt/quicktype.yue:1857
-    end) -- shunt/quicktype.yue:1856
-    it('accepts remainder return values', function() -- shunt/quicktype.yue:1859
-      require('shunt.spec')._expect_that([=[(-> (F '() -> string...', ->)!)]=], (function() -- shunt/quicktype.yue:1860
-        return (F('() -> string...', function() end))() -- shunt/quicktype.yue:1860
-      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1860)); -- shunt/quicktype.yue:1860
-      require('shunt.spec')._expect_that([=[(-> (F '() -> string...', -> 'hello', 'world')!)]=], (function() -- shunt/quicktype.yue:1861
-        return (F('() -> string...', function() -- shunt/quicktype.yue:1861
-          return 'hello', 'world' -- shunt/quicktype.yue:1861
-        end))() -- shunt/quicktype.yue:1861
-      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1861)); -- shunt/quicktype.yue:1861
-      require('shunt.spec')._expect_that([=[(-> (F '() -> <number, string...>', -> 123, 'hello', 'world')!)]=], (function() -- shunt/quicktype.yue:1862
-        return (F('() -> <number, string...>', function() -- shunt/quicktype.yue:1862
-          return 123, 'hello', 'world' -- shunt/quicktype.yue:1862
-        end))() -- shunt/quicktype.yue:1862
-      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1862)); -- shunt/quicktype.yue:1862
-      return require('shunt.spec')._expect_that([=[(-> (F '() -> <number, string...>', -> 123, 'hello', true)!)]=], (function() -- shunt/quicktype.yue:1864
-        return (F('() -> <number, string...>', function() -- shunt/quicktype.yue:1864
-          return 123, 'hello', true -- shunt/quicktype.yue:1864
-        end))() -- shunt/quicktype.yue:1864
-      end), (errors(matches('incorrect type: expected string but got boolean'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1864)) -- shunt/quicktype.yue:1864
-    end) -- shunt/quicktype.yue:1859
-    it('prevents execution on invalid args', function() -- shunt/quicktype.yue:1866
-      return require('shunt.spec')._expect_that([=[(-> (F '(string) -> nil', -> error 'OH NO') 123)]=], (function() -- shunt/quicktype.yue:1867
-        return (F('(string) -> nil', function() -- shunt/quicktype.yue:1867
-          return error('OH NO') -- shunt/quicktype.yue:1867
-        end))(123) -- shunt/quicktype.yue:1867
-      end), (errors(matches('incorrect type: expected string but got number'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1867)) -- shunt/quicktype.yue:1867
+      require('shunt.spec')._expect_that([=[(-> T 'number|{string|number}|string', {[1]: true})]=], (function() -- shunt/quicktype.yue:1850
+        return T('number|{string|number}|string', { -- shunt/quicktype.yue:1850
+          [1] = true -- shunt/quicktype.yue:1850
+        }) -- shunt/quicktype.yue:1850
+      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1850)); -- shunt/quicktype.yue:1850
+      return require('shunt.spec')._expect_that([=[(-> T 'number|{string|number}|string', ->)]=], (function() -- shunt/quicktype.yue:1851
+        return T('number|{string|number}|string', function() end) -- shunt/quicktype.yue:1851
+      end), (errors(matches('incorrect type: expected number|{string|number}|string but got function'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1851)) -- shunt/quicktype.yue:1851
+    end) -- shunt/quicktype.yue:1847
+    return it('checks nested recursive disjunctions', function() -- shunt/quicktype.yue:1853
+      declare_type('InnerDisjunction', 'string|number'); -- shunt/quicktype.yue:1854
+      require('shunt.spec')._expect_that([=[(-> T 'boolean|InnerDisjunction|function', true)]=], (function() -- shunt/quicktype.yue:1855
+        return T('boolean|InnerDisjunction|function', true) -- shunt/quicktype.yue:1855
+      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1855)); -- shunt/quicktype.yue:1855
+      require('shunt.spec')._expect_that([=[(-> T 'boolean|InnerDisjunction|function', 'hello')]=], (function() -- shunt/quicktype.yue:1856
+        return T('boolean|InnerDisjunction|function', 'hello') -- shunt/quicktype.yue:1856
+      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1856)); -- shunt/quicktype.yue:1856
+      require('shunt.spec')._expect_that([=[(-> T 'boolean|InnerDisjunction|function', 123)]=], (function() -- shunt/quicktype.yue:1857
+        return T('boolean|InnerDisjunction|function', 123) -- shunt/quicktype.yue:1857
+      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1857)); -- shunt/quicktype.yue:1857
+      require('shunt.spec')._expect_that([=[(-> T 'boolean|InnerDisjunction|function', ->)]=], (function() -- shunt/quicktype.yue:1858
+        return T('boolean|InnerDisjunction|function', function() end) -- shunt/quicktype.yue:1858
+      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1858)); -- shunt/quicktype.yue:1858
+      return require('shunt.spec')._expect_that([=[(-> T 'boolean|InnerDisjunction|function', {})]=], (function() -- shunt/quicktype.yue:1860
+        return T('boolean|InnerDisjunction|function', { }) -- shunt/quicktype.yue:1860
+      end), (errors(matches('incorrect type: expected boolean|InnerDisjunction|function but got table'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1860)) -- shunt/quicktype.yue:1860
+    end) -- shunt/quicktype.yue:1860
+  end) -- shunt/quicktype.yue:1676
+  describe('is', function() -- shunt/quicktype.yue:1862
+    it('requires two arguments', function() -- shunt/quicktype.yue:1863
+      return require('shunt.spec')._expect_that([=[(-> is!)]=], (function() -- shunt/quicktype.yue:1864
+        return is() -- shunt/quicktype.yue:1864
+      end), (errors(matches('cannot typecheck: no type spec provided'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1864)) -- shunt/quicktype.yue:1864
+    end) -- shunt/quicktype.yue:1863
+    it('returns correctly in matching case', function() -- shunt/quicktype.yue:1866
+      local ok, err = is('string', 'asdf'); -- shunt/quicktype.yue:1867
+      require('shunt.spec')._expect_that([=[ok]=], ok, (eq(true)), tostring("shunt/quicktype.yue") .. ":" .. tostring(1868)); -- shunt/quicktype.yue:1868
+      return require('shunt.spec')._expect_that([=[err]=], err, (eq(nil)), tostring("shunt/quicktype.yue") .. ":" .. tostring(1869)) -- shunt/quicktype.yue:1869
     end) -- shunt/quicktype.yue:1866
-    it('rejects non-function types', function() -- shunt/quicktype.yue:1869
-      return require('shunt.spec')._expect_that([=[(-> F '{}', ->)]=], (function() -- shunt/quicktype.yue:1870
-        return F('{}', function() end) -- shunt/quicktype.yue:1870
-      end), (errors(matches('cannot typecheck: expected a function type'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1870)) -- shunt/quicktype.yue:1870
-    end) -- shunt/quicktype.yue:1869
-    it('rejects incorrect-type arguments', function() -- shunt/quicktype.yue:1872
-      return require('shunt.spec')._expect_that([=[(-> (F '(string) -> table', ->) 123)]=], (function() -- shunt/quicktype.yue:1873
-        return (F('(string) -> table', function() end))(123) -- shunt/quicktype.yue:1873
-      end), (errors(matches('incorrect type: expected string but got number'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1873)) -- shunt/quicktype.yue:1873
-    end) -- shunt/quicktype.yue:1872
-    it('rejects extra arguments', function() -- shunt/quicktype.yue:1875
-      return require('shunt.spec')._expect_that([=[(-> (F '(string) -> table', ->) 'a', 'b')]=], (function() -- shunt/quicktype.yue:1876
-        return (F('(string) -> table', function() end))('a', 'b') -- shunt/quicktype.yue:1876
-      end), (errors(matches('function given too many arguments'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1876)) -- shunt/quicktype.yue:1876
-    end) -- shunt/quicktype.yue:1875
-    it('rejects incorrect-type return values', function() -- shunt/quicktype.yue:1878
-      return require('shunt.spec')._expect_that([=[(-> (F '(table) -> string', ->) {})]=], (function() -- shunt/quicktype.yue:1879
-        return (F('(table) -> string', function() end))({ }) -- shunt/quicktype.yue:1879
-      end), (errors(matches('incorrect type: expected string but got nil'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1879)) -- shunt/quicktype.yue:1879
-    end) -- shunt/quicktype.yue:1878
-    it('rejects extra return arguments', function() -- shunt/quicktype.yue:1881
-      return require('shunt.spec')._expect_that([=[(-> (F '() -> string', -> 'a', 'b')!)]=], (function() -- shunt/quicktype.yue:1882
-        return (F('() -> string', function() -- shunt/quicktype.yue:1882
-          return 'a', 'b' -- shunt/quicktype.yue:1882
-        end))() -- shunt/quicktype.yue:1882
-      end), (errors(matches('function returned too many values'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1882)) -- shunt/quicktype.yue:1882
-    end) -- shunt/quicktype.yue:1881
-    it('rejects multiple incorrect return values', function() -- shunt/quicktype.yue:1884
-      require('shunt.spec')._expect_that([=[(-> (F '() -> <string, boolean>', -> {}, true)!)]=], (function() -- shunt/quicktype.yue:1885
-        return (F('() -> <string, boolean>', function() -- shunt/quicktype.yue:1885
-          return { }, true -- shunt/quicktype.yue:1885
-        end))() -- shunt/quicktype.yue:1885
-      end), (errors(matches('incorrect type: expected string but got table'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1885)); -- shunt/quicktype.yue:1885
-      return require('shunt.spec')._expect_that([=[(-> (F '() -> <string, boolean>', -> 'asdf', {})!)]=], (function() -- shunt/quicktype.yue:1886
-        return (F('() -> <string, boolean>', function() -- shunt/quicktype.yue:1886
-          return 'asdf', { } -- shunt/quicktype.yue:1886
-        end))() -- shunt/quicktype.yue:1886
-      end), (errors(matches('incorrect type: expected boolean but got table'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1886)) -- shunt/quicktype.yue:1886
-    end) -- shunt/quicktype.yue:1884
-    it('accepts methods', function() -- shunt/quicktype.yue:1888
-      require('shunt.spec')._expect_that([==[(-> (F '(number) => <>', =>), {}, 123)]==], (function() -- shunt/quicktype.yue:1889
-        return (F('(number) => <>', function(self) end)), { }, 123 -- shunt/quicktype.yue:1889
-      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1889)); -- shunt/quicktype.yue:1889
-      return require('shunt.spec')._expect_that([==[(-> (F '(number) => <>', =>), 'recv', 123)]==], (function() -- shunt/quicktype.yue:1890
-        return (F('(number) => <>', function(self) end)), 'recv', 123 -- shunt/quicktype.yue:1890
-      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1890)) -- shunt/quicktype.yue:1890
-    end) -- shunt/quicktype.yue:1888
-    it('requires a method receiver', function() -- shunt/quicktype.yue:1892
-      return require('shunt.spec')._expect_that([==[(-> (F '() => <>', =>)!)]==], (function() -- shunt/quicktype.yue:1893
-        return (F('() => <>', function(self) end))() -- shunt/quicktype.yue:1893
-      end), (errors(matches("incorrect type: expected some but got nil"))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1893)) -- shunt/quicktype.yue:1893
-    end) -- shunt/quicktype.yue:1892
-    return it('checks never', function() -- shunt/quicktype.yue:1895
-      return require('shunt.spec')._expect_that([=[(-> (F '() -> !', ->)!)]=], (function() -- shunt/quicktype.yue:1896
-        return (F('() -> !', function() end))() -- shunt/quicktype.yue:1896
-      end), (errors(matches('never expected a value here'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1896)) -- shunt/quicktype.yue:1896
-    end) -- shunt/quicktype.yue:1896
-  end) -- shunt/quicktype.yue:1827
-  describe('stats', function() -- shunt/quicktype.yue:1898
-    return it('has the correct type', function() -- shunt/quicktype.yue:1899
-      local prev_collect_stats = COLLECT_STATS -- shunt/quicktype.yue:1900
-      COLLECT_STATS = true -- shunt/quicktype.yue:1901
-      T('string', 'hello') -- shunt/quicktype.yue:1903
-      local stats_arr = stats(); -- shunt/quicktype.yue:1904
-      require('shunt.spec')._expect_that([=[stats_arr]=], stats_arr, (len(gt(0))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1905)); -- shunt/quicktype.yue:1905
-      require('shunt.spec')._expect_that([=[stats_arr]=], stats_arr, (each_value(has_fields({ -- shunt/quicktype.yue:1906
-        count = ge(0) -- shunt/quicktype.yue:1906
-      }))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1906)) -- shunt/quicktype.yue:1906
-      COLLECT_STATS = prev_collect_stats -- shunt/quicktype.yue:1908
+    return it('returns correctly in non-matching case', function() -- shunt/quicktype.yue:1871
+      local ok, err = is('nil', 'asdf'); -- shunt/quicktype.yue:1872
+      require('shunt.spec')._expect_that([=[ok]=], ok, (eq(false)), tostring("shunt/quicktype.yue") .. ":" .. tostring(1873)); -- shunt/quicktype.yue:1873
+      return require('shunt.spec')._expect_that([=[err]=], err, (matches('incorrect type')), tostring("shunt/quicktype.yue") .. ":" .. tostring(1874)) -- shunt/quicktype.yue:1874
+    end) -- shunt/quicktype.yue:1874
+  end) -- shunt/quicktype.yue:1862
+  describe('declare_type', function() -- shunt/quicktype.yue:1876
+    it('requires two arguments', function() -- shunt/quicktype.yue:1877
+      require('shunt.spec')._expect_that([=[(-> declare_type!)]=], (function() -- shunt/quicktype.yue:1878
+        return declare_type() -- shunt/quicktype.yue:1878
+      end), (errors(matches('declare_type requires a name'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1878)); -- shunt/quicktype.yue:1878
+      require('shunt.spec')._expect_that([=[(-> declare_type 'TwoArgs')]=], (function() -- shunt/quicktype.yue:1879
+        return declare_type('TwoArgs') -- shunt/quicktype.yue:1879
+      end), (errors(matches('declare_type requires a type_spec'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1879)); -- shunt/quicktype.yue:1879
+      require('shunt.spec')._expect_that([=[(-> declare_type 123, 'string')]=], (function() -- shunt/quicktype.yue:1880
+        return declare_type(123, 'string') -- shunt/quicktype.yue:1880
+      end), (errors(matches('declare_type requires a string name'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1880)); -- shunt/quicktype.yue:1880
+      return require('shunt.spec')._expect_that([=[(-> declare_type 'TwoArgs', 123)]=], (function() -- shunt/quicktype.yue:1881
+        return declare_type('TwoArgs', 123) -- shunt/quicktype.yue:1881
+      end), (errors(matches('declare_type requires a string type_spec'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1881)) -- shunt/quicktype.yue:1881
+    end) -- shunt/quicktype.yue:1877
+    it('rejects false primitives', function() -- shunt/quicktype.yue:1883
+      return require('shunt.spec')._expect_that([=[(-> declare_type 'user', 'string')]=], (function() -- shunt/quicktype.yue:1884
+        return declare_type('user', 'string') -- shunt/quicktype.yue:1884
+      end), (errors(matches('user types must start with uppercase'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1884)) -- shunt/quicktype.yue:1884
+    end) -- shunt/quicktype.yue:1883
+    it('rejects redefinition', function() -- shunt/quicktype.yue:1886
+      declare_type('AlreadyDefined', 'number'); -- shunt/quicktype.yue:1887
+      return require('shunt.spec')._expect_that([=[(-> declare_type 'AlreadyDefined', 'string')]=], (function() -- shunt/quicktype.yue:1888
+        return declare_type('AlreadyDefined', 'string') -- shunt/quicktype.yue:1888
+      end), (errors(matches([[cannot redefine type 'AlreadyDefined']]))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1888)) -- shunt/quicktype.yue:1888
+    end) -- shunt/quicktype.yue:1886
+    it('supports non-recursive types', function() -- shunt/quicktype.yue:1890
+      declare_type('NonRecursive', '[string]'); -- shunt/quicktype.yue:1891
+      require('shunt.spec')._expect_that([=[(-> T '[NonRecursive]', {{'hello'}})]=], (function() -- shunt/quicktype.yue:1892
+        return T('[NonRecursive]', { -- shunt/quicktype.yue:1892
+          { -- shunt/quicktype.yue:1892
+            'hello' -- shunt/quicktype.yue:1892
+          } -- shunt/quicktype.yue:1892
+        }) -- shunt/quicktype.yue:1892
+      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1892)) -- shunt/quicktype.yue:1892
+      declare_type('prefixed.NonRecursive', '[string]'); -- shunt/quicktype.yue:1894
+      return require('shunt.spec')._expect_that([=[(-> T '[prefixed.NonRecursive]', {{'hello'}})]=], (function() -- shunt/quicktype.yue:1895
+        return T('[prefixed.NonRecursive]', { -- shunt/quicktype.yue:1895
+          { -- shunt/quicktype.yue:1895
+            'hello' -- shunt/quicktype.yue:1895
+          } -- shunt/quicktype.yue:1895
+        }) -- shunt/quicktype.yue:1895
+      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1895)) -- shunt/quicktype.yue:1895
+    end) -- shunt/quicktype.yue:1890
+    return it('supports recursive types', function() -- shunt/quicktype.yue:1897
+      declare_type('Recursive', '[?Recursive]'); -- shunt/quicktype.yue:1898
+      require('shunt.spec')._expect_that([=[(-> T 'Recursive', {{{{{nil}}}}})]=], (function() -- shunt/quicktype.yue:1899
+        return T('Recursive', { -- shunt/quicktype.yue:1899
+          { -- shunt/quicktype.yue:1899
+            { -- shunt/quicktype.yue:1899
+              { -- shunt/quicktype.yue:1899
+                { -- shunt/quicktype.yue:1899
+                  nil -- shunt/quicktype.yue:1899
+                } -- shunt/quicktype.yue:1899
+              } -- shunt/quicktype.yue:1899
+            } -- shunt/quicktype.yue:1899
+          } -- shunt/quicktype.yue:1899
+        }) -- shunt/quicktype.yue:1899
+      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1899)); -- shunt/quicktype.yue:1899
+      require('shunt.spec')._expect_that([=[(-> T 'Recursive', {{{{{'asdf'}}}}})]=], (function() -- shunt/quicktype.yue:1900
+        return T('Recursive', { -- shunt/quicktype.yue:1900
+          { -- shunt/quicktype.yue:1900
+            { -- shunt/quicktype.yue:1900
+              { -- shunt/quicktype.yue:1900
+                { -- shunt/quicktype.yue:1900
+                  'asdf' -- shunt/quicktype.yue:1900
+                } -- shunt/quicktype.yue:1900
+              } -- shunt/quicktype.yue:1900
+            } -- shunt/quicktype.yue:1900
+          } -- shunt/quicktype.yue:1900
+        }) -- shunt/quicktype.yue:1900
+      end), (errors(matches('incorrect type: expected table but got string'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1900)) -- shunt/quicktype.yue:1900
+      declare_type('MutuallyRecursive1', '?MutuallyRecursive2') -- shunt/quicktype.yue:1902
+      declare_type('MutuallyRecursive2', 'MutuallyRecursive1'); -- shunt/quicktype.yue:1903
+      require('shunt.spec')._expect_that([=[(-> T 'MutuallyRecursive1', nil)]=], (function() -- shunt/quicktype.yue:1904
+        return T('MutuallyRecursive1', nil) -- shunt/quicktype.yue:1904
+      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1904)); -- shunt/quicktype.yue:1904
+      return require('shunt.spec')._expect_that([=[(-> T 'MutuallyRecursive1', 'asdf')]=], (function() -- shunt/quicktype.yue:1905
+        return T('MutuallyRecursive1', 'asdf') -- shunt/quicktype.yue:1905
+      end), (errors(matches('type checker recursed too many times'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1905)) -- shunt/quicktype.yue:1905
+    end) -- shunt/quicktype.yue:1905
+  end) -- shunt/quicktype.yue:1876
+  describe('declare_singleton_type', function() -- shunt/quicktype.yue:1907
+    it('requires a valid name', function() -- shunt/quicktype.yue:1908
+      require('shunt.spec')._expect_that([=[declare_singleton_type]=], declare_singleton_type, (errors(matches('requires a value'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1909)); -- shunt/quicktype.yue:1909
+      require('shunt.spec')._expect_that([=[(-> declare_singleton_type {})]=], (function() -- shunt/quicktype.yue:1911
+        return declare_singleton_type({ }) -- shunt/quicktype.yue:1911
+      end), (errors(matches("user types must start with an uppercase letter"))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1911)); -- shunt/quicktype.yue:1911
+      require('shunt.spec')._expect_that([==[(-> declare_singleton_type <tostring>: => 'Has space')]==], (function() -- shunt/quicktype.yue:1912
+        return declare_singleton_type(setmetatable({ }, { -- shunt/quicktype.yue:1912
+          __tostring = function(self) -- shunt/quicktype.yue:1912
+            return 'Has space' -- shunt/quicktype.yue:1912
+          end -- shunt/quicktype.yue:1912
+        })) -- shunt/quicktype.yue:1912
+      end), (errors(matches("cannot declare type 'Has space': not a valid identifier"))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1912)); -- shunt/quicktype.yue:1912
+      return require('shunt.spec')._expect_that([==[(-> declare_singleton_type <tostring>: => 'SingletonTable')]==], (function() -- shunt/quicktype.yue:1913
+        return declare_singleton_type(setmetatable({ }, { -- shunt/quicktype.yue:1913
+          __tostring = function(self) -- shunt/quicktype.yue:1913
+            return 'SingletonTable' -- shunt/quicktype.yue:1913
+          end -- shunt/quicktype.yue:1913
+        })) -- shunt/quicktype.yue:1913
+      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1913)) -- shunt/quicktype.yue:1913
     end) -- shunt/quicktype.yue:1908
-  end) -- shunt/quicktype.yue:1898
-  describe('is_valid_type_spec', function() -- shunt/quicktype.yue:1910
-    it('returns true on valid type specs', function() -- shunt/quicktype.yue:1911
-      return require('shunt.spec')._expect_that([=[(is_valid_type_spec 'number')]=], (is_valid_type_spec('number')), (eq(true)), tostring("shunt/quicktype.yue") .. ":" .. tostring(1912)) -- shunt/quicktype.yue:1912
-    end) -- shunt/quicktype.yue:1911
-    return it('returns false on invalid type specs', function() -- shunt/quicktype.yue:1914
-      require('shunt.spec')._expect_that([=[(is_valid_type_spec 'unknown')]=], (is_valid_type_spec('unknown')), (eq(false)), tostring("shunt/quicktype.yue") .. ":" .. tostring(1915)); -- shunt/quicktype.yue:1915
-      require('shunt.spec')._expect_that([=[(is_valid_type_spec '(')]=], (is_valid_type_spec('(')), (eq(false)), tostring("shunt/quicktype.yue") .. ":" .. tostring(1916)); -- shunt/quicktype.yue:1916
-      return require('shunt.spec')._expect_that([=[(is_valid_type_spec ')')]=], (is_valid_type_spec(')')), (eq(false)), tostring("shunt/quicktype.yue") .. ":" .. tostring(1917)) -- shunt/quicktype.yue:1917
-    end) -- shunt/quicktype.yue:1917
-  end) -- shunt/quicktype.yue:1910
-  return describe('deactivate_typechecks', function() -- shunt/quicktype.yue:1919
-    local activate_typechecks -- shunt/quicktype.yue:1920
-    activate_typechecks = function() -- shunt/quicktype.yue:1920
-      skip_typechecking = false -- shunt/quicktype.yue:1921
-    end -- shunt/quicktype.yue:1920
-    return it('deactivates typechecks', function() -- shunt/quicktype.yue:1923
-      local received -- shunt/quicktype.yue:1924
-      local f = F('(number) => <>', function(r) -- shunt/quicktype.yue:1925
-        received = r -- shunt/quicktype.yue:1926
-      end); -- shunt/quicktype.yue:1925
-      require('shunt.spec')._assert_that([=[(-> f 'prepare for')]=], (function() -- shunt/quicktype.yue:1927
-        return f('prepare for') -- shunt/quicktype.yue:1927
-      end), (errors(anything())), tostring("shunt/quicktype.yue") .. ":" .. tostring(1927)) -- shunt/quicktype.yue:1927
-      deactivate_typechecks(); -- shunt/quicktype.yue:1929
-      require('shunt.spec')._assert_that([=[(-> f 'unforeseen')]=], (function() -- shunt/quicktype.yue:1930
-        return f('unforeseen') -- shunt/quicktype.yue:1930
-      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1930)) -- shunt/quicktype.yue:1930
-      activate_typechecks(); -- shunt/quicktype.yue:1932
-      return require('shunt.spec')._assert_that([=[(-> f 'consequences')]=], (function() -- shunt/quicktype.yue:1933
-        return f('consequences') -- shunt/quicktype.yue:1933
-      end), (errors(anything())), tostring("shunt/quicktype.yue") .. ":" .. tostring(1933)) -- shunt/quicktype.yue:1933
-    end) -- shunt/quicktype.yue:1933
-  end) -- shunt/quicktype.yue:1933
-end) -- shunt/quicktype.yue:1323
-return _module_0 -- shunt/quicktype.yue:1933
+    it('requires a unique name', function() -- shunt/quicktype.yue:1915
+      local NAME = 'UniqueSingleton' -- shunt/quicktype.yue:1916
+      declare_singleton_type(setmetatable({ }, { -- shunt/quicktype.yue:1917
+        __tostring = function(self) -- shunt/quicktype.yue:1917
+          return NAME -- shunt/quicktype.yue:1917
+        end -- shunt/quicktype.yue:1917
+      })); -- shunt/quicktype.yue:1917
+      return require('shunt.spec')._expect_that([==[(-> declare_singleton_type <tostring>: => NAME)]==], (function() -- shunt/quicktype.yue:1918
+        return declare_singleton_type(setmetatable({ }, { -- shunt/quicktype.yue:1918
+          __tostring = function(self) -- shunt/quicktype.yue:1918
+            return NAME -- shunt/quicktype.yue:1918
+          end -- shunt/quicktype.yue:1918
+        })) -- shunt/quicktype.yue:1918
+      end), (errors(matches("cannot redefine type '" .. tostring(NAME) .. "'"))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1918)) -- shunt/quicktype.yue:1918
+    end) -- shunt/quicktype.yue:1915
+    return it('rejects primitives', function() -- shunt/quicktype.yue:1920
+      require('shunt.spec')._expect_that([=[(-> declare_singleton_type 123)]=], (function() -- shunt/quicktype.yue:1921
+        return declare_singleton_type(123) -- shunt/quicktype.yue:1921
+      end), (errors(matches('declare_singleton_type requires a table value'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1921)); -- shunt/quicktype.yue:1921
+      return require('shunt.spec')._expect_that([=[(-> declare_singleton_type 'hello')]=], (function() -- shunt/quicktype.yue:1922
+        return declare_singleton_type('hello') -- shunt/quicktype.yue:1922
+      end), (errors(matches('declare_singleton_type requires a table value'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1922)) -- shunt/quicktype.yue:1922
+    end) -- shunt/quicktype.yue:1922
+  end) -- shunt/quicktype.yue:1907
+  describe('F', function() -- shunt/quicktype.yue:1924
+    it('requires two arguments', function() -- shunt/quicktype.yue:1925
+      require('shunt.spec')._expect_that([=[(-> F!)]=], (function() -- shunt/quicktype.yue:1926
+        return F() -- shunt/quicktype.yue:1926
+      end), (errors(matches('cannot typecheck: no type spec provided'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1926)); -- shunt/quicktype.yue:1926
+      require('shunt.spec')._expect_that([=[(-> F '() -> nil')]=], (function() -- shunt/quicktype.yue:1927
+        return F('() -> nil') -- shunt/quicktype.yue:1927
+      end), (errors(matches('cannot typecheck: no function provided'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1927)); -- shunt/quicktype.yue:1927
+      return require('shunt.spec')._expect_that([=[(-> F '() -> nil', 'interloper')]=], (function() -- shunt/quicktype.yue:1928
+        return F('() -> nil', 'interloper') -- shunt/quicktype.yue:1928
+      end), (errors(matches('cannot typecheck: no function provided'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1928)) -- shunt/quicktype.yue:1928
+    end) -- shunt/quicktype.yue:1925
+    it('returns its second argument', function() -- shunt/quicktype.yue:1930
+      local f = F('(number, number) -> number', function(a, b) -- shunt/quicktype.yue:1931
+        return a + b -- shunt/quicktype.yue:1931
+      end); -- shunt/quicktype.yue:1931
+      return require('shunt.spec')._expect_that([=[(f 1, 2)]=], (f(1, 2)), (eq(3)), tostring("shunt/quicktype.yue") .. ":" .. tostring(1932)) -- shunt/quicktype.yue:1932
+    end) -- shunt/quicktype.yue:1930
+    it('accepts none returns', function() -- shunt/quicktype.yue:1934
+      return require('shunt.spec')._expect_that([=[(-> (F '() -> <>', ->)!)]=], (function() -- shunt/quicktype.yue:1935
+        return (F('() -> <>', function() end))() -- shunt/quicktype.yue:1935
+      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1935)) -- shunt/quicktype.yue:1935
+    end) -- shunt/quicktype.yue:1934
+    it('accepts nil returns', function() -- shunt/quicktype.yue:1937
+      return require('shunt.spec')._expect_that([=[(-> (F '() -> nil', -> nil)!)]=], (function() -- shunt/quicktype.yue:1938
+        return (F('() -> nil', function() -- shunt/quicktype.yue:1938
+          return nil -- shunt/quicktype.yue:1938
+        end))() -- shunt/quicktype.yue:1938
+      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1938)) -- shunt/quicktype.yue:1938
+    end) -- shunt/quicktype.yue:1937
+    it('accepts absent optional arguments', function() -- shunt/quicktype.yue:1940
+      return require('shunt.spec')._expect_that([=[(-> (F '() -> ?string', ->)!)]=], (function() -- shunt/quicktype.yue:1941
+        return (F('() -> ?string', function() end))() -- shunt/quicktype.yue:1941
+      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1941)) -- shunt/quicktype.yue:1941
+    end) -- shunt/quicktype.yue:1940
+    it('accepts remainder arguments', function() -- shunt/quicktype.yue:1943
+      require('shunt.spec')._expect_that([=[(-> (F '(string...) -> nil', ->)!)]=], (function() -- shunt/quicktype.yue:1944
+        return (F('(string...) -> nil', function() end))() -- shunt/quicktype.yue:1944
+      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1944)); -- shunt/quicktype.yue:1944
+      require('shunt.spec')._expect_that([=[(-> (F '(string...) -> nil', ->) 'hello', 'world')]=], (function() -- shunt/quicktype.yue:1945
+        return (F('(string...) -> nil', function() end))('hello', 'world') -- shunt/quicktype.yue:1945
+      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1945)); -- shunt/quicktype.yue:1945
+      require('shunt.spec')._expect_that([=[(-> (F '(number, string...) -> nil', ->) 123, 'hello', 'world')]=], (function() -- shunt/quicktype.yue:1946
+        return (F('(number, string...) -> nil', function() end))(123, 'hello', 'world') -- shunt/quicktype.yue:1946
+      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1946)); -- shunt/quicktype.yue:1946
+      return require('shunt.spec')._expect_that([=[(-> (F '(number, string...) -> nil', (...) ->) 123, 'hello', true)]=], (function() -- shunt/quicktype.yue:1948
+        return (F('(number, string...) -> nil', function(...) end))(123, 'hello', true) -- shunt/quicktype.yue:1948
+      end), (errors(matches('incorrect type: expected string but got boolean'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1948)) -- shunt/quicktype.yue:1948
+    end) -- shunt/quicktype.yue:1943
+    it('accepts absent optional returns', function() -- shunt/quicktype.yue:1950
+      return require('shunt.spec')._expect_that([=[(-> (F '() -> nil', ->)!)]=], (function() -- shunt/quicktype.yue:1951
+        return (F('() -> nil', function() end))() -- shunt/quicktype.yue:1951
+      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1951)) -- shunt/quicktype.yue:1951
+    end) -- shunt/quicktype.yue:1950
+    it('accepts multiple return values', function() -- shunt/quicktype.yue:1953
+      return require('shunt.spec')._expect_that([=[(-> (F '() -> <string, boolean>', -> 'a', true)!)]=], (function() -- shunt/quicktype.yue:1954
+        return (F('() -> <string, boolean>', function() -- shunt/quicktype.yue:1954
+          return 'a', true -- shunt/quicktype.yue:1954
+        end))() -- shunt/quicktype.yue:1954
+      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1954)) -- shunt/quicktype.yue:1954
+    end) -- shunt/quicktype.yue:1953
+    it('accepts remainder return values', function() -- shunt/quicktype.yue:1956
+      require('shunt.spec')._expect_that([=[(-> (F '() -> string...', ->)!)]=], (function() -- shunt/quicktype.yue:1957
+        return (F('() -> string...', function() end))() -- shunt/quicktype.yue:1957
+      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1957)); -- shunt/quicktype.yue:1957
+      require('shunt.spec')._expect_that([=[(-> (F '() -> string...', -> 'hello', 'world')!)]=], (function() -- shunt/quicktype.yue:1958
+        return (F('() -> string...', function() -- shunt/quicktype.yue:1958
+          return 'hello', 'world' -- shunt/quicktype.yue:1958
+        end))() -- shunt/quicktype.yue:1958
+      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1958)); -- shunt/quicktype.yue:1958
+      require('shunt.spec')._expect_that([=[(-> (F '() -> <number, string...>', -> 123, 'hello', 'world')!)]=], (function() -- shunt/quicktype.yue:1959
+        return (F('() -> <number, string...>', function() -- shunt/quicktype.yue:1959
+          return 123, 'hello', 'world' -- shunt/quicktype.yue:1959
+        end))() -- shunt/quicktype.yue:1959
+      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1959)); -- shunt/quicktype.yue:1959
+      return require('shunt.spec')._expect_that([=[(-> (F '() -> <number, string...>', -> 123, 'hello', true)!)]=], (function() -- shunt/quicktype.yue:1961
+        return (F('() -> <number, string...>', function() -- shunt/quicktype.yue:1961
+          return 123, 'hello', true -- shunt/quicktype.yue:1961
+        end))() -- shunt/quicktype.yue:1961
+      end), (errors(matches('incorrect type: expected string but got boolean'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1961)) -- shunt/quicktype.yue:1961
+    end) -- shunt/quicktype.yue:1956
+    it('prevents execution on invalid args', function() -- shunt/quicktype.yue:1963
+      return require('shunt.spec')._expect_that([=[(-> (F '(string) -> nil', -> error 'OH NO') 123)]=], (function() -- shunt/quicktype.yue:1964
+        return (F('(string) -> nil', function() -- shunt/quicktype.yue:1964
+          return error('OH NO') -- shunt/quicktype.yue:1964
+        end))(123) -- shunt/quicktype.yue:1964
+      end), (errors(matches('incorrect type: expected string but got number'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1964)) -- shunt/quicktype.yue:1964
+    end) -- shunt/quicktype.yue:1963
+    it('rejects non-function types', function() -- shunt/quicktype.yue:1966
+      return require('shunt.spec')._expect_that([=[(-> F '{}', ->)]=], (function() -- shunt/quicktype.yue:1967
+        return F('{}', function() end) -- shunt/quicktype.yue:1967
+      end), (errors(matches('cannot typecheck: expected a function type'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1967)) -- shunt/quicktype.yue:1967
+    end) -- shunt/quicktype.yue:1966
+    it('rejects incorrect-type arguments', function() -- shunt/quicktype.yue:1969
+      return require('shunt.spec')._expect_that([=[(-> (F '(string) -> table', ->) 123)]=], (function() -- shunt/quicktype.yue:1970
+        return (F('(string) -> table', function() end))(123) -- shunt/quicktype.yue:1970
+      end), (errors(matches('incorrect type: expected string but got number'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1970)) -- shunt/quicktype.yue:1970
+    end) -- shunt/quicktype.yue:1969
+    it('rejects extra arguments', function() -- shunt/quicktype.yue:1972
+      return require('shunt.spec')._expect_that([=[(-> (F '(string) -> table', ->) 'a', 'b')]=], (function() -- shunt/quicktype.yue:1973
+        return (F('(string) -> table', function() end))('a', 'b') -- shunt/quicktype.yue:1973
+      end), (errors(matches('function given too many arguments'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1973)) -- shunt/quicktype.yue:1973
+    end) -- shunt/quicktype.yue:1972
+    it('rejects incorrect-type return values', function() -- shunt/quicktype.yue:1975
+      return require('shunt.spec')._expect_that([=[(-> (F '(table) -> string', ->) {})]=], (function() -- shunt/quicktype.yue:1976
+        return (F('(table) -> string', function() end))({ }) -- shunt/quicktype.yue:1976
+      end), (errors(matches('incorrect type: expected string but got nil'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1976)) -- shunt/quicktype.yue:1976
+    end) -- shunt/quicktype.yue:1975
+    it('rejects extra return arguments', function() -- shunt/quicktype.yue:1978
+      return require('shunt.spec')._expect_that([=[(-> (F '() -> string', -> 'a', 'b')!)]=], (function() -- shunt/quicktype.yue:1979
+        return (F('() -> string', function() -- shunt/quicktype.yue:1979
+          return 'a', 'b' -- shunt/quicktype.yue:1979
+        end))() -- shunt/quicktype.yue:1979
+      end), (errors(matches('function returned too many values'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1979)) -- shunt/quicktype.yue:1979
+    end) -- shunt/quicktype.yue:1978
+    it('rejects multiple incorrect return values', function() -- shunt/quicktype.yue:1981
+      require('shunt.spec')._expect_that([=[(-> (F '() -> <string, boolean>', -> {}, true)!)]=], (function() -- shunt/quicktype.yue:1982
+        return (F('() -> <string, boolean>', function() -- shunt/quicktype.yue:1982
+          return { }, true -- shunt/quicktype.yue:1982
+        end))() -- shunt/quicktype.yue:1982
+      end), (errors(matches('incorrect type: expected string but got table'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1982)); -- shunt/quicktype.yue:1982
+      return require('shunt.spec')._expect_that([=[(-> (F '() -> <string, boolean>', -> 'asdf', {})!)]=], (function() -- shunt/quicktype.yue:1983
+        return (F('() -> <string, boolean>', function() -- shunt/quicktype.yue:1983
+          return 'asdf', { } -- shunt/quicktype.yue:1983
+        end))() -- shunt/quicktype.yue:1983
+      end), (errors(matches('incorrect type: expected boolean but got table'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1983)) -- shunt/quicktype.yue:1983
+    end) -- shunt/quicktype.yue:1981
+    it('accepts methods', function() -- shunt/quicktype.yue:1985
+      require('shunt.spec')._expect_that([==[(-> (F '(number) => <>', =>), {}, 123)]==], (function() -- shunt/quicktype.yue:1986
+        return (F('(number) => <>', function(self) end)), { }, 123 -- shunt/quicktype.yue:1986
+      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1986)); -- shunt/quicktype.yue:1986
+      return require('shunt.spec')._expect_that([==[(-> (F '(number) => <>', =>), 'recv', 123)]==], (function() -- shunt/quicktype.yue:1987
+        return (F('(number) => <>', function(self) end)), 'recv', 123 -- shunt/quicktype.yue:1987
+      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(1987)) -- shunt/quicktype.yue:1987
+    end) -- shunt/quicktype.yue:1985
+    it('requires a method receiver', function() -- shunt/quicktype.yue:1989
+      return require('shunt.spec')._expect_that([==[(-> (F '() => <>', =>)!)]==], (function() -- shunt/quicktype.yue:1990
+        return (F('() => <>', function(self) end))() -- shunt/quicktype.yue:1990
+      end), (errors(matches("incorrect type: expected some but got nil"))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1990)) -- shunt/quicktype.yue:1990
+    end) -- shunt/quicktype.yue:1989
+    return it('checks never', function() -- shunt/quicktype.yue:1992
+      return require('shunt.spec')._expect_that([=[(-> (F '() -> !', ->)!)]=], (function() -- shunt/quicktype.yue:1993
+        return (F('() -> !', function() end))() -- shunt/quicktype.yue:1993
+      end), (errors(matches('never expected a value here'))), tostring("shunt/quicktype.yue") .. ":" .. tostring(1993)) -- shunt/quicktype.yue:1993
+    end) -- shunt/quicktype.yue:1993
+  end) -- shunt/quicktype.yue:1924
+  describe('stats', function() -- shunt/quicktype.yue:1995
+    return it('has the correct type', function() -- shunt/quicktype.yue:1996
+      local prev_collect_stats = COLLECT_STATS -- shunt/quicktype.yue:1997
+      COLLECT_STATS = true -- shunt/quicktype.yue:1998
+      T('string', 'hello') -- shunt/quicktype.yue:2000
+      local stats_arr = stats(); -- shunt/quicktype.yue:2001
+      require('shunt.spec')._expect_that([=[stats_arr]=], stats_arr, (len(gt(0))), tostring("shunt/quicktype.yue") .. ":" .. tostring(2002)); -- shunt/quicktype.yue:2002
+      require('shunt.spec')._expect_that([=[stats_arr]=], stats_arr, (each_value(has_fields({ -- shunt/quicktype.yue:2003
+        count = ge(0) -- shunt/quicktype.yue:2003
+      }))), tostring("shunt/quicktype.yue") .. ":" .. tostring(2003)) -- shunt/quicktype.yue:2003
+      COLLECT_STATS = prev_collect_stats -- shunt/quicktype.yue:2005
+    end) -- shunt/quicktype.yue:2005
+  end) -- shunt/quicktype.yue:1995
+  describe('is_valid_type_spec', function() -- shunt/quicktype.yue:2007
+    it('returns true on valid type specs', function() -- shunt/quicktype.yue:2008
+      return require('shunt.spec')._expect_that([=[(is_valid_type_spec 'number')]=], (is_valid_type_spec('number')), (eq(true)), tostring("shunt/quicktype.yue") .. ":" .. tostring(2009)) -- shunt/quicktype.yue:2009
+    end) -- shunt/quicktype.yue:2008
+    return it('returns false on invalid type specs', function() -- shunt/quicktype.yue:2011
+      require('shunt.spec')._expect_that([=[(is_valid_type_spec 'unknown')]=], (is_valid_type_spec('unknown')), (eq(false)), tostring("shunt/quicktype.yue") .. ":" .. tostring(2012)); -- shunt/quicktype.yue:2012
+      require('shunt.spec')._expect_that([=[(is_valid_type_spec '(')]=], (is_valid_type_spec('(')), (eq(false)), tostring("shunt/quicktype.yue") .. ":" .. tostring(2013)); -- shunt/quicktype.yue:2013
+      return require('shunt.spec')._expect_that([=[(is_valid_type_spec ')')]=], (is_valid_type_spec(')')), (eq(false)), tostring("shunt/quicktype.yue") .. ":" .. tostring(2014)) -- shunt/quicktype.yue:2014
+    end) -- shunt/quicktype.yue:2014
+  end) -- shunt/quicktype.yue:2007
+  return describe('deactivate_typechecks', function() -- shunt/quicktype.yue:2016
+    local activate_typechecks -- shunt/quicktype.yue:2017
+    activate_typechecks = function() -- shunt/quicktype.yue:2017
+      skip_typechecking = false -- shunt/quicktype.yue:2018
+    end -- shunt/quicktype.yue:2017
+    return it('deactivates typechecks', function() -- shunt/quicktype.yue:2020
+      local received -- shunt/quicktype.yue:2021
+      local f = F('(number) => <>', function(r) -- shunt/quicktype.yue:2022
+        received = r -- shunt/quicktype.yue:2023
+      end); -- shunt/quicktype.yue:2022
+      require('shunt.spec')._assert_that([=[(-> f 'prepare for')]=], (function() -- shunt/quicktype.yue:2024
+        return f('prepare for') -- shunt/quicktype.yue:2024
+      end), (errors(anything())), tostring("shunt/quicktype.yue") .. ":" .. tostring(2024)) -- shunt/quicktype.yue:2024
+      deactivate_typechecks(); -- shunt/quicktype.yue:2026
+      require('shunt.spec')._assert_that([=[(-> f 'unforeseen')]=], (function() -- shunt/quicktype.yue:2027
+        return f('unforeseen') -- shunt/quicktype.yue:2027
+      end), (no_errors()), tostring("shunt/quicktype.yue") .. ":" .. tostring(2027)) -- shunt/quicktype.yue:2027
+      activate_typechecks(); -- shunt/quicktype.yue:2029
+      return require('shunt.spec')._assert_that([=[(-> f 'consequences')]=], (function() -- shunt/quicktype.yue:2030
+        return f('consequences') -- shunt/quicktype.yue:2030
+      end), (errors(anything())), tostring("shunt/quicktype.yue") .. ":" .. tostring(2030)) -- shunt/quicktype.yue:2030
+    end) -- shunt/quicktype.yue:2030
+  end) -- shunt/quicktype.yue:2030
+end) -- shunt/quicktype.yue:1394
+return _module_0 -- shunt/quicktype.yue:2030
 end
 package.preload['shunt.spec'] = function(...)
 -- [yue]: shunt/spec.yue
 local _module_0 = { } -- shunt/spec.yue:1
-local spec_fns, verbose, set_log_verbosity, log, spec, root_spec, current_spec, current_spec_kind, describe, it, declare_spec_section, Spec, FATAL_TEST_ERROR_MARKER, Test, expect_that, _expect_that, assert_that, _assert_that, get_caller_location, Anything, Some, Not, Eq, Compare, DeepEq, Type, Matches, Len, ToStringsAs, NoErrors, Errors, Contains, Each, Fields, repr, is_list, can_sort, matchers, reflow, testing, running_tests, run_tests -- shunt/spec.yue:1
+local spec_fns, verbose, set_log_verbosity, log, spec, root_spec, current_spec, current_spec_kind, describe, it, declare_spec_section, Spec, FATAL_TEST_ERROR_MARKER, Test, expect_that, _expect_that, assert_that, _assert_that, get_caller_location, Anything, Some, Not, Eq, Compare, Near, DeepEq, Type, Matches, Len, ToStringsAs, NoErrors, Errors, Contains, Each, Fields, visible_chars, repr, is_list, can_sort, clone, matchers, reflow, testing, running_tests, run_tests -- shunt/spec.yue:1
 spec_fns = nil -- shunt/spec.yue:3
 verbose = false -- shunt/spec.yue:5
 set_log_verbosity = function(v) -- shunt/spec.yue:6
@@ -6193,7 +6354,7 @@ _assert_that = function(value_label, actual, matcher, location) -- shunt/spec.yu
       do -- shunt/spec.yue:180
         local _obj_0 = matcher.actual_repr -- shunt/spec.yue:180
         if _obj_0 ~= nil then -- shunt/spec.yue:180
-          _exp_0 = _obj_0() -- shunt/spec.yue:180
+          _exp_0 = _obj_0(matcher) -- shunt/spec.yue:180
         end -- shunt/spec.yue:180
       end -- shunt/spec.yue:180
       if _exp_0 ~= nil then -- shunt/spec.yue:180
@@ -6433,887 +6594,1024 @@ do -- shunt/spec.yue:239
   _base_0.__class = _class_0 -- shunt/spec.yue:239
   Compare = _class_0 -- shunt/spec.yue:239
 end -- shunt/spec.yue:277
-do -- shunt/spec.yue:280
-  local _class_0 -- shunt/spec.yue:280
-  local _base_0 = { -- shunt/spec.yue:280
-    matches = function(self, actual) -- shunt/spec.yue:283
-      return self:deep_equal(self.expected, actual) -- shunt/spec.yue:284
-    end, -- shunt/spec.yue:286
-    deep_equal = function(self, a, b) -- shunt/spec.yue:286
-      if a == b then -- shunt/spec.yue:287
-        return true -- shunt/spec.yue:288
-      end -- shunt/spec.yue:287
-      local type_a = type(a) -- shunt/spec.yue:290
-      local type_b = type(b) -- shunt/spec.yue:291
-      if type_a ~= type_b then -- shunt/spec.yue:292
-        return false -- shunt/spec.yue:293
-      end -- shunt/spec.yue:292
-      if type_a ~= 'table' then -- shunt/spec.yue:295
-        return false -- shunt/spec.yue:296
-      end -- shunt/spec.yue:295
-      for ka, va in pairs(a) do -- shunt/spec.yue:297
-        local vb = b[ka] -- shunt/spec.yue:298
-        if not self:deep_equal(va, vb) then -- shunt/spec.yue:299
-          return false -- shunt/spec.yue:300
-        end -- shunt/spec.yue:299
-      end -- shunt/spec.yue:300
-      for kb, _ in pairs(b) do -- shunt/spec.yue:301
-        if not (a[kb] ~= nil) then -- shunt/spec.yue:302
-          return false -- shunt/spec.yue:303
-        end -- shunt/spec.yue:302
+do -- shunt/spec.yue:279
+  local _class_0 -- shunt/spec.yue:279
+  local _base_0 = { -- shunt/spec.yue:279
+    matches = function(self, actual) -- shunt/spec.yue:282
+      if 'number' ~= type(actual) then -- shunt/spec.yue:283
+        return false -- shunt/spec.yue:284
+      end -- shunt/spec.yue:283
+      return (math.abs(actual - self.expected)) <= math.abs(self.delta * self.expected) -- shunt/spec.yue:285
+    end, -- shunt/spec.yue:287
+    explain_match = function(self, actual) -- shunt/spec.yue:287
+      return "which " .. tostring(self:describe(self:matches(actual))) -- shunt/spec.yue:288
+    end, -- shunt/spec.yue:290
+    describe = function(self, is_match) -- shunt/spec.yue:290
+      if is_match == nil then -- shunt/spec.yue:290
+        is_match = true -- shunt/spec.yue:290
+      end -- shunt/spec.yue:290
+      if is_match then -- shunt/spec.yue:291
+        return "is near " .. tostring(self.expected) .. " (Δ" .. tostring(self.delta) .. "x)" -- shunt/spec.yue:292
+      else -- shunt/spec.yue:294
+        return "isn't near " .. tostring(self.expected) .. " (Δ" .. tostring(self.delta) .. "x)" -- shunt/spec.yue:294
+      end -- shunt/spec.yue:291
+    end -- shunt/spec.yue:279
+  } -- shunt/spec.yue:279
+  if _base_0.__index == nil then -- shunt/spec.yue:279
+    _base_0.__index = _base_0 -- shunt/spec.yue:279
+  end -- shunt/spec.yue:294
+  _class_0 = setmetatable({ -- shunt/spec.yue:279
+    __init = function(self, expected, delta) -- shunt/spec.yue:280
+      if delta == nil then -- shunt/spec.yue:280
+        delta = 0.00001 -- shunt/spec.yue:280
+      end -- shunt/spec.yue:280
+      self.expected = expected -- shunt/spec.yue:280
+      self.delta = delta -- shunt/spec.yue:280
+    end, -- shunt/spec.yue:279
+    __base = _base_0, -- shunt/spec.yue:279
+    __name = "Near" -- shunt/spec.yue:279
+  }, { -- shunt/spec.yue:279
+    __index = _base_0, -- shunt/spec.yue:279
+    __call = function(cls, ...) -- shunt/spec.yue:279
+      local _self_0 = setmetatable({ }, _base_0) -- shunt/spec.yue:279
+      cls.__init(_self_0, ...) -- shunt/spec.yue:279
+      return _self_0 -- shunt/spec.yue:279
+    end -- shunt/spec.yue:279
+  }) -- shunt/spec.yue:279
+  _base_0.__class = _class_0 -- shunt/spec.yue:279
+  Near = _class_0 -- shunt/spec.yue:279
+end -- shunt/spec.yue:294
+do -- shunt/spec.yue:296
+  local _class_0 -- shunt/spec.yue:296
+  local _base_0 = { -- shunt/spec.yue:296
+    matches = function(self, actual) -- shunt/spec.yue:299
+      return self:deep_equal(self.expected, actual) -- shunt/spec.yue:300
+    end, -- shunt/spec.yue:302
+    deep_equal = function(self, a, b, a_stack_set, b_stack_set) -- shunt/spec.yue:302
+      if a_stack_set == nil then -- shunt/spec.yue:302
+        a_stack_set = { } -- shunt/spec.yue:302
+      end -- shunt/spec.yue:302
+      if b_stack_set == nil then -- shunt/spec.yue:302
+        b_stack_set = { } -- shunt/spec.yue:302
+      end -- shunt/spec.yue:302
+      if a == b then -- shunt/spec.yue:303
+        return true -- shunt/spec.yue:304
       end -- shunt/spec.yue:303
-      return true -- shunt/spec.yue:304
-    end, -- shunt/spec.yue:306
-    explain_match = function(self, actual) -- shunt/spec.yue:306
-      return "which " .. tostring(self:describe(self:matches(actual))) -- shunt/spec.yue:307
-    end, -- shunt/spec.yue:309
-    describe = function(self, is_match) -- shunt/spec.yue:309
-      if is_match == nil then -- shunt/spec.yue:309
-        is_match = true -- shunt/spec.yue:309
-      end -- shunt/spec.yue:309
-      if is_match then -- shunt/spec.yue:310
-        return "is deeply equal to " .. tostring(repr(self.expected)) -- shunt/spec.yue:311
-      else -- shunt/spec.yue:313
-        return "isn't deeply equal to " .. tostring(repr(self.expected)) -- shunt/spec.yue:313
-      end -- shunt/spec.yue:310
-    end -- shunt/spec.yue:280
-  } -- shunt/spec.yue:280
-  if _base_0.__index == nil then -- shunt/spec.yue:280
-    _base_0.__index = _base_0 -- shunt/spec.yue:280
-  end -- shunt/spec.yue:313
-  _class_0 = setmetatable({ -- shunt/spec.yue:280
-    __init = function(self, expected) -- shunt/spec.yue:281
-      self.expected = expected -- shunt/spec.yue:281
-    end, -- shunt/spec.yue:280
-    __base = _base_0, -- shunt/spec.yue:280
-    __name = "DeepEq" -- shunt/spec.yue:280
-  }, { -- shunt/spec.yue:280
-    __index = _base_0, -- shunt/spec.yue:280
-    __call = function(cls, ...) -- shunt/spec.yue:280
-      local _self_0 = setmetatable({ }, _base_0) -- shunt/spec.yue:280
-      cls.__init(_self_0, ...) -- shunt/spec.yue:280
-      return _self_0 -- shunt/spec.yue:280
-    end -- shunt/spec.yue:280
-  }) -- shunt/spec.yue:280
-  _base_0.__class = _class_0 -- shunt/spec.yue:280
-  DeepEq = _class_0 -- shunt/spec.yue:280
-end -- shunt/spec.yue:313
-do -- shunt/spec.yue:315
-  local _class_0 -- shunt/spec.yue:315
-  local _base_0 = { -- shunt/spec.yue:315
-    matches = function(self, actual) -- shunt/spec.yue:318
-      return self.type == type(actual) -- shunt/spec.yue:319
-    end, -- shunt/spec.yue:321
-    explain_match = function(self, actual) -- shunt/spec.yue:321
-      return "which " .. tostring(self:describe(self:matches(actual))) -- shunt/spec.yue:322
-    end, -- shunt/spec.yue:324
-    describe = function(self, is_match) -- shunt/spec.yue:324
-      if is_match == nil then -- shunt/spec.yue:324
-        is_match = true -- shunt/spec.yue:324
+      local type_a = type(a) -- shunt/spec.yue:306
+      local type_b = type(b) -- shunt/spec.yue:307
+      if type_a ~= type_b then -- shunt/spec.yue:308
+        return false -- shunt/spec.yue:309
+      end -- shunt/spec.yue:308
+      if type_a ~= 'table' then -- shunt/spec.yue:311
+        return false -- shunt/spec.yue:312
+      end -- shunt/spec.yue:311
+      for ka, va in pairs(a) do -- shunt/spec.yue:313
+        local vb = b[ka] -- shunt/spec.yue:314
+        if a_stack_set[va] and b_stack_set[vb] then -- shunt/spec.yue:316
+          return true -- shunt/spec.yue:317
+        end -- shunt/spec.yue:316
+        a_stack_set[va] = true -- shunt/spec.yue:318
+        if (vb ~= nil) then -- shunt/spec.yue:319
+          b_stack_set[vb] = true -- shunt/spec.yue:320
+        end -- shunt/spec.yue:319
+        if not self:deep_equal(va, vb, a_stack_set, b_stack_set) then -- shunt/spec.yue:321
+          return false -- shunt/spec.yue:322
+        end -- shunt/spec.yue:321
+        a_stack_set[va] = nil -- shunt/spec.yue:323
+        b_stack_set[vb] = nil -- shunt/spec.yue:324
       end -- shunt/spec.yue:324
-      if is_match then -- shunt/spec.yue:325
-        return "has type " .. tostring(self.type) -- shunt/spec.yue:326
-      else -- shunt/spec.yue:328
-        return "does not have type " .. tostring(self.type) -- shunt/spec.yue:328
-      end -- shunt/spec.yue:325
-    end -- shunt/spec.yue:315
-  } -- shunt/spec.yue:315
-  if _base_0.__index == nil then -- shunt/spec.yue:315
-    _base_0.__index = _base_0 -- shunt/spec.yue:315
-  end -- shunt/spec.yue:328
-  _class_0 = setmetatable({ -- shunt/spec.yue:315
-    __init = function(self, type) -- shunt/spec.yue:316
-      self.type = type -- shunt/spec.yue:316
-    end, -- shunt/spec.yue:315
-    __base = _base_0, -- shunt/spec.yue:315
-    __name = "Type" -- shunt/spec.yue:315
-  }, { -- shunt/spec.yue:315
-    __index = _base_0, -- shunt/spec.yue:315
-    __call = function(cls, ...) -- shunt/spec.yue:315
-      local _self_0 = setmetatable({ }, _base_0) -- shunt/spec.yue:315
-      cls.__init(_self_0, ...) -- shunt/spec.yue:315
-      return _self_0 -- shunt/spec.yue:315
-    end -- shunt/spec.yue:315
-  }) -- shunt/spec.yue:315
-  _base_0.__class = _class_0 -- shunt/spec.yue:315
-  Type = _class_0 -- shunt/spec.yue:315
-end -- shunt/spec.yue:328
-do -- shunt/spec.yue:330
-  local _class_0 -- shunt/spec.yue:330
-  local _base_0 = { -- shunt/spec.yue:330
-    matches = function(self, actual) -- shunt/spec.yue:333
-      return ('string' == type(actual)) and ((actual:match(self.pat)) ~= nil) -- shunt/spec.yue:335
-    end, -- shunt/spec.yue:337
-    explain_match = function(self, actual) -- shunt/spec.yue:337
-      if 'string' ~= type(actual) then -- shunt/spec.yue:338
-        return "which is a " .. tostring(type(actual)) -- shunt/spec.yue:339
-      end -- shunt/spec.yue:338
-      return "which " .. tostring(self:describe(self:matches(actual))) -- shunt/spec.yue:340
-    end, -- shunt/spec.yue:342
-    describe = function(self, is_match) -- shunt/spec.yue:342
-      if is_match == nil then -- shunt/spec.yue:342
-        is_match = true -- shunt/spec.yue:342
-      end -- shunt/spec.yue:342
-      if is_match then -- shunt/spec.yue:343
-        return "matches " .. tostring(repr(self.pat)) -- shunt/spec.yue:344
-      else -- shunt/spec.yue:346
-        return "doesn't match " .. tostring(repr(self.pat)) -- shunt/spec.yue:346
-      end -- shunt/spec.yue:343
-    end -- shunt/spec.yue:330
-  } -- shunt/spec.yue:330
-  if _base_0.__index == nil then -- shunt/spec.yue:330
-    _base_0.__index = _base_0 -- shunt/spec.yue:330
-  end -- shunt/spec.yue:346
-  _class_0 = setmetatable({ -- shunt/spec.yue:330
-    __init = function(self, pat) -- shunt/spec.yue:331
-      self.pat = pat -- shunt/spec.yue:331
+      for kb, _ in pairs(b) do -- shunt/spec.yue:325
+        if not (a[kb] ~= nil) then -- shunt/spec.yue:326
+          return false -- shunt/spec.yue:327
+        end -- shunt/spec.yue:326
+      end -- shunt/spec.yue:327
+      return true -- shunt/spec.yue:328
     end, -- shunt/spec.yue:330
-    __base = _base_0, -- shunt/spec.yue:330
-    __name = "Matches" -- shunt/spec.yue:330
-  }, { -- shunt/spec.yue:330
-    __index = _base_0, -- shunt/spec.yue:330
-    __call = function(cls, ...) -- shunt/spec.yue:330
-      local _self_0 = setmetatable({ }, _base_0) -- shunt/spec.yue:330
-      cls.__init(_self_0, ...) -- shunt/spec.yue:330
-      return _self_0 -- shunt/spec.yue:330
-    end -- shunt/spec.yue:330
-  }) -- shunt/spec.yue:330
-  _base_0.__class = _class_0 -- shunt/spec.yue:330
-  Matches = _class_0 -- shunt/spec.yue:330
-end -- shunt/spec.yue:346
-do -- shunt/spec.yue:348
-  local _class_0 -- shunt/spec.yue:348
-  local _base_0 = { -- shunt/spec.yue:348
-    matches = function(self, actual) -- shunt/spec.yue:351
-      local ty = type(actual) -- shunt/spec.yue:352
-      return (ty == 'string' or ty == 'table') and self.inner:matches(#actual) -- shunt/spec.yue:353
-    end, -- shunt/spec.yue:355
-    explain_match = function(self, actual) -- shunt/spec.yue:355
-      local _exp_0 = type(actual) -- shunt/spec.yue:356
-      if 'string' == _exp_0 or 'table' == _exp_0 then -- shunt/spec.yue:357
-        return "which has length " .. tostring(#actual) .. " " .. tostring(self.inner:explain_match(#actual)) -- shunt/spec.yue:358
-      else -- shunt/spec.yue:360
-        return "which is a " .. tostring(type(actual)) -- shunt/spec.yue:360
-      end -- shunt/spec.yue:360
-    end, -- shunt/spec.yue:362
-    describe = function(self, is_match) -- shunt/spec.yue:362
-      if is_match == nil then -- shunt/spec.yue:362
-        is_match = true -- shunt/spec.yue:362
-      end -- shunt/spec.yue:362
-      if is_match then -- shunt/spec.yue:363
-        return "has a length which " .. tostring(self.inner:describe()) -- shunt/spec.yue:364
-      else -- shunt/spec.yue:366
-        return "doesn't have a length which " .. tostring(self.inner:describe()) -- shunt/spec.yue:366
-      end -- shunt/spec.yue:363
-    end -- shunt/spec.yue:348
-  } -- shunt/spec.yue:348
-  if _base_0.__index == nil then -- shunt/spec.yue:348
-    _base_0.__index = _base_0 -- shunt/spec.yue:348
-  end -- shunt/spec.yue:366
-  _class_0 = setmetatable({ -- shunt/spec.yue:348
-    __init = function(self, inner) -- shunt/spec.yue:349
-      self.inner = inner -- shunt/spec.yue:349
+    explain_match = function(self, actual) -- shunt/spec.yue:330
+      return "which " .. tostring(self:describe(self:matches(actual))) -- shunt/spec.yue:331
+    end, -- shunt/spec.yue:333
+    describe = function(self, is_match) -- shunt/spec.yue:333
+      if is_match == nil then -- shunt/spec.yue:333
+        is_match = true -- shunt/spec.yue:333
+      end -- shunt/spec.yue:333
+      if is_match then -- shunt/spec.yue:334
+        return "is deeply equal to " .. tostring(repr(self.expected)) -- shunt/spec.yue:335
+      else -- shunt/spec.yue:337
+        return "isn't deeply equal to " .. tostring(repr(self.expected)) -- shunt/spec.yue:337
+      end -- shunt/spec.yue:334
+    end -- shunt/spec.yue:296
+  } -- shunt/spec.yue:296
+  if _base_0.__index == nil then -- shunt/spec.yue:296
+    _base_0.__index = _base_0 -- shunt/spec.yue:296
+  end -- shunt/spec.yue:337
+  _class_0 = setmetatable({ -- shunt/spec.yue:296
+    __init = function(self, expected) -- shunt/spec.yue:297
+      self.expected = expected -- shunt/spec.yue:297
+    end, -- shunt/spec.yue:296
+    __base = _base_0, -- shunt/spec.yue:296
+    __name = "DeepEq" -- shunt/spec.yue:296
+  }, { -- shunt/spec.yue:296
+    __index = _base_0, -- shunt/spec.yue:296
+    __call = function(cls, ...) -- shunt/spec.yue:296
+      local _self_0 = setmetatable({ }, _base_0) -- shunt/spec.yue:296
+      cls.__init(_self_0, ...) -- shunt/spec.yue:296
+      return _self_0 -- shunt/spec.yue:296
+    end -- shunt/spec.yue:296
+  }) -- shunt/spec.yue:296
+  _base_0.__class = _class_0 -- shunt/spec.yue:296
+  DeepEq = _class_0 -- shunt/spec.yue:296
+end -- shunt/spec.yue:337
+do -- shunt/spec.yue:339
+  local _class_0 -- shunt/spec.yue:339
+  local _base_0 = { -- shunt/spec.yue:339
+    matches = function(self, actual) -- shunt/spec.yue:342
+      return self.type == type(actual) -- shunt/spec.yue:343
+    end, -- shunt/spec.yue:345
+    explain_match = function(self, actual) -- shunt/spec.yue:345
+      return "which " .. tostring(self:describe(self:matches(actual))) -- shunt/spec.yue:346
     end, -- shunt/spec.yue:348
-    __base = _base_0, -- shunt/spec.yue:348
-    __name = "Len" -- shunt/spec.yue:348
-  }, { -- shunt/spec.yue:348
-    __index = _base_0, -- shunt/spec.yue:348
-    __call = function(cls, ...) -- shunt/spec.yue:348
-      local _self_0 = setmetatable({ }, _base_0) -- shunt/spec.yue:348
-      cls.__init(_self_0, ...) -- shunt/spec.yue:348
-      return _self_0 -- shunt/spec.yue:348
-    end -- shunt/spec.yue:348
-  }) -- shunt/spec.yue:348
-  _base_0.__class = _class_0 -- shunt/spec.yue:348
-  Len = _class_0 -- shunt/spec.yue:348
-end -- shunt/spec.yue:366
-do -- shunt/spec.yue:368
-  local _class_0 -- shunt/spec.yue:368
-  local _base_0 = { -- shunt/spec.yue:368
-    matches = function(self, actual) -- shunt/spec.yue:371
-      return self.inner:matches(tostring(actual)) -- shunt/spec.yue:372
-    end, -- shunt/spec.yue:374
-    explain_match = function(self, actual) -- shunt/spec.yue:374
-      local tostring_actual = tostring(actual) -- shunt/spec.yue:375
-      return "which tostrings as '" .. tostring(tostring_actual) .. "' " .. tostring(self.inner:explain_match(tostring_actual)) -- shunt/spec.yue:376
-    end, -- shunt/spec.yue:378
-    describe = function(self, is_match) -- shunt/spec.yue:378
-      if is_match == nil then -- shunt/spec.yue:378
-        is_match = true -- shunt/spec.yue:378
-      end -- shunt/spec.yue:378
-      if is_match then -- shunt/spec.yue:379
-        return "tostrings as a string which " .. tostring(self.inner:describe(true)) -- shunt/spec.yue:380
-      else -- shunt/spec.yue:382
-        return "doesn't tostrings as a string which " .. tostring(self.inner:describe(false)) -- shunt/spec.yue:382
-      end -- shunt/spec.yue:379
-    end -- shunt/spec.yue:368
-  } -- shunt/spec.yue:368
-  if _base_0.__index == nil then -- shunt/spec.yue:368
-    _base_0.__index = _base_0 -- shunt/spec.yue:368
-  end -- shunt/spec.yue:382
-  _class_0 = setmetatable({ -- shunt/spec.yue:368
-    __init = function(self, inner) -- shunt/spec.yue:369
-      self.inner = inner -- shunt/spec.yue:369
-    end, -- shunt/spec.yue:368
-    __base = _base_0, -- shunt/spec.yue:368
-    __name = "ToStringsAs" -- shunt/spec.yue:368
-  }, { -- shunt/spec.yue:368
-    __index = _base_0, -- shunt/spec.yue:368
-    __call = function(cls, ...) -- shunt/spec.yue:368
-      local _self_0 = setmetatable({ }, _base_0) -- shunt/spec.yue:368
-      cls.__init(_self_0, ...) -- shunt/spec.yue:368
-      return _self_0 -- shunt/spec.yue:368
-    end -- shunt/spec.yue:368
-  }) -- shunt/spec.yue:368
-  _base_0.__class = _class_0 -- shunt/spec.yue:368
-  ToStringsAs = _class_0 -- shunt/spec.yue:368
-end -- shunt/spec.yue:382
-do -- shunt/spec.yue:384
-  local _class_0 -- shunt/spec.yue:384
-  local _base_0 = { -- shunt/spec.yue:384
-    actual_repr = function(self) -- shunt/spec.yue:389
-      return "-> " .. tostring(self:error_repr()) -- shunt/spec.yue:390
-    end, -- shunt/spec.yue:392
-    error_repr = function(self) -- shunt/spec.yue:392
-      if (self.error ~= nil) then -- shunt/spec.yue:393
-        return "error " .. tostring(repr(self.error)) -- shunt/spec.yue:394
-      else -- shunt/spec.yue:396
-        return "no error" -- shunt/spec.yue:396
-      end -- shunt/spec.yue:393
+    describe = function(self, is_match) -- shunt/spec.yue:348
+      if is_match == nil then -- shunt/spec.yue:348
+        is_match = true -- shunt/spec.yue:348
+      end -- shunt/spec.yue:348
+      if is_match then -- shunt/spec.yue:349
+        return "has type " .. tostring(self.type) -- shunt/spec.yue:350
+      else -- shunt/spec.yue:352
+        return "does not have type " .. tostring(self.type) -- shunt/spec.yue:352
+      end -- shunt/spec.yue:349
+    end -- shunt/spec.yue:339
+  } -- shunt/spec.yue:339
+  if _base_0.__index == nil then -- shunt/spec.yue:339
+    _base_0.__index = _base_0 -- shunt/spec.yue:339
+  end -- shunt/spec.yue:352
+  _class_0 = setmetatable({ -- shunt/spec.yue:339
+    __init = function(self, type) -- shunt/spec.yue:340
+      self.type = type -- shunt/spec.yue:340
+    end, -- shunt/spec.yue:339
+    __base = _base_0, -- shunt/spec.yue:339
+    __name = "Type" -- shunt/spec.yue:339
+  }, { -- shunt/spec.yue:339
+    __index = _base_0, -- shunt/spec.yue:339
+    __call = function(cls, ...) -- shunt/spec.yue:339
+      local _self_0 = setmetatable({ }, _base_0) -- shunt/spec.yue:339
+      cls.__init(_self_0, ...) -- shunt/spec.yue:339
+      return _self_0 -- shunt/spec.yue:339
+    end -- shunt/spec.yue:339
+  }) -- shunt/spec.yue:339
+  _base_0.__class = _class_0 -- shunt/spec.yue:339
+  Type = _class_0 -- shunt/spec.yue:339
+end -- shunt/spec.yue:352
+do -- shunt/spec.yue:354
+  local _class_0 -- shunt/spec.yue:354
+  local _base_0 = { -- shunt/spec.yue:354
+    matches = function(self, actual) -- shunt/spec.yue:357
+      return ('string' == type(actual)) and ((actual:match(self.pat)) ~= nil) -- shunt/spec.yue:359
+    end, -- shunt/spec.yue:361
+    explain_match = function(self, actual) -- shunt/spec.yue:361
+      if 'string' ~= type(actual) then -- shunt/spec.yue:362
+        return "which is a " .. tostring(type(actual)) -- shunt/spec.yue:363
+      end -- shunt/spec.yue:362
+      return "which " .. tostring(self:describe(self:matches(actual))) -- shunt/spec.yue:364
+    end, -- shunt/spec.yue:366
+    describe = function(self, is_match) -- shunt/spec.yue:366
+      if is_match == nil then -- shunt/spec.yue:366
+        is_match = true -- shunt/spec.yue:366
+      end -- shunt/spec.yue:366
+      if is_match then -- shunt/spec.yue:367
+        return "matches " .. tostring(repr(self.pat)) -- shunt/spec.yue:368
+      else -- shunt/spec.yue:370
+        return "doesn't match " .. tostring(repr(self.pat)) -- shunt/spec.yue:370
+      end -- shunt/spec.yue:367
+    end -- shunt/spec.yue:354
+  } -- shunt/spec.yue:354
+  if _base_0.__index == nil then -- shunt/spec.yue:354
+    _base_0.__index = _base_0 -- shunt/spec.yue:354
+  end -- shunt/spec.yue:370
+  _class_0 = setmetatable({ -- shunt/spec.yue:354
+    __init = function(self, pat) -- shunt/spec.yue:355
+      self.pat = pat -- shunt/spec.yue:355
+    end, -- shunt/spec.yue:354
+    __base = _base_0, -- shunt/spec.yue:354
+    __name = "Matches" -- shunt/spec.yue:354
+  }, { -- shunt/spec.yue:354
+    __index = _base_0, -- shunt/spec.yue:354
+    __call = function(cls, ...) -- shunt/spec.yue:354
+      local _self_0 = setmetatable({ }, _base_0) -- shunt/spec.yue:354
+      cls.__init(_self_0, ...) -- shunt/spec.yue:354
+      return _self_0 -- shunt/spec.yue:354
+    end -- shunt/spec.yue:354
+  }) -- shunt/spec.yue:354
+  _base_0.__class = _class_0 -- shunt/spec.yue:354
+  Matches = _class_0 -- shunt/spec.yue:354
+end -- shunt/spec.yue:370
+do -- shunt/spec.yue:372
+  local _class_0 -- shunt/spec.yue:372
+  local _base_0 = { -- shunt/spec.yue:372
+    matches = function(self, actual) -- shunt/spec.yue:375
+      local ty = type(actual) -- shunt/spec.yue:376
+      return (ty == 'string' or ty == 'table') and self.inner:matches(#actual) -- shunt/spec.yue:377
+    end, -- shunt/spec.yue:379
+    explain_match = function(self, actual) -- shunt/spec.yue:379
+      local _exp_0 = type(actual) -- shunt/spec.yue:380
+      if 'string' == _exp_0 or 'table' == _exp_0 then -- shunt/spec.yue:381
+        return "which has length " .. tostring(#actual) .. " " .. tostring(self.inner:explain_match(#actual)) -- shunt/spec.yue:382
+      else -- shunt/spec.yue:384
+        return "which is a " .. tostring(type(actual)) -- shunt/spec.yue:384
+      end -- shunt/spec.yue:384
+    end, -- shunt/spec.yue:386
+    describe = function(self, is_match) -- shunt/spec.yue:386
+      if is_match == nil then -- shunt/spec.yue:386
+        is_match = true -- shunt/spec.yue:386
+      end -- shunt/spec.yue:386
+      if is_match then -- shunt/spec.yue:387
+        return "has a length which " .. tostring(self.inner:describe()) -- shunt/spec.yue:388
+      else -- shunt/spec.yue:390
+        return "doesn't have a length which " .. tostring(self.inner:describe()) -- shunt/spec.yue:390
+      end -- shunt/spec.yue:387
+    end -- shunt/spec.yue:372
+  } -- shunt/spec.yue:372
+  if _base_0.__index == nil then -- shunt/spec.yue:372
+    _base_0.__index = _base_0 -- shunt/spec.yue:372
+  end -- shunt/spec.yue:390
+  _class_0 = setmetatable({ -- shunt/spec.yue:372
+    __init = function(self, inner) -- shunt/spec.yue:373
+      self.inner = inner -- shunt/spec.yue:373
+    end, -- shunt/spec.yue:372
+    __base = _base_0, -- shunt/spec.yue:372
+    __name = "Len" -- shunt/spec.yue:372
+  }, { -- shunt/spec.yue:372
+    __index = _base_0, -- shunt/spec.yue:372
+    __call = function(cls, ...) -- shunt/spec.yue:372
+      local _self_0 = setmetatable({ }, _base_0) -- shunt/spec.yue:372
+      cls.__init(_self_0, ...) -- shunt/spec.yue:372
+      return _self_0 -- shunt/spec.yue:372
+    end -- shunt/spec.yue:372
+  }) -- shunt/spec.yue:372
+  _base_0.__class = _class_0 -- shunt/spec.yue:372
+  Len = _class_0 -- shunt/spec.yue:372
+end -- shunt/spec.yue:390
+do -- shunt/spec.yue:392
+  local _class_0 -- shunt/spec.yue:392
+  local _base_0 = { -- shunt/spec.yue:392
+    matches = function(self, actual) -- shunt/spec.yue:395
+      return self.inner:matches(tostring(actual)) -- shunt/spec.yue:396
     end, -- shunt/spec.yue:398
-    get_err = function(self, fn) -- shunt/spec.yue:398
-      if self.error_set then -- shunt/spec.yue:399
-        return self.error -- shunt/spec.yue:400
-      end -- shunt/spec.yue:399
-xpcall(function() -- shunt/spec.yue:402
-        return fn() -- shunt/spec.yue:403
-      end, function(err) -- shunt/spec.yue:403
-        self.error = err -- shunt/spec.yue:405
-      end) -- shunt/spec.yue:405
-      self.error_set = true -- shunt/spec.yue:406
-      return self.error -- shunt/spec.yue:407
-    end, -- shunt/spec.yue:409
-    matches = function(self, fn) -- shunt/spec.yue:409
-      return not ((self:get_err(fn)) ~= nil) -- shunt/spec.yue:410
-    end, -- shunt/spec.yue:412
-    explain_match = function(self, fn) -- shunt/spec.yue:412
-      return "which " .. tostring(self:describe(self:matches(fn))) -- shunt/spec.yue:413
-    end, -- shunt/spec.yue:415
-    describe = function(self, is_match) -- shunt/spec.yue:415
-      if is_match == nil then -- shunt/spec.yue:415
-        is_match = true -- shunt/spec.yue:415
-      end -- shunt/spec.yue:415
-      if is_match then -- shunt/spec.yue:416
-        return "doesn't throw an error" -- shunt/spec.yue:417
-      else -- shunt/spec.yue:419
-        return "throws an error" -- shunt/spec.yue:419
-      end -- shunt/spec.yue:416
-    end -- shunt/spec.yue:384
-  } -- shunt/spec.yue:384
-  if _base_0.__index == nil then -- shunt/spec.yue:384
-    _base_0.__index = _base_0 -- shunt/spec.yue:384
-  end -- shunt/spec.yue:419
-  _class_0 = setmetatable({ -- shunt/spec.yue:384
-    __init = function(self) -- shunt/spec.yue:385
-      self.error_set = false -- shunt/spec.yue:386
-      self.error = nil -- shunt/spec.yue:387
-    end, -- shunt/spec.yue:384
-    __base = _base_0, -- shunt/spec.yue:384
-    __name = "NoErrors" -- shunt/spec.yue:384
-  }, { -- shunt/spec.yue:384
-    __index = _base_0, -- shunt/spec.yue:384
-    __call = function(cls, ...) -- shunt/spec.yue:384
-      local _self_0 = setmetatable({ }, _base_0) -- shunt/spec.yue:384
-      cls.__init(_self_0, ...) -- shunt/spec.yue:384
-      return _self_0 -- shunt/spec.yue:384
-    end -- shunt/spec.yue:384
-  }) -- shunt/spec.yue:384
-  _base_0.__class = _class_0 -- shunt/spec.yue:384
-  NoErrors = _class_0 -- shunt/spec.yue:384
-end -- shunt/spec.yue:419
-do -- shunt/spec.yue:421
-  local _class_0 -- shunt/spec.yue:421
-  local _base_0 = { -- shunt/spec.yue:421
-    actual_repr = function(self) -- shunt/spec.yue:426
-      return "-> " .. tostring(self:error_repr()) -- shunt/spec.yue:427
-    end, -- shunt/spec.yue:429
-    error_repr = function(self) -- shunt/spec.yue:429
-      if (self.error ~= nil) then -- shunt/spec.yue:430
-        return "error " .. tostring(repr(self.error)) -- shunt/spec.yue:431
-      else -- shunt/spec.yue:433
-        return "no error" -- shunt/spec.yue:433
-      end -- shunt/spec.yue:430
-    end, -- shunt/spec.yue:435
-    get_err = function(self, fn) -- shunt/spec.yue:435
-      if self.error_set then -- shunt/spec.yue:436
-        return self.error -- shunt/spec.yue:437
-      end -- shunt/spec.yue:436
-xpcall(function() -- shunt/spec.yue:439
-        return fn() -- shunt/spec.yue:440
-      end, function(err) -- shunt/spec.yue:440
-        self.error = err -- shunt/spec.yue:442
-      end) -- shunt/spec.yue:442
-      self.error_set = true -- shunt/spec.yue:443
-      return self.error -- shunt/spec.yue:444
-    end, -- shunt/spec.yue:446
-    matches = function(self, fn) -- shunt/spec.yue:446
-      local err = self:get_err(fn) -- shunt/spec.yue:447
-      if not (err ~= nil) then -- shunt/spec.yue:448
-        return false -- shunt/spec.yue:449
-      end -- shunt/spec.yue:448
-      return self.inner:matches(err) -- shunt/spec.yue:450
-    end, -- shunt/spec.yue:452
-    explain_match = function(self, fn) -- shunt/spec.yue:452
-      local err = self:get_err(fn) -- shunt/spec.yue:453
-      if (err ~= nil) then -- shunt/spec.yue:454
-        return "which throws " .. tostring(self:error_repr()) .. " " .. tostring(self.inner:explain_match(err)) -- shunt/spec.yue:455
+    explain_match = function(self, actual) -- shunt/spec.yue:398
+      local tostring_actual = tostring(actual) -- shunt/spec.yue:399
+      return "which tostrings as '" .. tostring(tostring_actual) .. "' " .. tostring(self.inner:explain_match(tostring_actual)) -- shunt/spec.yue:400
+    end, -- shunt/spec.yue:402
+    describe = function(self, is_match) -- shunt/spec.yue:402
+      if is_match == nil then -- shunt/spec.yue:402
+        is_match = true -- shunt/spec.yue:402
+      end -- shunt/spec.yue:402
+      if is_match then -- shunt/spec.yue:403
+        return "tostrings as a string which " .. tostring(self.inner:describe(true)) -- shunt/spec.yue:404
+      else -- shunt/spec.yue:406
+        return "doesn't tostrings as a string which " .. tostring(self.inner:describe(false)) -- shunt/spec.yue:406
+      end -- shunt/spec.yue:403
+    end -- shunt/spec.yue:392
+  } -- shunt/spec.yue:392
+  if _base_0.__index == nil then -- shunt/spec.yue:392
+    _base_0.__index = _base_0 -- shunt/spec.yue:392
+  end -- shunt/spec.yue:406
+  _class_0 = setmetatable({ -- shunt/spec.yue:392
+    __init = function(self, inner) -- shunt/spec.yue:393
+      self.inner = inner -- shunt/spec.yue:393
+    end, -- shunt/spec.yue:392
+    __base = _base_0, -- shunt/spec.yue:392
+    __name = "ToStringsAs" -- shunt/spec.yue:392
+  }, { -- shunt/spec.yue:392
+    __index = _base_0, -- shunt/spec.yue:392
+    __call = function(cls, ...) -- shunt/spec.yue:392
+      local _self_0 = setmetatable({ }, _base_0) -- shunt/spec.yue:392
+      cls.__init(_self_0, ...) -- shunt/spec.yue:392
+      return _self_0 -- shunt/spec.yue:392
+    end -- shunt/spec.yue:392
+  }) -- shunt/spec.yue:392
+  _base_0.__class = _class_0 -- shunt/spec.yue:392
+  ToStringsAs = _class_0 -- shunt/spec.yue:392
+end -- shunt/spec.yue:406
+do -- shunt/spec.yue:408
+  local _class_0 -- shunt/spec.yue:408
+  local _base_0 = { -- shunt/spec.yue:408
+    actual_repr = function(self) -- shunt/spec.yue:413
+      return "-> " .. tostring(self:error_repr()) -- shunt/spec.yue:414
+    end, -- shunt/spec.yue:416
+    error_repr = function(self) -- shunt/spec.yue:416
+      if (self.error ~= nil) then -- shunt/spec.yue:417
+        return "error " .. tostring(repr(self.error)) -- shunt/spec.yue:418
+      else -- shunt/spec.yue:420
+        return "no error" -- shunt/spec.yue:420
+      end -- shunt/spec.yue:417
+    end, -- shunt/spec.yue:422
+    get_err = function(self, fn) -- shunt/spec.yue:422
+      if self.error_set then -- shunt/spec.yue:423
+        return self.error -- shunt/spec.yue:424
+      end -- shunt/spec.yue:423
+xpcall(function() -- shunt/spec.yue:426
+        return fn() -- shunt/spec.yue:427
+      end, function(err) -- shunt/spec.yue:427
+        self.error = err -- shunt/spec.yue:429
+      end) -- shunt/spec.yue:429
+      self.error_set = true -- shunt/spec.yue:430
+      return self.error -- shunt/spec.yue:431
+    end, -- shunt/spec.yue:433
+    matches = function(self, fn) -- shunt/spec.yue:433
+      return not ((self:get_err(fn)) ~= nil) -- shunt/spec.yue:434
+    end, -- shunt/spec.yue:436
+    explain_match = function(self, fn) -- shunt/spec.yue:436
+      return "which " .. tostring(self:describe(self:matches(fn))) -- shunt/spec.yue:437
+    end, -- shunt/spec.yue:439
+    describe = function(self, is_match) -- shunt/spec.yue:439
+      if is_match == nil then -- shunt/spec.yue:439
+        is_match = true -- shunt/spec.yue:439
+      end -- shunt/spec.yue:439
+      if is_match then -- shunt/spec.yue:440
+        return "doesn't throw an error" -- shunt/spec.yue:441
+      else -- shunt/spec.yue:443
+        return "throws an error" -- shunt/spec.yue:443
+      end -- shunt/spec.yue:440
+    end -- shunt/spec.yue:408
+  } -- shunt/spec.yue:408
+  if _base_0.__index == nil then -- shunt/spec.yue:408
+    _base_0.__index = _base_0 -- shunt/spec.yue:408
+  end -- shunt/spec.yue:443
+  _class_0 = setmetatable({ -- shunt/spec.yue:408
+    __init = function(self) -- shunt/spec.yue:409
+      self.error_set = false -- shunt/spec.yue:410
+      self.error = nil -- shunt/spec.yue:411
+    end, -- shunt/spec.yue:408
+    __base = _base_0, -- shunt/spec.yue:408
+    __name = "NoErrors" -- shunt/spec.yue:408
+  }, { -- shunt/spec.yue:408
+    __index = _base_0, -- shunt/spec.yue:408
+    __call = function(cls, ...) -- shunt/spec.yue:408
+      local _self_0 = setmetatable({ }, _base_0) -- shunt/spec.yue:408
+      cls.__init(_self_0, ...) -- shunt/spec.yue:408
+      return _self_0 -- shunt/spec.yue:408
+    end -- shunt/spec.yue:408
+  }) -- shunt/spec.yue:408
+  _base_0.__class = _class_0 -- shunt/spec.yue:408
+  NoErrors = _class_0 -- shunt/spec.yue:408
+end -- shunt/spec.yue:443
+do -- shunt/spec.yue:445
+  local _class_0 -- shunt/spec.yue:445
+  local _base_0 = { -- shunt/spec.yue:445
+    actual_repr = function(self) -- shunt/spec.yue:450
+      return "-> " .. tostring(self:error_repr()) -- shunt/spec.yue:451
+    end, -- shunt/spec.yue:453
+    error_repr = function(self) -- shunt/spec.yue:453
+      if (self.error ~= nil) then -- shunt/spec.yue:454
+        return "error " .. tostring(repr(self.error)) -- shunt/spec.yue:455
       else -- shunt/spec.yue:457
-        return "which doesn't throw an error" -- shunt/spec.yue:457
+        return "no error" -- shunt/spec.yue:457
       end -- shunt/spec.yue:454
     end, -- shunt/spec.yue:459
-    describe = function(self, is_match) -- shunt/spec.yue:459
-      if is_match == nil then -- shunt/spec.yue:459
-        is_match = true -- shunt/spec.yue:459
-      end -- shunt/spec.yue:459
-      if is_match then -- shunt/spec.yue:460
-        return "throws an error which " .. tostring(self.inner:describe()) -- shunt/spec.yue:461
-      else -- shunt/spec.yue:463
-        return "doesn't throw an error" -- shunt/spec.yue:463
+    get_err = function(self, fn) -- shunt/spec.yue:459
+      if self.error_set then -- shunt/spec.yue:460
+        return self.error -- shunt/spec.yue:461
       end -- shunt/spec.yue:460
-    end -- shunt/spec.yue:421
-  } -- shunt/spec.yue:421
-  if _base_0.__index == nil then -- shunt/spec.yue:421
-    _base_0.__index = _base_0 -- shunt/spec.yue:421
-  end -- shunt/spec.yue:463
-  _class_0 = setmetatable({ -- shunt/spec.yue:421
-    __init = function(self, inner) -- shunt/spec.yue:422
-      self.inner = inner -- shunt/spec.yue:422
-      self.error_set = false -- shunt/spec.yue:423
-      self.error = nil -- shunt/spec.yue:424
-    end, -- shunt/spec.yue:421
-    __base = _base_0, -- shunt/spec.yue:421
-    __name = "Errors" -- shunt/spec.yue:421
-  }, { -- shunt/spec.yue:421
-    __index = _base_0, -- shunt/spec.yue:421
-    __call = function(cls, ...) -- shunt/spec.yue:421
-      local _self_0 = setmetatable({ }, _base_0) -- shunt/spec.yue:421
-      cls.__init(_self_0, ...) -- shunt/spec.yue:421
-      return _self_0 -- shunt/spec.yue:421
-    end -- shunt/spec.yue:421
-  }) -- shunt/spec.yue:421
-  _base_0.__class = _class_0 -- shunt/spec.yue:421
-  Errors = _class_0 -- shunt/spec.yue:421
-end -- shunt/spec.yue:463
-do -- shunt/spec.yue:465
-  local _class_0 -- shunt/spec.yue:465
-  local _base_0 = { -- shunt/spec.yue:465
-    matches = function(self, actual) -- shunt/spec.yue:472
-      return (actual ~= nil) and ((self:find_match(actual)) ~= nil) -- shunt/spec.yue:473
-    end, -- shunt/spec.yue:475
-    find_match = function(self, actual) -- shunt/spec.yue:475
-      for key, value in pairs(actual) do -- shunt/spec.yue:476
-        local to_check -- shunt/spec.yue:477
-        do -- shunt/spec.yue:477
-          local _exp_0 = self.kind -- shunt/spec.yue:477
-          if 'key' == _exp_0 then -- shunt/spec.yue:478
-            to_check = key -- shunt/spec.yue:479
-          elseif 'value' == _exp_0 then -- shunt/spec.yue:480
-            to_check = value -- shunt/spec.yue:481
-          elseif 'key-value' == _exp_0 then -- shunt/spec.yue:482
-            to_check = { -- shunt/spec.yue:483
-              key = key, -- shunt/spec.yue:483
-              value = value -- shunt/spec.yue:483
-            } -- shunt/spec.yue:483
-          else -- shunt/spec.yue:485
-            to_check = error("internal error: unknown kind " .. tostring(repr(self.kind))) -- shunt/spec.yue:485
-          end -- shunt/spec.yue:485
-        end -- shunt/spec.yue:485
-        if self.inner:matches(to_check) then -- shunt/spec.yue:486
-          return to_check -- shunt/spec.yue:487
-        end -- shunt/spec.yue:486
-      end -- shunt/spec.yue:487
-      return nil -- shunt/spec.yue:488
-    end, -- shunt/spec.yue:490
-    explain_match = function(self, actual) -- shunt/spec.yue:490
-      if 'table' ~= type(actual) then -- shunt/spec.yue:491
-        return "which is a " .. tostring(type(actual)) -- shunt/spec.yue:492
-      else -- shunt/spec.yue:493
-        do -- shunt/spec.yue:493
-          local match = self:find_match(actual) -- shunt/spec.yue:493
-          if match then -- shunt/spec.yue:493
-            return "which contains " .. tostring(repr(match)) .. " " .. tostring(self.inner:explain_match(match)) -- shunt/spec.yue:494
-          else -- shunt/spec.yue:496
-            return "which does not contain any " .. tostring(self.pretty_kind) .. " which " .. tostring(self.inner:describe()) -- shunt/spec.yue:496
-          end -- shunt/spec.yue:493
-        end -- shunt/spec.yue:493
-      end -- shunt/spec.yue:491
-    end, -- shunt/spec.yue:498
-    describe = function(self, is_match) -- shunt/spec.yue:498
-      if is_match == nil then -- shunt/spec.yue:498
-        is_match = true -- shunt/spec.yue:498
-      end -- shunt/spec.yue:498
-      if is_match then -- shunt/spec.yue:499
-        return "contains a value which " .. tostring(self.inner:describe()) -- shunt/spec.yue:500
-      else -- shunt/spec.yue:502
-        return "does not contain any " .. tostring(self.pretty_kind) .. " which " .. tostring(self.inner:describe()) -- shunt/spec.yue:502
-      end -- shunt/spec.yue:499
-    end -- shunt/spec.yue:465
-  } -- shunt/spec.yue:465
-  if _base_0.__index == nil then -- shunt/spec.yue:465
-    _base_0.__index = _base_0 -- shunt/spec.yue:465
-  end -- shunt/spec.yue:502
-  _class_0 = setmetatable({ -- shunt/spec.yue:465
-    __init = function(self, kind, inner) -- shunt/spec.yue:466
-      self.kind = kind -- shunt/spec.yue:466
-      self.inner = inner -- shunt/spec.yue:466
-      if self.kind == 'key-value' then -- shunt/spec.yue:467
-        self.pretty_kind = 'key-value pair' -- shunt/spec.yue:468
-      else -- shunt/spec.yue:470
-        self.pretty_kind = self.kind -- shunt/spec.yue:470
-      end -- shunt/spec.yue:467
-    end, -- shunt/spec.yue:465
-    __base = _base_0, -- shunt/spec.yue:465
-    __name = "Contains" -- shunt/spec.yue:465
-  }, { -- shunt/spec.yue:465
-    __index = _base_0, -- shunt/spec.yue:465
-    __call = function(cls, ...) -- shunt/spec.yue:465
-      local _self_0 = setmetatable({ }, _base_0) -- shunt/spec.yue:465
-      cls.__init(_self_0, ...) -- shunt/spec.yue:465
-      return _self_0 -- shunt/spec.yue:465
-    end -- shunt/spec.yue:465
-  }) -- shunt/spec.yue:465
-  _base_0.__class = _class_0 -- shunt/spec.yue:465
-  Contains = _class_0 -- shunt/spec.yue:465
-end -- shunt/spec.yue:502
-do -- shunt/spec.yue:504
-  local _class_0 -- shunt/spec.yue:504
-  local _base_0 = { -- shunt/spec.yue:504
-    matches = function(self, actual) -- shunt/spec.yue:511
-      return (actual ~= nil) and not ((self:find_non_match(actual)) ~= nil) -- shunt/spec.yue:512
+xpcall(function() -- shunt/spec.yue:463
+        return fn() -- shunt/spec.yue:464
+      end, function(err) -- shunt/spec.yue:464
+        self.error = err -- shunt/spec.yue:466
+      end) -- shunt/spec.yue:466
+      self.error_set = true -- shunt/spec.yue:467
+      return self.error -- shunt/spec.yue:468
+    end, -- shunt/spec.yue:470
+    matches = function(self, fn) -- shunt/spec.yue:470
+      local err = self:get_err(fn) -- shunt/spec.yue:471
+      if not (err ~= nil) then -- shunt/spec.yue:472
+        return false -- shunt/spec.yue:473
+      end -- shunt/spec.yue:472
+      return self.inner:matches(err) -- shunt/spec.yue:474
+    end, -- shunt/spec.yue:476
+    explain_match = function(self, fn) -- shunt/spec.yue:476
+      local err = self:get_err(fn) -- shunt/spec.yue:477
+      if (err ~= nil) then -- shunt/spec.yue:478
+        return "which throws " .. tostring(self:error_repr()) .. " " .. tostring(self.inner:explain_match(err)) -- shunt/spec.yue:479
+      else -- shunt/spec.yue:481
+        return "which doesn't throw an error" -- shunt/spec.yue:481
+      end -- shunt/spec.yue:478
+    end, -- shunt/spec.yue:483
+    describe = function(self, is_match) -- shunt/spec.yue:483
+      if is_match == nil then -- shunt/spec.yue:483
+        is_match = true -- shunt/spec.yue:483
+      end -- shunt/spec.yue:483
+      if is_match then -- shunt/spec.yue:484
+        return "throws an error which " .. tostring(self.inner:describe()) -- shunt/spec.yue:485
+      else -- shunt/spec.yue:487
+        return "doesn't throw an error" -- shunt/spec.yue:487
+      end -- shunt/spec.yue:484
+    end -- shunt/spec.yue:445
+  } -- shunt/spec.yue:445
+  if _base_0.__index == nil then -- shunt/spec.yue:445
+    _base_0.__index = _base_0 -- shunt/spec.yue:445
+  end -- shunt/spec.yue:487
+  _class_0 = setmetatable({ -- shunt/spec.yue:445
+    __init = function(self, inner) -- shunt/spec.yue:446
+      self.inner = inner -- shunt/spec.yue:446
+      self.error_set = false -- shunt/spec.yue:447
+      self.error = nil -- shunt/spec.yue:448
+    end, -- shunt/spec.yue:445
+    __base = _base_0, -- shunt/spec.yue:445
+    __name = "Errors" -- shunt/spec.yue:445
+  }, { -- shunt/spec.yue:445
+    __index = _base_0, -- shunt/spec.yue:445
+    __call = function(cls, ...) -- shunt/spec.yue:445
+      local _self_0 = setmetatable({ }, _base_0) -- shunt/spec.yue:445
+      cls.__init(_self_0, ...) -- shunt/spec.yue:445
+      return _self_0 -- shunt/spec.yue:445
+    end -- shunt/spec.yue:445
+  }) -- shunt/spec.yue:445
+  _base_0.__class = _class_0 -- shunt/spec.yue:445
+  Errors = _class_0 -- shunt/spec.yue:445
+end -- shunt/spec.yue:487
+do -- shunt/spec.yue:489
+  local _class_0 -- shunt/spec.yue:489
+  local _base_0 = { -- shunt/spec.yue:489
+    matches = function(self, actual) -- shunt/spec.yue:496
+      return (actual ~= nil) and ((self:find_match(actual)) ~= nil) -- shunt/spec.yue:497
+    end, -- shunt/spec.yue:499
+    find_match = function(self, actual) -- shunt/spec.yue:499
+      for key, value in pairs(actual) do -- shunt/spec.yue:500
+        local to_check -- shunt/spec.yue:501
+        do -- shunt/spec.yue:501
+          local _exp_0 = self.kind -- shunt/spec.yue:501
+          if 'key' == _exp_0 then -- shunt/spec.yue:502
+            to_check = key -- shunt/spec.yue:503
+          elseif 'value' == _exp_0 then -- shunt/spec.yue:504
+            to_check = value -- shunt/spec.yue:505
+          elseif 'key-value' == _exp_0 then -- shunt/spec.yue:506
+            to_check = { -- shunt/spec.yue:507
+              key = key, -- shunt/spec.yue:507
+              value = value -- shunt/spec.yue:507
+            } -- shunt/spec.yue:507
+          else -- shunt/spec.yue:509
+            to_check = error("internal error: unknown kind " .. tostring(repr(self.kind))) -- shunt/spec.yue:509
+          end -- shunt/spec.yue:509
+        end -- shunt/spec.yue:509
+        if self.inner:matches(to_check) then -- shunt/spec.yue:510
+          return to_check -- shunt/spec.yue:511
+        end -- shunt/spec.yue:510
+      end -- shunt/spec.yue:511
+      return nil -- shunt/spec.yue:512
     end, -- shunt/spec.yue:514
-    find_non_match = function(self, actual) -- shunt/spec.yue:514
-      for key, value in pairs(actual) do -- shunt/spec.yue:515
-        local to_check -- shunt/spec.yue:516
-        do -- shunt/spec.yue:516
-          local _exp_0 = self.kind -- shunt/spec.yue:516
-          if 'key' == _exp_0 then -- shunt/spec.yue:517
-            to_check = key -- shunt/spec.yue:518
-          elseif 'value' == _exp_0 then -- shunt/spec.yue:519
-            to_check = value -- shunt/spec.yue:520
-          elseif 'key-value' == _exp_0 then -- shunt/spec.yue:521
-            to_check = { -- shunt/spec.yue:522
-              key = key, -- shunt/spec.yue:522
-              value = value -- shunt/spec.yue:522
-            } -- shunt/spec.yue:522
-          else -- shunt/spec.yue:524
-            to_check = error("internal error: unknown kind " .. tostring(repr(self.kind))) -- shunt/spec.yue:524
-          end -- shunt/spec.yue:524
-        end -- shunt/spec.yue:524
-        if not self.inner:matches(to_check) then -- shunt/spec.yue:525
-          return to_check -- shunt/spec.yue:526
-        end -- shunt/spec.yue:525
-      end -- shunt/spec.yue:526
-      return nil -- shunt/spec.yue:527
-    end, -- shunt/spec.yue:529
-    explain_match = function(self, actual) -- shunt/spec.yue:529
-      if 'table' ~= type(actual) then -- shunt/spec.yue:530
-        return "is a " .. tostring(actual) -- shunt/spec.yue:531
-      else -- shunt/spec.yue:532
-        do -- shunt/spec.yue:532
-          local non_match = self:find_non_match(actual) -- shunt/spec.yue:532
-          if non_match then -- shunt/spec.yue:532
-            return "in which some element " .. tostring(self.inner:describe(false)) -- shunt/spec.yue:533
-          else -- shunt/spec.yue:535
-            return "in which each element " .. tostring(self.inner:describe(true)) -- shunt/spec.yue:535
-          end -- shunt/spec.yue:532
-        end -- shunt/spec.yue:532
-      end -- shunt/spec.yue:530
-    end, -- shunt/spec.yue:537
-    describe = function(self, is_match) -- shunt/spec.yue:537
-      if is_match == nil then -- shunt/spec.yue:537
-        is_match = true -- shunt/spec.yue:537
-      end -- shunt/spec.yue:537
-      if is_match then -- shunt/spec.yue:538
-        return "consists of " .. tostring(self.pretty_kind) .. " which " .. tostring(self.inner:describe()) -- shunt/spec.yue:539
-      else -- shunt/spec.yue:541
-        return "contains a " .. tostring(self.pretty_kind) .. " which " .. tostring(self.inner:describe()) -- shunt/spec.yue:541
-      end -- shunt/spec.yue:538
-    end -- shunt/spec.yue:504
-  } -- shunt/spec.yue:504
-  if _base_0.__index == nil then -- shunt/spec.yue:504
-    _base_0.__index = _base_0 -- shunt/spec.yue:504
-  end -- shunt/spec.yue:541
-  _class_0 = setmetatable({ -- shunt/spec.yue:504
-    __init = function(self, kind, inner) -- shunt/spec.yue:505
-      self.kind = kind -- shunt/spec.yue:505
-      self.inner = inner -- shunt/spec.yue:505
-      if self.kind == 'key-value' then -- shunt/spec.yue:506
-        self.pretty_kind = 'key-value pair' -- shunt/spec.yue:507
-      else -- shunt/spec.yue:509
-        self.pretty_kind = self.kind -- shunt/spec.yue:509
-      end -- shunt/spec.yue:506
-    end, -- shunt/spec.yue:504
-    __base = _base_0, -- shunt/spec.yue:504
-    __name = "Each" -- shunt/spec.yue:504
-  }, { -- shunt/spec.yue:504
-    __index = _base_0, -- shunt/spec.yue:504
-    __call = function(cls, ...) -- shunt/spec.yue:504
-      local _self_0 = setmetatable({ }, _base_0) -- shunt/spec.yue:504
-      cls.__init(_self_0, ...) -- shunt/spec.yue:504
-      return _self_0 -- shunt/spec.yue:504
-    end -- shunt/spec.yue:504
-  }) -- shunt/spec.yue:504
-  _base_0.__class = _class_0 -- shunt/spec.yue:504
-  Each = _class_0 -- shunt/spec.yue:504
-end -- shunt/spec.yue:541
-do -- shunt/spec.yue:543
-  local _class_0 -- shunt/spec.yue:543
-  local _base_0 = { -- shunt/spec.yue:543
-    matches = function(self, actual) -- shunt/spec.yue:553
-      return (actual ~= nil) and not ((self:find_non_match(actual)) ~= nil) -- shunt/spec.yue:554
-    end, -- shunt/spec.yue:556
-    find_non_match = function(self, actual) -- shunt/spec.yue:556
-      local _list_0 = self.fields -- shunt/spec.yue:557
-      for _index_0 = 1, #_list_0 do -- shunt/spec.yue:557
-        local _des_0 = _list_0[_index_0] -- shunt/spec.yue:557
-        local field, matcher = _des_0.field, _des_0.matcher -- shunt/spec.yue:557
-        if not matcher:matches(actual[field]) then -- shunt/spec.yue:558
-          return field, matcher -- shunt/spec.yue:559
-        end -- shunt/spec.yue:558
-      end -- shunt/spec.yue:559
-      return nil -- shunt/spec.yue:560
-    end, -- shunt/spec.yue:562
-    explain_match = function(self, actual) -- shunt/spec.yue:562
-      if 'table' ~= type(actual) then -- shunt/spec.yue:563
-        return "is a " .. tostring(type(actual)) -- shunt/spec.yue:564
-      end -- shunt/spec.yue:563
-      local non_match_field, non_match_matcher = self:find_non_match(actual) -- shunt/spec.yue:566
-      if not (non_match_field ~= nil) then -- shunt/spec.yue:567
-        local field_descriptions -- shunt/spec.yue:568
-        do -- shunt/spec.yue:568
-          local _accum_0 = { } -- shunt/spec.yue:568
-          local _len_0 = 1 -- shunt/spec.yue:568
-          local _list_0 = self.fields -- shunt/spec.yue:568
-          for _index_0 = 1, #_list_0 do -- shunt/spec.yue:568
-            local _des_0 = _list_0[_index_0] -- shunt/spec.yue:568
-            local field, matcher = _des_0.field, _des_0.matcher -- shunt/spec.yue:568
-            _accum_0[_len_0] = "there is a field '" .. tostring(field) .. "' " .. tostring(matcher:explain_match(actual[field])) -- shunt/spec.yue:568
-            _len_0 = _len_0 + 1 -- shunt/spec.yue:568
-          end -- shunt/spec.yue:568
-          field_descriptions = _accum_0 -- shunt/spec.yue:568
-        end -- shunt/spec.yue:568
-        return "in which:\n  " .. tostring(table.concat(field_descriptions, '\n  ')) -- shunt/spec.yue:569
-      else -- shunt/spec.yue:571
-        return "in which field " .. tostring(repr(non_match_field)) .. " " .. tostring(non_match_matcher:explain_match(actual[non_match_field])) -- shunt/spec.yue:571
-      end -- shunt/spec.yue:567
-    end, -- shunt/spec.yue:573
-    describe = function(self, is_match) -- shunt/spec.yue:573
-      if is_match == nil then -- shunt/spec.yue:573
-        is_match = true -- shunt/spec.yue:573
-      end -- shunt/spec.yue:573
-      local field_descriptions -- shunt/spec.yue:574
-      do -- shunt/spec.yue:574
-        local _accum_0 = { } -- shunt/spec.yue:574
-        local _len_0 = 1 -- shunt/spec.yue:574
-        local _list_0 = self.fields -- shunt/spec.yue:574
-        for _index_0 = 1, #_list_0 do -- shunt/spec.yue:574
-          local _des_0 = _list_0[_index_0] -- shunt/spec.yue:574
-          local field, matcher = _des_0.field, _des_0.matcher -- shunt/spec.yue:574
-          _accum_0[_len_0] = "there is a field '" .. tostring(field) .. "' which " .. tostring(matcher:describe()) -- shunt/spec.yue:574
-          _len_0 = _len_0 + 1 -- shunt/spec.yue:574
-        end -- shunt/spec.yue:574
-        field_descriptions = _accum_0 -- shunt/spec.yue:574
-      end -- shunt/spec.yue:574
-      if is_match then -- shunt/spec.yue:575
-        return "is a table in which:\n  " .. tostring(table.concat(field_descriptions, '\n  ')) -- shunt/spec.yue:576
-      else -- shunt/spec.yue:578
-        return "isn't a table in which:\n  " .. tostring(table.concat(field_descriptions, '\n  ')) -- shunt/spec.yue:578
-      end -- shunt/spec.yue:575
-    end -- shunt/spec.yue:543
-  } -- shunt/spec.yue:543
-  if _base_0.__index == nil then -- shunt/spec.yue:543
-    _base_0.__index = _base_0 -- shunt/spec.yue:543
-  end -- shunt/spec.yue:578
-  _class_0 = setmetatable({ -- shunt/spec.yue:543
-    __init = function(self, fields) -- shunt/spec.yue:544
-      do -- shunt/spec.yue:545
-        local _accum_0 = { } -- shunt/spec.yue:545
-        local _len_0 = 1 -- shunt/spec.yue:545
-        for field, matcher in pairs(fields) do -- shunt/spec.yue:545
-          _accum_0[_len_0] = { -- shunt/spec.yue:545
-            field = field, -- shunt/spec.yue:545
-            matcher = matcher -- shunt/spec.yue:545
-          } -- shunt/spec.yue:545
-          _len_0 = _len_0 + 1 -- shunt/spec.yue:545
-        end -- shunt/spec.yue:545
-        self.fields = _accum_0 -- shunt/spec.yue:545
-      end -- shunt/spec.yue:545
-      return table.sort(self.fields, function(a, b) -- shunt/spec.yue:546
-        local taf = type(a.field) -- shunt/spec.yue:547
-        local tbf = type(b.field) -- shunt/spec.yue:548
-        if taf ~= tbf or taf == 'number' then -- shunt/spec.yue:549
-          return false -- shunt/spec.yue:550
+    explain_match = function(self, actual) -- shunt/spec.yue:514
+      if 'table' ~= type(actual) then -- shunt/spec.yue:515
+        return "which is a " .. tostring(type(actual)) -- shunt/spec.yue:516
+      else -- shunt/spec.yue:517
+        do -- shunt/spec.yue:517
+          local match = self:find_match(actual) -- shunt/spec.yue:517
+          if match then -- shunt/spec.yue:517
+            return "which contains " .. tostring(repr(match)) .. " " .. tostring(self.inner:explain_match(match)) -- shunt/spec.yue:518
+          else -- shunt/spec.yue:520
+            return "which does not contain any " .. tostring(self.pretty_kind) .. " which " .. tostring(self.inner:describe()) -- shunt/spec.yue:520
+          end -- shunt/spec.yue:517
+        end -- shunt/spec.yue:517
+      end -- shunt/spec.yue:515
+    end, -- shunt/spec.yue:522
+    describe = function(self, is_match) -- shunt/spec.yue:522
+      if is_match == nil then -- shunt/spec.yue:522
+        is_match = true -- shunt/spec.yue:522
+      end -- shunt/spec.yue:522
+      if is_match then -- shunt/spec.yue:523
+        return "contains a value which " .. tostring(self.inner:describe()) -- shunt/spec.yue:524
+      else -- shunt/spec.yue:526
+        return "does not contain any " .. tostring(self.pretty_kind) .. " which " .. tostring(self.inner:describe()) -- shunt/spec.yue:526
+      end -- shunt/spec.yue:523
+    end -- shunt/spec.yue:489
+  } -- shunt/spec.yue:489
+  if _base_0.__index == nil then -- shunt/spec.yue:489
+    _base_0.__index = _base_0 -- shunt/spec.yue:489
+  end -- shunt/spec.yue:526
+  _class_0 = setmetatable({ -- shunt/spec.yue:489
+    __init = function(self, kind, inner) -- shunt/spec.yue:490
+      self.kind = kind -- shunt/spec.yue:490
+      self.inner = inner -- shunt/spec.yue:490
+      if self.kind == 'key-value' then -- shunt/spec.yue:491
+        self.pretty_kind = 'key-value pair' -- shunt/spec.yue:492
+      else -- shunt/spec.yue:494
+        self.pretty_kind = self.kind -- shunt/spec.yue:494
+      end -- shunt/spec.yue:491
+    end, -- shunt/spec.yue:489
+    __base = _base_0, -- shunt/spec.yue:489
+    __name = "Contains" -- shunt/spec.yue:489
+  }, { -- shunt/spec.yue:489
+    __index = _base_0, -- shunt/spec.yue:489
+    __call = function(cls, ...) -- shunt/spec.yue:489
+      local _self_0 = setmetatable({ }, _base_0) -- shunt/spec.yue:489
+      cls.__init(_self_0, ...) -- shunt/spec.yue:489
+      return _self_0 -- shunt/spec.yue:489
+    end -- shunt/spec.yue:489
+  }) -- shunt/spec.yue:489
+  _base_0.__class = _class_0 -- shunt/spec.yue:489
+  Contains = _class_0 -- shunt/spec.yue:489
+end -- shunt/spec.yue:526
+do -- shunt/spec.yue:528
+  local _class_0 -- shunt/spec.yue:528
+  local _base_0 = { -- shunt/spec.yue:528
+    matches = function(self, actual) -- shunt/spec.yue:535
+      return (actual ~= nil) and not ((self:find_non_match(actual)) ~= nil) -- shunt/spec.yue:536
+    end, -- shunt/spec.yue:538
+    find_non_match = function(self, actual) -- shunt/spec.yue:538
+      for key, value in pairs(actual) do -- shunt/spec.yue:539
+        local to_check -- shunt/spec.yue:540
+        do -- shunt/spec.yue:540
+          local _exp_0 = self.kind -- shunt/spec.yue:540
+          if 'key' == _exp_0 then -- shunt/spec.yue:541
+            to_check = key -- shunt/spec.yue:542
+          elseif 'value' == _exp_0 then -- shunt/spec.yue:543
+            to_check = value -- shunt/spec.yue:544
+          elseif 'key-value' == _exp_0 then -- shunt/spec.yue:545
+            to_check = { -- shunt/spec.yue:546
+              key = key, -- shunt/spec.yue:546
+              value = value -- shunt/spec.yue:546
+            } -- shunt/spec.yue:546
+          else -- shunt/spec.yue:548
+            to_check = error("internal error: unknown kind " .. tostring(repr(self.kind))) -- shunt/spec.yue:548
+          end -- shunt/spec.yue:548
+        end -- shunt/spec.yue:548
+        if not self.inner:matches(to_check) then -- shunt/spec.yue:549
+          return to_check -- shunt/spec.yue:550
         end -- shunt/spec.yue:549
-        return a.field < b.field -- shunt/spec.yue:551
-      end) -- shunt/spec.yue:551
-    end, -- shunt/spec.yue:543
-    __base = _base_0, -- shunt/spec.yue:543
-    __name = "Fields" -- shunt/spec.yue:543
-  }, { -- shunt/spec.yue:543
-    __index = _base_0, -- shunt/spec.yue:543
-    __call = function(cls, ...) -- shunt/spec.yue:543
-      local _self_0 = setmetatable({ }, _base_0) -- shunt/spec.yue:543
-      cls.__init(_self_0, ...) -- shunt/spec.yue:543
-      return _self_0 -- shunt/spec.yue:543
-    end -- shunt/spec.yue:543
-  }) -- shunt/spec.yue:543
-  _base_0.__class = _class_0 -- shunt/spec.yue:543
-  Fields = _class_0 -- shunt/spec.yue:543
-end -- shunt/spec.yue:578
-repr = function(self) -- shunt/spec.yue:580
-  return table.concat((function() -- shunt/spec.yue:581
-    local _with_0 = { } -- shunt/spec.yue:581
-    local stack = { } -- shunt/spec.yue:582
-    local repr_impl -- shunt/spec.yue:583
-    repr_impl = function(self) -- shunt/spec.yue:583
-      for _index_0 = 1, #stack do -- shunt/spec.yue:584
-        local elem = stack[_index_0] -- shunt/spec.yue:584
-        if rawequal(self, elem) then -- shunt/spec.yue:585
-          _with_0[#_with_0 + 1] = '...' -- shunt/spec.yue:586
-          return -- shunt/spec.yue:587
-        end -- shunt/spec.yue:585
+      end -- shunt/spec.yue:550
+      return nil -- shunt/spec.yue:551
+    end, -- shunt/spec.yue:553
+    explain_match = function(self, actual) -- shunt/spec.yue:553
+      if 'table' ~= type(actual) then -- shunt/spec.yue:554
+        return "is a " .. tostring(actual) -- shunt/spec.yue:555
+      else -- shunt/spec.yue:556
+        do -- shunt/spec.yue:556
+          local non_match = self:find_non_match(actual) -- shunt/spec.yue:556
+          if non_match then -- shunt/spec.yue:556
+            return "in which some element " .. tostring(self.inner:describe(false)) -- shunt/spec.yue:557
+          else -- shunt/spec.yue:559
+            return "in which each element " .. tostring(self.inner:describe(true)) -- shunt/spec.yue:559
+          end -- shunt/spec.yue:556
+        end -- shunt/spec.yue:556
+      end -- shunt/spec.yue:554
+    end, -- shunt/spec.yue:561
+    describe = function(self, is_match) -- shunt/spec.yue:561
+      if is_match == nil then -- shunt/spec.yue:561
+        is_match = true -- shunt/spec.yue:561
+      end -- shunt/spec.yue:561
+      if is_match then -- shunt/spec.yue:562
+        return "consists of " .. tostring(self.pretty_kind) .. " which " .. tostring(self.inner:describe()) -- shunt/spec.yue:563
+      else -- shunt/spec.yue:565
+        return "contains a " .. tostring(self.pretty_kind) .. " which " .. tostring(self.inner:describe()) -- shunt/spec.yue:565
+      end -- shunt/spec.yue:562
+    end -- shunt/spec.yue:528
+  } -- shunt/spec.yue:528
+  if _base_0.__index == nil then -- shunt/spec.yue:528
+    _base_0.__index = _base_0 -- shunt/spec.yue:528
+  end -- shunt/spec.yue:565
+  _class_0 = setmetatable({ -- shunt/spec.yue:528
+    __init = function(self, kind, inner) -- shunt/spec.yue:529
+      self.kind = kind -- shunt/spec.yue:529
+      self.inner = inner -- shunt/spec.yue:529
+      if self.kind == 'key-value' then -- shunt/spec.yue:530
+        self.pretty_kind = 'key-value pair' -- shunt/spec.yue:531
+      else -- shunt/spec.yue:533
+        self.pretty_kind = self.kind -- shunt/spec.yue:533
+      end -- shunt/spec.yue:530
+    end, -- shunt/spec.yue:528
+    __base = _base_0, -- shunt/spec.yue:528
+    __name = "Each" -- shunt/spec.yue:528
+  }, { -- shunt/spec.yue:528
+    __index = _base_0, -- shunt/spec.yue:528
+    __call = function(cls, ...) -- shunt/spec.yue:528
+      local _self_0 = setmetatable({ }, _base_0) -- shunt/spec.yue:528
+      cls.__init(_self_0, ...) -- shunt/spec.yue:528
+      return _self_0 -- shunt/spec.yue:528
+    end -- shunt/spec.yue:528
+  }) -- shunt/spec.yue:528
+  _base_0.__class = _class_0 -- shunt/spec.yue:528
+  Each = _class_0 -- shunt/spec.yue:528
+end -- shunt/spec.yue:565
+do -- shunt/spec.yue:567
+  local _class_0 -- shunt/spec.yue:567
+  local _base_0 = { -- shunt/spec.yue:567
+    matches = function(self, actual) -- shunt/spec.yue:577
+      return (actual ~= nil) and not ((self:find_non_match(actual)) ~= nil) -- shunt/spec.yue:578
+    end, -- shunt/spec.yue:580
+    find_non_match = function(self, actual) -- shunt/spec.yue:580
+      local _list_0 = self.fields -- shunt/spec.yue:581
+      for _index_0 = 1, #_list_0 do -- shunt/spec.yue:581
+        local _des_0 = _list_0[_index_0] -- shunt/spec.yue:581
+        local field, matcher = _des_0.field, _des_0.matcher -- shunt/spec.yue:581
+        if not matcher:matches(actual[field]) then -- shunt/spec.yue:582
+          return field, matcher -- shunt/spec.yue:583
+        end -- shunt/spec.yue:582
+      end -- shunt/spec.yue:583
+      return nil -- shunt/spec.yue:584
+    end, -- shunt/spec.yue:586
+    explain_match = function(self, actual) -- shunt/spec.yue:586
+      if 'table' ~= type(actual) then -- shunt/spec.yue:587
+        return "is a " .. tostring(type(actual)) -- shunt/spec.yue:588
       end -- shunt/spec.yue:587
-      stack[#stack + 1] = self -- shunt/spec.yue:588
-      do -- shunt/spec.yue:590
-        local _exp_0 = type(self) -- shunt/spec.yue:590
-        if 'string' == _exp_0 then -- shunt/spec.yue:591
-          _with_0[#_with_0 + 1] = "'" .. tostring(self) .. "'" -- shunt/spec.yue:592
-        elseif 'table' == _exp_0 then -- shunt/spec.yue:593
-          if (getmetatable(self) ~= nil) and (getmetatable(self).__tostring ~= nil) then -- shunt/spec.yue:594
-            _with_0[#_with_0 + 1] = tostring(self) -- shunt/spec.yue:595
-          else -- shunt/spec.yue:596
-            if is_list(self) then -- shunt/spec.yue:596
-              _with_0[#_with_0 + 1] = '[' -- shunt/spec.yue:597
-              local first = true -- shunt/spec.yue:598
-              for _index_0 = 1, #self do -- shunt/spec.yue:599
-                local elem = self[_index_0] -- shunt/spec.yue:599
-                if not first then -- shunt/spec.yue:600
-                  _with_0[#_with_0 + 1] = ', ' -- shunt/spec.yue:601
-                end -- shunt/spec.yue:600
-                first = false -- shunt/spec.yue:602
-                repr_impl(elem) -- shunt/spec.yue:604
-              end -- shunt/spec.yue:604
-              _with_0[#_with_0 + 1] = ']' -- shunt/spec.yue:605
-            else -- shunt/spec.yue:607
-              _with_0[#_with_0 + 1] = '{' -- shunt/spec.yue:607
-              local first = true -- shunt/spec.yue:608
-              local keys -- shunt/spec.yue:609
-              do -- shunt/spec.yue:609
-                local _accum_0 = { } -- shunt/spec.yue:609
-                local _len_0 = 1 -- shunt/spec.yue:609
-                for key, _ in pairs(self) do -- shunt/spec.yue:609
-                  _accum_0[_len_0] = key -- shunt/spec.yue:609
-                  _len_0 = _len_0 + 1 -- shunt/spec.yue:609
-                end -- shunt/spec.yue:609
-                keys = _accum_0 -- shunt/spec.yue:609
-              end -- shunt/spec.yue:609
-              if can_sort(keys) then -- shunt/spec.yue:610
-                table.sort(keys, function(a, b) -- shunt/spec.yue:611
-                  local ta = type(a) -- shunt/spec.yue:612
-                  local tb = type(b) -- shunt/spec.yue:613
-                  if ta ~= tb or ta == 'number' then -- shunt/spec.yue:614
-                    return false -- shunt/spec.yue:615
-                  end -- shunt/spec.yue:614
-                  return a < b -- shunt/spec.yue:616
-                end) -- shunt/spec.yue:611
-              end -- shunt/spec.yue:610
-              for _index_0 = 1, #keys do -- shunt/spec.yue:617
-                local key = keys[_index_0] -- shunt/spec.yue:617
-                local value = self[key] -- shunt/spec.yue:618
-                if not first then -- shunt/spec.yue:619
-                  _with_0[#_with_0 + 1] = ', ' -- shunt/spec.yue:620
-                end -- shunt/spec.yue:619
-                first = false -- shunt/spec.yue:621
-                repr_impl(key) -- shunt/spec.yue:623
-                _with_0[#_with_0 + 1] = ': ' -- shunt/spec.yue:624
-                repr_impl(value) -- shunt/spec.yue:625
-              end -- shunt/spec.yue:625
-              _with_0[#_with_0 + 1] = '}' -- shunt/spec.yue:626
-            end -- shunt/spec.yue:596
-          end -- shunt/spec.yue:594
-        else -- shunt/spec.yue:628
-          _with_0[#_with_0 + 1] = tostring(self) -- shunt/spec.yue:628
-        end -- shunt/spec.yue:628
-      end -- shunt/spec.yue:628
-      stack[#stack] = nil -- shunt/spec.yue:630
-    end -- shunt/spec.yue:583
-    repr_impl(self) -- shunt/spec.yue:631
-    return _with_0 -- shunt/spec.yue:581
-  end)()) -- shunt/spec.yue:631
-end -- shunt/spec.yue:580
-_module_0["repr"] = repr -- shunt/spec.yue:631
-is_list = function(table) -- shunt/spec.yue:633
-  local max_key = 0 -- shunt/spec.yue:634
-  local num_keys = 0 -- shunt/spec.yue:635
-  for k, _ in pairs(table) do -- shunt/spec.yue:636
-    num_keys = num_keys + 1 -- shunt/spec.yue:637
-    if 'number' ~= type(k) then -- shunt/spec.yue:638
-      return false -- shunt/spec.yue:639
-    end -- shunt/spec.yue:638
-    if max_key < k then -- shunt/spec.yue:640
-      max_key = k -- shunt/spec.yue:641
-    end -- shunt/spec.yue:640
-  end -- shunt/spec.yue:641
-  return max_key == num_keys and num_keys > 0 -- shunt/spec.yue:642
-end -- shunt/spec.yue:633
-can_sort = function(list) -- shunt/spec.yue:644
-  for _index_0 = 1, #list do -- shunt/spec.yue:645
-    local elem = list[_index_0] -- shunt/spec.yue:645
-    local _continue_0 = false -- shunt/spec.yue:646
-    repeat -- shunt/spec.yue:646
-      do -- shunt/spec.yue:646
-        local _exp_0 = type(elem) -- shunt/spec.yue:646
-        if 'boolean' == _exp_0 or 'string' == _exp_0 or 'number' == _exp_0 then -- shunt/spec.yue:647
-          _continue_0 = true -- shunt/spec.yue:648
-          break -- shunt/spec.yue:648
-        elseif 'table' == _exp_0 then -- shunt/spec.yue:649
-          if not (getmetatable(table) ~= nil) or not (getmetatable(table).__lt ~= nil) then -- shunt/spec.yue:650
-            return false -- shunt/spec.yue:651
-          end -- shunt/spec.yue:650
-        else -- shunt/spec.yue:653
-          return false -- shunt/spec.yue:653
-        end -- shunt/spec.yue:653
+      local non_match_field, non_match_matcher = self:find_non_match(actual) -- shunt/spec.yue:590
+      if not (non_match_field ~= nil) then -- shunt/spec.yue:591
+        local field_descriptions -- shunt/spec.yue:592
+        do -- shunt/spec.yue:592
+          local _accum_0 = { } -- shunt/spec.yue:592
+          local _len_0 = 1 -- shunt/spec.yue:592
+          local _list_0 = self.fields -- shunt/spec.yue:592
+          for _index_0 = 1, #_list_0 do -- shunt/spec.yue:592
+            local _des_0 = _list_0[_index_0] -- shunt/spec.yue:592
+            local field, matcher = _des_0.field, _des_0.matcher -- shunt/spec.yue:592
+            _accum_0[_len_0] = "there is a field '" .. tostring(field) .. "' " .. tostring(matcher:explain_match(actual[field])) -- shunt/spec.yue:592
+            _len_0 = _len_0 + 1 -- shunt/spec.yue:592
+          end -- shunt/spec.yue:592
+          field_descriptions = _accum_0 -- shunt/spec.yue:592
+        end -- shunt/spec.yue:592
+        return "in which:\n  " .. tostring(table.concat(field_descriptions, '\n  ')) -- shunt/spec.yue:593
+      else -- shunt/spec.yue:595
+        return "in which field " .. tostring(repr(non_match_field)) .. " " .. tostring(non_match_matcher:explain_match(actual[non_match_field])) -- shunt/spec.yue:595
+      end -- shunt/spec.yue:591
+    end, -- shunt/spec.yue:597
+    describe = function(self, is_match) -- shunt/spec.yue:597
+      if is_match == nil then -- shunt/spec.yue:597
+        is_match = true -- shunt/spec.yue:597
+      end -- shunt/spec.yue:597
+      local field_descriptions -- shunt/spec.yue:598
+      do -- shunt/spec.yue:598
+        local _accum_0 = { } -- shunt/spec.yue:598
+        local _len_0 = 1 -- shunt/spec.yue:598
+        local _list_0 = self.fields -- shunt/spec.yue:598
+        for _index_0 = 1, #_list_0 do -- shunt/spec.yue:598
+          local _des_0 = _list_0[_index_0] -- shunt/spec.yue:598
+          local field, matcher = _des_0.field, _des_0.matcher -- shunt/spec.yue:598
+          _accum_0[_len_0] = "there is a field '" .. tostring(field) .. "' which " .. tostring(matcher:describe()) -- shunt/spec.yue:598
+          _len_0 = _len_0 + 1 -- shunt/spec.yue:598
+        end -- shunt/spec.yue:598
+        field_descriptions = _accum_0 -- shunt/spec.yue:598
+      end -- shunt/spec.yue:598
+      if is_match then -- shunt/spec.yue:599
+        return "is a table in which:\n  " .. tostring(table.concat(field_descriptions, '\n  ')) -- shunt/spec.yue:600
+      else -- shunt/spec.yue:602
+        return "isn't a table in which:\n  " .. tostring(table.concat(field_descriptions, '\n  ')) -- shunt/spec.yue:602
+      end -- shunt/spec.yue:599
+    end -- shunt/spec.yue:567
+  } -- shunt/spec.yue:567
+  if _base_0.__index == nil then -- shunt/spec.yue:567
+    _base_0.__index = _base_0 -- shunt/spec.yue:567
+  end -- shunt/spec.yue:602
+  _class_0 = setmetatable({ -- shunt/spec.yue:567
+    __init = function(self, fields) -- shunt/spec.yue:568
+      do -- shunt/spec.yue:569
+        local _accum_0 = { } -- shunt/spec.yue:569
+        local _len_0 = 1 -- shunt/spec.yue:569
+        for field, matcher in pairs(fields) do -- shunt/spec.yue:569
+          _accum_0[_len_0] = { -- shunt/spec.yue:569
+            field = field, -- shunt/spec.yue:569
+            matcher = matcher -- shunt/spec.yue:569
+          } -- shunt/spec.yue:569
+          _len_0 = _len_0 + 1 -- shunt/spec.yue:569
+        end -- shunt/spec.yue:569
+        self.fields = _accum_0 -- shunt/spec.yue:569
+      end -- shunt/spec.yue:569
+      return table.sort(self.fields, function(a, b) -- shunt/spec.yue:570
+        local taf = type(a.field) -- shunt/spec.yue:571
+        local tbf = type(b.field) -- shunt/spec.yue:572
+        if taf ~= tbf or taf == 'number' then -- shunt/spec.yue:573
+          return false -- shunt/spec.yue:574
+        end -- shunt/spec.yue:573
+        return a.field < b.field -- shunt/spec.yue:575
+      end) -- shunt/spec.yue:575
+    end, -- shunt/spec.yue:567
+    __base = _base_0, -- shunt/spec.yue:567
+    __name = "Fields" -- shunt/spec.yue:567
+  }, { -- shunt/spec.yue:567
+    __index = _base_0, -- shunt/spec.yue:567
+    __call = function(cls, ...) -- shunt/spec.yue:567
+      local _self_0 = setmetatable({ }, _base_0) -- shunt/spec.yue:567
+      cls.__init(_self_0, ...) -- shunt/spec.yue:567
+      return _self_0 -- shunt/spec.yue:567
+    end -- shunt/spec.yue:567
+  }) -- shunt/spec.yue:567
+  _base_0.__class = _class_0 -- shunt/spec.yue:567
+  Fields = _class_0 -- shunt/spec.yue:567
+end -- shunt/spec.yue:602
+do -- shunt/spec.yue:604
+  local _with_0 = { } -- shunt/spec.yue:604
+  _with_0['('] = true -- shunt/spec.yue:605
+  _with_0[')'] = true -- shunt/spec.yue:606
+  _with_0['['] = true -- shunt/spec.yue:607
+  _with_0[']'] = true -- shunt/spec.yue:608
+  _with_0['{'] = true -- shunt/spec.yue:609
+  _with_0['}'] = true -- shunt/spec.yue:610
+  _with_0['!'] = true -- shunt/spec.yue:611
+  _with_0['"'] = true -- shunt/spec.yue:612
+  _with_0["'"] = true -- shunt/spec.yue:613
+  _with_0['$'] = true -- shunt/spec.yue:614
+  _with_0['%'] = true -- shunt/spec.yue:615
+  _with_0['^'] = true -- shunt/spec.yue:616
+  _with_0['&'] = true -- shunt/spec.yue:617
+  _with_0['*'] = true -- shunt/spec.yue:618
+  _with_0['-'] = true -- shunt/spec.yue:619
+  _with_0['_'] = true -- shunt/spec.yue:620
+  _with_0['+'] = true -- shunt/spec.yue:621
+  _with_0['='] = true -- shunt/spec.yue:622
+  _with_0[':'] = true -- shunt/spec.yue:623
+  _with_0[' '] = true -- shunt/spec.yue:624
+  _with_0['\t'] = true -- shunt/spec.yue:625
+  _with_0['.'] = true -- shunt/spec.yue:626
+  _with_0[','] = true -- shunt/spec.yue:627
+  _with_0['/'] = true -- shunt/spec.yue:628
+  _with_0['\\'] = true -- shunt/spec.yue:629
+  _with_0['>'] = true -- shunt/spec.yue:630
+  _with_0['<'] = true -- shunt/spec.yue:631
+  _with_0['!'] = true -- shunt/spec.yue:632
+  _with_0['?'] = true -- shunt/spec.yue:633
+  _with_0['#'] = true -- shunt/spec.yue:634
+  _with_0['|'] = true -- shunt/spec.yue:635
+  _with_0['~'] = true -- shunt/spec.yue:636
+  local a = string.byte('a') -- shunt/spec.yue:637
+  for i = 0, 25 do -- shunt/spec.yue:638
+    _with_0[string.char(a + i)] = true -- shunt/spec.yue:639
+  end -- shunt/spec.yue:639
+  local A = string.byte('A') -- shunt/spec.yue:640
+  for i = 0, 25 do -- shunt/spec.yue:641
+    _with_0[string.char(A + i)] = true -- shunt/spec.yue:642
+  end -- shunt/spec.yue:642
+  local zero = string.byte('0') -- shunt/spec.yue:643
+  for i = 0, 9 do -- shunt/spec.yue:644
+    _with_0[string.char(zero + i)] = true -- shunt/spec.yue:645
+  end -- shunt/spec.yue:645
+  visible_chars = _with_0 -- shunt/spec.yue:604
+end -- shunt/spec.yue:604
+repr = function(self) -- shunt/spec.yue:646
+  return table.concat((function() -- shunt/spec.yue:647
+    local _with_0 = { } -- shunt/spec.yue:647
+    local stack = { } -- shunt/spec.yue:648
+    local repr_impl -- shunt/spec.yue:649
+    repr_impl = function(self) -- shunt/spec.yue:649
+      for _index_0 = 1, #stack do -- shunt/spec.yue:650
+        local elem = stack[_index_0] -- shunt/spec.yue:650
+        if rawequal(self, elem) then -- shunt/spec.yue:651
+          _with_0[#_with_0 + 1] = '...' -- shunt/spec.yue:652
+          return -- shunt/spec.yue:653
+        end -- shunt/spec.yue:651
       end -- shunt/spec.yue:653
-      _continue_0 = true -- shunt/spec.yue:646
-    until true -- shunt/spec.yue:653
-    if not _continue_0 then -- shunt/spec.yue:653
-      break -- shunt/spec.yue:653
-    end -- shunt/spec.yue:653
-  end -- shunt/spec.yue:653
-  return true -- shunt/spec.yue:654
-end -- shunt/spec.yue:644
-matchers = { -- shunt/spec.yue:657
-  anything = function() -- shunt/spec.yue:657
-    return Anything() -- shunt/spec.yue:657
-  end, -- shunt/spec.yue:657
-  some = function() -- shunt/spec.yue:658
-    return Some() -- shunt/spec.yue:658
-  end, -- shunt/spec.yue:658
-  not_ = function(matcher) -- shunt/spec.yue:659
-    return Not(matcher) -- shunt/spec.yue:659
-  end, -- shunt/spec.yue:659
-  eq = function(value) -- shunt/spec.yue:660
-    return Compare('==', value) -- shunt/spec.yue:660
-  end, -- shunt/spec.yue:660
-  deep_eq = function(value) -- shunt/spec.yue:661
-    return DeepEq(value) -- shunt/spec.yue:661
-  end, -- shunt/spec.yue:661
-  lt = function(value) -- shunt/spec.yue:662
-    return Compare('<', value) -- shunt/spec.yue:662
-  end, -- shunt/spec.yue:662
-  le = function(value) -- shunt/spec.yue:663
-    return Compare('<=', value) -- shunt/spec.yue:663
-  end, -- shunt/spec.yue:663
-  gt = function(value) -- shunt/spec.yue:664
-    return Compare('>', value) -- shunt/spec.yue:664
-  end, -- shunt/spec.yue:664
-  ge = function(value) -- shunt/spec.yue:665
-    return Compare('>=', value) -- shunt/spec.yue:665
-  end, -- shunt/spec.yue:665
-  len = function(matcher) -- shunt/spec.yue:666
-    return Len(matcher) -- shunt/spec.yue:666
-  end, -- shunt/spec.yue:666
-  matches = function(pattern) -- shunt/spec.yue:667
-    return Matches(pattern) -- shunt/spec.yue:667
-  end, -- shunt/spec.yue:667
-  tostrings_as = function(matcher) -- shunt/spec.yue:668
-    return ToStringsAs(matcher) -- shunt/spec.yue:668
-  end, -- shunt/spec.yue:668
-  contains_key = function(matcher) -- shunt/spec.yue:669
-    return Contains('key', matcher) -- shunt/spec.yue:669
-  end, -- shunt/spec.yue:669
-  contains_value = function(matcher) -- shunt/spec.yue:670
-    return Contains('value', matcher) -- shunt/spec.yue:670
-  end, -- shunt/spec.yue:670
-  contains_pair = function(matcher) -- shunt/spec.yue:671
-    return Contains('key-value', matcher) -- shunt/spec.yue:671
-  end, -- shunt/spec.yue:671
-  each_key = function(matcher) -- shunt/spec.yue:672
-    return Each('key', matcher) -- shunt/spec.yue:672
-  end, -- shunt/spec.yue:672
-  each_value = function(matcher) -- shunt/spec.yue:673
-    return Each('value', matcher) -- shunt/spec.yue:673
-  end, -- shunt/spec.yue:673
-  each_pair = function(matcher) -- shunt/spec.yue:674
-    return Each('key-value', matcher) -- shunt/spec.yue:674
-  end, -- shunt/spec.yue:674
-  no_errors = function() -- shunt/spec.yue:675
-    return NoErrors() -- shunt/spec.yue:675
-  end, -- shunt/spec.yue:675
-  errors = function(matcher) -- shunt/spec.yue:676
-    return Errors(matcher) -- shunt/spec.yue:676
-  end, -- shunt/spec.yue:676
-  has_type = function(typ) -- shunt/spec.yue:677
-    return Type(typ) -- shunt/spec.yue:677
-  end, -- shunt/spec.yue:677
-  has_fields = function(fields) -- shunt/spec.yue:678
-    return Fields(fields) -- shunt/spec.yue:678
-  end -- shunt/spec.yue:678
-} -- shunt/spec.yue:656
-_module_0["matchers"] = matchers -- shunt/spec.yue:678
-reflow = function(prefix, string, width) -- shunt/spec.yue:680
-  if width == nil then -- shunt/spec.yue:680
-    width = 80 -- shunt/spec.yue:680
-  end -- shunt/spec.yue:680
-  local lines -- shunt/spec.yue:681
-  do -- shunt/spec.yue:681
-    local _with_0 = { } -- shunt/spec.yue:681
-    local chunk_len = width - #prefix -- shunt/spec.yue:682
-    local first_line = true -- shunt/spec.yue:683
-    for line in string:gmatch('[^\r\n]*') do -- shunt/spec.yue:684
-      for i = 1, #line, chunk_len do -- shunt/spec.yue:685
-        local chunk = line:sub(i, i + chunk_len - 1) -- shunt/spec.yue:686
-        if first_line then -- shunt/spec.yue:687
-          _with_0[#_with_0 + 1] = chunk -- shunt/spec.yue:688
-        else -- shunt/spec.yue:690
-          _with_0[#_with_0 + 1] = prefix .. chunk -- shunt/spec.yue:690
-        end -- shunt/spec.yue:687
-        first_line = false -- shunt/spec.yue:691
-      end -- shunt/spec.yue:691
-    end -- shunt/spec.yue:691
-    lines = _with_0 -- shunt/spec.yue:681
-  end -- shunt/spec.yue:681
-  return table.concat(lines, '\n') -- shunt/spec.yue:692
-end -- shunt/spec.yue:680
-testing = false -- shunt/spec.yue:694
-running_tests = function() -- shunt/spec.yue:695
-  return testing -- shunt/spec.yue:695
-end -- shunt/spec.yue:695
-_module_0["running_tests"] = running_tests -- shunt/spec.yue:695
-run_tests = function(filter) -- shunt/spec.yue:697
-  if not (spec_fns ~= nil) then -- shunt/spec.yue:699
-    return -- shunt/spec.yue:700
-  end -- shunt/spec.yue:699
-  for _index_0 = 1, #spec_fns do -- shunt/spec.yue:701
-    local spec_fn = spec_fns[_index_0] -- shunt/spec.yue:701
-    spec_fn() -- shunt/spec.yue:702
-  end -- shunt/spec.yue:702
-  testing = true -- shunt/spec.yue:704
-  if root_spec ~= nil then -- shunt/spec.yue:705
-    root_spec:test(filter) -- shunt/spec.yue:705
-  end -- shunt/spec.yue:705
-  testing = false -- shunt/spec.yue:706
-  log(function() -- shunt/spec.yue:708
-    return tostring(Test.num_run) .. " checks run" -- shunt/spec.yue:709
-  end) -- shunt/spec.yue:708
-  local ok = Test.num_failures == 0 -- shunt/spec.yue:710
-  if not ok then -- shunt/spec.yue:711
-    print(tostring(Test.num_failures) .. " checks failed!") -- shunt/spec.yue:712
-  end -- shunt/spec.yue:711
-  return ok -- shunt/spec.yue:713
-end -- shunt/spec.yue:697
-_module_0["run_tests"] = run_tests -- shunt/spec.yue:713
-return _module_0 -- shunt/spec.yue:713
+      stack[#stack + 1] = self -- shunt/spec.yue:654
+      do -- shunt/spec.yue:656
+        local _exp_0 = type(self) -- shunt/spec.yue:656
+        if 'string' == _exp_0 then -- shunt/spec.yue:657
+          _with_0[#_with_0 + 1] = "'" -- shunt/spec.yue:658
+          for i = 1, #self do -- shunt/spec.yue:659
+            local c = self:sub(i, i) -- shunt/spec.yue:660
+            if visible_chars[c] then -- shunt/spec.yue:661
+              _with_0[#_with_0 + 1] = c -- shunt/spec.yue:662
+            else -- shunt/spec.yue:664
+              _with_0[#_with_0 + 1] = ("\\x%02x"):format(string.byte(self, i)) -- shunt/spec.yue:664
+            end -- shunt/spec.yue:661
+          end -- shunt/spec.yue:664
+          _with_0[#_with_0 + 1] = "'" -- shunt/spec.yue:665
+        elseif 'table' == _exp_0 then -- shunt/spec.yue:666
+          if (getmetatable(self) ~= nil) and (getmetatable(self).__tostring ~= nil) then -- shunt/spec.yue:667
+            _with_0[#_with_0 + 1] = tostring(self) -- shunt/spec.yue:668
+          else -- shunt/spec.yue:669
+            if is_list(self) then -- shunt/spec.yue:669
+              _with_0[#_with_0 + 1] = '[' -- shunt/spec.yue:670
+              local first = true -- shunt/spec.yue:671
+              for _index_0 = 1, #self do -- shunt/spec.yue:672
+                local elem = self[_index_0] -- shunt/spec.yue:672
+                if not first then -- shunt/spec.yue:673
+                  _with_0[#_with_0 + 1] = ', ' -- shunt/spec.yue:674
+                end -- shunt/spec.yue:673
+                first = false -- shunt/spec.yue:675
+                repr_impl(elem) -- shunt/spec.yue:677
+              end -- shunt/spec.yue:677
+              _with_0[#_with_0 + 1] = ']' -- shunt/spec.yue:678
+            else -- shunt/spec.yue:680
+              _with_0[#_with_0 + 1] = '{' -- shunt/spec.yue:680
+              local first = true -- shunt/spec.yue:681
+              local keys -- shunt/spec.yue:682
+              do -- shunt/spec.yue:682
+                local _accum_0 = { } -- shunt/spec.yue:682
+                local _len_0 = 1 -- shunt/spec.yue:682
+                for key, _ in pairs(self) do -- shunt/spec.yue:682
+                  _accum_0[_len_0] = key -- shunt/spec.yue:682
+                  _len_0 = _len_0 + 1 -- shunt/spec.yue:682
+                end -- shunt/spec.yue:682
+                keys = _accum_0 -- shunt/spec.yue:682
+              end -- shunt/spec.yue:682
+              if can_sort(keys) then -- shunt/spec.yue:683
+                table.sort(keys, function(a, b) -- shunt/spec.yue:684
+                  local ta = type(a) -- shunt/spec.yue:685
+                  local tb = type(b) -- shunt/spec.yue:686
+                  if ta ~= tb or ta == 'number' then -- shunt/spec.yue:687
+                    return false -- shunt/spec.yue:688
+                  end -- shunt/spec.yue:687
+                  return a < b -- shunt/spec.yue:689
+                end) -- shunt/spec.yue:684
+              end -- shunt/spec.yue:683
+              for _index_0 = 1, #keys do -- shunt/spec.yue:690
+                local key = keys[_index_0] -- shunt/spec.yue:690
+                local value = self[key] -- shunt/spec.yue:691
+                if not first then -- shunt/spec.yue:692
+                  _with_0[#_with_0 + 1] = ', ' -- shunt/spec.yue:693
+                end -- shunt/spec.yue:692
+                first = false -- shunt/spec.yue:694
+                repr_impl(key) -- shunt/spec.yue:696
+                _with_0[#_with_0 + 1] = ': ' -- shunt/spec.yue:697
+                repr_impl(value) -- shunt/spec.yue:698
+              end -- shunt/spec.yue:698
+              _with_0[#_with_0 + 1] = '}' -- shunt/spec.yue:699
+            end -- shunt/spec.yue:669
+          end -- shunt/spec.yue:667
+        else -- shunt/spec.yue:701
+          _with_0[#_with_0 + 1] = tostring(self) -- shunt/spec.yue:701
+        end -- shunt/spec.yue:701
+      end -- shunt/spec.yue:701
+      stack[#stack] = nil -- shunt/spec.yue:703
+    end -- shunt/spec.yue:649
+    repr_impl(self) -- shunt/spec.yue:704
+    return _with_0 -- shunt/spec.yue:647
+  end)()) -- shunt/spec.yue:704
+end -- shunt/spec.yue:646
+_module_0["repr"] = repr -- shunt/spec.yue:704
+is_list = function(table) -- shunt/spec.yue:706
+  local max_key = 0 -- shunt/spec.yue:707
+  local num_keys = 0 -- shunt/spec.yue:708
+  for k, _ in pairs(table) do -- shunt/spec.yue:709
+    num_keys = num_keys + 1 -- shunt/spec.yue:710
+    if 'number' ~= type(k) then -- shunt/spec.yue:711
+      return false -- shunt/spec.yue:712
+    end -- shunt/spec.yue:711
+    if max_key < k then -- shunt/spec.yue:713
+      max_key = k -- shunt/spec.yue:714
+    end -- shunt/spec.yue:713
+  end -- shunt/spec.yue:714
+  return max_key == num_keys and num_keys > 0 -- shunt/spec.yue:715
+end -- shunt/spec.yue:706
+can_sort = function(list) -- shunt/spec.yue:717
+  for _index_0 = 1, #list do -- shunt/spec.yue:718
+    local elem = list[_index_0] -- shunt/spec.yue:718
+    local _continue_0 = false -- shunt/spec.yue:719
+    repeat -- shunt/spec.yue:719
+      do -- shunt/spec.yue:719
+        local _exp_0 = type(elem) -- shunt/spec.yue:719
+        if 'boolean' == _exp_0 or 'string' == _exp_0 or 'number' == _exp_0 then -- shunt/spec.yue:720
+          _continue_0 = true -- shunt/spec.yue:721
+          break -- shunt/spec.yue:721
+        elseif 'table' == _exp_0 then -- shunt/spec.yue:722
+          if not (getmetatable(table) ~= nil) or not (getmetatable(table).__lt ~= nil) then -- shunt/spec.yue:723
+            return false -- shunt/spec.yue:724
+          end -- shunt/spec.yue:723
+        else -- shunt/spec.yue:726
+          return false -- shunt/spec.yue:726
+        end -- shunt/spec.yue:726
+      end -- shunt/spec.yue:726
+      _continue_0 = true -- shunt/spec.yue:719
+    until true -- shunt/spec.yue:726
+    if not _continue_0 then -- shunt/spec.yue:726
+      break -- shunt/spec.yue:726
+    end -- shunt/spec.yue:726
+  end -- shunt/spec.yue:726
+  return true -- shunt/spec.yue:727
+end -- shunt/spec.yue:717
+clone = function(value) -- shunt/spec.yue:729
+  local _exp_0 = type(value) -- shunt/spec.yue:730
+  if 'nil' == _exp_0 or 'boolean' == _exp_0 or 'number' == _exp_0 or 'string' == _exp_0 then -- shunt/spec.yue:731
+    return value -- shunt/spec.yue:732
+  elseif 'table' == _exp_0 then -- shunt/spec.yue:733
+    local _with_0 = { } -- shunt/spec.yue:734
+    for k, v in pairs(value) do -- shunt/spec.yue:735
+      _with_0[clone(k)] = clone(v) -- shunt/spec.yue:736
+    end -- shunt/spec.yue:736
+    return _with_0 -- shunt/spec.yue:734
+  else -- shunt/spec.yue:738
+    return error("cannot clone a " .. tostring(type(value)) .. " (" .. tostring(value) .. ")") -- shunt/spec.yue:738
+  end -- shunt/spec.yue:738
+end -- shunt/spec.yue:729
+_module_0["clone"] = clone -- shunt/spec.yue:738
+matchers = { -- shunt/spec.yue:741
+  anything = function() -- shunt/spec.yue:741
+    return Anything() -- shunt/spec.yue:741
+  end, -- shunt/spec.yue:741
+  some = function() -- shunt/spec.yue:742
+    return Some() -- shunt/spec.yue:742
+  end, -- shunt/spec.yue:742
+  not_ = function(matcher) -- shunt/spec.yue:743
+    return Not(matcher) -- shunt/spec.yue:743
+  end, -- shunt/spec.yue:743
+  eq = function(value) -- shunt/spec.yue:744
+    return Compare('==', value) -- shunt/spec.yue:744
+  end, -- shunt/spec.yue:744
+  deep_eq = function(value) -- shunt/spec.yue:745
+    return DeepEq(value) -- shunt/spec.yue:745
+  end, -- shunt/spec.yue:745
+  lt = function(value) -- shunt/spec.yue:746
+    return Compare('<', value) -- shunt/spec.yue:746
+  end, -- shunt/spec.yue:746
+  le = function(value) -- shunt/spec.yue:747
+    return Compare('<=', value) -- shunt/spec.yue:747
+  end, -- shunt/spec.yue:747
+  gt = function(value) -- shunt/spec.yue:748
+    return Compare('>', value) -- shunt/spec.yue:748
+  end, -- shunt/spec.yue:748
+  ge = function(value) -- shunt/spec.yue:749
+    return Compare('>=', value) -- shunt/spec.yue:749
+  end, -- shunt/spec.yue:749
+  len = function(matcher) -- shunt/spec.yue:750
+    return Len(matcher) -- shunt/spec.yue:750
+  end, -- shunt/spec.yue:750
+  matches = function(pattern) -- shunt/spec.yue:751
+    return Matches(pattern) -- shunt/spec.yue:751
+  end, -- shunt/spec.yue:751
+  near = function(value, delta) -- shunt/spec.yue:752
+    return Near(value, delta) -- shunt/spec.yue:752
+  end, -- shunt/spec.yue:752
+  tostrings_as = function(matcher) -- shunt/spec.yue:753
+    return ToStringsAs(matcher) -- shunt/spec.yue:753
+  end, -- shunt/spec.yue:753
+  contains_key = function(matcher) -- shunt/spec.yue:754
+    return Contains('key', matcher) -- shunt/spec.yue:754
+  end, -- shunt/spec.yue:754
+  contains_value = function(matcher) -- shunt/spec.yue:755
+    return Contains('value', matcher) -- shunt/spec.yue:755
+  end, -- shunt/spec.yue:755
+  contains_pair = function(matcher) -- shunt/spec.yue:756
+    return Contains('key-value', matcher) -- shunt/spec.yue:756
+  end, -- shunt/spec.yue:756
+  each_key = function(matcher) -- shunt/spec.yue:757
+    return Each('key', matcher) -- shunt/spec.yue:757
+  end, -- shunt/spec.yue:757
+  each_value = function(matcher) -- shunt/spec.yue:758
+    return Each('value', matcher) -- shunt/spec.yue:758
+  end, -- shunt/spec.yue:758
+  each_pair = function(matcher) -- shunt/spec.yue:759
+    return Each('key-value', matcher) -- shunt/spec.yue:759
+  end, -- shunt/spec.yue:759
+  no_errors = function() -- shunt/spec.yue:760
+    return NoErrors() -- shunt/spec.yue:760
+  end, -- shunt/spec.yue:760
+  errors = function(matcher) -- shunt/spec.yue:761
+    return Errors(matcher) -- shunt/spec.yue:761
+  end, -- shunt/spec.yue:761
+  has_type = function(typ) -- shunt/spec.yue:762
+    return Type(typ) -- shunt/spec.yue:762
+  end, -- shunt/spec.yue:762
+  has_fields = function(fields) -- shunt/spec.yue:763
+    return Fields(fields) -- shunt/spec.yue:763
+  end -- shunt/spec.yue:763
+} -- shunt/spec.yue:740
+_module_0["matchers"] = matchers -- shunt/spec.yue:763
+reflow = function(prefix, string, width) -- shunt/spec.yue:765
+  if width == nil then -- shunt/spec.yue:765
+    width = 80 -- shunt/spec.yue:765
+  end -- shunt/spec.yue:765
+  local lines -- shunt/spec.yue:766
+  do -- shunt/spec.yue:766
+    local _with_0 = { } -- shunt/spec.yue:766
+    local chunk_len = width - #prefix -- shunt/spec.yue:767
+    local first_line = true -- shunt/spec.yue:768
+    for line in string:gmatch('[^\r\n]*') do -- shunt/spec.yue:769
+      for i = 1, #line, chunk_len do -- shunt/spec.yue:770
+        local chunk = line:sub(i, i + chunk_len - 1) -- shunt/spec.yue:771
+        if first_line then -- shunt/spec.yue:772
+          _with_0[#_with_0 + 1] = chunk -- shunt/spec.yue:773
+        else -- shunt/spec.yue:775
+          _with_0[#_with_0 + 1] = prefix .. chunk -- shunt/spec.yue:775
+        end -- shunt/spec.yue:772
+        first_line = false -- shunt/spec.yue:776
+      end -- shunt/spec.yue:776
+    end -- shunt/spec.yue:776
+    lines = _with_0 -- shunt/spec.yue:766
+  end -- shunt/spec.yue:766
+  return table.concat(lines, '\n') -- shunt/spec.yue:777
+end -- shunt/spec.yue:765
+testing = false -- shunt/spec.yue:779
+running_tests = function() -- shunt/spec.yue:780
+  return testing -- shunt/spec.yue:780
+end -- shunt/spec.yue:780
+_module_0["running_tests"] = running_tests -- shunt/spec.yue:780
+run_tests = function(filter) -- shunt/spec.yue:782
+  if not (spec_fns ~= nil) then -- shunt/spec.yue:784
+    return -- shunt/spec.yue:785
+  end -- shunt/spec.yue:784
+  for _index_0 = 1, #spec_fns do -- shunt/spec.yue:786
+    local spec_fn = spec_fns[_index_0] -- shunt/spec.yue:786
+    spec_fn() -- shunt/spec.yue:787
+  end -- shunt/spec.yue:787
+  testing = true -- shunt/spec.yue:789
+  if root_spec ~= nil then -- shunt/spec.yue:790
+    root_spec:test(filter) -- shunt/spec.yue:790
+  end -- shunt/spec.yue:790
+  testing = false -- shunt/spec.yue:791
+  log(function() -- shunt/spec.yue:793
+    return tostring(Test.num_run) .. " checks run" -- shunt/spec.yue:794
+  end) -- shunt/spec.yue:793
+  local ok = Test.num_failures == 0 -- shunt/spec.yue:795
+  if not ok then -- shunt/spec.yue:796
+    print(tostring(Test.num_failures) .. " checks failed!") -- shunt/spec.yue:797
+  end -- shunt/spec.yue:796
+  return ok -- shunt/spec.yue:798
+end -- shunt/spec.yue:782
+_module_0["run_tests"] = run_tests -- shunt/spec.yue:798
+return _module_0 -- shunt/spec.yue:798
 end
 package.preload['shunt.state'] = function(...)
 -- [yue]: shunt/state.yue
@@ -8688,6 +8986,3175 @@ spec(function() -- shunt/state.yue:384
 end) -- shunt/state.yue:384
 return _module_0 -- shunt/state.yue:897
 end
+package.preload['shunt.writelite'] = function(...)
+-- [yue]: shunt/writelite.yue
+local _module_0 = { } -- shunt/writelite.yue:1
+local FORMAT_VERSION, MIN_PAGE_SIZE, injected_failures, activated_failure_points, CORRUPTION_WARNING, MAIN_PRELUDE, JOURNAL_PRELUDE, OsFs, PageCache, Transaction, Journal, NIL_TAG, NIL_TAG_CHAR, TRUE_TAG, TRUE_TAG_CHAR, FALSE_TAG, FALSE_TAG_CHAR, INT_TYPE, FLOAT_TYPE, FLOAT_TYPE_CHAR, STRING_TAG, STRING_TAG_CHAR, TABLE_REF_TAG, TABLE_REF_TAG_CHAR, TABLE_PAYLOAD_TAG, BLANK_TAG, BLANK_TAG_CHAR, TAG_MASK, INT_LEN_SHIFT, INT_LEN_MASK, Serialiser, MAX_INT, MIN_INT, is_float, Deserialiser, Page, MAX_HASH, Hasher, print_serialised -- shunt/writelite.yue:1
+local HOST = require('shunt.compat').HOST -- shunt/writelite.yue:0
+local declare_singleton_type, declare_type, F, T -- shunt/writelite.yue:0
+do -- shunt/writelite.yue:0
+  local _obj_0 = require('shunt.quicktype') -- shunt/writelite.yue:0
+  declare_singleton_type, declare_type, F, T = _obj_0.declare_singleton_type, _obj_0.declare_type, _obj_0.F, _obj_0.T -- shunt/writelite.yue:0
+end -- shunt/writelite.yue:0
+local spec = require('shunt.spec').spec -- shunt/writelite.yue:0
+FORMAT_VERSION = 1 -- shunt/writelite.yue:7
+MIN_PAGE_SIZE = 1024 -- shunt/writelite.yue:8
+injected_failures = nil -- shunt/writelite.yue:10
+activated_failure_points = nil -- shunt/writelite.yue:11
+declare_type('writelite.Writelite', [[{
+  mode: (writelite.Mode) => Self,
+  page_size: (number) => Self,
+  open: () => <boolean, ?string>,
+  transaction: ((writelite.Transaction) -> <>) => <>,
+  close: () => <boolean, ?string>,
+}]]) -- shunt/writelite.yue:49
+declare_type('writelite.Mode', '"blob"') -- shunt/writelite.yue:56
+declare_type('writelite.MainHeader', [[{
+  format_version: 1,
+  page_size: number,
+  mode: writelite.Mode,
+}]]) -- shunt/writelite.yue:57
+local Writelite -- shunt/writelite.yue:62
+do -- shunt/writelite.yue:62
+  local _class_0 -- shunt/writelite.yue:62
+  local _base_0 = { -- shunt/writelite.yue:62
+    mode = F('(writelite.Mode) => Self', function(self, mode) -- shunt/writelite.yue:76
+      if (self._mode ~= nil) then -- shunt/writelite.yue:77
+        error("cannot change mode once set") -- shunt/writelite.yue:78
+      end -- shunt/writelite.yue:77
+      self._mode = mode -- shunt/writelite.yue:79
+      return self -- shunt/writelite.yue:80
+    end), -- shunt/writelite.yue:82
+    page_size = F('(number) => Self', function(self, page_size) -- shunt/writelite.yue:82
+      if self._page_size_set then -- shunt/writelite.yue:83
+        error("cannot change page size once set") -- shunt/writelite.yue:84
+      end -- shunt/writelite.yue:83
+      if page_size < MIN_PAGE_SIZE then -- shunt/writelite.yue:85
+        error("cannot change page size to " .. tostring(page_size) .. ": minimum is " .. tostring(MIN_PAGE_SIZE)) -- shunt/writelite.yue:86
+      end -- shunt/writelite.yue:85
+      if page_size % 1 ~= 0 then -- shunt/writelite.yue:87
+        error("cannot change page size to " .. tostring(page_size) .. ": not an integer") -- shunt/writelite.yue:88
+      end -- shunt/writelite.yue:87
+      local shifted = page_size -- shunt/writelite.yue:91
+      while 0 == bit.band(shifted, 1) do -- shunt/writelite.yue:92
+        shifted = bit.brshift(shifted, 1) -- shunt/writelite.yue:93
+      end -- shunt/writelite.yue:93
+      if shifted > 1 then -- shunt/writelite.yue:94
+        error("cannot change page size to " .. tostring(page_size) .. ": not a power of 2") -- shunt/writelite.yue:95
+      end -- shunt/writelite.yue:94
+      self._page_size_set = true -- shunt/writelite.yue:97
+      self._page_size = page_size -- shunt/writelite.yue:98
+      return self -- shunt/writelite.yue:99
+    end), -- shunt/writelite.yue:101
+    max_cached_pages = F('(number) => Self', function(self, max_cached_pages) -- shunt/writelite.yue:101
+      self._page_cache:set_max_cached_pages(max_cached_pages) -- shunt/writelite.yue:102
+      return self -- shunt/writelite.yue:103
+    end), -- shunt/writelite.yue:105
+    open = F('() => <boolean, ?string>', function(self) -- shunt/writelite.yue:105
+      if self._open then -- shunt/writelite.yue:106
+        return false, 'cannot open writelite twice' -- shunt/writelite.yue:107
+      end -- shunt/writelite.yue:106
+      self._open = true -- shunt/writelite.yue:108
+      if not (self._mode ~= nil) then -- shunt/writelite.yue:110
+        return false, 'cannot open main file: mode unspecified' -- shunt/writelite.yue:111
+      end -- shunt/writelite.yue:110
+      if (injected_failures ~= nil) and injected_failures['pre-open'] then -- shunt/writelite.yue:113
+        if activated_failure_points == nil then -- shunt/writelite.yue:113
+          activated_failure_points = { } -- shunt/writelite.yue:113
+        end -- shunt/writelite.yue:113
+        activated_failure_points['pre-open'] = true -- shunt/writelite.yue:113
+        error('FAILURE_MARKER-pre-open') -- shunt/writelite.yue:113
+      end -- shunt/writelite.yue:113
+      local main_file, _, _ = self._fs:open(self._path, 'rb+') -- shunt/writelite.yue:114
+      if not (main_file ~= nil) then -- shunt/writelite.yue:115
+        local err -- shunt/writelite.yue:120
+        main_file, err, _ = self._fs:open(self._path, 'wb+') -- shunt/writelite.yue:120
+        if (err ~= nil) then -- shunt/writelite.yue:121
+          return false, "cannot open main file: " .. tostring(err) -- shunt/writelite.yue:122
+        end -- shunt/writelite.yue:121
+      end -- shunt/writelite.yue:115
+      main_file:setvbuf('full') -- shunt/writelite.yue:123
+      self._main_file = main_file; -- shunt/writelite.yue:124
+      if (injected_failures ~= nil) and injected_failures['post-open'] then -- shunt/writelite.yue:125
+        if activated_failure_points == nil then -- shunt/writelite.yue:125
+          activated_failure_points = { } -- shunt/writelite.yue:125
+        end -- shunt/writelite.yue:125
+        activated_failure_points['post-open'] = true -- shunt/writelite.yue:125
+        error('FAILURE_MARKER-post-open') -- shunt/writelite.yue:125
+      end -- shunt/writelite.yue:125
+      local main_end_index, err = self._main_file:seek('end', 0) -- shunt/writelite.yue:127
+      if (err ~= nil) then -- shunt/writelite.yue:128
+        return false, "cannot read main file: " .. tostring(err) -- shunt/writelite.yue:129
+      end -- shunt/writelite.yue:128
+      local journal_file -- shunt/writelite.yue:131
+      journal_file, _ = self._fs:open(self._journal_path, 'rb') -- shunt/writelite.yue:131
+      if (journal_file ~= nil) then -- shunt/writelite.yue:132
+        local journal_content = journal_file:read('*a') -- shunt/writelite.yue:133
+        journal_file:close(); -- shunt/writelite.yue:134
+        if (injected_failures ~= nil) and injected_failures['post-journal-read'] then -- shunt/writelite.yue:135
+          if activated_failure_points == nil then -- shunt/writelite.yue:135
+            activated_failure_points = { } -- shunt/writelite.yue:135
+          end -- shunt/writelite.yue:135
+          activated_failure_points['post-journal-read'] = true -- shunt/writelite.yue:135
+          error('FAILURE_MARKER-post-journal-read') -- shunt/writelite.yue:135
+        end -- shunt/writelite.yue:135
+        local journal -- shunt/writelite.yue:137
+        journal, err = Journal:load(journal_content, self._page_size) -- shunt/writelite.yue:137
+        if (err ~= nil) then -- shunt/writelite.yue:138
+          error("cannot load journal: " .. tostring(err)) -- shunt/writelite.yue:139
+        end -- shunt/writelite.yue:138
+        if (injected_failures ~= nil) and injected_failures['post-journal-load'] then -- shunt/writelite.yue:140
+          if activated_failure_points == nil then -- shunt/writelite.yue:140
+            activated_failure_points = { } -- shunt/writelite.yue:140
+          end -- shunt/writelite.yue:140
+          activated_failure_points['post-journal-load'] = true -- shunt/writelite.yue:140
+          error('FAILURE_MARKER-post-journal-load') -- shunt/writelite.yue:140
+        end -- shunt/writelite.yue:140
+        if (journal ~= nil) then -- shunt/writelite.yue:141
+          local _list_0 = journal:pages() -- shunt/writelite.yue:142
+          for _index_0 = 1, #_list_0 do -- shunt/writelite.yue:142
+            local page = _list_0[_index_0] -- shunt/writelite.yue:142
+            local offset, content = page.offset, page.content -- shunt/writelite.yue:143
+            _, err = self._main_file:seek('set', offset) -- shunt/writelite.yue:144
+            if (err ~= nil) then -- shunt/writelite.yue:145
+              error("cannot seek in main file") -- shunt/writelite.yue:146
+            end -- shunt/writelite.yue:145
+            _, err = self._main_file:write(content) -- shunt/writelite.yue:147
+            if (err ~= nil) then -- shunt/writelite.yue:148
+              error("cannot write to main file") -- shunt/writelite.yue:149
+            end -- shunt/writelite.yue:148
+            if (injected_failures ~= nil) and injected_failures['mid-journal-recovery'] then -- shunt/writelite.yue:150
+              if activated_failure_points == nil then -- shunt/writelite.yue:150
+                activated_failure_points = { } -- shunt/writelite.yue:150
+              end -- shunt/writelite.yue:150
+              activated_failure_points['mid-journal-recovery'] = true -- shunt/writelite.yue:150
+              error('FAILURE_MARKER-mid-journal-recovery') -- shunt/writelite.yue:150
+            end -- shunt/writelite.yue:150
+          end -- shunt/writelite.yue:150
+        end -- shunt/writelite.yue:141
+        if (injected_failures ~= nil) and injected_failures['pre-journal-removal'] then -- shunt/writelite.yue:153
+          if activated_failure_points == nil then -- shunt/writelite.yue:153
+            activated_failure_points = { } -- shunt/writelite.yue:153
+          end -- shunt/writelite.yue:153
+          activated_failure_points['pre-journal-removal'] = true -- shunt/writelite.yue:153
+          error('FAILURE_MARKER-pre-journal-removal') -- shunt/writelite.yue:153
+        end -- shunt/writelite.yue:153
+        self._fs:remove(self._journal_path); -- shunt/writelite.yue:154
+        if (injected_failures ~= nil) and injected_failures['post-journal-removal'] then -- shunt/writelite.yue:155
+          if activated_failure_points == nil then -- shunt/writelite.yue:155
+            activated_failure_points = { } -- shunt/writelite.yue:155
+          end -- shunt/writelite.yue:155
+          activated_failure_points['post-journal-removal'] = true -- shunt/writelite.yue:155
+          error('FAILURE_MARKER-post-journal-removal') -- shunt/writelite.yue:155
+        end -- shunt/writelite.yue:155
+      end -- shunt/writelite.yue:132
+      local main_header -- shunt/writelite.yue:157
+      if main_end_index == 0 then -- shunt/writelite.yue:158
+        main_header = self:_make_main_header() -- shunt/writelite.yue:159
+        err = self:_format_main(main_header) -- shunt/writelite.yue:160
+        if (err ~= nil) then -- shunt/writelite.yue:161
+          return false, err -- shunt/writelite.yue:162
+        end -- shunt/writelite.yue:161
+      else -- shunt/writelite.yue:164
+        main_header, err = self:_read_main_header() -- shunt/writelite.yue:164
+        if (err ~= nil) then -- shunt/writelite.yue:165
+          return false, "cannot open writelite: " .. tostring(err) -- shunt/writelite.yue:166
+        end -- shunt/writelite.yue:165
+      end -- shunt/writelite.yue:158
+      return true, nil -- shunt/writelite.yue:169
+    end), -- shunt/writelite.yue:171
+    _make_main_header = F('() => writelite.MainHeader', function(self) -- shunt/writelite.yue:171
+      local header = T('writelite.MainHeader', { -- shunt/writelite.yue:173
+        format_version = FORMAT_VERSION, -- shunt/writelite.yue:173
+        page_size = self._page_size, -- shunt/writelite.yue:174
+        mode = self._mode, -- shunt/writelite.yue:175
+        checksum = 0 -- shunt/writelite.yue:176
+      }) -- shunt/writelite.yue:172
+      local checksum = Hasher:hash(header) -- shunt/writelite.yue:178
+      header.checksum = checksum -- shunt/writelite.yue:180
+      return header -- shunt/writelite.yue:181
+    end), -- shunt/writelite.yue:183
+    _read_main_header = F('() => <?writelite.MainHeader, ?string>', function(self) -- shunt/writelite.yue:183
+      self._main_file:seek('set', 0) -- shunt/writelite.yue:184
+      local raw_header, err = self._main_file:read(MIN_PAGE_SIZE) -- shunt/writelite.yue:185
+      if (err ~= nil) then -- shunt/writelite.yue:186
+        return nil, err -- shunt/writelite.yue:187
+      end -- shunt/writelite.yue:186
+      if not (raw_header ~= nil) then -- shunt/writelite.yue:188
+        return nil, "main file empty" -- shunt/writelite.yue:189
+      end -- shunt/writelite.yue:188
+      local header = (Deserialiser(raw_header:sub(#MAIN_PRELUDE + 1))):parse() -- shunt/writelite.yue:190
+      local checkers = { -- shunt/writelite.yue:194
+        format_version = function(fv) -- shunt/writelite.yue:194
+          if fv ~= FORMAT_VERSION then -- shunt/writelite.yue:194
+            return "format version mismatch" -- shunt/writelite.yue:195
+          end -- shunt/writelite.yue:194
+        end, -- shunt/writelite.yue:194
+        mode = function(m) -- shunt/writelite.yue:196
+          if m ~= self._mode then -- shunt/writelite.yue:196
+            return "mode mismatch" -- shunt/writelite.yue:197
+          end -- shunt/writelite.yue:196
+        end, -- shunt/writelite.yue:196
+        page_size = function(ps) -- shunt/writelite.yue:198
+          if ps ~= self._page_size then -- shunt/writelite.yue:198
+            return "page size mismatch" -- shunt/writelite.yue:199
+          end -- shunt/writelite.yue:198
+        end, -- shunt/writelite.yue:198
+        checksum = function() end -- shunt/writelite.yue:200
+      } -- shunt/writelite.yue:193
+      for key, value in pairs(header) do -- shunt/writelite.yue:201
+        local checker = checkers[key] -- shunt/writelite.yue:202
+        if not (checker ~= nil) then -- shunt/writelite.yue:203
+          error("internal error: no such checker '" .. tostring(key) .. "'") -- shunt/writelite.yue:204
+        end -- shunt/writelite.yue:203
+        err = checker(value) -- shunt/writelite.yue:205
+        if (err ~= nil) then -- shunt/writelite.yue:206
+          return nil, "cannot open " .. tostring(self._path) .. ": " .. tostring(err) -- shunt/writelite.yue:207
+        end -- shunt/writelite.yue:206
+      end -- shunt/writelite.yue:207
+      local stored_checksum = header.checksum -- shunt/writelite.yue:209
+      header.checksum = 0 -- shunt/writelite.yue:210
+      local computed_checksum = Hasher:hash(header) -- shunt/writelite.yue:211
+      if stored_checksum ~= computed_checksum then -- shunt/writelite.yue:212
+        return nil, "header corrupt (computed_checksum=" .. tostring(computed_checksum) .. ", stored_checksum=" .. tostring(stored_checksum) .. ")" -- shunt/writelite.yue:213
+      end -- shunt/writelite.yue:212
+      header.checksum = stored_checksum -- shunt/writelite.yue:214
+      return header -- shunt/writelite.yue:216
+    end), -- shunt/writelite.yue:218
+    _format_main = F('(writelite.MainHeader) => ?string', function(self, header) -- shunt/writelite.yue:218
+      local fragments = { -- shunt/writelite.yue:220
+        MAIN_PRELUDE, -- shunt/writelite.yue:220
+        Serialiser:serialise(header) -- shunt/writelite.yue:221
+      } -- shunt/writelite.yue:219
+      local current_size = 0 -- shunt/writelite.yue:223
+      for _index_0 = 1, #fragments do -- shunt/writelite.yue:224
+        local fragment = fragments[_index_0] -- shunt/writelite.yue:224
+        current_size = current_size + (#fragment) -- shunt/writelite.yue:225
+      end -- shunt/writelite.yue:225
+      fragments[#fragments + 1] = ('\0'):rep(MIN_PAGE_SIZE - current_size) -- shunt/writelite.yue:226
+      local to_write = table.concat(fragments) -- shunt/writelite.yue:228
+      if #to_write > MIN_PAGE_SIZE then -- shunt/writelite.yue:229
+        error("internal error: first page too large: " .. tostring(#to_write) .. " > " .. tostring(MIN_PAGE_SIZE)) -- shunt/writelite.yue:230
+      end -- shunt/writelite.yue:229
+      local _, err = self._main_file:seek('set', 0) -- shunt/writelite.yue:231
+      if (err ~= nil) then -- shunt/writelite.yue:232
+        return err -- shunt/writelite.yue:233
+      end -- shunt/writelite.yue:232
+      _, err = self._main_file:write(to_write) -- shunt/writelite.yue:234
+      if (err ~= nil) then -- shunt/writelite.yue:235
+        return err -- shunt/writelite.yue:236
+      end -- shunt/writelite.yue:235
+      _, err = self._main_file:flush() -- shunt/writelite.yue:237
+      return err -- shunt/writelite.yue:238
+    end), -- shunt/writelite.yue:240
+    transaction = F('((writelite.Transaction) -> <>) => <>', function(self, f) -- shunt/writelite.yue:240
+      self.__class._open_transactions[self._path] = true -- shunt/writelite.yue:241
+      local txn = Transaction(self) -- shunt/writelite.yue:243
+      local err = nil -- shunt/writelite.yue:244
+xpcall(function() -- shunt/writelite.yue:245
+        return f(txn) -- shunt/writelite.yue:246
+      end, function(err2) -- shunt/writelite.yue:246
+        err = err2 -- shunt/writelite.yue:248
+        return txn:abort() -- shunt/writelite.yue:249
+      end) -- shunt/writelite.yue:249
+      self.__class._open_transactions[self._path] = nil -- shunt/writelite.yue:251
+      if (injected_failures ~= nil) and injected_failures['mid-transaction'] then -- shunt/writelite.yue:253
+        if activated_failure_points == nil then -- shunt/writelite.yue:253
+          activated_failure_points = { } -- shunt/writelite.yue:253
+        end -- shunt/writelite.yue:253
+        activated_failure_points['mid-transaction'] = true -- shunt/writelite.yue:253
+        error('FAILURE_MARKER-mid-transaction') -- shunt/writelite.yue:253
+      end -- shunt/writelite.yue:253
+      err = txn:_close(); -- shunt/writelite.yue:254
+      if (injected_failures ~= nil) and injected_failures['post-transaction'] then -- shunt/writelite.yue:255
+        if activated_failure_points == nil then -- shunt/writelite.yue:255
+          activated_failure_points = { } -- shunt/writelite.yue:255
+        end -- shunt/writelite.yue:255
+        activated_failure_points['post-transaction'] = true -- shunt/writelite.yue:255
+        error('FAILURE_MARKER-post-transaction') -- shunt/writelite.yue:255
+      end -- shunt/writelite.yue:255
+      if (err ~= nil) then -- shunt/writelite.yue:257
+        error(err) -- shunt/writelite.yue:258
+      end -- shunt/writelite.yue:257
+      if (err2 ~= nil) then -- shunt/writelite.yue:259
+        error(err2) -- shunt/writelite.yue:260
+      end -- shunt/writelite.yue:259
+      return -- shunt/writelite.yue:261
+    end), -- shunt/writelite.yue:263
+    close = F('() => <boolean, ?string>', function(self) -- shunt/writelite.yue:263
+      local _, file_closure_error = self._main_file:close() -- shunt/writelite.yue:264
+      if self.__class._open_transactions[self._path] then -- shunt/writelite.yue:266
+        return false, "cannot close writelite file " .. tostring(self._path) .. ": a transaction is open" -- shunt/writelite.yue:267
+      end -- shunt/writelite.yue:266
+      if not self._open then -- shunt/writelite.yue:269
+        return false, "cannot close writelite file " .. tostring(self._path) .. ": not open" -- shunt/writelite.yue:270
+      end -- shunt/writelite.yue:269
+      self._open = false -- shunt/writelite.yue:271
+      return not (file_closure_error ~= nil), file_closure_error -- shunt/writelite.yue:273
+    end), -- shunt/writelite.yue:279
+    _ut_max_cached_pages = F('() => number', function(self) -- shunt/writelite.yue:279
+      return self._page_cache.max_cached_pages -- shunt/writelite.yue:280
+    end) -- shunt/writelite.yue:62
+  } -- shunt/writelite.yue:62
+  if _base_0.__index == nil then -- shunt/writelite.yue:62
+    _base_0.__index = _base_0 -- shunt/writelite.yue:62
+  end -- shunt/writelite.yue:280
+  _class_0 = setmetatable({ -- shunt/writelite.yue:62
+    __init = F('(string, ?writelite.Fs) => <>', function(self, _path, _fs) -- shunt/writelite.yue:65
+      if _fs == nil then -- shunt/writelite.yue:65
+        _fs = OsFs() -- shunt/writelite.yue:65
+      end -- shunt/writelite.yue:65
+      self._path = _path -- shunt/writelite.yue:65
+      self._fs = _fs -- shunt/writelite.yue:65
+      self._journal_path = T('string', self._path .. '~') -- shunt/writelite.yue:66
+      self._main_file = T('?writelite.File', nil) -- shunt/writelite.yue:67
+      self._open = T('boolean', false) -- shunt/writelite.yue:68
+      self._mode = T('?writelite.Mode', nil) -- shunt/writelite.yue:69
+      self._page_size = 4096 -- shunt/writelite.yue:70
+      self._page_size_set = T('boolean', false) -- shunt/writelite.yue:71
+      self._injected_failures = T('?{string}', nil) -- shunt/writelite.yue:72
+      self._page_cache = PageCache(self) -- shunt/writelite.yue:74
+    end), -- shunt/writelite.yue:62
+    __base = _base_0, -- shunt/writelite.yue:62
+    __name = "Writelite" -- shunt/writelite.yue:62
+  }, { -- shunt/writelite.yue:62
+    __index = _base_0, -- shunt/writelite.yue:62
+    __call = function(cls, ...) -- shunt/writelite.yue:62
+      local _self_0 = setmetatable({ }, _base_0) -- shunt/writelite.yue:62
+      cls.__init(_self_0, ...) -- shunt/writelite.yue:62
+      return _self_0 -- shunt/writelite.yue:62
+    end -- shunt/writelite.yue:62
+  }) -- shunt/writelite.yue:62
+  _base_0.__class = _class_0 -- shunt/writelite.yue:62
+  local self = _class_0; -- shunt/writelite.yue:62
+  self._open_transactions = T('{string}', { }) -- shunt/writelite.yue:63
+  self._zero_page = F('() => string', function(self) -- shunt/writelite.yue:275
+    if self._cached_zero_page == nil then -- shunt/writelite.yue:276
+      self._cached_zero_page = ('\0'):rep(self._page_size) -- shunt/writelite.yue:276
+    end -- shunt/writelite.yue:276
+    return self._cached_zero_page -- shunt/writelite.yue:277
+  end) -- shunt/writelite.yue:275
+  Writelite = _class_0 -- shunt/writelite.yue:62
+end -- shunt/writelite.yue:280
+_module_0["Writelite"] = Writelite -- shunt/writelite.yue:62
+CORRUPTION_WARNING = T('string', '\n+----------------------------------------------+\n|                                              |\n|                !!! STOP !!!                  |\n|                                              |\n|                DO NOT EDIT!                  |\n|                                              |\n|   Editing this file will corrupt its data.   |\n|                                              |\n| Close this file and DO NOT SAVE any changes. |\n|                                              |\n|             EXIT the editor NOW.             |\n|                                              |\n+----------------------------------------------+\n') -- shunt/writelite.yue:282
+MAIN_PRELUDE = "#!writelite\0\0\0\0\0" .. tostring(CORRUPTION_WARNING) -- shunt/writelite.yue:297
+JOURNAL_PRELUDE = "#!writelitejrnl\0" .. tostring(CORRUPTION_WARNING) -- shunt/writelite.yue:298
+declare_type('writelite.Fs', [[{
+  open: (string, writelite.FileMode) => <?writelite.File, ?string, ?number>,
+  remove: (string) => boolean,
+}]]) -- shunt/writelite.yue:300
+declare_type('writelite.FileMode', [[  "r"|"w"|"a"
+  |"r+"|"w+"|"a+"
+  |"rb"|"wb"|"ab"
+  |"rb+"|"wb+"|"ab+"
+]]) -- shunt/writelite.yue:304
+declare_type('writelite.File', [[~{
+  read: ("*a"|number) => <?string, ?string>,
+  write: (string) => ?string,
+  seek: (Whence, ?number) => <?number, ?string>,
+  setvbuf: ("full") => <>,
+  flush: () => <boolean, ?string>,
+  close: () => <boolean, ?string>,
+}]]) -- shunt/writelite.yue:310
+do -- shunt/writelite.yue:318
+  local _class_0 -- shunt/writelite.yue:318
+  local _base_0 = { -- shunt/writelite.yue:318
+    open = F('(string, writelite.FileMode) => <?writelite.File, ?string, ?number>', function(self, path, mode) -- shunt/writelite.yue:321
+      return io.open(tostring(self.dir) .. "/" .. tostring(path), mode) -- shunt/writelite.yue:322
+    end), -- shunt/writelite.yue:324
+    remove = F('(string) => boolean', function(self, path) -- shunt/writelite.yue:324
+      return os.remove(path) -- shunt/writelite.yue:325
+    end) -- shunt/writelite.yue:318
+  } -- shunt/writelite.yue:318
+  if _base_0.__index == nil then -- shunt/writelite.yue:318
+    _base_0.__index = _base_0 -- shunt/writelite.yue:318
+  end -- shunt/writelite.yue:325
+  _class_0 = setmetatable({ -- shunt/writelite.yue:318
+    __init = F('(?string) => <>', function(self, dir) -- shunt/writelite.yue:319
+      if dir == nil then -- shunt/writelite.yue:319
+        dir = '.' -- shunt/writelite.yue:319
+      end -- shunt/writelite.yue:319
+      self.dir = dir -- shunt/writelite.yue:319
+    end), -- shunt/writelite.yue:318
+    __base = _base_0, -- shunt/writelite.yue:318
+    __name = "OsFs" -- shunt/writelite.yue:318
+  }, { -- shunt/writelite.yue:318
+    __index = _base_0, -- shunt/writelite.yue:318
+    __call = function(cls, ...) -- shunt/writelite.yue:318
+      local _self_0 = setmetatable({ }, _base_0) -- shunt/writelite.yue:318
+      cls.__init(_self_0, ...) -- shunt/writelite.yue:318
+      return _self_0 -- shunt/writelite.yue:318
+    end -- shunt/writelite.yue:318
+  }) -- shunt/writelite.yue:318
+  _base_0.__class = _class_0 -- shunt/writelite.yue:318
+  OsFs = _class_0 -- shunt/writelite.yue:318
+end -- shunt/writelite.yue:325
+declare_type('writelite.PageCache', [[{
+  get: (number) => ?writelite.Page,
+  set: (number, writelite.Page) => <>,
+  set_max_cached_pages: (number) => <>,
+}]]) -- shunt/writelite.yue:327
+declare_type('writelite.PageCacheOpts', [[{
+  _page_size: number,
+  _main_file: ?writelite.File, -- Lazy
+}]]) -- shunt/writelite.yue:332
+do -- shunt/writelite.yue:336
+  local _class_0 -- shunt/writelite.yue:336
+  local _base_0 = { -- shunt/writelite.yue:336
+    get = F('(number) => ?writelite.Page', function(self, offset) -- shunt/writelite.yue:346
+      local page_size = self.opts._page_size -- shunt/writelite.yue:347
+      if offset % page_size ~= 0 then -- shunt/writelite.yue:349
+        error("internal error: page-cache offset must be a multiple of the page size") -- shunt/writelite.yue:350
+      end -- shunt/writelite.yue:349
+      self.lru_map[offset] = self.lru_counter -- shunt/writelite.yue:352
+      self.lru_counter = self.lru_counter + 1 -- shunt/writelite.yue:353
+      do -- shunt/writelite.yue:355
+        local page = self.cached_pages[offset] -- shunt/writelite.yue:355
+        if page then -- shunt/writelite.yue:355
+          return page -- shunt/writelite.yue:356
+        end -- shunt/writelite.yue:355
+      end -- shunt/writelite.yue:355
+      if self.num_cached_pages >= self.max_cached_pages then -- shunt/writelite.yue:358
+        self:discard_old() -- shunt/writelite.yue:359
+      end -- shunt/writelite.yue:358
+      local page -- shunt/writelite.yue:361
+      do -- shunt/writelite.yue:361
+        local main_file = self.opts._main_file -- shunt/writelite.yue:362
+        main_file:seek('set', offset) -- shunt/writelite.yue:363
+        local content -- shunt/writelite.yue:365
+        do -- shunt/writelite.yue:365
+          local err -- shunt/writelite.yue:366
+          content, err = main_file:read(page_size) -- shunt/writelite.yue:366
+          if (err ~= nil) then -- shunt/writelite.yue:367
+            error(err) -- shunt/writelite.yue:368
+          end -- shunt/writelite.yue:367
+          if content ~= nil then -- shunt/writelite.yue:369
+            content = content -- shunt/writelite.yue:369
+          else -- shunt/writelite.yue:369
+            content = '' -- shunt/writelite.yue:369
+          end -- shunt/writelite.yue:369
+          if #content < page_size then -- shunt/writelite.yue:370
+            content = content .. ('\0'):rep(page_size - #content) -- shunt/writelite.yue:371
+          end -- shunt/writelite.yue:370
+          content = content -- shunt/writelite.yue:372
+        end -- shunt/writelite.yue:372
+        if #content ~= page_size then -- shunt/writelite.yue:373
+          error("internal error: incorrect page size (" .. tostring(#content) .. " != " .. tostring(page_size) .. ")") -- shunt/writelite.yue:374
+        end -- shunt/writelite.yue:373
+        page = Page({ -- shunt/writelite.yue:376
+          offset = offset, -- shunt/writelite.yue:376
+          content = content -- shunt/writelite.yue:377
+        }) -- shunt/writelite.yue:375
+      end -- shunt/writelite.yue:377
+      self.num_cached_pages = self.num_cached_pages + 1 -- shunt/writelite.yue:379
+      self.cached_pages[offset] = page -- shunt/writelite.yue:380
+      return page -- shunt/writelite.yue:381
+    end), -- shunt/writelite.yue:383
+    set = F('(number, writelite.Page) => <>', function(self, offset, page) -- shunt/writelite.yue:383
+      local page_size = self.opts._page_size -- shunt/writelite.yue:384
+      if offset % page_size ~= 0 then -- shunt/writelite.yue:386
+        error("internal error: page-cache offset must be a multiple of the page size") -- shunt/writelite.yue:387
+      end -- shunt/writelite.yue:386
+      if #page.content ~= page_size then -- shunt/writelite.yue:388
+        error("internal error: page has the wrong size (" .. tostring(#page.content) .. " != " .. tostring(page_size) .. ")") -- shunt/writelite.yue:389
+      end -- shunt/writelite.yue:388
+      if offset ~= page.offset then -- shunt/writelite.yue:390
+        error("internal error: required and declared offset mismatch (" .. tostring(offset) .. " != " .. tostring(page.offset) .. ")") -- shunt/writelite.yue:391
+      end -- shunt/writelite.yue:390
+      self.lru_map[offset] = self.lru_counter -- shunt/writelite.yue:393
+      self.lru_counter = self.lru_counter + 1 -- shunt/writelite.yue:394
+      if not (self.cached_pages[offset] ~= nil) then -- shunt/writelite.yue:396
+        self.num_cached_pages = self.num_cached_pages + 1 -- shunt/writelite.yue:397
+      end -- shunt/writelite.yue:396
+      self.cached_pages[offset] = page -- shunt/writelite.yue:398
+      if self.num_cached_pages > self.max_cached_pages then -- shunt/writelite.yue:400
+        return self:discard_old() -- shunt/writelite.yue:401
+      end -- shunt/writelite.yue:400
+    end), -- shunt/writelite.yue:403
+    discard_old = F('() => <>', function(self) -- shunt/writelite.yue:403
+      local discard_horizon = self.lru_counter - self.max_cached_pages * 0.5 -- shunt/writelite.yue:404
+      local indices_to_discard -- shunt/writelite.yue:405
+      do -- shunt/writelite.yue:405
+        local _with_0 = { } -- shunt/writelite.yue:405
+        for index, last_used in pairs(self.lru_map) do -- shunt/writelite.yue:406
+          if last_used < discard_horizon then -- shunt/writelite.yue:407
+            _with_0[#_with_0 + 1] = index -- shunt/writelite.yue:408
+          end -- shunt/writelite.yue:407
+        end -- shunt/writelite.yue:408
+        indices_to_discard = _with_0 -- shunt/writelite.yue:405
+      end -- shunt/writelite.yue:405
+      for _index_0 = 1, #indices_to_discard do -- shunt/writelite.yue:409
+        local index = indices_to_discard[_index_0] -- shunt/writelite.yue:409
+        self.lru_map[index] = nil -- shunt/writelite.yue:410
+        self.cached_pages[index] = nil -- shunt/writelite.yue:411
+      end -- shunt/writelite.yue:411
+      self.num_cached_pages = self.num_cached_pages - (#indices_to_discard) -- shunt/writelite.yue:412
+    end), -- shunt/writelite.yue:414
+    set_max_cached_pages = F('(number) => <>', function(self, max_cached_pages) -- shunt/writelite.yue:414
+      if max_cached_pages < 1 then -- shunt/writelite.yue:415
+        error("cannot set max cached pages to " .. tostring(max_cached_pages) .. ": too small") -- shunt/writelite.yue:416
+      end -- shunt/writelite.yue:415
+      if is_float(max_cached_pages) then -- shunt/writelite.yue:417
+        error("cannot set max cached pages to " .. tostring(max_cached_pages) .. ": not an integer") -- shunt/writelite.yue:418
+      end -- shunt/writelite.yue:417
+      self.max_cached_pages = max_cached_pages -- shunt/writelite.yue:419
+    end) -- shunt/writelite.yue:336
+  } -- shunt/writelite.yue:336
+  if _base_0.__index == nil then -- shunt/writelite.yue:336
+    _base_0.__index = _base_0 -- shunt/writelite.yue:336
+  end -- shunt/writelite.yue:419
+  _class_0 = setmetatable({ -- shunt/writelite.yue:336
+    __init = F('(writelite.PageCacheOpts) => <>', function(self, opts) -- shunt/writelite.yue:337
+      self.opts = opts -- shunt/writelite.yue:337
+      self.cached_pages = T('{number->writelite.Page}', { }) -- shunt/writelite.yue:340
+      self.num_cached_pages = T('number', 0) -- shunt/writelite.yue:341
+      self.lru_map = T('{number->number}', { }) -- shunt/writelite.yue:342
+      self.lru_counter = T('number', 0) -- shunt/writelite.yue:343
+      self.max_cached_pages = T('number', 1000) -- shunt/writelite.yue:344
+    end), -- shunt/writelite.yue:336
+    __base = _base_0, -- shunt/writelite.yue:336
+    __name = "PageCache" -- shunt/writelite.yue:336
+  }, { -- shunt/writelite.yue:336
+    __index = _base_0, -- shunt/writelite.yue:336
+    __call = function(cls, ...) -- shunt/writelite.yue:336
+      local _self_0 = setmetatable({ }, _base_0) -- shunt/writelite.yue:336
+      cls.__init(_self_0, ...) -- shunt/writelite.yue:336
+      return _self_0 -- shunt/writelite.yue:336
+    end -- shunt/writelite.yue:336
+  }) -- shunt/writelite.yue:336
+  _base_0.__class = _class_0 -- shunt/writelite.yue:336
+  PageCache = _class_0 -- shunt/writelite.yue:336
+end -- shunt/writelite.yue:419
+declare_type('writelite.Transaction', [[{
+  write: (string) => <>,
+  seek: (Whence, ?number) => <?number, ?string>,
+  abort: () => <>,
+}]]) -- shunt/writelite.yue:421
+declare_type('Whence', '"set"|"cur"|"end"') -- shunt/writelite.yue:426
+declare_type('writelite.Delta', [[{
+  offset: number,
+  content: string,
+}]]) -- shunt/writelite.yue:427
+do -- shunt/writelite.yue:431
+  local _class_0 -- shunt/writelite.yue:431
+  local _base_0 = { -- shunt/writelite.yue:431
+    write = F('(string) => <>', function(self, bytes) -- shunt/writelite.yue:439
+      if self._mode ~= 'blob' then -- shunt/writelite.yue:440
+        error("cannot use write method in " .. tostring(self._mode) .. " mode (must be in blob mode)") -- shunt/writelite.yue:441
+      end -- shunt/writelite.yue:440
+      if self._aborted then -- shunt/writelite.yue:442
+        error('cannot write to aborted transaction') -- shunt/writelite.yue:443
+      end -- shunt/writelite.yue:442
+      local offset = self._cursor + self._page_size -- shunt/writelite.yue:445
+      do -- shunt/writelite.yue:446
+        local _obj_0 = self._deltas -- shunt/writelite.yue:446
+        _obj_0[#_obj_0 + 1] = { -- shunt/writelite.yue:447
+          offset = offset, -- shunt/writelite.yue:447
+          content = bytes -- shunt/writelite.yue:448
+        } -- shunt/writelite.yue:446
+      end -- shunt/writelite.yue:448
+      self._cursor = self._cursor + (#bytes) -- shunt/writelite.yue:449
+    end), -- shunt/writelite.yue:451
+    seek = F('(Whence, ?number) => <>', function(self, whence, offset) -- shunt/writelite.yue:451
+      if self._aborted then -- shunt/writelite.yue:452
+        error('cannot seek in aborted transaction') -- shunt/writelite.yue:453
+      end -- shunt/writelite.yue:452
+      local new_cursor -- shunt/writelite.yue:455
+      if 'set' == whence then -- shunt/writelite.yue:457
+        if offset ~= nil then -- shunt/writelite.yue:458
+          new_cursor = offset -- shunt/writelite.yue:458
+        else -- shunt/writelite.yue:458
+          new_cursor = 0 -- shunt/writelite.yue:458
+        end -- shunt/writelite.yue:458
+        if new_cursor < 0 then -- shunt/writelite.yue:459
+          error("cannot seek to negative position") -- shunt/writelite.yue:460
+        end -- shunt/writelite.yue:459
+      elseif 'cur' == whence then -- shunt/writelite.yue:461
+        assert((offset ~= nil), 'internal error: "cur"-whence requires offset') -- shunt/writelite.yue:462
+        new_cursor = new_cursor + offset -- shunt/writelite.yue:463
+      elseif 'end' == whence then -- shunt/writelite.yue:464
+        assert(not (offset ~= nil), 'internal error: "end"-whence cannot have no offset') -- shunt/writelite.yue:465
+        new_cursor = self._len -- shunt/writelite.yue:466
+      else -- shunt/writelite.yue:468
+        error('internal error: unreachable') -- shunt/writelite.yue:468
+      end -- shunt/writelite.yue:468
+      self._cursor = new_cursor -- shunt/writelite.yue:469
+    end), -- shunt/writelite.yue:471
+    abort = F('() => <>', function(self) -- shunt/writelite.yue:471
+      self._aborted = true -- shunt/writelite.yue:472
+    end), -- shunt/writelite.yue:474
+    _close = F('() => ?string', function(self) -- shunt/writelite.yue:474
+      local journal_path = self._parent._journal_path -- shunt/writelite.yue:475
+      if self._aborted then -- shunt/writelite.yue:477
+        self._parent._fs:remove(journal_path) -- shunt/writelite.yue:479
+        return nil -- shunt/writelite.yue:480
+      end -- shunt/writelite.yue:477
+      local pages_to_write = self:_pages_to_write() -- shunt/writelite.yue:483
+      if #pages_to_write == 0 then -- shunt/writelite.yue:485
+        return nil -- shunt/writelite.yue:487
+      end -- shunt/writelite.yue:485
+      do -- shunt/writelite.yue:489
+        local journal = Journal(self._page_size) -- shunt/writelite.yue:490
+        for _index_0 = 1, #pages_to_write do -- shunt/writelite.yue:491
+          local page = pages_to_write[_index_0] -- shunt/writelite.yue:491
+          journal:add(page) -- shunt/writelite.yue:492
+        end -- shunt/writelite.yue:492
+        local fs = self._parent._fs -- shunt/writelite.yue:494
+        local journal_file, err = fs:open(journal_path, 'wb+') -- shunt/writelite.yue:495
+        if (err ~= nil) then -- shunt/writelite.yue:496
+          error("cannot open journal file '" .. tostring(journal_path) .. "': " .. tostring(err)) -- shunt/writelite.yue:497
+        end -- shunt/writelite.yue:496
+        do -- shunt/writelite.yue:498
+          journal_file:setvbuf('full') -- shunt/writelite.yue:499
+          local _ -- shunt/writelite.yue:500
+          _, err = journal:write_to(journal_file) -- shunt/writelite.yue:500
+          if (err ~= nil) then -- shunt/writelite.yue:501
+            error("cannot write to journal file '" .. tostring(journal_path) .. "': " .. tostring(err)) -- shunt/writelite.yue:502
+          end -- shunt/writelite.yue:501
+          _, err = journal_file:close() -- shunt/writelite.yue:503
+          if (err ~= nil) then -- shunt/writelite.yue:504
+            error("cannot close journal file '" .. tostring(journal_path) .. ": " .. tostring(err)) -- shunt/writelite.yue:505
+          end -- shunt/writelite.yue:504
+        end -- shunt/writelite.yue:498
+      end -- shunt/writelite.yue:505
+      local main_file = self._parent._main_file -- shunt/writelite.yue:508
+      for _index_0 = 1, #pages_to_write do -- shunt/writelite.yue:509
+        local page = pages_to_write[_index_0] -- shunt/writelite.yue:509
+        local _, err = main_file:seek('set', page.offset) -- shunt/writelite.yue:510
+        if (err ~= nil) then -- shunt/writelite.yue:511
+          return "cannot seek in main file: " .. tostring(err) -- shunt/writelite.yue:512
+        end -- shunt/writelite.yue:511
+        _, err = main_file:write(page.content) -- shunt/writelite.yue:513
+        if (err ~= nil) then -- shunt/writelite.yue:514
+          return "cannot write to main file: " .. tostring(err) -- shunt/writelite.yue:515
+        end -- shunt/writelite.yue:514
+      end -- shunt/writelite.yue:515
+      local _, err = main_file:flush() -- shunt/writelite.yue:517
+      if (err ~= nil) then -- shunt/writelite.yue:518
+        return "cannot flush main file: " .. tostring(err) -- shunt/writelite.yue:519
+      end -- shunt/writelite.yue:518
+      self._parent._fs:remove(journal_path) -- shunt/writelite.yue:522
+      return nil -- shunt/writelite.yue:523
+    end), -- shunt/writelite.yue:525
+    _pages_to_write = F('() => [writelite.Page]', function(self) -- shunt/writelite.yue:525
+      local page_cache, page_size -- shunt/writelite.yue:526
+      do -- shunt/writelite.yue:526
+        local _obj_0 = self._parent -- shunt/writelite.yue:529
+        page_cache, page_size = _obj_0._page_cache, _obj_0._page_size -- shunt/writelite.yue:526
+      end -- shunt/writelite.yue:529
+      local page_sized_deltas -- shunt/writelite.yue:531
+      do -- shunt/writelite.yue:531
+        local _with_0 = { } -- shunt/writelite.yue:531
+        local _list_0 = self._deltas -- shunt/writelite.yue:532
+        for _index_0 = 1, #_list_0 do -- shunt/writelite.yue:532
+          local delta = _list_0[_index_0] -- shunt/writelite.yue:532
+          local _continue_0 = false -- shunt/writelite.yue:533
+          repeat -- shunt/writelite.yue:533
+            local offset, content = delta.offset, delta.content -- shunt/writelite.yue:533
+            local start_page_offset = self:_to_page_offset(offset) -- shunt/writelite.yue:535
+            local end_page_offset = self:_to_page_offset(offset + #content) -- shunt/writelite.yue:536
+            if start_page_offset == end_page_offset then -- shunt/writelite.yue:537
+              _with_0[#_with_0 + 1] = { -- shunt/writelite.yue:539
+                page_offset = start_page_offset, -- shunt/writelite.yue:539
+                offset = offset % page_size, -- shunt/writelite.yue:540
+                content = content -- shunt/writelite.yue:541
+              } -- shunt/writelite.yue:538
+              _continue_0 = true -- shunt/writelite.yue:542
+              break -- shunt/writelite.yue:542
+            end -- shunt/writelite.yue:537
+            local first_chunk_size = page_size - offset % page_size -- shunt/writelite.yue:544
+            _with_0[#_with_0 + 1] = { -- shunt/writelite.yue:546
+              page_offset = start_page_offset, -- shunt/writelite.yue:546
+              offset = offset % page_size, -- shunt/writelite.yue:547
+              content = content:sub(1, first_chunk_size) -- shunt/writelite.yue:548
+            } -- shunt/writelite.yue:545
+            local chunk_offset = offset -- shunt/writelite.yue:549
+            for start_idx = 1 + first_chunk_size, #content, page_size do -- shunt/writelite.yue:550
+              local end_idx = start_idx + page_size - 1 -- shunt/writelite.yue:551
+              if end_idx > #content then -- shunt/writelite.yue:552
+                end_idx = #content -- shunt/writelite.yue:553
+              end -- shunt/writelite.yue:552
+              _with_0[#_with_0 + 1] = { -- shunt/writelite.yue:555
+                page_offset = self:_to_page_offset(start_idx + offset), -- shunt/writelite.yue:555
+                offset = 0, -- shunt/writelite.yue:556
+                content = content:sub(start_idx, end_idx) -- shunt/writelite.yue:557
+              } -- shunt/writelite.yue:554
+              chunk_offset = chunk_offset + page_size -- shunt/writelite.yue:558
+            end -- shunt/writelite.yue:558
+            _continue_0 = true -- shunt/writelite.yue:533
+          until true -- shunt/writelite.yue:558
+          if not _continue_0 then -- shunt/writelite.yue:558
+            break -- shunt/writelite.yue:558
+          end -- shunt/writelite.yue:558
+        end -- shunt/writelite.yue:558
+        page_sized_deltas = _with_0 -- shunt/writelite.yue:531
+      end -- shunt/writelite.yue:531
+      for _index_0 = 1, #page_sized_deltas do -- shunt/writelite.yue:560
+        local delta = page_sized_deltas[_index_0] -- shunt/writelite.yue:560
+        if #delta.content > page_size then -- shunt/writelite.yue:561
+          error("internal error: chunk too large: " .. tostring(#delta.content) .. " > " .. tostring(page_size) .. " at (" .. tostring(delta.page_offset) .. ", " .. tostring(delta.offset) .. ")#") -- shunt/writelite.yue:562
+        end -- shunt/writelite.yue:561
+        if delta.offset > page_size then -- shunt/writelite.yue:563
+          error("internal error: invalid delta offset: " .. tostring(delta.offset) .. " > " .. tostring(page_size)) -- shunt/writelite.yue:564
+        end -- shunt/writelite.yue:563
+      end -- shunt/writelite.yue:564
+      local deltas_by_page -- shunt/writelite.yue:566
+      do -- shunt/writelite.yue:566
+        local _with_0 = { } -- shunt/writelite.yue:566
+        for _index_0 = 1, #page_sized_deltas do -- shunt/writelite.yue:567
+          local delta = page_sized_deltas[_index_0] -- shunt/writelite.yue:567
+          local page_offset = delta.page_offset -- shunt/writelite.yue:568
+          if _with_0[page_offset] == nil then -- shunt/writelite.yue:569
+            _with_0[page_offset] = { } -- shunt/writelite.yue:569
+          end -- shunt/writelite.yue:569
+          do -- shunt/writelite.yue:570
+            local _obj_0 = _with_0[page_offset] -- shunt/writelite.yue:570
+            _obj_0[#_obj_0 + 1] = delta -- shunt/writelite.yue:570
+          end -- shunt/writelite.yue:570
+        end -- shunt/writelite.yue:570
+        deltas_by_page = _with_0 -- shunt/writelite.yue:566
+      end -- shunt/writelite.yue:566
+      local ret -- shunt/writelite.yue:572
+      do -- shunt/writelite.yue:572
+        local _with_0 = { } -- shunt/writelite.yue:572
+        for page_offset, page_deltas in pairs(deltas_by_page) do -- shunt/writelite.yue:573
+          local content_bytes = { } -- shunt/writelite.yue:574
+          for _index_0 = 1, #page_deltas do -- shunt/writelite.yue:575
+            local delta = page_deltas[_index_0] -- shunt/writelite.yue:575
+            local offset, content = delta.offset, delta.content -- shunt/writelite.yue:576
+            for i = 1, #content do -- shunt/writelite.yue:581
+              content_bytes[offset + i] = content:byte(i) -- shunt/writelite.yue:582
+            end -- shunt/writelite.yue:582
+          end -- shunt/writelite.yue:582
+          local gaps_present = false -- shunt/writelite.yue:584
+          for i = 1, page_size do -- shunt/writelite.yue:585
+            if not (content_bytes[i] ~= nil) then -- shunt/writelite.yue:586
+              gaps_present = true -- shunt/writelite.yue:587
+              break -- shunt/writelite.yue:588
+            end -- shunt/writelite.yue:586
+          end -- shunt/writelite.yue:588
+          if gaps_present then -- shunt/writelite.yue:589
+            local prev_page = assert(page_cache:get(page_offset)) -- shunt/writelite.yue:590
+            local prev_page_content = prev_page.content -- shunt/writelite.yue:591
+            for i = 1, page_size do -- shunt/writelite.yue:592
+              if not (content_bytes[i] ~= nil) then -- shunt/writelite.yue:593
+                content_bytes[i] = prev_page_content:byte(i) -- shunt/writelite.yue:594
+              end -- shunt/writelite.yue:593
+            end -- shunt/writelite.yue:594
+          end -- shunt/writelite.yue:589
+          if #content_bytes ~= page_size then -- shunt/writelite.yue:595
+            error("internal error: produced page does not match page size " .. tostring(#content_bytes) .. " != " .. tostring(page_size)) -- shunt/writelite.yue:596
+          end -- shunt/writelite.yue:595
+          _with_0[#_with_0 + 1] = Page({ -- shunt/writelite.yue:599
+            offset = page_offset, -- shunt/writelite.yue:599
+            content = table.concat((function() -- shunt/writelite.yue:600
+              local _accum_0 = { } -- shunt/writelite.yue:600
+              local _len_0 = 1 -- shunt/writelite.yue:600
+              for _index_0 = 1, #content_bytes do -- shunt/writelite.yue:600
+                local c = content_bytes[_index_0] -- shunt/writelite.yue:600
+                _accum_0[_len_0] = string.char(c) -- shunt/writelite.yue:600
+                _len_0 = _len_0 + 1 -- shunt/writelite.yue:600
+              end -- shunt/writelite.yue:600
+              return _accum_0 -- shunt/writelite.yue:600
+            end)()) -- shunt/writelite.yue:600
+          }) -- shunt/writelite.yue:598
+        end -- shunt/writelite.yue:600
+        ret = _with_0 -- shunt/writelite.yue:572
+      end -- shunt/writelite.yue:572
+      table.sort(ret, function(a, b) -- shunt/writelite.yue:601
+        return a.offset < b.offset -- shunt/writelite.yue:601
+      end) -- shunt/writelite.yue:601
+      return ret -- shunt/writelite.yue:602
+    end), -- shunt/writelite.yue:604
+    _to_page_offset = F('(number) => number', function(self, offset) -- shunt/writelite.yue:604
+      return offset - offset % self._parent._page_size -- shunt/writelite.yue:605
+    end) -- shunt/writelite.yue:431
+  } -- shunt/writelite.yue:431
+  if _base_0.__index == nil then -- shunt/writelite.yue:431
+    _base_0.__index = _base_0 -- shunt/writelite.yue:431
+  end -- shunt/writelite.yue:605
+  _class_0 = setmetatable({ -- shunt/writelite.yue:431
+    __init = F('(writelite.Writelite) => <>', function(self, _parent) -- shunt/writelite.yue:432
+      self._parent = _parent -- shunt/writelite.yue:432
+      self._deltas = T('[writelite.Delta]', { }) -- shunt/writelite.yue:433
+      self._cursor = T('number', 0) -- shunt/writelite.yue:434
+      self._aborted = T('boolean', false) -- shunt/writelite.yue:435
+      self._page_size = self._parent._page_size -- shunt/writelite.yue:436
+      self._mode = T('writelite.Mode', self._parent._mode) -- shunt/writelite.yue:437
+    end), -- shunt/writelite.yue:431
+    __base = _base_0, -- shunt/writelite.yue:431
+    __name = "Transaction" -- shunt/writelite.yue:431
+  }, { -- shunt/writelite.yue:431
+    __index = _base_0, -- shunt/writelite.yue:431
+    __call = function(cls, ...) -- shunt/writelite.yue:431
+      local _self_0 = setmetatable({ }, _base_0) -- shunt/writelite.yue:431
+      cls.__init(_self_0, ...) -- shunt/writelite.yue:431
+      return _self_0 -- shunt/writelite.yue:431
+    end -- shunt/writelite.yue:431
+  }) -- shunt/writelite.yue:431
+  _base_0.__class = _class_0 -- shunt/writelite.yue:431
+  Transaction = _class_0 -- shunt/writelite.yue:431
+end -- shunt/writelite.yue:605
+declare_type('writelite.Journal', [[{
+  pages: () => [writelite.Page],
+  add: (writelite.Page) => <>,
+  write_to: (writelite.File) => <boolean, ?string>,
+}]]) -- shunt/writelite.yue:607
+declare_type('writelite.JournalHeader', [[{
+  format_version: 1,
+  page_size: number,
+  mode: writelite.JournalMode,
+  payload_length: number,
+}]]) -- shunt/writelite.yue:612
+declare_type('writelite.JournalMode', '"delete"') -- shunt/writelite.yue:618
+do -- shunt/writelite.yue:619
+  local _class_0 -- shunt/writelite.yue:619
+  local _base_0 = { -- shunt/writelite.yue:619
+    _validate_raw = F('(writelite.JournalHeader, number, string) => ?string', function(self, header, header_end_index, content) -- shunt/writelite.yue:636
+      local first_page = content:sub(1, self._page_size - 1) -- shunt/writelite.yue:637
+      if not (first_page ~= nil) then -- shunt/writelite.yue:638
+        return "header missing" -- shunt/writelite.yue:639
+      end -- shunt/writelite.yue:638
+      if (first_page:sub(1, #JOURNAL_PRELUDE)) ~= JOURNAL_PRELUDE then -- shunt/writelite.yue:640
+        return "prelude was edited" -- shunt/writelite.yue:641
+      end -- shunt/writelite.yue:640
+      local format_version, page_size, mode, payload_length = header.format_version, header.page_size, header.mode, header.payload_length -- shunt/writelite.yue:643
+      if format_version ~= FORMAT_VERSION then -- shunt/writelite.yue:649
+        return "format version " .. tostring(format_version) .. " unsupported" -- shunt/writelite.yue:650
+      end -- shunt/writelite.yue:649
+      if mode ~= 'delete' then -- shunt/writelite.yue:651
+        return "unrecognised journal mode '" .. tostring(mode) .. "'" -- shunt/writelite.yue:652
+      end -- shunt/writelite.yue:651
+      if payload_length < 0 then -- shunt/writelite.yue:653
+        return "invalid payload length " .. tostring(payload_length) -- shunt/writelite.yue:654
+      end -- shunt/writelite.yue:653
+      local expected_content_len = payload_length + header_end_index -- shunt/writelite.yue:655
+      if #content ~= expected_content_len then -- shunt/writelite.yue:656
+        return "unexpected length: expected " .. tostring(expected_content_len) .. " but got " .. tostring(#content) -- shunt/writelite.yue:657
+      end -- shunt/writelite.yue:656
+      return nil -- shunt/writelite.yue:659
+    end), -- shunt/writelite.yue:661
+    pages = F('() => [writelite.Page]', function(self) -- shunt/writelite.yue:661
+      return self._pages -- shunt/writelite.yue:662
+    end), -- shunt/writelite.yue:664
+    add = F('(writelite.Page) => <>', function(self, page) -- shunt/writelite.yue:664
+      do -- shunt/writelite.yue:665
+        local _obj_0 = self._pages -- shunt/writelite.yue:665
+        _obj_0[#_obj_0 + 1] = page -- shunt/writelite.yue:665
+      end -- shunt/writelite.yue:665
+    end), -- shunt/writelite.yue:667
+    write_to = F('(writelite.File) => <boolean, ?string>', function(self, file) -- shunt/writelite.yue:667
+      local serialised_pages = Serialiser:serialise(self._pages) -- shunt/writelite.yue:668
+      local header = T('writelite.JournalHeader', { -- shunt/writelite.yue:670
+        format_version = FORMAT_VERSION, -- shunt/writelite.yue:670
+        page_size = self._page_size, -- shunt/writelite.yue:671
+        mode = 'delete', -- shunt/writelite.yue:672
+        payload_length = #serialised_pages -- shunt/writelite.yue:673
+      }) -- shunt/writelite.yue:669
+      local _, err = file:write(table.concat({ -- shunt/writelite.yue:675
+        JOURNAL_PRELUDE, -- shunt/writelite.yue:675
+        Serialiser:serialise(header), -- shunt/writelite.yue:676
+        serialised_pages -- shunt/writelite.yue:677
+      })) -- shunt/writelite.yue:674
+      if (err ~= nil) then -- shunt/writelite.yue:678
+        return false, err -- shunt/writelite.yue:679
+      end -- shunt/writelite.yue:678
+      return true, nil -- shunt/writelite.yue:680
+    end) -- shunt/writelite.yue:619
+  } -- shunt/writelite.yue:619
+  if _base_0.__index == nil then -- shunt/writelite.yue:619
+    _base_0.__index = _base_0 -- shunt/writelite.yue:619
+  end -- shunt/writelite.yue:680
+  _class_0 = setmetatable({ -- shunt/writelite.yue:619
+    __init = F('(number) => <>', function(self, _page_size) -- shunt/writelite.yue:620
+      self._page_size = _page_size -- shunt/writelite.yue:620
+      self._pages = T('[writelite.Page]', { }) -- shunt/writelite.yue:621
+      self._header = T('?writelite.JournalHeader', nil) -- shunt/writelite.yue:622
+    end), -- shunt/writelite.yue:619
+    __base = _base_0, -- shunt/writelite.yue:619
+    __name = "Journal" -- shunt/writelite.yue:619
+  }, { -- shunt/writelite.yue:619
+    __index = _base_0, -- shunt/writelite.yue:619
+    __call = function(cls, ...) -- shunt/writelite.yue:619
+      local _self_0 = setmetatable({ }, _base_0) -- shunt/writelite.yue:619
+      cls.__init(_self_0, ...) -- shunt/writelite.yue:619
+      return _self_0 -- shunt/writelite.yue:619
+    end -- shunt/writelite.yue:619
+  }) -- shunt/writelite.yue:619
+  _base_0.__class = _class_0 -- shunt/writelite.yue:619
+  local self = _class_0; -- shunt/writelite.yue:619
+  self.load = F('(string, number) => <?writelite.Journal, ?string>', function(self, content, page_size) -- shunt/writelite.yue:624
+    local journal -- shunt/writelite.yue:625
+    do -- shunt/writelite.yue:625
+      local _with_0 = Journal(page_size) -- shunt/writelite.yue:625
+      local de = Deserialiser(content, #JOURNAL_PRELUDE + 1) -- shunt/writelite.yue:626
+      local header = T('writelite.JournalHeader', de:parse()) -- shunt/writelite.yue:627
+      local err = _with_0:_validate_raw(header, de.index - 1, content) -- shunt/writelite.yue:628
+      if (err ~= nil) then -- shunt/writelite.yue:629
+        return nil, err -- shunt/writelite.yue:630
+      end -- shunt/writelite.yue:629
+      local _list_0 = T('[writelite.Page]', de:parse()) -- shunt/writelite.yue:632
+      for _index_0 = 1, #_list_0 do -- shunt/writelite.yue:632
+        local page = _list_0[_index_0] -- shunt/writelite.yue:632
+        _with_0:add(page) -- shunt/writelite.yue:633
+      end -- shunt/writelite.yue:633
+      journal = _with_0 -- shunt/writelite.yue:625
+    end -- shunt/writelite.yue:625
+    return journal, nil -- shunt/writelite.yue:634
+  end) -- shunt/writelite.yue:624
+  Journal = _class_0 -- shunt/writelite.yue:619
+end -- shunt/writelite.yue:680
+NIL_TAG = 0 -- shunt/writelite.yue:682
+NIL_TAG_CHAR = string.char(NIL_TAG) -- shunt/writelite.yue:683
+TRUE_TAG = 1 -- shunt/writelite.yue:684
+TRUE_TAG_CHAR = string.char(TRUE_TAG) -- shunt/writelite.yue:685
+FALSE_TAG = 2 -- shunt/writelite.yue:686
+FALSE_TAG_CHAR = string.char(FALSE_TAG) -- shunt/writelite.yue:687
+INT_TYPE = 3 -- shunt/writelite.yue:688
+FLOAT_TYPE = 4 -- shunt/writelite.yue:689
+FLOAT_TYPE_CHAR = string.char(FLOAT_TYPE) -- shunt/writelite.yue:690
+STRING_TAG = 5 -- shunt/writelite.yue:691
+STRING_TAG_CHAR = string.char(STRING_TAG) -- shunt/writelite.yue:692
+TABLE_REF_TAG = 6 -- shunt/writelite.yue:693
+TABLE_REF_TAG_CHAR = string.char(TABLE_REF_TAG) -- shunt/writelite.yue:694
+TABLE_PAYLOAD_TAG = 7 -- shunt/writelite.yue:695
+BLANK_TAG = 8 -- shunt/writelite.yue:696
+BLANK_TAG_CHAR = string.char(BLANK_TAG) -- shunt/writelite.yue:697
+TAG_MASK = 0xf -- shunt/writelite.yue:698
+INT_LEN_SHIFT = 4 -- shunt/writelite.yue:700
+INT_LEN_MASK = 0xf -- shunt/writelite.yue:701
+do -- shunt/writelite.yue:703
+  local _class_0 -- shunt/writelite.yue:703
+  local _base_0 = { -- shunt/writelite.yue:703
+    write = F('(any) => Self', function(self, to_write) -- shunt/writelite.yue:715
+      self:write_impl(to_write, self.root_fragments) -- shunt/writelite.yue:716
+      return self -- shunt/writelite.yue:717
+    end), -- shunt/writelite.yue:719
+    write_impl = F('(any, table) => <>', function(self, to_write, fragments) -- shunt/writelite.yue:719
+      local _exp_0 = type(to_write) -- shunt/writelite.yue:720
+      if 'nil' == _exp_0 then -- shunt/writelite.yue:721
+        fragments[#fragments + 1] = NIL_TAG_CHAR -- shunt/writelite.yue:722
+      elseif 'boolean' == _exp_0 then -- shunt/writelite.yue:723
+        if to_write then -- shunt/writelite.yue:724
+          fragments[#fragments + 1] = TRUE_TAG_CHAR -- shunt/writelite.yue:725
+        else -- shunt/writelite.yue:727
+          fragments[#fragments + 1] = FALSE_TAG_CHAR -- shunt/writelite.yue:727
+        end -- shunt/writelite.yue:724
+      elseif 'number' == _exp_0 then -- shunt/writelite.yue:728
+        if is_float(to_write) then -- shunt/writelite.yue:729
+          fragments[#fragments + 1] = FLOAT_TYPE_CHAR -- shunt/writelite.yue:730
+          self:write_impl((tostring(to_write)), fragments) -- shunt/writelite.yue:732
+          return -- shunt/writelite.yue:733
+        end -- shunt/writelite.yue:729
+        fragments[#fragments + 1] = 0 -- shunt/writelite.yue:735
+        local tag_index = #fragments -- shunt/writelite.yue:736
+        while to_write ~= 0 do -- shunt/writelite.yue:737
+          fragments[#fragments + 1] = string.char(bit.band(to_write, 0xff)) -- shunt/writelite.yue:738
+          to_write = bit.brshift(to_write, 8) -- shunt/writelite.yue:739
+        end -- shunt/writelite.yue:739
+        local len = #fragments - tag_index -- shunt/writelite.yue:741
+        if len > INT_LEN_MASK then -- shunt/writelite.yue:742
+          error("internal error: len too large " .. tostring(len) .. " > " .. tostring(INT_LEN_MASK)) -- shunt/writelite.yue:743
+        end -- shunt/writelite.yue:742
+        fragments[tag_index] = string.char(bit.bor(INT_TYPE, bit.blshift(len, INT_LEN_SHIFT))) -- shunt/writelite.yue:744
+      elseif 'string' == _exp_0 then -- shunt/writelite.yue:746
+        fragments[#fragments + 1] = STRING_TAG_CHAR -- shunt/writelite.yue:747
+        self:write_impl(#to_write, fragments) -- shunt/writelite.yue:748
+        fragments[#fragments + 1] = to_write -- shunt/writelite.yue:749
+      elseif 'table' == _exp_0 then -- shunt/writelite.yue:750
+        fragments[#fragments + 1] = TABLE_REF_TAG_CHAR -- shunt/writelite.yue:751
+        do -- shunt/writelite.yue:754
+          local ref = self.refs[to_write] -- shunt/writelite.yue:754
+          if ref then -- shunt/writelite.yue:754
+            self:write_impl(ref, fragments) -- shunt/writelite.yue:755
+            return -- shunt/writelite.yue:756
+          end -- shunt/writelite.yue:754
+        end -- shunt/writelite.yue:754
+        local ref = self.next_ref -- shunt/writelite.yue:758
+        self:write_impl(ref, fragments) -- shunt/writelite.yue:759
+        self.refs[to_write] = ref -- shunt/writelite.yue:760
+        self.next_ref = self.next_ref + 1 -- shunt/writelite.yue:761
+        local content_fragments = { } -- shunt/writelite.yue:763
+        local num_pairs = 0 -- shunt/writelite.yue:764
+        for k, v in pairs(to_write) do -- shunt/writelite.yue:765
+          num_pairs = num_pairs + 1 -- shunt/writelite.yue:766
+          self:write_impl(k, content_fragments) -- shunt/writelite.yue:767
+          self:write_impl(v, content_fragments) -- shunt/writelite.yue:768
+        end -- shunt/writelite.yue:768
+        do -- shunt/writelite.yue:769
+          local _obj_0 = self.tables -- shunt/writelite.yue:769
+          _obj_0[#_obj_0 + 1] = { -- shunt/writelite.yue:770
+            num_pairs = num_pairs, -- shunt/writelite.yue:770
+            content_fragments = content_fragments -- shunt/writelite.yue:771
+          } -- shunt/writelite.yue:769
+        end -- shunt/writelite.yue:771
+      else -- shunt/writelite.yue:773
+        return error("cannot encode " .. tostring(type(to_write))) -- shunt/writelite.yue:773
+      end -- shunt/writelite.yue:773
+    end), -- shunt/writelite.yue:775
+    finish = F('() => string', function(self) -- shunt/writelite.yue:775
+      local fragments = { } -- shunt/writelite.yue:776
+      fragments[#fragments + 1] = '\0' -- shunt/writelite.yue:779
+      for i = 1, 4 do -- shunt/writelite.yue:780
+        fragments[#fragments + 1] = BLANK_TAG_CHAR -- shunt/writelite.yue:781
+      end -- shunt/writelite.yue:781
+      self:write_impl(#self.tables, fragments) -- shunt/writelite.yue:783
+      local _list_0 = self.tables -- shunt/writelite.yue:784
+      for _index_0 = 1, #_list_0 do -- shunt/writelite.yue:784
+        local table = _list_0[_index_0] -- shunt/writelite.yue:784
+        local num_pairs, content_fragments = table.num_pairs, table.content_fragments -- shunt/writelite.yue:785
+        self:write_impl(num_pairs, fragments) -- shunt/writelite.yue:786
+        for _index_1 = 1, #content_fragments do -- shunt/writelite.yue:787
+          local fragment = content_fragments[_index_1] -- shunt/writelite.yue:787
+          fragments[#fragments + 1] = fragment -- shunt/writelite.yue:788
+        end -- shunt/writelite.yue:788
+      end -- shunt/writelite.yue:788
+      local _list_1 = self.root_fragments -- shunt/writelite.yue:790
+      for _index_0 = 1, #_list_1 do -- shunt/writelite.yue:790
+        local fragment = _list_1[_index_0] -- shunt/writelite.yue:790
+        fragments[#fragments + 1] = fragment -- shunt/writelite.yue:791
+      end -- shunt/writelite.yue:791
+      local len = 0 -- shunt/writelite.yue:793
+      for _index_0 = 1, #fragments do -- shunt/writelite.yue:794
+        local fragment = fragments[_index_0] -- shunt/writelite.yue:794
+        len = len + (#fragment) -- shunt/writelite.yue:795
+      end -- shunt/writelite.yue:795
+      local len_fragments = { } -- shunt/writelite.yue:796
+      self:write_impl(len, len_fragments) -- shunt/writelite.yue:797
+      if #len_fragments > 5 then -- shunt/writelite.yue:798
+        error("internal error: len fragments too large " .. tostring(#len_fragments) .. " > 5") -- shunt/writelite.yue:799
+      end -- shunt/writelite.yue:798
+      for i = 1, #len_fragments do -- shunt/writelite.yue:800
+        fragments[i] = len_fragments[i] -- shunt/writelite.yue:801
+      end -- shunt/writelite.yue:801
+      local ret = table.concat(T('[string]', fragments)) -- shunt/writelite.yue:803
+      if len ~= #ret then -- shunt/writelite.yue:804
+        error("written len != actual len (" .. tostring(len) .. " != " .. tostring(#ret) .. ")") -- shunt/writelite.yue:805
+      end -- shunt/writelite.yue:804
+      return ret -- shunt/writelite.yue:806
+    end) -- shunt/writelite.yue:703
+  } -- shunt/writelite.yue:703
+  if _base_0.__index == nil then -- shunt/writelite.yue:703
+    _base_0.__index = _base_0 -- shunt/writelite.yue:703
+  end -- shunt/writelite.yue:806
+  _class_0 = setmetatable({ -- shunt/writelite.yue:703
+    __init = F('() => <>', function(self) -- shunt/writelite.yue:704
+      self.root_fragments = T('[string]', { }) -- shunt/writelite.yue:705
+      self.next_ref = T('number', 0) -- shunt/writelite.yue:706
+      self.tables = T('[{num_pairs: number, content_fragments: [string]}]', { }) -- shunt/writelite.yue:707
+      self.refs = T('{table->number}', { }) -- shunt/writelite.yue:708
+    end), -- shunt/writelite.yue:703
+    __base = _base_0, -- shunt/writelite.yue:703
+    __name = "Serialiser" -- shunt/writelite.yue:703
+  }, { -- shunt/writelite.yue:703
+    __index = _base_0, -- shunt/writelite.yue:703
+    __call = function(cls, ...) -- shunt/writelite.yue:703
+      local _self_0 = setmetatable({ }, _base_0) -- shunt/writelite.yue:703
+      cls.__init(_self_0, ...) -- shunt/writelite.yue:703
+      return _self_0 -- shunt/writelite.yue:703
+    end -- shunt/writelite.yue:703
+  }) -- shunt/writelite.yue:703
+  _base_0.__class = _class_0 -- shunt/writelite.yue:703
+  local self = _class_0; -- shunt/writelite.yue:703
+  self.serialise = F('(any) => string', function(self, to_serialise) -- shunt/writelite.yue:710
+    return Serialiser():write(to_serialise):finish() -- shunt/writelite.yue:713
+  end) -- shunt/writelite.yue:710
+  Serialiser = _class_0 -- shunt/writelite.yue:703
+end -- shunt/writelite.yue:806
+if 'native' == HOST then -- shunt/writelite.yue:809
+  MAX_INT = 0x7fffffff -- shunt/writelite.yue:810
+elseif 'minecraft' == HOST then -- shunt/writelite.yue:812
+  MAX_INT = 0xffffffff -- shunt/writelite.yue:813
+else -- shunt/writelite.yue:815
+  MAX_INT = error("unknown host " .. tostring(HOST)) -- shunt/writelite.yue:815
+end -- shunt/writelite.yue:815
+MIN_INT = -MAX_INT - 1 -- shunt/writelite.yue:816
+is_float = F('(number) -> boolean', function(num) -- shunt/writelite.yue:818
+  if num > MAX_INT then -- shunt/writelite.yue:819
+    return true -- shunt/writelite.yue:820
+  end -- shunt/writelite.yue:819
+  if num < MIN_INT then -- shunt/writelite.yue:821
+    return true -- shunt/writelite.yue:822
+  end -- shunt/writelite.yue:821
+  local _, frac = math.modf(num) -- shunt/writelite.yue:824
+  if frac ~= 0 then -- shunt/writelite.yue:825
+    return true -- shunt/writelite.yue:826
+  end -- shunt/writelite.yue:825
+  return false -- shunt/writelite.yue:828
+end) -- shunt/writelite.yue:818
+declare_type('writelite.DeserialiserSource', 'string|writelite.File') -- shunt/writelite.yue:830
+do -- shunt/writelite.yue:831
+  local _class_0 -- shunt/writelite.yue:831
+  local _base_0 = { -- shunt/writelite.yue:831
+    parse = F('() => <any, boolean>', function(self) -- shunt/writelite.yue:845
+      if self.raw == nil then -- shunt/writelite.yue:846
+        self.raw = self:prepare_raw() -- shunt/writelite.yue:846
+      end -- shunt/writelite.yue:846
+      if self.index > #self.raw then -- shunt/writelite.yue:847
+        return nil, true -- shunt/writelite.yue:848
+      end -- shunt/writelite.yue:847
+      local total_len = self:parse_value() -- shunt/writelite.yue:850
+      if 'number' ~= type(total_len) then -- shunt/writelite.yue:851
+        error('internal error: len field is not a number') -- shunt/writelite.yue:852
+      end -- shunt/writelite.yue:851
+      local num_tables = self:parse_value() -- shunt/writelite.yue:854
+      if 'number' ~= type(num_tables) then -- shunt/writelite.yue:855
+        error('internal error: num_tables field is not a number') -- shunt/writelite.yue:856
+      end -- shunt/writelite.yue:855
+      for ref = num_tables - 1, 0, -1 do -- shunt/writelite.yue:857
+        self:parse_table_def(ref) -- shunt/writelite.yue:858
+      end -- shunt/writelite.yue:858
+      local ret = self:parse_value() -- shunt/writelite.yue:860
+      local _list_0 = self.unresolved_table_refs -- shunt/writelite.yue:861
+      for _index_0 = 1, #_list_0 do -- shunt/writelite.yue:861
+        local _des_0 = _list_0[_index_0] -- shunt/writelite.yue:861
+        local table, key, ref = _des_0.table, _des_0.key, _des_0.ref -- shunt/writelite.yue:861
+        local value = self.tables_by_ref[ref] -- shunt/writelite.yue:862
+        if not (value ~= nil) then -- shunt/writelite.yue:863
+          error("internal error: unresolved reference " .. tostring(ref)) -- shunt/writelite.yue:864
+        end -- shunt/writelite.yue:863
+        table[key] = value -- shunt/writelite.yue:865
+      end -- shunt/writelite.yue:865
+      return ret, self.index > #self.raw -- shunt/writelite.yue:866
+    end), -- shunt/writelite.yue:868
+    parse_table_def = F('(number) => {}', function(self, ref) -- shunt/writelite.yue:868
+      local num_pairs = self:parse_value() -- shunt/writelite.yue:869
+      if 'number' ~= type(num_pairs) then -- shunt/writelite.yue:870
+        error('internal error: num_pairs field is not a number') -- shunt/writelite.yue:871
+      end -- shunt/writelite.yue:870
+      local table = { } -- shunt/writelite.yue:873
+      self.tables_by_ref[ref] = table -- shunt/writelite.yue:874
+      for _ = 1, num_pairs do -- shunt/writelite.yue:876
+        local key = self:parse_value() -- shunt/writelite.yue:877
+        if TABLE_REF_TAG == self.raw:byte(self.index) then -- shunt/writelite.yue:879
+          self.index = self.index + 1 -- shunt/writelite.yue:880
+          ref = self:parse_value() -- shunt/writelite.yue:881
+          do -- shunt/writelite.yue:882
+            local _obj_0 = self.unresolved_table_refs -- shunt/writelite.yue:882
+            _obj_0[#_obj_0 + 1] = { -- shunt/writelite.yue:883
+              table = table, -- shunt/writelite.yue:883
+              key = key, -- shunt/writelite.yue:884
+              ref = ref -- shunt/writelite.yue:885
+            } -- shunt/writelite.yue:882
+          end -- shunt/writelite.yue:885
+        else -- shunt/writelite.yue:887
+          table[key] = self:parse_value() -- shunt/writelite.yue:887
+        end -- shunt/writelite.yue:879
+      end -- shunt/writelite.yue:887
+      return table -- shunt/writelite.yue:875
+    end), -- shunt/writelite.yue:889
+    parse_value = F('() => any', function(self) -- shunt/writelite.yue:889
+      if self.raw == nil then -- shunt/writelite.yue:890
+        self.raw = self:prepare_raw() -- shunt/writelite.yue:890
+      end -- shunt/writelite.yue:890
+      local head -- shunt/writelite.yue:892
+      while true do -- shunt/writelite.yue:893
+        head = self.raw:byte(self.index) -- shunt/writelite.yue:894
+        if not (head ~= nil) then -- shunt/writelite.yue:895
+          error("internal error: unexpected EOF at index " .. tostring(self.index)) -- shunt/writelite.yue:896
+        end -- shunt/writelite.yue:895
+        if head ~= BLANK_TAG then -- shunt/writelite.yue:897
+          break -- shunt/writelite.yue:898
+        end -- shunt/writelite.yue:897
+        self.index = self.index + 1 -- shunt/writelite.yue:899
+      end -- shunt/writelite.yue:899
+      self.index = self.index + 1 -- shunt/writelite.yue:900
+      do -- shunt/writelite.yue:901
+        local _exp_0 = bit.band(head, TAG_MASK) -- shunt/writelite.yue:901
+        if NIL_TAG == _exp_0 then -- shunt/writelite.yue:902
+          return nil -- shunt/writelite.yue:903
+        elseif TRUE_TAG == _exp_0 then -- shunt/writelite.yue:904
+          return true -- shunt/writelite.yue:905
+        elseif FALSE_TAG == _exp_0 then -- shunt/writelite.yue:906
+          return false -- shunt/writelite.yue:907
+        elseif INT_TYPE == _exp_0 then -- shunt/writelite.yue:908
+          local len = bit.band(INT_LEN_MASK, bit.brshift(head, INT_LEN_SHIFT)) -- shunt/writelite.yue:909
+          local ret = 0 -- shunt/writelite.yue:913
+          for i = 0, len - 1 do -- shunt/writelite.yue:914
+            ret = bit.bor(ret, bit.blshift((self.raw:byte(self.index)), i * 8)) -- shunt/writelite.yue:915
+            self.index = self.index + 1 -- shunt/writelite.yue:918
+          end -- shunt/writelite.yue:918
+          return ret -- shunt/writelite.yue:919
+        elseif FLOAT_TYPE == _exp_0 then -- shunt/writelite.yue:920
+          local raw = self:parse_value() -- shunt/writelite.yue:921
+          if 'string' ~= type(raw) then -- shunt/writelite.yue:922
+            error("internal error: cannot parse a " .. tostring(type(raw)) .. " into float[]") -- shunt/writelite.yue:923
+          end -- shunt/writelite.yue:922
+          return tonumber(raw) -- shunt/writelite.yue:924
+        elseif STRING_TAG == _exp_0 then -- shunt/writelite.yue:925
+          local len = self:parse_value() -- shunt/writelite.yue:926
+          if 'number' ~= type(len) then -- shunt/writelite.yue:927
+            error("internal error: cannot use a " .. tostring(type(len)) .. " as a string length") -- shunt/writelite.yue:928
+          end -- shunt/writelite.yue:927
+          local ret = self.raw:sub(self.index, self.index + len - 1) -- shunt/writelite.yue:929
+          self.index = self.index + len -- shunt/writelite.yue:930
+          return ret -- shunt/writelite.yue:931
+        elseif TABLE_REF_TAG == _exp_0 then -- shunt/writelite.yue:932
+          local index = self.index -- shunt/writelite.yue:933
+          local ref = self:parse_value() -- shunt/writelite.yue:934
+          if 'number' ~= type(ref) then -- shunt/writelite.yue:935
+            error('internal error: ref is not a number') -- shunt/writelite.yue:936
+          end -- shunt/writelite.yue:935
+          local table = self.tables_by_ref[ref] -- shunt/writelite.yue:937
+          if not (table ~= nil) then -- shunt/writelite.yue:938
+            error("internal error: ref " .. tostring(ref) .. " invalid at " .. tostring(index)) -- shunt/writelite.yue:939
+          end -- shunt/writelite.yue:938
+          return table -- shunt/writelite.yue:940
+        else -- shunt/writelite.yue:942
+          print_serialised(self.raw) -- shunt/writelite.yue:942
+          error(("unrecognised tag %02x at index %d"):format((bit.band(head, TAG_MASK)), self.index - 1)) -- shunt/writelite.yue:943
+        end -- shunt/writelite.yue:944
+      end -- shunt/writelite.yue:944
+      return error('unreachable') -- shunt/writelite.yue:945
+    end), -- shunt/writelite.yue:947
+    prepare_raw = F('() => string', function(self) -- shunt/writelite.yue:947
+      local _exp_0 = type(self.source) -- shunt/writelite.yue:948
+      if 'string' == _exp_0 then -- shunt/writelite.yue:949
+        return self.source -- shunt/writelite.yue:950
+      else -- shunt/writelite.yue:952
+        local raw_len_bytes, err = self.source:read(5) -- shunt/writelite.yue:952
+        if (err ~= nil) then -- shunt/writelite.yue:953
+          error("cannot read length from parse source: " .. tostring(err)) -- shunt/writelite.yue:954
+        end -- shunt/writelite.yue:953
+        local len = Deserialiser:deserialise_raw(raw_len_bytes) -- shunt/writelite.yue:955
+        if 'number' ~= type(len) then -- shunt/writelite.yue:956
+          error("cannot use " .. tostring(type(len)) .. " as length") -- shunt/writelite.yue:957
+        end -- shunt/writelite.yue:956
+        local _ -- shunt/writelite.yue:958
+        _, err = self.source:seek('set', 0) -- shunt/writelite.yue:958
+        if (err ~= nil) then -- shunt/writelite.yue:959
+          error("cannot seek parse source: " .. tostring(err)) -- shunt/writelite.yue:960
+        end -- shunt/writelite.yue:959
+        local raw -- shunt/writelite.yue:961
+        raw, err = self.source:read(len) -- shunt/writelite.yue:961
+        if (err ~= nil) then -- shunt/writelite.yue:962
+          error("cannot read parse source: " .. tostring(err)) -- shunt/writelite.yue:963
+        end -- shunt/writelite.yue:962
+        return raw -- shunt/writelite.yue:964
+      end -- shunt/writelite.yue:964
+    end) -- shunt/writelite.yue:831
+  } -- shunt/writelite.yue:831
+  if _base_0.__index == nil then -- shunt/writelite.yue:831
+    _base_0.__index = _base_0 -- shunt/writelite.yue:831
+  end -- shunt/writelite.yue:964
+  _class_0 = setmetatable({ -- shunt/writelite.yue:831
+    __init = F('(writelite.DeserialiserSource, ?number) => <>', function(self, source, index) -- shunt/writelite.yue:832
+      if index == nil then -- shunt/writelite.yue:832
+        index = 1 -- shunt/writelite.yue:832
+      end -- shunt/writelite.yue:832
+      self.source = source -- shunt/writelite.yue:832
+      self.index = index -- shunt/writelite.yue:832
+      self.tables_by_ref = T('{number->table}', { }) -- shunt/writelite.yue:833
+      self.unresolved_table_refs = T('[{table: table, key: some, ref: number}]', { }) -- shunt/writelite.yue:834
+    end), -- shunt/writelite.yue:831
+    __base = _base_0, -- shunt/writelite.yue:831
+    __name = "Deserialiser" -- shunt/writelite.yue:831
+  }, { -- shunt/writelite.yue:831
+    __index = _base_0, -- shunt/writelite.yue:831
+    __call = function(cls, ...) -- shunt/writelite.yue:831
+      local _self_0 = setmetatable({ }, _base_0) -- shunt/writelite.yue:831
+      cls.__init(_self_0, ...) -- shunt/writelite.yue:831
+      return _self_0 -- shunt/writelite.yue:831
+    end -- shunt/writelite.yue:831
+  }) -- shunt/writelite.yue:831
+  _base_0.__class = _class_0 -- shunt/writelite.yue:831
+  local self = _class_0; -- shunt/writelite.yue:831
+  self.deserialise = F('(writelite.DeserialiserSource, ?number) => any', function(self, source, index) -- shunt/writelite.yue:836
+    local v, _ = (Deserialiser(source, index)):parse() -- shunt/writelite.yue:837
+    return v -- shunt/writelite.yue:839
+  end) -- shunt/writelite.yue:836
+  self.deserialise_raw = F('(string, ?number) => any', function(self, source, index) -- shunt/writelite.yue:841
+    return (Deserialiser(source, index)):parse_value() -- shunt/writelite.yue:843
+  end) -- shunt/writelite.yue:841
+  Deserialiser = _class_0 -- shunt/writelite.yue:831
+end -- shunt/writelite.yue:964
+declare_type('writelite.PageOpts', [[{
+  offset: number,
+  content: string,
+}]]) -- shunt/writelite.yue:966
+declare_type('writelite.Page', [[{
+  offset: number,
+  content: string,
+  checksum: number,
+}]]) -- shunt/writelite.yue:970
+do -- shunt/writelite.yue:975
+  local _class_0 -- shunt/writelite.yue:975
+  local _base_0 = { } -- shunt/writelite.yue:975
+  if _base_0.__index == nil then -- shunt/writelite.yue:975
+    _base_0.__index = _base_0 -- shunt/writelite.yue:975
+  end -- shunt/writelite.yue:983
+  _class_0 = setmetatable({ -- shunt/writelite.yue:975
+    __init = F('(writelite.PageOpts) => <>', function(self, opts) -- shunt/writelite.yue:976
+      local offset, content = opts.offset, opts.content -- shunt/writelite.yue:977
+      self.offset = offset -- shunt/writelite.yue:981
+      self.content = content -- shunt/writelite.yue:982
+      self.checksum = Hasher:hash(content) -- shunt/writelite.yue:983
+    end), -- shunt/writelite.yue:975
+    __base = _base_0, -- shunt/writelite.yue:975
+    __name = "Page" -- shunt/writelite.yue:975
+  }, { -- shunt/writelite.yue:975
+    __index = _base_0, -- shunt/writelite.yue:975
+    __call = function(cls, ...) -- shunt/writelite.yue:975
+      local _self_0 = setmetatable({ }, _base_0) -- shunt/writelite.yue:975
+      cls.__init(_self_0, ...) -- shunt/writelite.yue:975
+      return _self_0 -- shunt/writelite.yue:975
+    end -- shunt/writelite.yue:975
+  }) -- shunt/writelite.yue:975
+  _base_0.__class = _class_0 -- shunt/writelite.yue:975
+  Page = _class_0 -- shunt/writelite.yue:975
+end -- shunt/writelite.yue:983
+MAX_HASH = 99999999 -- shunt/writelite.yue:985
+assert(MAX_INT >= MAX_HASH) -- shunt/writelite.yue:986
+declare_type('writelite.Hasher', [[{
+  hash: (any) => number,
+  write: (string) => <>,
+  finish: () => number,
+}]]) -- shunt/writelite.yue:988
+do -- shunt/writelite.yue:993
+  local _class_0 -- shunt/writelite.yue:993
+  local _base_0 = { -- shunt/writelite.yue:993
+    write = F('(any) => Self', function(self, to_write) -- shunt/writelite.yue:1002
+      do -- shunt/writelite.yue:1003
+        local _exp_0 = type(to_write) -- shunt/writelite.yue:1003
+        if 'boolean' == _exp_0 then -- shunt/writelite.yue:1004
+          if to_write then -- shunt/writelite.yue:1005
+            self:_add(997 * 127) -- shunt/writelite.yue:1006
+          else -- shunt/writelite.yue:1008
+            self:_add(997 * 13) -- shunt/writelite.yue:1008
+          end -- shunt/writelite.yue:1005
+        elseif 'number' == _exp_0 then -- shunt/writelite.yue:1009
+          self:_add(997 * (8302197 + to_write)) -- shunt/writelite.yue:1010
+        elseif 'string' == _exp_0 then -- shunt/writelite.yue:1011
+          self:write(1 + #to_write) -- shunt/writelite.yue:1012
+          local CHUNK_SIZE = 100 -- shunt/writelite.yue:1014
+          for i = 1, to_write:len(), CHUNK_SIZE do -- shunt/writelite.yue:1015
+            local start_idx = 1 + (i - 1) * CHUNK_SIZE -- shunt/writelite.yue:1016
+            local end_idx = i * CHUNK_SIZE -- shunt/writelite.yue:1017
+            local _list_0 = { -- shunt/writelite.yue:1018
+              to_write:byte(start_idx, end_idx) -- shunt/writelite.yue:1018
+            } -- shunt/writelite.yue:1018
+            for _index_0 = 1, #_list_0 do -- shunt/writelite.yue:1018
+              local byte = _list_0[_index_0] -- shunt/writelite.yue:1018
+              self:_add(997 * byte) -- shunt/writelite.yue:1019
+            end -- shunt/writelite.yue:1019
+          end -- shunt/writelite.yue:1019
+        elseif 'table' == _exp_0 then -- shunt/writelite.yue:1020
+          local entries -- shunt/writelite.yue:1021
+          do -- shunt/writelite.yue:1021
+            local _with_0 = { } -- shunt/writelite.yue:1021
+            for key, value in pairs(to_write) do -- shunt/writelite.yue:1022
+              _with_0[#_with_0 + 1] = { -- shunt/writelite.yue:1023
+                key = key, -- shunt/writelite.yue:1023
+                value = value -- shunt/writelite.yue:1023
+              } -- shunt/writelite.yue:1023
+            end -- shunt/writelite.yue:1023
+            entries = _with_0 -- shunt/writelite.yue:1021
+          end -- shunt/writelite.yue:1021
+          self:_add(1 + #entries) -- shunt/writelite.yue:1024
+          table.sort(entries, function(a, b) -- shunt/writelite.yue:1025
+            return a.key < b.key -- shunt/writelite.yue:1025
+          end) -- shunt/writelite.yue:1025
+          for _index_0 = 1, #entries do -- shunt/writelite.yue:1026
+            local _des_0 = entries[_index_0] -- shunt/writelite.yue:1026
+            local key, value = _des_0.key, _des_0.value -- shunt/writelite.yue:1026
+            self:write(key) -- shunt/writelite.yue:1027
+            self:write(value) -- shunt/writelite.yue:1028
+          end -- shunt/writelite.yue:1028
+        else -- shunt/writelite.yue:1030
+          error("cannot hash a " .. tostring(type(to_write))) -- shunt/writelite.yue:1030
+        end -- shunt/writelite.yue:1030
+      end -- shunt/writelite.yue:1030
+      return self -- shunt/writelite.yue:1031
+    end), -- shunt/writelite.yue:1033
+    _add = F('(number) => <>', function(self, num) -- shunt/writelite.yue:1033
+      self._current = self._current * num -- shunt/writelite.yue:1034
+      self._current = self._current % MAX_HASH -- shunt/writelite.yue:1035
+    end), -- shunt/writelite.yue:1037
+    finish = F('() => number', function(self) -- shunt/writelite.yue:1037
+      return self._current -- shunt/writelite.yue:1038
+    end) -- shunt/writelite.yue:993
+  } -- shunt/writelite.yue:993
+  if _base_0.__index == nil then -- shunt/writelite.yue:993
+    _base_0.__index = _base_0 -- shunt/writelite.yue:993
+  end -- shunt/writelite.yue:1038
+  _class_0 = setmetatable({ -- shunt/writelite.yue:993
+    __init = F('() => <>', function(self) -- shunt/writelite.yue:994
+      self._current = 7 -- shunt/writelite.yue:995
+    end), -- shunt/writelite.yue:993
+    __base = _base_0, -- shunt/writelite.yue:993
+    __name = "Hasher" -- shunt/writelite.yue:993
+  }, { -- shunt/writelite.yue:993
+    __index = _base_0, -- shunt/writelite.yue:993
+    __call = function(cls, ...) -- shunt/writelite.yue:993
+      local _self_0 = setmetatable({ }, _base_0) -- shunt/writelite.yue:993
+      cls.__init(_self_0, ...) -- shunt/writelite.yue:993
+      return _self_0 -- shunt/writelite.yue:993
+    end -- shunt/writelite.yue:993
+  }) -- shunt/writelite.yue:993
+  _base_0.__class = _class_0 -- shunt/writelite.yue:993
+  local self = _class_0; -- shunt/writelite.yue:993
+  self.hash = F('(any) => number', function(self, to_hash) -- shunt/writelite.yue:997
+    return Hasher():write(to_hash):finish() -- shunt/writelite.yue:1000
+  end) -- shunt/writelite.yue:997
+  Hasher = _class_0 -- shunt/writelite.yue:993
+end -- shunt/writelite.yue:1038
+print_serialised = F('(string) -> <>', function(serialised) -- shunt/writelite.yue:1040
+  local indices -- shunt/writelite.yue:1041
+  do -- shunt/writelite.yue:1041
+    local _accum_0 = { } -- shunt/writelite.yue:1041
+    local _len_0 = 1 -- shunt/writelite.yue:1041
+    for i = 1, #serialised do -- shunt/writelite.yue:1041
+      _accum_0[_len_0] = ('%02d'):format(i) -- shunt/writelite.yue:1041
+      _len_0 = _len_0 + 1 -- shunt/writelite.yue:1041
+    end -- shunt/writelite.yue:1041
+    indices = _accum_0 -- shunt/writelite.yue:1041
+  end -- shunt/writelite.yue:1041
+  local bytes -- shunt/writelite.yue:1042
+  do -- shunt/writelite.yue:1042
+    local _with_0 = { } -- shunt/writelite.yue:1042
+    for i = 1, #serialised do -- shunt/writelite.yue:1043
+      _with_0[#_with_0 + 1] = ('%02x'):format(serialised:byte(i)) -- shunt/writelite.yue:1044
+    end -- shunt/writelite.yue:1044
+    bytes = _with_0 -- shunt/writelite.yue:1042
+  end -- shunt/writelite.yue:1042
+  local is_printable -- shunt/writelite.yue:1045
+  is_printable = function(c) -- shunt/writelite.yue:1045
+    return 'a' <= c and c <= 'z' or 'A' <= c and c <= 'Z' or '0' <= c and c <= '9' or c == '-' or c == '+' or c == '_' -- shunt/writelite.yue:1051
+  end -- shunt/writelite.yue:1045
+  local chars -- shunt/writelite.yue:1052
+  do -- shunt/writelite.yue:1052
+    local _with_0 = { } -- shunt/writelite.yue:1052
+    for i = 1, #serialised do -- shunt/writelite.yue:1053
+      local byte = serialised:byte(i) -- shunt/writelite.yue:1054
+      if is_printable(string.char(byte)) then -- shunt/writelite.yue:1055
+        _with_0[#_with_0 + 1] = ('% 2s'):format(serialised:sub(i, i)) -- shunt/writelite.yue:1056
+      else -- shunt/writelite.yue:1058
+        _with_0[#_with_0 + 1] = ('%02x'):format(byte) -- shunt/writelite.yue:1058
+      end -- shunt/writelite.yue:1055
+    end -- shunt/writelite.yue:1058
+    chars = _with_0 -- shunt/writelite.yue:1052
+  end -- shunt/writelite.yue:1052
+  assert(#indices == #bytes) -- shunt/writelite.yue:1059
+  assert(#indices == #chars) -- shunt/writelite.yue:1060
+  local PER_LINE = 25 -- shunt/writelite.yue:1061
+  local first = true -- shunt/writelite.yue:1062
+  for i = 1, #indices, PER_LINE do -- shunt/writelite.yue:1063
+    if first then -- shunt/writelite.yue:1064
+      first = false -- shunt/writelite.yue:1065
+    else -- shunt/writelite.yue:1067
+      print() -- shunt/writelite.yue:1067
+    end -- shunt/writelite.yue:1064
+    print(table.concat((function() -- shunt/writelite.yue:1068
+      local _accum_0 = { } -- shunt/writelite.yue:1068
+      local _len_0 = 1 -- shunt/writelite.yue:1068
+      local _max_0 = i + PER_LINE - 1 -- shunt/writelite.yue:1068
+      for _index_0 = i, _max_0 < 0 and #indices + _max_0 or _max_0 do -- shunt/writelite.yue:1068
+        local i = indices[_index_0] -- shunt/writelite.yue:1068
+        _accum_0[_len_0] = i -- shunt/writelite.yue:1068
+        _len_0 = _len_0 + 1 -- shunt/writelite.yue:1068
+      end -- shunt/writelite.yue:1068
+      return _accum_0 -- shunt/writelite.yue:1068
+    end)(), ' ')) -- shunt/writelite.yue:1068
+    print(('-'):rep(3 * (PER_LINE + 1) - 1)) -- shunt/writelite.yue:1069
+    print(table.concat((function() -- shunt/writelite.yue:1070
+      local _accum_0 = { } -- shunt/writelite.yue:1070
+      local _len_0 = 1 -- shunt/writelite.yue:1070
+      local _max_0 = i + PER_LINE - 1 -- shunt/writelite.yue:1070
+      for _index_0 = i, _max_0 < 0 and #bytes + _max_0 or _max_0 do -- shunt/writelite.yue:1070
+        local i = bytes[_index_0] -- shunt/writelite.yue:1070
+        _accum_0[_len_0] = i -- shunt/writelite.yue:1070
+        _len_0 = _len_0 + 1 -- shunt/writelite.yue:1070
+      end -- shunt/writelite.yue:1070
+      return _accum_0 -- shunt/writelite.yue:1070
+    end)(), ' ')) -- shunt/writelite.yue:1070
+    print(table.concat((function() -- shunt/writelite.yue:1071
+      local _accum_0 = { } -- shunt/writelite.yue:1071
+      local _len_0 = 1 -- shunt/writelite.yue:1071
+      local _max_0 = i + PER_LINE - 1 -- shunt/writelite.yue:1071
+      for _index_0 = i, _max_0 < 0 and #chars + _max_0 or _max_0 do -- shunt/writelite.yue:1071
+        local i = chars[_index_0] -- shunt/writelite.yue:1071
+        _accum_0[_len_0] = i -- shunt/writelite.yue:1071
+        _len_0 = _len_0 + 1 -- shunt/writelite.yue:1071
+      end -- shunt/writelite.yue:1071
+      return _accum_0 -- shunt/writelite.yue:1071
+    end)(), ' ')) -- shunt/writelite.yue:1071
+  end -- shunt/writelite.yue:1071
+end) -- shunt/writelite.yue:1040
+spec(function() -- shunt/writelite.yue:1073
+  local TestFs, TestFile -- shunt/writelite.yue:1074
+  local clone, describe, it, matchers -- shunt/writelite.yue:0
+  do -- shunt/writelite.yue:0
+    local _obj_0 = require('shunt.spec') -- shunt/writelite.yue:0
+    clone, describe, it, matchers = _obj_0.clone, _obj_0.describe, _obj_0.it, _obj_0.matchers -- shunt/writelite.yue:0
+  end -- shunt/writelite.yue:0
+  local deep_eq, each_value, eq, errors, has_fields, len, lt, matches, near, no_errors, not_ = matchers.deep_eq, matchers.each_value, matchers.eq, matchers.errors, matchers.has_fields, matchers.len, matchers.lt, matchers.matches, matchers.near, matchers.no_errors, matchers.not_ -- shunt/writelite.yue:1080
+  declare_type('writelite.FileSpec', [[{
+    content: string,
+  }]]) -- shunt/writelite.yue:1082
+  do -- shunt/writelite.yue:1085
+    local _class_0 -- shunt/writelite.yue:1085
+    local _base_0 = { -- shunt/writelite.yue:1085
+      open = F('(string, writelite.FileMode) => <?writelite.File, ?string, ?number>', function(self, path, mode) -- shunt/writelite.yue:1090
+        if mode:match('^w') then -- shunt/writelite.yue:1091
+          local file = TestFile('') -- shunt/writelite.yue:1092
+          file:open() -- shunt/writelite.yue:1093
+          self.files[path] = file -- shunt/writelite.yue:1094
+          return file, nil, nil -- shunt/writelite.yue:1095
+        else -- shunt/writelite.yue:1096
+          do -- shunt/writelite.yue:1096
+            local file = self.files[path] -- shunt/writelite.yue:1096
+            if file then -- shunt/writelite.yue:1096
+              file:open() -- shunt/writelite.yue:1097
+              return file, nil, nil -- shunt/writelite.yue:1098
+            else -- shunt/writelite.yue:1100
+              return nil, tostring(path) .. ": No such file or directory", 2 -- shunt/writelite.yue:1100
+            end -- shunt/writelite.yue:1096
+          end -- shunt/writelite.yue:1096
+        end -- shunt/writelite.yue:1091
+      end), -- shunt/writelite.yue:1102
+      remove = F('(string) => boolean', function(self, path) -- shunt/writelite.yue:1102
+        local file = self.files[path] -- shunt/writelite.yue:1103
+        if not (file ~= nil) then -- shunt/writelite.yue:1104
+          return false -- shunt/writelite.yue:1105
+        end -- shunt/writelite.yue:1104
+        if not file.closed then -- shunt/writelite.yue:1107
+          error('cannot remove open file') -- shunt/writelite.yue:1108
+        end -- shunt/writelite.yue:1107
+        local _obj_0 = self.removed -- shunt/writelite.yue:1110
+        if _obj_0[path] == nil then -- shunt/writelite.yue:1110
+          _obj_0[path] = { } -- shunt/writelite.yue:1110
+        end -- shunt/writelite.yue:1110
+        do -- shunt/writelite.yue:1111
+          local _obj_1 = self.removed[path] -- shunt/writelite.yue:1111
+          _obj_1[#_obj_1 + 1] = file -- shunt/writelite.yue:1111
+        end -- shunt/writelite.yue:1111
+        self.files[path] = nil -- shunt/writelite.yue:1112
+        return true -- shunt/writelite.yue:1113
+      end), -- shunt/writelite.yue:1115
+      reinstate = F('(string) => <>', function(self, path) -- shunt/writelite.yue:1115
+        local versions = self.removed[path] -- shunt/writelite.yue:1116
+        if not (versions ~= nil) then -- shunt/writelite.yue:1117
+          error("cannot reinstate " .. tostring(path) .. ": never deleted") -- shunt/writelite.yue:1118
+        end -- shunt/writelite.yue:1117
+        self.files[path] = versions[#versions] -- shunt/writelite.yue:1119
+      end) -- shunt/writelite.yue:1085
+    } -- shunt/writelite.yue:1085
+    if _base_0.__index == nil then -- shunt/writelite.yue:1085
+      _base_0.__index = _base_0 -- shunt/writelite.yue:1085
+    end -- shunt/writelite.yue:1119
+    _class_0 = setmetatable({ -- shunt/writelite.yue:1085
+      __init = F('(?{string->writelite.FileSpec}) => <>', function(self, files) -- shunt/writelite.yue:1086
+        if files == nil then -- shunt/writelite.yue:1086
+          files = { } -- shunt/writelite.yue:1086
+        end -- shunt/writelite.yue:1086
+        do -- shunt/writelite.yue:1087
+          local _tbl_0 = { } -- shunt/writelite.yue:1087
+          for file, _des_0 in pairs(files) do -- shunt/writelite.yue:1087
+            local content = _des_0.content -- shunt/writelite.yue:1087
+            _tbl_0[file] = TestFile(content) -- shunt/writelite.yue:1087
+          end -- shunt/writelite.yue:1087
+          self.files = _tbl_0 -- shunt/writelite.yue:1087
+        end -- shunt/writelite.yue:1087
+        self.removed = T('{string->[writelite.File]}', { }) -- shunt/writelite.yue:1088
+      end), -- shunt/writelite.yue:1085
+      __base = _base_0, -- shunt/writelite.yue:1085
+      __name = "TestFs" -- shunt/writelite.yue:1085
+    }, { -- shunt/writelite.yue:1085
+      __index = _base_0, -- shunt/writelite.yue:1085
+      __call = function(cls, ...) -- shunt/writelite.yue:1085
+        local _self_0 = setmetatable({ }, _base_0) -- shunt/writelite.yue:1085
+        cls.__init(_self_0, ...) -- shunt/writelite.yue:1085
+        return _self_0 -- shunt/writelite.yue:1085
+      end -- shunt/writelite.yue:1085
+    }) -- shunt/writelite.yue:1085
+    _base_0.__class = _class_0 -- shunt/writelite.yue:1085
+    TestFs = _class_0 -- shunt/writelite.yue:1085
+  end -- shunt/writelite.yue:1119
+  do -- shunt/writelite.yue:1121
+    local _class_0 -- shunt/writelite.yue:1121
+    local _base_0 = { -- shunt/writelite.yue:1121
+      content = F('() => string', function(self) -- shunt/writelite.yue:1129
+        return table.concat((function() -- shunt/writelite.yue:1130
+          local _with_0 = { } -- shunt/writelite.yue:1130
+          local i = 0 -- shunt/writelite.yue:1131
+          while (self.content_bytes[i] ~= nil) do -- shunt/writelite.yue:1132
+            _with_0[#_with_0 + 1] = string.char(self.content_bytes[i]) -- shunt/writelite.yue:1133
+            i = i + 1 -- shunt/writelite.yue:1134
+          end -- shunt/writelite.yue:1134
+          return _with_0 -- shunt/writelite.yue:1130
+        end)()) -- shunt/writelite.yue:1134
+      end), -- shunt/writelite.yue:1136
+      open = F('() => <>', function(self) -- shunt/writelite.yue:1136
+        if self.closed then -- shunt/writelite.yue:1137
+          self.cursor = 0 -- shunt/writelite.yue:1138
+        end -- shunt/writelite.yue:1137
+        self.closed = false -- shunt/writelite.yue:1139
+      end), -- shunt/writelite.yue:1141
+      read = F('("*a"|number) => <?string, ?string>', function(self, amount) -- shunt/writelite.yue:1141
+        if self.closed then -- shunt/writelite.yue:1142
+          return nil, 'closed' -- shunt/writelite.yue:1143
+        end -- shunt/writelite.yue:1142
+        local content = self:content() -- shunt/writelite.yue:1144
+        local end_index -- shunt/writelite.yue:1145
+        if '*a' == amount then -- shunt/writelite.yue:1146
+          end_index = #content -- shunt/writelite.yue:1147
+        else -- shunt/writelite.yue:1149
+          end_index = self.cursor + amount -- shunt/writelite.yue:1149
+        end -- shunt/writelite.yue:1149
+        if end_index > #content then -- shunt/writelite.yue:1150
+          end_index = #content -- shunt/writelite.yue:1151
+        end -- shunt/writelite.yue:1150
+        if self.cursor == #content then -- shunt/writelite.yue:1152
+          return nil, nil -- shunt/writelite.yue:1153
+        end -- shunt/writelite.yue:1152
+        local cursor = self.cursor -- shunt/writelite.yue:1154
+        self.cursor = end_index -- shunt/writelite.yue:1155
+        return (self:content():sub(1 + cursor, end_index)), nil -- shunt/writelite.yue:1156
+      end), -- shunt/writelite.yue:1158
+      write = F('(string) => ?string', function(self, to_write) -- shunt/writelite.yue:1158
+        if self.closed then -- shunt/writelite.yue:1159
+          return 'closed' -- shunt/writelite.yue:1160
+        end -- shunt/writelite.yue:1159
+        for i = 1, #to_write do -- shunt/writelite.yue:1161
+          self.content_bytes[self.cursor] = to_write:byte(i) -- shunt/writelite.yue:1162
+          self.cursor = self.cursor + 1 -- shunt/writelite.yue:1163
+        end -- shunt/writelite.yue:1163
+        return nil -- shunt/writelite.yue:1164
+      end), -- shunt/writelite.yue:1166
+      seek = F('(Whence, ?number) => <?number, ?string>', function(self, whence, num) -- shunt/writelite.yue:1166
+        if self.closed then -- shunt/writelite.yue:1167
+          return nil, 'closed' -- shunt/writelite.yue:1168
+        end -- shunt/writelite.yue:1167
+        local _ -- shunt/writelite.yue:1169
+        num, _ = math.modf(num, 1) -- shunt/writelite.yue:1169
+        if 'set' == whence then -- shunt/writelite.yue:1171
+          self.cursor = num -- shunt/writelite.yue:1172
+        elseif 'cur' == whence then -- shunt/writelite.yue:1173
+          self.cursor = self.cursor + num -- shunt/writelite.yue:1174
+        elseif 'end' == whence then -- shunt/writelite.yue:1175
+          self.cursor = #self.content_bytes + num -- shunt/writelite.yue:1176
+        else -- shunt/writelite.yue:1178
+          error("internal error: unexpected whence " .. tostring(whence)) -- shunt/writelite.yue:1178
+        end -- shunt/writelite.yue:1178
+        return self.cursor, nil -- shunt/writelite.yue:1179
+      end), -- shunt/writelite.yue:1181
+      setvbuf = F('("full") => <>', function(self, _mode) -- shunt/writelite.yue:1181
+        if self.closed then -- shunt/writelite.yue:1182
+          return error('closed') -- shunt/writelite.yue:1183
+        end -- shunt/writelite.yue:1182
+      end), -- shunt/writelite.yue:1185
+      flush = F('() => <boolean, ?string>', function(self) -- shunt/writelite.yue:1185
+        return true, nil -- shunt/writelite.yue:1186
+      end), -- shunt/writelite.yue:1188
+      close = F('() => <boolean, ?string>', function(self) -- shunt/writelite.yue:1188
+        if self.closed then -- shunt/writelite.yue:1189
+          return false, 'closed' -- shunt/writelite.yue:1190
+        end -- shunt/writelite.yue:1189
+        self.closed = true -- shunt/writelite.yue:1191
+        return true, nil -- shunt/writelite.yue:1192
+      end) -- shunt/writelite.yue:1121
+    } -- shunt/writelite.yue:1121
+    if _base_0.__index == nil then -- shunt/writelite.yue:1121
+      _base_0.__index = _base_0 -- shunt/writelite.yue:1121
+    end -- shunt/writelite.yue:1192
+    _class_0 = setmetatable({ -- shunt/writelite.yue:1121
+      __init = F('(string) => <>', function(self, content) -- shunt/writelite.yue:1122
+        self.cursor = 0 -- shunt/writelite.yue:1123
+        do -- shunt/writelite.yue:1124
+          local _with_0 = { } -- shunt/writelite.yue:1124
+          for i = 1, #content do -- shunt/writelite.yue:1125
+            _with_0[i - 1] = content:byte(i) -- shunt/writelite.yue:1126
+          end -- shunt/writelite.yue:1126
+          self.content_bytes = _with_0 -- shunt/writelite.yue:1124
+        end -- shunt/writelite.yue:1124
+        self.closed = true -- shunt/writelite.yue:1127
+      end), -- shunt/writelite.yue:1121
+      __base = _base_0, -- shunt/writelite.yue:1121
+      __name = "TestFile" -- shunt/writelite.yue:1121
+    }, { -- shunt/writelite.yue:1121
+      __index = _base_0, -- shunt/writelite.yue:1121
+      __call = function(cls, ...) -- shunt/writelite.yue:1121
+        local _self_0 = setmetatable({ }, _base_0) -- shunt/writelite.yue:1121
+        cls.__init(_self_0, ...) -- shunt/writelite.yue:1121
+        return _self_0 -- shunt/writelite.yue:1121
+      end -- shunt/writelite.yue:1121
+    }) -- shunt/writelite.yue:1121
+    _base_0.__class = _class_0 -- shunt/writelite.yue:1121
+    TestFile = _class_0 -- shunt/writelite.yue:1121
+  end -- shunt/writelite.yue:1192
+  describe('writelite.Writelite', function() -- shunt/writelite.yue:1194
+    describe('\\mode', function() -- shunt/writelite.yue:1195
+      local modes = T('[writelite.Mode]', { -- shunt/writelite.yue:1197
+        'blob' -- shunt/writelite.yue:1197
+      }) -- shunt/writelite.yue:1196
+      return it('forbids explicit reassignment', function() -- shunt/writelite.yue:1199
+        for _index_0 = 1, #modes do -- shunt/writelite.yue:1200
+          local mode_a = modes[_index_0] -- shunt/writelite.yue:1200
+          for _index_1 = 1, #modes do -- shunt/writelite.yue:1201
+            local mode_b = modes[_index_1] -- shunt/writelite.yue:1201
+            print("mode_a=" .. tostring(mode_a) .. ", mode_b=" .. tostring(mode_b)) -- shunt/writelite.yue:1202
+            local writelite = Writelite('database.db', TestFs()) -- shunt/writelite.yue:1203
+            writelite:mode(mode_a); -- shunt/writelite.yue:1204
+            require('shunt.spec')._assert_that([=[(-> writelite\mode mode_b)]=], (function() -- shunt/writelite.yue:1205
+              return writelite:mode(mode_b) -- shunt/writelite.yue:1205
+            end), (errors(matches('cannot change mode once set'))), tostring("shunt/writelite.yue") .. ":" .. tostring(1205)) -- shunt/writelite.yue:1205
+          end -- shunt/writelite.yue:1205
+        end -- shunt/writelite.yue:1205
+      end) -- shunt/writelite.yue:1205
+    end) -- shunt/writelite.yue:1195
+    describe('\\page_size', function() -- shunt/writelite.yue:1213
+      it('forbids explicit reassignment', function() -- shunt/writelite.yue:1214
+        local writelite = Writelite('database.db', TestFs()) -- shunt/writelite.yue:1215
+        writelite:page_size(MIN_PAGE_SIZE); -- shunt/writelite.yue:1216
+        return require('shunt.spec')._assert_that([=[(-> writelite\page_size MIN_PAGE_SIZE)]=], (function() -- shunt/writelite.yue:1217
+          return writelite:page_size(MIN_PAGE_SIZE) -- shunt/writelite.yue:1217
+        end), (errors(matches('cannot change page size once set'))), tostring("shunt/writelite.yue") .. ":" .. tostring(1217)) -- shunt/writelite.yue:1217
+      end) -- shunt/writelite.yue:1214
+      it('forbids too-small page sizes', function() -- shunt/writelite.yue:1219
+        local _with_0 = Writelite('database.db', TestFs()) -- shunt/writelite.yue:1220
+        require('shunt.spec')._assert_that([=[(-> \page_size MIN_PAGE_SIZE - 1)]=], (function() -- shunt/writelite.yue:1221
+          return _with_0:page_size(MIN_PAGE_SIZE - 1) -- shunt/writelite.yue:1221
+        end), (errors(matches("cannot change page size to " .. tostring(MIN_PAGE_SIZE - 1) .. ": minimum is " .. tostring(MIN_PAGE_SIZE)))), tostring("shunt/writelite.yue") .. ":" .. tostring(1221)) -- shunt/writelite.yue:1221
+        return _with_0 -- shunt/writelite.yue:1220
+      end) -- shunt/writelite.yue:1219
+      it('requires integers', function() -- shunt/writelite.yue:1223
+        local _with_0 = Writelite('database.db', TestFs()) -- shunt/writelite.yue:1224
+        require('shunt.spec')._assert_that([=[(-> \page_size 1234.5)]=], (function() -- shunt/writelite.yue:1225
+          return _with_0:page_size(1234.5) -- shunt/writelite.yue:1225
+        end), (errors(matches('cannot change page size to 1234%.5: not an integer'))), tostring("shunt/writelite.yue") .. ":" .. tostring(1225)) -- shunt/writelite.yue:1225
+        return _with_0 -- shunt/writelite.yue:1224
+      end) -- shunt/writelite.yue:1223
+      it('requires powers of two', function() -- shunt/writelite.yue:1227
+        for i = 10, 30 do -- shunt/writelite.yue:1228
+          print("testing " .. tostring(i) .. "...") -- shunt/writelite.yue:1229
+          do -- shunt/writelite.yue:1230
+            local _with_0 = Writelite('database.db', TestFs()) -- shunt/writelite.yue:1230
+            require('shunt.spec')._expect_that([=[(-> \page_size bit.blshift 1, i)]=], (function() -- shunt/writelite.yue:1231
+              return _with_0:page_size(bit.blshift(1, i)) -- shunt/writelite.yue:1231
+            end), (no_errors()), tostring("shunt/writelite.yue") .. ":" .. tostring(1231)) -- shunt/writelite.yue:1231
+          end -- shunt/writelite.yue:1230
+        end -- shunt/writelite.yue:1231
+        local _with_0 = Writelite('database.db', TestFs()) -- shunt/writelite.yue:1233
+        require('shunt.spec')._expect_that([=[(-> \page_size 2000)]=], (function() -- shunt/writelite.yue:1234
+          return _with_0:page_size(2000) -- shunt/writelite.yue:1234
+        end), (errors(matches('cannot change page size to 2000: not a power of 2'))), tostring("shunt/writelite.yue") .. ":" .. tostring(1234)) -- shunt/writelite.yue:1234
+        return _with_0 -- shunt/writelite.yue:1233
+      end) -- shunt/writelite.yue:1227
+      return it('forbids implicit reassignment', function() -- shunt/writelite.yue:1236
+        local fs = TestFs() -- shunt/writelite.yue:1237
+        do -- shunt/writelite.yue:1238
+          local _with_0 = Writelite('database.db', fs) -- shunt/writelite.yue:1238
+          _with_0:mode('blob') -- shunt/writelite.yue:1239
+          _with_0:page_size(bit.blshift(1, 13)) -- shunt/writelite.yue:1240
+          local _, err = _with_0:open(); -- shunt/writelite.yue:1241
+          require('shunt.spec')._assert_that([=[err]=], err, (eq(nil)), tostring("shunt/writelite.yue") .. ":" .. tostring(1242)) -- shunt/writelite.yue:1242
+          _, err = _with_0:close(); -- shunt/writelite.yue:1243
+          require('shunt.spec')._assert_that([=[err]=], err, (eq(nil)), tostring("shunt/writelite.yue") .. ":" .. tostring(1244)) -- shunt/writelite.yue:1244
+        end -- shunt/writelite.yue:1238
+        local _with_0 = Writelite('database.db', fs) -- shunt/writelite.yue:1245
+        _with_0:mode('blob') -- shunt/writelite.yue:1246
+        _with_0:page_size(bit.blshift(1, 20)) -- shunt/writelite.yue:1247
+        local ok, err = _with_0:open(); -- shunt/writelite.yue:1248
+        require('shunt.spec')._expect_that([=[ok]=], ok, (eq(false)), tostring("shunt/writelite.yue") .. ":" .. tostring(1249)); -- shunt/writelite.yue:1249
+        require('shunt.spec')._expect_that([=[err]=], err, (matches('page size mismatch')), tostring("shunt/writelite.yue") .. ":" .. tostring(1250)) -- shunt/writelite.yue:1250
+        return _with_0 -- shunt/writelite.yue:1245
+      end) -- shunt/writelite.yue:1250
+    end) -- shunt/writelite.yue:1213
+    describe('\\max_cached_pages', function() -- shunt/writelite.yue:1252
+      local tests = { -- shunt/writelite.yue:1254
+        { -- shunt/writelite.yue:1254
+          it = 'accepts valid numbers', -- shunt/writelite.yue:1254
+          max_cached_pages = 256 -- shunt/writelite.yue:1255
+        }, -- shunt/writelite.yue:1254
+        { -- shunt/writelite.yue:1256
+          it = 'rejects floats', -- shunt/writelite.yue:1256
+          max_cached_pages = 255.5, -- shunt/writelite.yue:1257
+          expect = 'cannot set max cached pages to 255.5: not an integer' -- shunt/writelite.yue:1258
+        }, -- shunt/writelite.yue:1256
+        { -- shunt/writelite.yue:1259
+          it = 'rejects too small numbers', -- shunt/writelite.yue:1259
+          max_cached_pages = 0, -- shunt/writelite.yue:1260
+          expect = 'cannot set max cached pages to 0: too small' -- shunt/writelite.yue:1261
+        }, -- shunt/writelite.yue:1259
+        { -- shunt/writelite.yue:1262
+          it = 'rejects negative numbers', -- shunt/writelite.yue:1262
+          max_cached_pages = -1, -- shunt/writelite.yue:1263
+          expect = 'cannot set max cached pages to %-1: too small' -- shunt/writelite.yue:1264
+        } -- shunt/writelite.yue:1262
+      } -- shunt/writelite.yue:1253
+      for _index_0 = 1, #tests do -- shunt/writelite.yue:1265
+        local test = tests[_index_0] -- shunt/writelite.yue:1265
+        it(test.it, function() -- shunt/writelite.yue:1266
+          local max_cached_pages, expect = test.max_cached_pages, test.expect -- shunt/writelite.yue:1267
+          local writelite = Writelite('database.db', TestFs()) -- shunt/writelite.yue:1268
+          if (expect ~= nil) then -- shunt/writelite.yue:1269
+            return require('shunt.spec')._expect_that([=[(-> writelite\max_cached_pages max_cached_pages)]=], (function() -- shunt/writelite.yue:1270
+              return writelite:max_cached_pages(max_cached_pages) -- shunt/writelite.yue:1270
+            end), (errors(matches(expect))), tostring("shunt/writelite.yue") .. ":" .. tostring(1270)) -- shunt/writelite.yue:1270
+          else -- shunt/writelite.yue:1272
+            require('shunt.spec')._expect_that([=[(writelite\max_cached_pages max_cached_pages)]=], (writelite:max_cached_pages(max_cached_pages)), (eq(writelite)), tostring("shunt/writelite.yue") .. ":" .. tostring(1272)); -- shunt/writelite.yue:1272
+            return require('shunt.spec')._expect_that([=[writelite\_ut_max_cached_pages!]=], writelite:_ut_max_cached_pages(), (eq(max_cached_pages)), tostring("shunt/writelite.yue") .. ":" .. tostring(1273)) -- shunt/writelite.yue:1273
+          end -- shunt/writelite.yue:1269
+        end) -- shunt/writelite.yue:1266
+      end -- shunt/writelite.yue:1273
+    end) -- shunt/writelite.yue:1252
+    describe('\\open', function() -- shunt/writelite.yue:1275
+      it('requires mandatory metadata', function() -- shunt/writelite.yue:1276
+        local metadata = { -- shunt/writelite.yue:1278
+          { -- shunt/writelite.yue:1278
+            name = 'mode', -- shunt/writelite.yue:1278
+            action = function(wl) -- shunt/writelite.yue:1279
+              return wl:mode('blob') -- shunt/writelite.yue:1279
+            end, -- shunt/writelite.yue:1279
+            expect = 'cannot open main file: mode unspecified' -- shunt/writelite.yue:1280
+          }, -- shunt/writelite.yue:1278
+          { -- shunt/writelite.yue:1281
+            name = 'page size', -- shunt/writelite.yue:1281
+            action = function(wl) -- shunt/writelite.yue:1282
+              return wl:page_size(bit.blshift(1, 13)) -- shunt/writelite.yue:1282
+            end -- shunt/writelite.yue:1282
+          } -- shunt/writelite.yue:1281
+        } -- shunt/writelite.yue:1277
+        for index_to_omit = 1, #metadata do -- shunt/writelite.yue:1283
+          local name, expect -- shunt/writelite.yue:1284
+          do -- shunt/writelite.yue:1284
+            local _obj_0 = metadata[index_to_omit] -- shunt/writelite.yue:1284
+            name, expect = _obj_0.name, _obj_0.expect -- shunt/writelite.yue:1284
+          end -- shunt/writelite.yue:1284
+          print("testing omission of " .. tostring(name) .. "...") -- shunt/writelite.yue:1285
+          local writelite = Writelite('database.db', TestFs()) -- shunt/writelite.yue:1287
+          for i = 1, #metadata do -- shunt/writelite.yue:1289
+            local _continue_0 = false -- shunt/writelite.yue:1290
+            repeat -- shunt/writelite.yue:1290
+              if i == index_to_omit then -- shunt/writelite.yue:1290
+                _continue_0 = true -- shunt/writelite.yue:1291
+                break -- shunt/writelite.yue:1291
+              end -- shunt/writelite.yue:1290
+              metadata[i].action(writelite) -- shunt/writelite.yue:1292
+              _continue_0 = true -- shunt/writelite.yue:1290
+            until true -- shunt/writelite.yue:1292
+            if not _continue_0 then -- shunt/writelite.yue:1292
+              break -- shunt/writelite.yue:1292
+            end -- shunt/writelite.yue:1292
+          end -- shunt/writelite.yue:1292
+          if (expect ~= nil) then -- shunt/writelite.yue:1294
+            local ok, err = writelite:open(); -- shunt/writelite.yue:1295
+            require('shunt.spec')._expect_that([=[ok]=], ok, (eq(false)), tostring("shunt/writelite.yue") .. ":" .. tostring(1296)); -- shunt/writelite.yue:1296
+            require('shunt.spec')._expect_that([=[err]=], err, (matches(expect)), tostring("shunt/writelite.yue") .. ":" .. tostring(1297)) -- shunt/writelite.yue:1297
+          else -- shunt/writelite.yue:1299
+            local ok, err = writelite:open(); -- shunt/writelite.yue:1299
+            require('shunt.spec')._assert_that([=[ok]=], ok, (eq(true)), tostring("shunt/writelite.yue") .. ":" .. tostring(1300)); -- shunt/writelite.yue:1300
+            require('shunt.spec')._assert_that([=[err]=], err, (eq(nil)), tostring("shunt/writelite.yue") .. ":" .. tostring(1301)) -- shunt/writelite.yue:1301
+            ok, err = writelite:close(); -- shunt/writelite.yue:1303
+            require('shunt.spec')._assert_that([=[ok]=], ok, (eq(true)), tostring("shunt/writelite.yue") .. ":" .. tostring(1304)); -- shunt/writelite.yue:1304
+            require('shunt.spec')._assert_that([=[err]=], err, (eq(nil)), tostring("shunt/writelite.yue") .. ":" .. tostring(1305)) -- shunt/writelite.yue:1305
+          end -- shunt/writelite.yue:1294
+        end -- shunt/writelite.yue:1305
+      end) -- shunt/writelite.yue:1276
+      return it('cannot be called whilst open', function() -- shunt/writelite.yue:1307
+        local _with_0 = Writelite('database.db', TestFs()) -- shunt/writelite.yue:1308
+        _with_0:mode('blob') -- shunt/writelite.yue:1309
+        local ok, err = _with_0:open(); -- shunt/writelite.yue:1310
+        require('shunt.spec')._expect_that([=[ok]=], ok, (eq(true)), tostring("shunt/writelite.yue") .. ":" .. tostring(1311)); -- shunt/writelite.yue:1311
+        require('shunt.spec')._assert_that([=[err]=], err, (eq(nil)), tostring("shunt/writelite.yue") .. ":" .. tostring(1312)) -- shunt/writelite.yue:1312
+        ok, err = _with_0:open(); -- shunt/writelite.yue:1314
+        require('shunt.spec')._expect_that([=[ok]=], ok, (eq(false)), tostring("shunt/writelite.yue") .. ":" .. tostring(1315)); -- shunt/writelite.yue:1315
+        require('shunt.spec')._assert_that([=[err]=], err, (matches('cannot open writelite twice')), tostring("shunt/writelite.yue") .. ":" .. tostring(1316)) -- shunt/writelite.yue:1316
+        ok, err = _with_0:close(); -- shunt/writelite.yue:1318
+        require('shunt.spec')._expect_that([=[ok]=], ok, (eq(true)), tostring("shunt/writelite.yue") .. ":" .. tostring(1319)); -- shunt/writelite.yue:1319
+        require('shunt.spec')._assert_that([=[err]=], err, (eq(nil)), tostring("shunt/writelite.yue") .. ":" .. tostring(1320)) -- shunt/writelite.yue:1320
+        ok, err = _with_0:open(); -- shunt/writelite.yue:1322
+        require('shunt.spec')._expect_that([=[ok]=], ok, (eq(true)), tostring("shunt/writelite.yue") .. ":" .. tostring(1323)); -- shunt/writelite.yue:1323
+        require('shunt.spec')._assert_that([=[err]=], err, (eq(nil)), tostring("shunt/writelite.yue") .. ":" .. tostring(1324)) -- shunt/writelite.yue:1324
+        ok, err = _with_0:open(); -- shunt/writelite.yue:1326
+        require('shunt.spec')._expect_that([=[ok]=], ok, (eq(false)), tostring("shunt/writelite.yue") .. ":" .. tostring(1327)); -- shunt/writelite.yue:1327
+        require('shunt.spec')._assert_that([=[err]=], err, (matches('cannot open writelite twice')), tostring("shunt/writelite.yue") .. ":" .. tostring(1328)) -- shunt/writelite.yue:1328
+        return _with_0 -- shunt/writelite.yue:1308
+      end) -- shunt/writelite.yue:1328
+    end) -- shunt/writelite.yue:1275
+    describe('\\close', function() -- shunt/writelite.yue:1330
+      return it('cannot be called twice', function() -- shunt/writelite.yue:1331
+        local _with_0 = Writelite('database.db', TestFs()) -- shunt/writelite.yue:1332
+        _with_0:mode('blob') -- shunt/writelite.yue:1333
+        local ok, err = _with_0:open(); -- shunt/writelite.yue:1334
+        require('shunt.spec')._assert_that([=[ok]=], ok, (eq(true)), tostring("shunt/writelite.yue") .. ":" .. tostring(1335)); -- shunt/writelite.yue:1335
+        require('shunt.spec')._expect_that([=[err]=], err, (eq(nil)), tostring("shunt/writelite.yue") .. ":" .. tostring(1336)) -- shunt/writelite.yue:1336
+        ok, err = _with_0:close(); -- shunt/writelite.yue:1338
+        require('shunt.spec')._assert_that([=[ok]=], ok, (eq(true)), tostring("shunt/writelite.yue") .. ":" .. tostring(1339)); -- shunt/writelite.yue:1339
+        require('shunt.spec')._assert_that([=[err]=], err, (eq(nil)), tostring("shunt/writelite.yue") .. ":" .. tostring(1340)) -- shunt/writelite.yue:1340
+        ok, err = _with_0:close(); -- shunt/writelite.yue:1342
+        require('shunt.spec')._assert_that([=[ok]=], ok, (eq(false)), tostring("shunt/writelite.yue") .. ":" .. tostring(1343)); -- shunt/writelite.yue:1343
+        require('shunt.spec')._assert_that([=[err]=], err, (eq('cannot close writelite file database.db: not open')), tostring("shunt/writelite.yue") .. ":" .. tostring(1344)) -- shunt/writelite.yue:1344
+        return _with_0 -- shunt/writelite.yue:1332
+      end) -- shunt/writelite.yue:1344
+    end) -- shunt/writelite.yue:1330
+    return describe('consistency', function() -- shunt/writelite.yue:1346
+      describe('on golden-path', function() -- shunt/writelite.yue:1347
+        local PAGE_SIZE = 1024 -- shunt/writelite.yue:1348
+        local tests = { -- shunt/writelite.yue:1350
+          { -- shunt/writelite.yue:1350
+            name = 'no deltas', -- shunt/writelite.yue:1350
+            txn_fn = function(txn) end -- shunt/writelite.yue:1351
+          }, -- shunt/writelite.yue:1350
+          { -- shunt/writelite.yue:1352
+            name = 'single page deltas', -- shunt/writelite.yue:1352
+            txn_fn = function(txn) -- shunt/writelite.yue:1353
+              txn:seek('set', 0) -- shunt/writelite.yue:1354
+              txn:write('hello, world') -- shunt/writelite.yue:1355
+              txn:seek('set', 128) -- shunt/writelite.yue:1356
+              return txn:write('how are you?') -- shunt/writelite.yue:1357
+            end, -- shunt/writelite.yue:1353
+            assertion = function(content) -- shunt/writelite.yue:1358
+              local first_chunk_start_index = content:find('hello, world'); -- shunt/writelite.yue:1359
+              require('shunt.spec')._expect_that([=[first_chunk_start_index]=], first_chunk_start_index, (eq(PAGE_SIZE + 1)), tostring("shunt/writelite.yue") .. ":" .. tostring(1360)) -- shunt/writelite.yue:1360
+              local second_chunk_start_index = content:find('how are you?'); -- shunt/writelite.yue:1362
+              return require('shunt.spec')._expect_that([=[second_chunk_start_index]=], second_chunk_start_index, (eq(PAGE_SIZE + 1 + 128)), tostring("shunt/writelite.yue") .. ":" .. tostring(1363)) -- shunt/writelite.yue:1363
+            end -- shunt/writelite.yue:1358
+          }, -- shunt/writelite.yue:1352
+          { -- shunt/writelite.yue:1364
+            name = 'overlapping small deltas', -- shunt/writelite.yue:1364
+            txn_fn = function(txn) -- shunt/writelite.yue:1365
+              txn:seek('set', 128) -- shunt/writelite.yue:1366
+              txn:write('aaaaa.....ccccc') -- shunt/writelite.yue:1367
+              txn:seek('set', 128 + 5) -- shunt/writelite.yue:1368
+              return txn:write('bbbbb') -- shunt/writelite.yue:1369
+            end, -- shunt/writelite.yue:1365
+            assertion = function(content) -- shunt/writelite.yue:1370
+              local pattern_index = content:find('aaaaabbbbbccccc'); -- shunt/writelite.yue:1371
+              return require('shunt.spec')._expect_that([=[pattern_index]=], pattern_index, (eq(PAGE_SIZE + 1 + 128)), tostring("shunt/writelite.yue") .. ":" .. tostring(1372)) -- shunt/writelite.yue:1372
+            end -- shunt/writelite.yue:1370
+          }, -- shunt/writelite.yue:1364
+          { -- shunt/writelite.yue:1373
+            name = 'multi-page delta', -- shunt/writelite.yue:1373
+            txn_fn = function(txn) -- shunt/writelite.yue:1374
+              txn:seek('set', PAGE_SIZE / 4) -- shunt/writelite.yue:1375
+              return txn:write(('a'):rep(2 * PAGE_SIZE)) -- shunt/writelite.yue:1376
+            end, -- shunt/writelite.yue:1374
+            assertion = function(content) -- shunt/writelite.yue:1377
+              local pattern_index = content:find(('a'):rep(2 * PAGE_SIZE)); -- shunt/writelite.yue:1378
+              return require('shunt.spec')._expect_that([=[pattern_index]=], pattern_index, (eq(1 + PAGE_SIZE + PAGE_SIZE / 4)), tostring("shunt/writelite.yue") .. ":" .. tostring(1379)) -- shunt/writelite.yue:1379
+            end -- shunt/writelite.yue:1377
+          } -- shunt/writelite.yue:1373
+        } -- shunt/writelite.yue:1349
+        for _index_0 = 1, #tests do -- shunt/writelite.yue:1380
+          local test = tests[_index_0] -- shunt/writelite.yue:1380
+          local name, txn_fn, assertion = test.name, test.txn_fn, test.assertion -- shunt/writelite.yue:1381
+          it("functions with " .. tostring(name), function() -- shunt/writelite.yue:1382
+            local fs = TestFs() -- shunt/writelite.yue:1383
+            local FILE = 'database.db' -- shunt/writelite.yue:1384
+            local _with_0 = Writelite(FILE, fs) -- shunt/writelite.yue:1385
+            _with_0:mode('blob') -- shunt/writelite.yue:1386
+            _with_0:page_size(PAGE_SIZE) -- shunt/writelite.yue:1387
+            local ok, err = _with_0:open(); -- shunt/writelite.yue:1388
+            require('shunt.spec')._assert_that([=[ok]=], ok, (eq(true)), tostring("shunt/writelite.yue") .. ":" .. tostring(1389)); -- shunt/writelite.yue:1389
+            require('shunt.spec')._expect_that([=[err]=], err, (eq(nil)), tostring("shunt/writelite.yue") .. ":" .. tostring(1390)); -- shunt/writelite.yue:1390
+            require('shunt.spec')._expect_that([=[fs.files[FILE]?]=], (fs.files[FILE] ~= nil), (eq(true)), tostring("shunt/writelite.yue") .. ":" .. tostring(1392)) -- shunt/writelite.yue:1392
+            _with_0:transaction(txn_fn) -- shunt/writelite.yue:1394
+            local content = fs.files[FILE]:content(); -- shunt/writelite.yue:1396
+            require('shunt.spec')._expect_that([=[content]=], content, (matches('^#!writelite\0')), tostring("shunt/writelite.yue") .. ":" .. tostring(1397)) -- shunt/writelite.yue:1397
+            if (assertion ~= nil) then -- shunt/writelite.yue:1398
+              assertion(content) -- shunt/writelite.yue:1399
+            end -- shunt/writelite.yue:1398
+            ok, err = _with_0:close(); -- shunt/writelite.yue:1401
+            require('shunt.spec')._assert_that([=[ok]=], ok, (eq(true)), tostring("shunt/writelite.yue") .. ":" .. tostring(1402)); -- shunt/writelite.yue:1402
+            require('shunt.spec')._assert_that([=[err]=], err, (eq(nil)), tostring("shunt/writelite.yue") .. ":" .. tostring(1403)) -- shunt/writelite.yue:1403
+            return _with_0 -- shunt/writelite.yue:1385
+          end) -- shunt/writelite.yue:1382
+        end -- shunt/writelite.yue:1403
+      end) -- shunt/writelite.yue:1347
+      return describe('with failures', function() -- shunt/writelite.yue:1405
+        local PAGE_SIZE = 1024 -- shunt/writelite.yue:1406
+        local clean_fs -- shunt/writelite.yue:1408
+        do -- shunt/writelite.yue:1408
+          clean_fs = TestFs() -- shunt/writelite.yue:1409
+          do -- shunt/writelite.yue:1411
+            local _with_0 = Writelite('database.db', clean_fs) -- shunt/writelite.yue:1411
+            _with_0:mode('blob') -- shunt/writelite.yue:1412
+            _with_0:page_size(PAGE_SIZE) -- shunt/writelite.yue:1413
+            assert(_with_0:open()) -- shunt/writelite.yue:1414
+            assert(_with_0:close()) -- shunt/writelite.yue:1415
+          end -- shunt/writelite.yue:1411
+          clean_fs = clean_fs -- shunt/writelite.yue:1416
+        end -- shunt/writelite.yue:1416
+        it('is tested with a clean file system', function() -- shunt/writelite.yue:1418
+          return require('shunt.spec')._assert_that([=[clean_fs.files]=], clean_fs.files, (has_fields({ -- shunt/writelite.yue:1419
+            ['database.db'] = not_(eq(nil)), -- shunt/writelite.yue:1419
+            ['database.db~'] = eq(nil) -- shunt/writelite.yue:1419
+          })), tostring("shunt/writelite.yue") .. ":" .. tostring(1419)) -- shunt/writelite.yue:1421
+        end) -- shunt/writelite.yue:1418
+        local clone_fs -- shunt/writelite.yue:1423
+        clone_fs = function(fs) -- shunt/writelite.yue:1423
+          local _with_0 = clone(fs) -- shunt/writelite.yue:1424
+          setmetatable(_with_0, getmetatable(fs)) -- shunt/writelite.yue:1425
+          local mt = getmetatable((TestFile(''))) -- shunt/writelite.yue:1426
+          for _, file in pairs(_with_0.files) do -- shunt/writelite.yue:1427
+            setmetatable(file, mt) -- shunt/writelite.yue:1428
+          end -- shunt/writelite.yue:1428
+          return _with_0 -- shunt/writelite.yue:1424
+        end -- shunt/writelite.yue:1423
+        local journal_present -- shunt/writelite.yue:1430
+        journal_present = function(fs) -- shunt/writelite.yue:1430
+          return require('shunt.spec')._expect_that([=[fs.files['database.db~']]=], fs.files['database.db~'], (not_(eq(nil))), tostring("shunt/writelite.yue") .. ":" .. tostring(1431)) -- shunt/writelite.yue:1431
+        end -- shunt/writelite.yue:1430
+        local journal_absent -- shunt/writelite.yue:1432
+        journal_absent = function(fs) -- shunt/writelite.yue:1432
+          return require('shunt.spec')._expect_that([=[fs.files['database.db~']]=], fs.files['database.db~'], (eq(nil)), tostring("shunt/writelite.yue") .. ":" .. tostring(1433)) -- shunt/writelite.yue:1433
+        end -- shunt/writelite.yue:1432
+        local main_unchanged -- shunt/writelite.yue:1434
+        main_unchanged = function(fs) -- shunt/writelite.yue:1434
+          return require('shunt.spec')._expect_that([=[fs.files['database.db']\content!]=], fs.files['database.db']:content(), (eq(clean_fs.files['database.db']:content())), tostring("shunt/writelite.yue") .. ":" .. tostring(1435)) -- shunt/writelite.yue:1435
+        end -- shunt/writelite.yue:1434
+        local main_advanced -- shunt/writelite.yue:1436
+        main_advanced = function(fs) -- shunt/writelite.yue:1436
+          return require('shunt.spec')._expect_that([=[fs.files['database.db']\content!]=], fs.files['database.db']:content(), (matches(('a'):rep(3 * PAGE_SIZE))), tostring("shunt/writelite.yue") .. ":" .. tostring(1437)) -- shunt/writelite.yue:1437
+        end -- shunt/writelite.yue:1436
+        local clean_tests = { -- shunt/writelite.yue:1440
+          { -- shunt/writelite.yue:1440
+            failure_points = { -- shunt/writelite.yue:1441
+              'pre-open' -- shunt/writelite.yue:1441
+            }, -- shunt/writelite.yue:1440
+            expect_after_first_run = { -- shunt/writelite.yue:1443
+              journal_absent -- shunt/writelite.yue:1443
+            }, -- shunt/writelite.yue:1442
+            expect_after_second_run = { -- shunt/writelite.yue:1445
+              journal_absent, -- shunt/writelite.yue:1445
+              main_unchanged -- shunt/writelite.yue:1446
+            } -- shunt/writelite.yue:1444
+          }, -- shunt/writelite.yue:1440
+          { -- shunt/writelite.yue:1447
+            failure_points = { -- shunt/writelite.yue:1448
+              'post-open' -- shunt/writelite.yue:1448
+            }, -- shunt/writelite.yue:1447
+            expect_after_first_run = { -- shunt/writelite.yue:1450
+              journal_absent -- shunt/writelite.yue:1450
+            }, -- shunt/writelite.yue:1449
+            expect_after_second_run = { -- shunt/writelite.yue:1452
+              journal_absent, -- shunt/writelite.yue:1452
+              main_unchanged -- shunt/writelite.yue:1453
+            } -- shunt/writelite.yue:1451
+          }, -- shunt/writelite.yue:1447
+          { -- shunt/writelite.yue:1454
+            failure_points = { -- shunt/writelite.yue:1455
+              'mid-transaction' -- shunt/writelite.yue:1455
+            }, -- shunt/writelite.yue:1454
+            expect_after_first_run = { -- shunt/writelite.yue:1457
+              journal_absent -- shunt/writelite.yue:1457
+            }, -- shunt/writelite.yue:1456
+            expect_after_second_run = { -- shunt/writelite.yue:1459
+              journal_absent, -- shunt/writelite.yue:1459
+              main_unchanged -- shunt/writelite.yue:1460
+            } -- shunt/writelite.yue:1458
+          }, -- shunt/writelite.yue:1454
+          { -- shunt/writelite.yue:1461
+            failure_points = { -- shunt/writelite.yue:1462
+              'post-transaction' -- shunt/writelite.yue:1462
+            }, -- shunt/writelite.yue:1461
+            expect_after_first_run = { -- shunt/writelite.yue:1464
+              journal_absent -- shunt/writelite.yue:1464
+            }, -- shunt/writelite.yue:1463
+            expect_after_second_run = { -- shunt/writelite.yue:1466
+              journal_absent, -- shunt/writelite.yue:1466
+              main_advanced -- shunt/writelite.yue:1467
+            } -- shunt/writelite.yue:1465
+          } -- shunt/writelite.yue:1461
+        } -- shunt/writelite.yue:1439
+        for _index_0 = 1, #clean_tests do -- shunt/writelite.yue:1468
+          local test = clean_tests[_index_0] -- shunt/writelite.yue:1468
+          local failure_points, expect_after_first_run, expect_after_second_run = test.failure_points, test.expect_after_first_run, test.expect_after_second_run -- shunt/writelite.yue:1469
+          it("is maintained with a clean file system at " .. tostring(table.concat(failure_points, '+')) .. " failures", function() -- shunt/writelite.yue:1474
+            print('first-run') -- shunt/writelite.yue:1475
+            local fs = clone_fs(clean_fs); -- shunt/writelite.yue:1476
+            do -- shunt/writelite.yue:1477
+              local _tbl_0 = { } -- shunt/writelite.yue:1477
+              for _index_1 = 1, #failure_points do -- shunt/writelite.yue:1477
+                local name = failure_points[_index_1] -- shunt/writelite.yue:1477
+                _tbl_0[name] = true -- shunt/writelite.yue:1477
+              end -- shunt/writelite.yue:1477
+              injected_failures = _tbl_0 -- shunt/writelite.yue:1477
+            end -- shunt/writelite.yue:1477
+            local err -- shunt/writelite.yue:1478
+xpcall(function() -- shunt/writelite.yue:1479
+              local _with_0 = Writelite('database.db', fs) -- shunt/writelite.yue:1480
+              _with_0:mode('blob') -- shunt/writelite.yue:1481
+              _with_0:page_size(PAGE_SIZE) -- shunt/writelite.yue:1482
+              assert(_with_0:open()) -- shunt/writelite.yue:1483
+              _with_0:transaction(function(txn) -- shunt/writelite.yue:1484
+                txn:seek('set', 256) -- shunt/writelite.yue:1486
+                txn:write(('a'):rep(3 * PAGE_SIZE)) -- shunt/writelite.yue:1487
+                return txn -- shunt/writelite.yue:1485
+              end) -- shunt/writelite.yue:1484
+              assert(_with_0:close()) -- shunt/writelite.yue:1488
+              return _with_0 -- shunt/writelite.yue:1480
+            end, function(err2) -- shunt/writelite.yue:1488
+              if not err2:match('FAILURE_MARKER') then -- shunt/writelite.yue:1490
+                err = err2 -- shunt/writelite.yue:1491
+              end -- shunt/writelite.yue:1490
+            end); -- shunt/writelite.yue:1491
+            require('shunt.spec')._assert_that([=[err]=], err, (eq(nil)), tostring("shunt/writelite.yue") .. ":" .. tostring(1492)) -- shunt/writelite.yue:1492
+            for _index_1 = 1, #expect_after_first_run do -- shunt/writelite.yue:1494
+              local check = expect_after_first_run[_index_1] -- shunt/writelite.yue:1494
+              check(fs) -- shunt/writelite.yue:1495
+            end -- shunt/writelite.yue:1495
+            print('second-run'); -- shunt/writelite.yue:1497
+            injected_failures = nil -- shunt/writelite.yue:1498
+            local err -- shunt/writelite.yue:1499
+xpcall(function() -- shunt/writelite.yue:1500
+              local _with_0 = Writelite('database.db', fs) -- shunt/writelite.yue:1501
+              _with_0:mode('blob') -- shunt/writelite.yue:1502
+              _with_0:page_size(PAGE_SIZE) -- shunt/writelite.yue:1503
+              assert(_with_0:open()) -- shunt/writelite.yue:1504
+              assert(_with_0:close()) -- shunt/writelite.yue:1505
+              return _with_0 -- shunt/writelite.yue:1501
+            end, function(err2) -- shunt/writelite.yue:1505
+              err = err2 -- shunt/writelite.yue:1507
+            end); -- shunt/writelite.yue:1507
+            require('shunt.spec')._assert_that([=[err]=], err, (eq(nil)), tostring("shunt/writelite.yue") .. ":" .. tostring(1508)) -- shunt/writelite.yue:1508
+            for _index_1 = 1, #expect_after_second_run do -- shunt/writelite.yue:1510
+              local check = expect_after_second_run[_index_1] -- shunt/writelite.yue:1510
+              check(fs) -- shunt/writelite.yue:1511
+            end -- shunt/writelite.yue:1511
+          end) -- shunt/writelite.yue:1474
+        end -- shunt/writelite.yue:1511
+        local dirty_fs -- shunt/writelite.yue:1513
+        do -- shunt/writelite.yue:1513
+          dirty_fs = clone_fs(clean_fs) -- shunt/writelite.yue:1514
+          do -- shunt/writelite.yue:1515
+            local _with_0 = Writelite('database.db', dirty_fs) -- shunt/writelite.yue:1515
+            _with_0:mode('blob') -- shunt/writelite.yue:1516
+            _with_0:page_size(PAGE_SIZE) -- shunt/writelite.yue:1517
+            assert(_with_0:open()) -- shunt/writelite.yue:1518
+            local err -- shunt/writelite.yue:1519
+xpcall(function() -- shunt/writelite.yue:1520
+              return _with_0:transaction(function(txn) -- shunt/writelite.yue:1521
+                return txn:write(('a'):rep(3 * PAGE_SIZE)) -- shunt/writelite.yue:1522
+              end) -- shunt/writelite.yue:1522
+            end, function(err2) -- shunt/writelite.yue:1522
+              err = err2 -- shunt/writelite.yue:1524
+            end) -- shunt/writelite.yue:1524
+            if (err ~= nil) then -- shunt/writelite.yue:1525
+              error("unexpected error: " .. tostring(err)) -- shunt/writelite.yue:1526
+            end -- shunt/writelite.yue:1525
+            assert(_with_0:close()) -- shunt/writelite.yue:1527
+          end -- shunt/writelite.yue:1515
+          dirty_fs.files['database.db'] = clean_fs.files['database.db'] -- shunt/writelite.yue:1530
+          dirty_fs:reinstate('database.db~') -- shunt/writelite.yue:1531
+          dirty_fs = dirty_fs -- shunt/writelite.yue:1533
+        end -- shunt/writelite.yue:1533
+        it('is tested with a dirty file system', function() -- shunt/writelite.yue:1535
+          return require('shunt.spec')._assert_that([=[dirty_fs.files]=], dirty_fs.files, (has_fields({ -- shunt/writelite.yue:1536
+            ['database.db'] = not_(eq(nil)), -- shunt/writelite.yue:1536
+            ['database.db~'] = not_(eq(nil)) -- shunt/writelite.yue:1536
+          })), tostring("shunt/writelite.yue") .. ":" .. tostring(1536)) -- shunt/writelite.yue:1538
+        end) -- shunt/writelite.yue:1535
+        local dirty_tests = { -- shunt/writelite.yue:1541
+          { -- shunt/writelite.yue:1541
+            failure_points = { -- shunt/writelite.yue:1542
+              'pre-open' -- shunt/writelite.yue:1542
+            }, -- shunt/writelite.yue:1541
+            expect_after_run = { -- shunt/writelite.yue:1544
+              journal_present, -- shunt/writelite.yue:1544
+              main_unchanged -- shunt/writelite.yue:1545
+            } -- shunt/writelite.yue:1543
+          }, -- shunt/writelite.yue:1541
+          { -- shunt/writelite.yue:1546
+            failure_points = { -- shunt/writelite.yue:1547
+              'post-open' -- shunt/writelite.yue:1547
+            }, -- shunt/writelite.yue:1546
+            expect_after_run = { -- shunt/writelite.yue:1549
+              journal_present, -- shunt/writelite.yue:1549
+              main_unchanged -- shunt/writelite.yue:1550
+            } -- shunt/writelite.yue:1548
+          }, -- shunt/writelite.yue:1546
+          { -- shunt/writelite.yue:1551
+            failure_points = { -- shunt/writelite.yue:1552
+              'post-journal-read' -- shunt/writelite.yue:1552
+            }, -- shunt/writelite.yue:1551
+            expect_after_run = { -- shunt/writelite.yue:1554
+              journal_present, -- shunt/writelite.yue:1554
+              main_unchanged -- shunt/writelite.yue:1555
+            } -- shunt/writelite.yue:1553
+          }, -- shunt/writelite.yue:1551
+          { -- shunt/writelite.yue:1556
+            failure_points = { -- shunt/writelite.yue:1557
+              'post-journal-load' -- shunt/writelite.yue:1557
+            }, -- shunt/writelite.yue:1556
+            expect_after_run = { -- shunt/writelite.yue:1559
+              journal_present, -- shunt/writelite.yue:1559
+              main_unchanged -- shunt/writelite.yue:1560
+            } -- shunt/writelite.yue:1558
+          }, -- shunt/writelite.yue:1556
+          { -- shunt/writelite.yue:1561
+            failure_points = { -- shunt/writelite.yue:1562
+              'mid-journal-recovery' -- shunt/writelite.yue:1562
+            }, -- shunt/writelite.yue:1561
+            expect_after_run = { -- shunt/writelite.yue:1564
+              journal_present -- shunt/writelite.yue:1564
+            } -- shunt/writelite.yue:1563
+          }, -- shunt/writelite.yue:1561
+          { -- shunt/writelite.yue:1565
+            failure_points = { -- shunt/writelite.yue:1566
+              'pre-journal-removal' -- shunt/writelite.yue:1566
+            }, -- shunt/writelite.yue:1565
+            expect_after_run = { -- shunt/writelite.yue:1568
+              journal_present, -- shunt/writelite.yue:1568
+              main_advanced -- shunt/writelite.yue:1569
+            } -- shunt/writelite.yue:1567
+          }, -- shunt/writelite.yue:1565
+          { -- shunt/writelite.yue:1570
+            failure_points = { -- shunt/writelite.yue:1571
+              'post-journal-removal' -- shunt/writelite.yue:1571
+            }, -- shunt/writelite.yue:1570
+            expect_after_run = { -- shunt/writelite.yue:1573
+              journal_absent, -- shunt/writelite.yue:1573
+              main_advanced -- shunt/writelite.yue:1574
+            } -- shunt/writelite.yue:1572
+          } -- shunt/writelite.yue:1570
+        } -- shunt/writelite.yue:1540
+        for _index_0 = 1, #dirty_tests do -- shunt/writelite.yue:1575
+          local test = dirty_tests[_index_0] -- shunt/writelite.yue:1575
+          local failure_points, expect_after_run = test.failure_points, test.expect_after_run -- shunt/writelite.yue:1576
+          it("is maintained with a dirty file system at " .. tostring(table.concat(failure_points, '+')) .. " failures", function() -- shunt/writelite.yue:1580
+            local fs = clone_fs(dirty_fs); -- shunt/writelite.yue:1581
+            do -- shunt/writelite.yue:1582
+              local _tbl_0 = { } -- shunt/writelite.yue:1582
+              for _index_1 = 1, #failure_points do -- shunt/writelite.yue:1582
+                local name = failure_points[_index_1] -- shunt/writelite.yue:1582
+                _tbl_0[name] = true -- shunt/writelite.yue:1582
+              end -- shunt/writelite.yue:1582
+              injected_failures = _tbl_0 -- shunt/writelite.yue:1582
+            end -- shunt/writelite.yue:1582
+            local err -- shunt/writelite.yue:1583
+xpcall(function() -- shunt/writelite.yue:1584
+              local _with_0 = Writelite('database.db', fs) -- shunt/writelite.yue:1585
+              _with_0:mode('blob') -- shunt/writelite.yue:1586
+              _with_0:page_size(PAGE_SIZE) -- shunt/writelite.yue:1587
+              assert(_with_0:open()) -- shunt/writelite.yue:1588
+              assert(_with_0:close()) -- shunt/writelite.yue:1589
+              return _with_0 -- shunt/writelite.yue:1585
+            end, function(err2) -- shunt/writelite.yue:1589
+              if not err2:match('FAILURE_MARKER') then -- shunt/writelite.yue:1591
+                err = err2 -- shunt/writelite.yue:1592
+              end -- shunt/writelite.yue:1591
+            end); -- shunt/writelite.yue:1592
+            require('shunt.spec')._assert_that([=[err]=], err, (eq(nil)), tostring("shunt/writelite.yue") .. ":" .. tostring(1593)) -- shunt/writelite.yue:1593
+            for _index_1 = 1, #expect_after_run do -- shunt/writelite.yue:1595
+              local check = expect_after_run[_index_1] -- shunt/writelite.yue:1595
+              check(fs) -- shunt/writelite.yue:1596
+            end -- shunt/writelite.yue:1596
+          end) -- shunt/writelite.yue:1580
+        end -- shunt/writelite.yue:1596
+        return it('is tested comprehensively', function() -- shunt/writelite.yue:1598
+          local attempted_failure_points -- shunt/writelite.yue:1599
+          do -- shunt/writelite.yue:1599
+            local _with_0 = { } -- shunt/writelite.yue:1599
+            for _index_0 = 1, #clean_tests do -- shunt/writelite.yue:1600
+              local test = clean_tests[_index_0] -- shunt/writelite.yue:1600
+              local _list_0 = test.failure_points -- shunt/writelite.yue:1601
+              for _index_1 = 1, #_list_0 do -- shunt/writelite.yue:1601
+                local failure_point = _list_0[_index_1] -- shunt/writelite.yue:1601
+                _with_0[failure_point] = true -- shunt/writelite.yue:1602
+              end -- shunt/writelite.yue:1602
+            end -- shunt/writelite.yue:1602
+            for _index_0 = 1, #dirty_tests do -- shunt/writelite.yue:1603
+              local test = dirty_tests[_index_0] -- shunt/writelite.yue:1603
+              local _list_0 = test.failure_points -- shunt/writelite.yue:1604
+              for _index_1 = 1, #_list_0 do -- shunt/writelite.yue:1604
+                local failure_point = _list_0[_index_1] -- shunt/writelite.yue:1604
+                _with_0[failure_point] = true -- shunt/writelite.yue:1605
+              end -- shunt/writelite.yue:1605
+            end -- shunt/writelite.yue:1605
+            attempted_failure_points = _with_0 -- shunt/writelite.yue:1599
+          end -- shunt/writelite.yue:1599
+          require('shunt.spec')._expect_that([=[attempted_failure_points]=], attempted_failure_points, (deep_eq({ -- shunt/writelite.yue:1606
+            ['mid-journal-recovery'] = true, -- shunt/writelite.yue:1606
+            ['mid-transaction'] = true, -- shunt/writelite.yue:1606
+            ['post-journal-load'] = true, -- shunt/writelite.yue:1606
+            ['post-journal-read'] = true, -- shunt/writelite.yue:1606
+            ['post-journal-removal'] = true, -- shunt/writelite.yue:1606
+            ['post-open'] = true, -- shunt/writelite.yue:1606
+            ['post-transaction'] = true, -- shunt/writelite.yue:1606
+            ['pre-journal-removal'] = true, -- shunt/writelite.yue:1606
+            ['pre-open'] = true -- shunt/writelite.yue:1606
+          })), tostring("shunt/writelite.yue") .. ":" .. tostring(1606)); -- shunt/writelite.yue:1606
+          return require('shunt.spec')._expect_that([=[attempted_failure_points]=], attempted_failure_points, (deep_eq(activated_failure_points)), tostring("shunt/writelite.yue") .. ":" .. tostring(1607)) -- shunt/writelite.yue:1607
+        end) -- shunt/writelite.yue:1607
+      end) -- shunt/writelite.yue:1607
+    end) -- shunt/writelite.yue:1607
+  end) -- shunt/writelite.yue:1194
+  describe('writelite.PageCache', function() -- shunt/writelite.yue:1609
+    describe('\\write', function() -- shunt/writelite.yue:1610
+      it('accesses the filesystem', function() -- shunt/writelite.yue:1611
+        local page_size = 10 -- shunt/writelite.yue:1612
+        local main_file = TestFile(table.concat((function() -- shunt/writelite.yue:1614
+          local _with_0 = { } -- shunt/writelite.yue:1614
+          _with_0[#_with_0 + 1] = ('a'):rep(page_size) -- shunt/writelite.yue:1615
+          _with_0[#_with_0 + 1] = ('b'):rep(page_size) -- shunt/writelite.yue:1616
+          _with_0[#_with_0 + 1] = ('c'):rep(page_size / 2) -- shunt/writelite.yue:1617
+          return _with_0 -- shunt/writelite.yue:1614
+        end)())) -- shunt/writelite.yue:1614
+        main_file:open() -- shunt/writelite.yue:1618
+        local cache = PageCache({ -- shunt/writelite.yue:1621
+          _main_file = main_file, -- shunt/writelite.yue:1621
+          _page_size = page_size -- shunt/writelite.yue:1622
+        }); -- shunt/writelite.yue:1620
+        require('shunt.spec')._expect_that([=[(cache\get 0 * page_size)]=], (cache:get(0 * page_size)), (has_fields({ -- shunt/writelite.yue:1623
+          offset = eq(0), -- shunt/writelite.yue:1623
+          content = eq(('a'):rep(page_size)) -- shunt/writelite.yue:1623
+        })), tostring("shunt/writelite.yue") .. ":" .. tostring(1623)); -- shunt/writelite.yue:1623
+        require('shunt.spec')._expect_that([=[(cache\get 0 * page_size)]=], (cache:get(0 * page_size)), (has_fields({ -- shunt/writelite.yue:1626
+          offset = eq(0), -- shunt/writelite.yue:1626
+          content = eq(('a'):rep(page_size)) -- shunt/writelite.yue:1626
+        })), tostring("shunt/writelite.yue") .. ":" .. tostring(1626)); -- shunt/writelite.yue:1626
+        require('shunt.spec')._expect_that([=[(cache\get 1 * page_size)]=], (cache:get(1 * page_size)), (has_fields({ -- shunt/writelite.yue:1629
+          offset = eq(page_size), -- shunt/writelite.yue:1629
+          content = eq(('b'):rep(page_size)) -- shunt/writelite.yue:1629
+        })), tostring("shunt/writelite.yue") .. ":" .. tostring(1629)); -- shunt/writelite.yue:1629
+        require('shunt.spec')._expect_that([=[(cache\get 2 * page_size)]=], (cache:get(2 * page_size)), (has_fields({ -- shunt/writelite.yue:1632
+          offset = eq(2 * page_size), -- shunt/writelite.yue:1632
+          content = eq(table.concat({ -- shunt/writelite.yue:1632
+            ('c'):rep(page_size / 2), -- shunt/writelite.yue:1632
+            ('\0'):rep(page_size / 2) -- shunt/writelite.yue:1632
+          })) -- shunt/writelite.yue:1632
+        })), tostring("shunt/writelite.yue") .. ":" .. tostring(1632)); -- shunt/writelite.yue:1632
+        return require('shunt.spec')._expect_that([=[(cache\get 1 * page_size)]=], (cache:get(1 * page_size)), (has_fields({ -- shunt/writelite.yue:1637
+          offset = eq(page_size), -- shunt/writelite.yue:1637
+          content = eq(('b'):rep(page_size)) -- shunt/writelite.yue:1637
+        })), tostring("shunt/writelite.yue") .. ":" .. tostring(1637)) -- shunt/writelite.yue:1639
+      end) -- shunt/writelite.yue:1611
+      return it('caches appropriately', function() -- shunt/writelite.yue:1641
+        local PAGE_SIZE = 10 -- shunt/writelite.yue:1642
+        local main_file = TestFile(table.concat((function() -- shunt/writelite.yue:1644
+          local _with_0 = { } -- shunt/writelite.yue:1644
+          local a = ('a'):byte() -- shunt/writelite.yue:1645
+          for i = 0, 20 do -- shunt/writelite.yue:1646
+            _with_0[#_with_0 + 1] = (string.char(a + i)):rep(PAGE_SIZE) -- shunt/writelite.yue:1647
+          end -- shunt/writelite.yue:1647
+          return _with_0 -- shunt/writelite.yue:1644
+        end)())) -- shunt/writelite.yue:1644
+        main_file:open() -- shunt/writelite.yue:1648
+        local MAX_CACHED_PAGES = 10 -- shunt/writelite.yue:1650
+        local cache = PageCache({ -- shunt/writelite.yue:1652
+          _main_file = main_file, -- shunt/writelite.yue:1652
+          _page_size = PAGE_SIZE -- shunt/writelite.yue:1653
+        }) -- shunt/writelite.yue:1651
+        cache:set_max_cached_pages(MAX_CACHED_PAGES) -- shunt/writelite.yue:1654
+        for i = 0, MAX_CACHED_PAGES - 1 do -- shunt/writelite.yue:1657
+          cache:get(i * PAGE_SIZE) -- shunt/writelite.yue:1658
+        end -- shunt/writelite.yue:1658
+        main_file:seek('set', 0) -- shunt/writelite.yue:1661
+        local err = main_file:write(('0'):rep(20 * PAGE_SIZE)) -- shunt/writelite.yue:1662
+        assert(not (err ~= nil), err) -- shunt/writelite.yue:1663
+        local a = ('a'):byte() -- shunt/writelite.yue:1666
+        for i = 0, MAX_CACHED_PAGES - 1 do -- shunt/writelite.yue:1667
+          require('shunt.spec')._expect_that([=[(cache\get i * PAGE_SIZE)]=], (cache:get(i * PAGE_SIZE)), (has_fields({ -- shunt/writelite.yue:1668
+            offset = eq(i * PAGE_SIZE), -- shunt/writelite.yue:1668
+            content = eq((string.char(a + i)):rep(PAGE_SIZE)) -- shunt/writelite.yue:1668
+          })), tostring("shunt/writelite.yue") .. ":" .. tostring(1668)) -- shunt/writelite.yue:1668
+        end -- shunt/writelite.yue:1670
+        cache:get(MAX_CACHED_PAGES * PAGE_SIZE); -- shunt/writelite.yue:1673
+        return require('shunt.spec')._expect_that([=[(cache\get 0)]=], (cache:get(0)), (has_fields({ -- shunt/writelite.yue:1675
+          offset = eq(0), -- shunt/writelite.yue:1675
+          content = eq(('0'):rep(PAGE_SIZE)) -- shunt/writelite.yue:1675
+        })), tostring("shunt/writelite.yue") .. ":" .. tostring(1675)) -- shunt/writelite.yue:1677
+      end) -- shunt/writelite.yue:1677
+    end) -- shunt/writelite.yue:1610
+    return describe('\\set', function() -- shunt/writelite.yue:1679
+      it('shows changes immediately', function() -- shunt/writelite.yue:1680
+        local PAGE_SIZE = 10 -- shunt/writelite.yue:1681
+        local main_file = TestFile(table.concat((function() -- shunt/writelite.yue:1683
+          local _with_0 = { } -- shunt/writelite.yue:1683
+          local a = ('a'):byte() -- shunt/writelite.yue:1684
+          for i = 0, 20 do -- shunt/writelite.yue:1685
+            _with_0[#_with_0 + 1] = (string.char(a + i)):rep(PAGE_SIZE) -- shunt/writelite.yue:1686
+          end -- shunt/writelite.yue:1686
+          return _with_0 -- shunt/writelite.yue:1683
+        end)())) -- shunt/writelite.yue:1683
+        main_file:open() -- shunt/writelite.yue:1687
+        local MAX_CACHED_PAGES = 10 -- shunt/writelite.yue:1689
+        local cache = PageCache({ -- shunt/writelite.yue:1691
+          _main_file = main_file, -- shunt/writelite.yue:1691
+          _page_size = PAGE_SIZE -- shunt/writelite.yue:1692
+        }) -- shunt/writelite.yue:1690
+        return cache:set_max_cached_pages(MAX_CACHED_PAGES) -- shunt/writelite.yue:1693
+      end) -- shunt/writelite.yue:1680
+      it('rejects unaligned pages', function() -- shunt/writelite.yue:1695
+        local PAGE_SIZE = 32 -- shunt/writelite.yue:1696
+        local cache = PageCache({ -- shunt/writelite.yue:1698
+          _main_file = (function() -- shunt/writelite.yue:1698
+            local _with_0 = TestFile('') -- shunt/writelite.yue:1698
+            _with_0:open() -- shunt/writelite.yue:1699
+            return _with_0 -- shunt/writelite.yue:1698
+          end)(), -- shunt/writelite.yue:1698
+          _page_size = PAGE_SIZE -- shunt/writelite.yue:1700
+        }) -- shunt/writelite.yue:1697
+        local page = Page({ -- shunt/writelite.yue:1702
+          offset = 0, -- shunt/writelite.yue:1702
+          content = ('\0'):rep(PAGE_SIZE) -- shunt/writelite.yue:1703
+        }); -- shunt/writelite.yue:1701
+        return require('shunt.spec')._expect_that([=[(-> cache\set 12, page)]=], (function() -- shunt/writelite.yue:1704
+          return cache:set(12, page) -- shunt/writelite.yue:1704
+        end), (errors(matches('page%-cache offset must be a multiple of the page size'))), tostring("shunt/writelite.yue") .. ":" .. tostring(1704)) -- shunt/writelite.yue:1704
+      end) -- shunt/writelite.yue:1695
+      return it('rejects incorrect-size pages', function() -- shunt/writelite.yue:1706
+        local PAGE_SIZE = 32 -- shunt/writelite.yue:1707
+        local cache = PageCache({ -- shunt/writelite.yue:1709
+          _main_file = (function() -- shunt/writelite.yue:1709
+            local _with_0 = TestFile('') -- shunt/writelite.yue:1709
+            _with_0:open() -- shunt/writelite.yue:1710
+            return _with_0 -- shunt/writelite.yue:1709
+          end)(), -- shunt/writelite.yue:1709
+          _page_size = PAGE_SIZE -- shunt/writelite.yue:1711
+        }) -- shunt/writelite.yue:1708
+        local page = Page({ -- shunt/writelite.yue:1713
+          offset = 123 * PAGE_SIZE, -- shunt/writelite.yue:1713
+          content = '0123456789' -- shunt/writelite.yue:1714
+        }); -- shunt/writelite.yue:1712
+        return require('shunt.spec')._expect_that([=[(-> cache\set 123 * PAGE_SIZE, page)]=], (function() -- shunt/writelite.yue:1715
+          return cache:set(123 * PAGE_SIZE, page) -- shunt/writelite.yue:1715
+        end), (errors(matches("internal error: page has the wrong size %(10 != " .. tostring(PAGE_SIZE) .. "%)"))), tostring("shunt/writelite.yue") .. ":" .. tostring(1715)) -- shunt/writelite.yue:1715
+      end) -- shunt/writelite.yue:1715
+    end) -- shunt/writelite.yue:1715
+  end) -- shunt/writelite.yue:1609
+  describe('writelite.Hasher', function() -- shunt/writelite.yue:1717
+    it('avoids collisions', function() -- shunt/writelite.yue:1718
+      local collisions = { } -- shunt/writelite.yue:1719
+      local NUM_STRINGS = 10000 -- shunt/writelite.yue:1720
+      for i = 1, NUM_STRINGS do -- shunt/writelite.yue:1721
+        local hash = Hasher():write("some_string_" .. tostring(i) .. "_which_is_similar"):finish() -- shunt/writelite.yue:1722
+        if collisions[hash] == nil then -- shunt/writelite.yue:1725
+          collisions[hash] = 0 -- shunt/writelite.yue:1725
+        end -- shunt/writelite.yue:1725
+        collisions[hash] = collisions[hash] + 1 -- shunt/writelite.yue:1726
+      end -- shunt/writelite.yue:1726
+      local max_collisions = -1 -- shunt/writelite.yue:1728
+      for h, c in pairs(collisions) do -- shunt/writelite.yue:1729
+        if max_collisions < c then -- shunt/writelite.yue:1730
+          max_collisions = c -- shunt/writelite.yue:1731
+        end -- shunt/writelite.yue:1730
+      end -- shunt/writelite.yue:1731
+      return require('shunt.spec')._expect_that([=[max_collisions]=], max_collisions, (lt(NUM_STRINGS * 0.01)), tostring("shunt/writelite.yue") .. ":" .. tostring(1732)) -- shunt/writelite.yue:1732
+    end) -- shunt/writelite.yue:1718
+    return it('is stable for tables', function() -- shunt/writelite.yue:1734
+      local make_test_data -- shunt/writelite.yue:1735
+      make_test_data = function() -- shunt/writelite.yue:1735
+        local _with_0 = { } -- shunt/writelite.yue:1736
+        _with_0.k1 = { -- shunt/writelite.yue:1738
+          k11 = 'a', -- shunt/writelite.yue:1738
+          k12 = 'b' -- shunt/writelite.yue:1739
+        } -- shunt/writelite.yue:1737
+        _with_0.k2 = { -- shunt/writelite.yue:1741
+          k21 = 'c', -- shunt/writelite.yue:1741
+          k22 = 'd' -- shunt/writelite.yue:1742
+        } -- shunt/writelite.yue:1740
+        return _with_0 -- shunt/writelite.yue:1736
+      end -- shunt/writelite.yue:1735
+      local hash = nil -- shunt/writelite.yue:1743
+      for i = 1, 1000 do -- shunt/writelite.yue:1744
+        local h = Hasher():write(make_test_data()):finish() -- shunt/writelite.yue:1745
+        if (hash ~= nil) then -- shunt/writelite.yue:1748
+          require('shunt.spec')._assert_that([=[h]=], h, (eq(hash)), tostring("shunt/writelite.yue") .. ":" .. tostring(1749)) -- shunt/writelite.yue:1749
+        else -- shunt/writelite.yue:1751
+          hash = h -- shunt/writelite.yue:1751
+        end -- shunt/writelite.yue:1748
+      end -- shunt/writelite.yue:1751
+    end) -- shunt/writelite.yue:1751
+  end) -- shunt/writelite.yue:1717
+  return describe('writelite.Serialiser roundtrip', function() -- shunt/writelite.yue:1753
+    local tests = { -- shunt/writelite.yue:1755
+      { -- shunt/writelite.yue:1755
+        name = 'nil', -- shunt/writelite.yue:1755
+        value = nil -- shunt/writelite.yue:1756
+      }, -- shunt/writelite.yue:1755
+      { -- shunt/writelite.yue:1757
+        name = 'true', -- shunt/writelite.yue:1757
+        value = true -- shunt/writelite.yue:1758
+      }, -- shunt/writelite.yue:1757
+      { -- shunt/writelite.yue:1759
+        name = 'false', -- shunt/writelite.yue:1759
+        value = false -- shunt/writelite.yue:1760
+      }, -- shunt/writelite.yue:1759
+      { -- shunt/writelite.yue:1761
+        name = 'int (zero)', -- shunt/writelite.yue:1761
+        value = 0 -- shunt/writelite.yue:1762
+      }, -- shunt/writelite.yue:1761
+      { -- shunt/writelite.yue:1763
+        name = 'int (small, positive)', -- shunt/writelite.yue:1763
+        value = 10 -- shunt/writelite.yue:1764
+      }, -- shunt/writelite.yue:1763
+      { -- shunt/writelite.yue:1765
+        name = 'int (small, negative)', -- shunt/writelite.yue:1765
+        value = -10 -- shunt/writelite.yue:1766
+      }, -- shunt/writelite.yue:1765
+      { -- shunt/writelite.yue:1767
+        name = 'int (max int)', -- shunt/writelite.yue:1767
+        value = MAX_INT -- shunt/writelite.yue:1768
+      }, -- shunt/writelite.yue:1767
+      { -- shunt/writelite.yue:1769
+        name = 'int (min int)', -- shunt/writelite.yue:1769
+        value = MIN_INT -- shunt/writelite.yue:1770
+      }, -- shunt/writelite.yue:1769
+      { -- shunt/writelite.yue:1771
+        name = 'float (small positive)', -- shunt/writelite.yue:1771
+        value = 1.1, -- shunt/writelite.yue:1772
+        check = function(actual, value) -- shunt/writelite.yue:1773
+          return require('shunt.spec')._expect_that([=[actual]=], actual, (near(value)), tostring("shunt/writelite.yue") .. ":" .. tostring(1774)) -- shunt/writelite.yue:1774
+        end -- shunt/writelite.yue:1773
+      }, -- shunt/writelite.yue:1771
+      { -- shunt/writelite.yue:1775
+        name = 'float (small negative)', -- shunt/writelite.yue:1775
+        value = -1.1, -- shunt/writelite.yue:1776
+        check = function(actual, value) -- shunt/writelite.yue:1777
+          return require('shunt.spec')._expect_that([=[actual]=], actual, (near(value)), tostring("shunt/writelite.yue") .. ":" .. tostring(1778)) -- shunt/writelite.yue:1778
+        end -- shunt/writelite.yue:1777
+      }, -- shunt/writelite.yue:1775
+      { -- shunt/writelite.yue:1779
+        name = 'float (large positive)', -- shunt/writelite.yue:1779
+        value = 9999999999999 * 9999999 * 0.3, -- shunt/writelite.yue:1780
+        check = function(actual, value) -- shunt/writelite.yue:1781
+          return require('shunt.spec')._expect_that([=[actual]=], actual, (near(value)), tostring("shunt/writelite.yue") .. ":" .. tostring(1782)) -- shunt/writelite.yue:1782
+        end -- shunt/writelite.yue:1781
+      }, -- shunt/writelite.yue:1779
+      { -- shunt/writelite.yue:1783
+        name = 'float (large negative)', -- shunt/writelite.yue:1783
+        value = -9999999999999 * 9999999 * 0.3, -- shunt/writelite.yue:1784
+        check = function(actual, value) -- shunt/writelite.yue:1785
+          return require('shunt.spec')._expect_that([=[actual]=], actual, (near(value)), tostring("shunt/writelite.yue") .. ":" .. tostring(1786)) -- shunt/writelite.yue:1786
+        end -- shunt/writelite.yue:1785
+      }, -- shunt/writelite.yue:1783
+      { -- shunt/writelite.yue:1787
+        name = 'empty string', -- shunt/writelite.yue:1787
+        value = '' -- shunt/writelite.yue:1788
+      }, -- shunt/writelite.yue:1787
+      { -- shunt/writelite.yue:1789
+        name = 'short string', -- shunt/writelite.yue:1789
+        value = 'asdf' -- shunt/writelite.yue:1790
+      }, -- shunt/writelite.yue:1789
+      { -- shunt/writelite.yue:1791
+        name = 'long string', -- shunt/writelite.yue:1791
+        value = ('x'):rep(1000) -- shunt/writelite.yue:1792
+      }, -- shunt/writelite.yue:1791
+      { -- shunt/writelite.yue:1793
+        name = 'simple leaf table', -- shunt/writelite.yue:1793
+        value = { -- shunt/writelite.yue:1795
+          [false] = true -- shunt/writelite.yue:1795
+        } -- shunt/writelite.yue:1794
+      }, -- shunt/writelite.yue:1793
+      { -- shunt/writelite.yue:1796
+        name = 'simple leaf table', -- shunt/writelite.yue:1796
+        value = { -- shunt/writelite.yue:1798
+          hello = true -- shunt/writelite.yue:1798
+        } -- shunt/writelite.yue:1797
+      }, -- shunt/writelite.yue:1796
+      { -- shunt/writelite.yue:1799
+        name = 'simple leaf table', -- shunt/writelite.yue:1799
+        value = { -- shunt/writelite.yue:1801
+          [false] = 'world' -- shunt/writelite.yue:1801
+        } -- shunt/writelite.yue:1800
+      }, -- shunt/writelite.yue:1799
+      { -- shunt/writelite.yue:1802
+        name = 'complex leaf table', -- shunt/writelite.yue:1802
+        value = { -- shunt/writelite.yue:1804
+          hello = 'world' -- shunt/writelite.yue:1804
+        } -- shunt/writelite.yue:1803
+      }, -- shunt/writelite.yue:1802
+      { -- shunt/writelite.yue:1805
+        name = 'tree table', -- shunt/writelite.yue:1805
+        value = { -- shunt/writelite.yue:1807
+          hello = { -- shunt/writelite.yue:1808
+            world = { -- shunt/writelite.yue:1809
+              how = { -- shunt/writelite.yue:1810
+                are = 'you' -- shunt/writelite.yue:1810
+              } -- shunt/writelite.yue:1809
+            } -- shunt/writelite.yue:1808
+          } -- shunt/writelite.yue:1807
+        } -- shunt/writelite.yue:1806
+      }, -- shunt/writelite.yue:1805
+      { -- shunt/writelite.yue:1811
+        name = 'cyclic table', -- shunt/writelite.yue:1811
+        value = (function() -- shunt/writelite.yue:1812
+          local ret = { } -- shunt/writelite.yue:1813
+          ret.self = ret -- shunt/writelite.yue:1814
+          return ret -- shunt/writelite.yue:1815
+        end)() -- shunt/writelite.yue:1812
+      }, -- shunt/writelite.yue:1811
+      { -- shunt/writelite.yue:1816
+        name = 'indirectly cyclic table', -- shunt/writelite.yue:1816
+        value = (function() -- shunt/writelite.yue:1817
+          local ret = { -- shunt/writelite.yue:1818
+            child = { } -- shunt/writelite.yue:1818
+          } -- shunt/writelite.yue:1818
+          ret.child.parent = ret -- shunt/writelite.yue:1819
+          return ret -- shunt/writelite.yue:1820
+        end)() -- shunt/writelite.yue:1817
+      }, -- shunt/writelite.yue:1816
+      { -- shunt/writelite.yue:1821
+        name = 'key-tree-table', -- shunt/writelite.yue:1821
+        value = { -- shunt/writelite.yue:1823
+          [{ -- shunt/writelite.yue:1823
+            hello = 'there' -- shunt/writelite.yue:1823
+          }] = 'world' -- shunt/writelite.yue:1823
+        }, -- shunt/writelite.yue:1822
+        check = function(actual, value) -- shunt/writelite.yue:1824
+          local actual_structure -- shunt/writelite.yue:1825
+          do -- shunt/writelite.yue:1825
+            local _accum_0 = { } -- shunt/writelite.yue:1825
+            local _len_0 = 1 -- shunt/writelite.yue:1825
+            for key, value in pairs(actual) do -- shunt/writelite.yue:1825
+              _accum_0[_len_0] = { -- shunt/writelite.yue:1825
+                key = key, -- shunt/writelite.yue:1825
+                value = value -- shunt/writelite.yue:1825
+              } -- shunt/writelite.yue:1825
+              _len_0 = _len_0 + 1 -- shunt/writelite.yue:1825
+            end -- shunt/writelite.yue:1825
+            actual_structure = _accum_0 -- shunt/writelite.yue:1825
+          end -- shunt/writelite.yue:1825
+          for _index_0 = 1, #actual_structure do -- shunt/writelite.yue:1826
+            local kv = actual_structure[_index_0] -- shunt/writelite.yue:1826
+            do -- shunt/writelite.yue:1827
+              local _accum_0 = { } -- shunt/writelite.yue:1827
+              local _len_0 = 1 -- shunt/writelite.yue:1827
+              for key, value in pairs(kv.key) do -- shunt/writelite.yue:1827
+                _accum_0[_len_0] = { -- shunt/writelite.yue:1827
+                  key = key, -- shunt/writelite.yue:1827
+                  value = value -- shunt/writelite.yue:1827
+                } -- shunt/writelite.yue:1827
+                _len_0 = _len_0 + 1 -- shunt/writelite.yue:1827
+              end -- shunt/writelite.yue:1827
+              kv.key = _accum_0 -- shunt/writelite.yue:1827
+            end -- shunt/writelite.yue:1827
+          end -- shunt/writelite.yue:1827
+          return require('shunt.spec')._expect_that([=[actual_structure]=], actual_structure, (deep_eq({ -- shunt/writelite.yue:1828
+            { -- shunt/writelite.yue:1828
+              key = { -- shunt/writelite.yue:1828
+                { -- shunt/writelite.yue:1828
+                  key = 'hello', -- shunt/writelite.yue:1828
+                  value = 'there' -- shunt/writelite.yue:1828
+                } -- shunt/writelite.yue:1828
+              }, -- shunt/writelite.yue:1828
+              value = 'world' -- shunt/writelite.yue:1828
+            } -- shunt/writelite.yue:1828
+          })), tostring("shunt/writelite.yue") .. ":" .. tostring(1828)) -- shunt/writelite.yue:1833
+        end -- shunt/writelite.yue:1824
+      }, -- shunt/writelite.yue:1821
+      { -- shunt/writelite.yue:1834
+        name = 'key-cyclic table', -- shunt/writelite.yue:1834
+        value = (function() -- shunt/writelite.yue:1835
+          local ret = { } -- shunt/writelite.yue:1836
+          ret[ret] = true -- shunt/writelite.yue:1837
+          return ret -- shunt/writelite.yue:1838
+        end)(), -- shunt/writelite.yue:1835
+        check = function(actual, value) -- shunt/writelite.yue:1839
+          local keys -- shunt/writelite.yue:1840
+          do -- shunt/writelite.yue:1840
+            local _accum_0 = { } -- shunt/writelite.yue:1840
+            local _len_0 = 1 -- shunt/writelite.yue:1840
+            for key, _ in pairs(actual) do -- shunt/writelite.yue:1840
+              _accum_0[_len_0] = { -- shunt/writelite.yue:1840
+                key = key -- shunt/writelite.yue:1840
+              } -- shunt/writelite.yue:1840
+              _len_0 = _len_0 + 1 -- shunt/writelite.yue:1840
+            end -- shunt/writelite.yue:1840
+            keys = _accum_0 -- shunt/writelite.yue:1840
+          end -- shunt/writelite.yue:1840
+          require('shunt.spec')._assert_that([=[keys]=], keys, (len(eq(1))), tostring("shunt/writelite.yue") .. ":" .. tostring(1841)) -- shunt/writelite.yue:1841
+          local key = keys[1].key; -- shunt/writelite.yue:1843
+          return require('shunt.spec')._expect_that([=[key[key]]=], key[key], (eq(true)), tostring("shunt/writelite.yue") .. ":" .. tostring(1844)) -- shunt/writelite.yue:1844
+        end -- shunt/writelite.yue:1839
+      } -- shunt/writelite.yue:1834
+    } -- shunt/writelite.yue:1754
+    for _index_0 = 1, #tests do -- shunt/writelite.yue:1847
+      local test = tests[_index_0] -- shunt/writelite.yue:1847
+      local name, value, matcher, check = test.name, test.value, test.matcher, test.check -- shunt/writelite.yue:1848
+      if matcher == nil then -- shunt/writelite.yue:1851
+        matcher = deep_eq -- shunt/writelite.yue:1851
+      end -- shunt/writelite.yue:1851
+      if check == nil then -- shunt/writelite.yue:1852
+        check = function(actual, value) -- shunt/writelite.yue:1852
+          return require('shunt.spec')._expect_that([=[actual]=], actual, (deep_eq(value)), tostring("shunt/writelite.yue") .. ":" .. tostring(1853)) -- shunt/writelite.yue:1853
+        end -- shunt/writelite.yue:1852
+      end -- shunt/writelite.yue:1852
+      it("works for " .. tostring(name), function() -- shunt/writelite.yue:1855
+        local serialised = Serialiser():write(value):finish() -- shunt/writelite.yue:1856
+        local serialised_directly = Serialiser:serialise(value); -- shunt/writelite.yue:1860
+        require('shunt.spec')._expect_that([=[serialised_directly]=], serialised_directly, (eq(serialised)), tostring("shunt/writelite.yue") .. ":" .. tostring(1861)) -- shunt/writelite.yue:1861
+        print_serialised(serialised) -- shunt/writelite.yue:1863
+        local deserialised_from_string, eof = (Deserialiser(serialised)):parse() -- shunt/writelite.yue:1864
+        check(deserialised_from_string, value); -- shunt/writelite.yue:1866
+        require('shunt.spec')._expect_that([=[eof]=], eof, (eq(true)), tostring("shunt/writelite.yue") .. ":" .. tostring(1867)) -- shunt/writelite.yue:1867
+        local direct_deserialised_from_string = Deserialiser:deserialise(serialised) -- shunt/writelite.yue:1869
+        check(direct_deserialised_from_string, value) -- shunt/writelite.yue:1870
+        local path = os.tmpname() -- shunt/writelite.yue:1872
+        local file = assert(io.open(path, 'w+')) -- shunt/writelite.yue:1873
+        assert(file:write(serialised)) -- shunt/writelite.yue:1875
+        assert(file:flush()) -- shunt/writelite.yue:1876
+        assert(file:seek('set', 0)) -- shunt/writelite.yue:1877
+        local err -- shunt/writelite.yue:1879
+xpcall(function() -- shunt/writelite.yue:1881
+          local deserialised_from_file = (Deserialiser(file)):parse() -- shunt/writelite.yue:1882
+          return check(deserialised_from_file, value) -- shunt/writelite.yue:1884
+        end, function(err2) -- shunt/writelite.yue:1884
+          err = err2 -- shunt/writelite.yue:1886
+        end) -- shunt/writelite.yue:1886
+        if (err ~= nil) then -- shunt/writelite.yue:1887
+          error(err) -- shunt/writelite.yue:1888
+        end -- shunt/writelite.yue:1887
+        assert(file:seek('set', 0)) -- shunt/writelite.yue:1890
+xpcall(function() -- shunt/writelite.yue:1891
+          local direct_deserialised_from_file = Deserialiser:deserialise(file) -- shunt/writelite.yue:1892
+          return check(direct_deserialised_from_file, value) -- shunt/writelite.yue:1893
+        end, function(err2) -- shunt/writelite.yue:1893
+          err = err2 -- shunt/writelite.yue:1895
+        end) -- shunt/writelite.yue:1895
+        if (err ~= nil) then -- shunt/writelite.yue:1896
+          error(err) -- shunt/writelite.yue:1897
+        end -- shunt/writelite.yue:1896
+        assert(file:close()) -- shunt/writelite.yue:1899
+        return os.remove(path) -- shunt/writelite.yue:1900
+      end) -- shunt/writelite.yue:1855
+    end -- shunt/writelite.yue:1900
+  end) -- shunt/writelite.yue:1900
+end) -- shunt/writelite.yue:1073
+return _module_0 -- shunt/writelite.yue:1900
+end
+package.preload['shunt.compat'] = function(...)
+-- [yue]: shunt/compat.yue
+local _module_0 = { } -- shunt/compat.yue:1
+local detect_host, HOST, LUA, compat_applied, apply_compat, test_compat -- shunt/compat.yue:1
+detect_host = function() -- shunt/compat.yue:3
+  if (collectgarbage ~= nil) then -- shunt/compat.yue:4
+    return 'native' -- shunt/compat.yue:5
+  else -- shunt/compat.yue:7
+    return 'minecraft' -- shunt/compat.yue:7
+  end -- shunt/compat.yue:4
+end -- shunt/compat.yue:3
+HOST = detect_host() -- shunt/compat.yue:8
+_module_0["HOST"] = HOST -- shunt/compat.yue:8
+LUA = 'luajit' -- shunt/compat.yue:9
+_module_0["LUA"] = LUA -- shunt/compat.yue:9
+compat_applied = false -- shunt/compat.yue:11
+apply_compat = function() -- shunt/compat.yue:12
+  compat_applied = true -- shunt/compat.yue:13
+  local _obj_0 = table -- shunt/compat.yue:15
+  if _obj_0.unpack == nil then -- shunt/compat.yue:15
+    _obj_0.unpack = assert(unpack, 'internal error: cannot find unpack function') -- shunt/compat.yue:15
+  end -- shunt/compat.yue:15
+  local _obj_1 = os -- shunt/compat.yue:17
+  if _obj_1.sleep == nil then -- shunt/compat.yue:17
+    _obj_1.sleep = function(n_secs) -- shunt/compat.yue:17
+      return os.execute("sleep " .. tostring(n_secs) .. "s") -- shunt/compat.yue:18
+    end -- shunt/compat.yue:17
+  end -- shunt/compat.yue:18
+  local _obj_2 = os -- shunt/compat.yue:20
+  if _obj_2.tmpname == nil then -- shunt/compat.yue:20
+    _obj_2.tmpname = function() -- shunt/compat.yue:20
+      while true do -- shunt/compat.yue:21
+        local _continue_0 = false -- shunt/compat.yue:22
+        repeat -- shunt/compat.yue:22
+          local f = "lua_" .. tostring(('%x'):format(math.random(1, 100000))) -- shunt/compat.yue:22
+          do -- shunt/compat.yue:23
+            local _with_0 = io.open(f, 'r') -- shunt/compat.yue:23
+            if _with_0 ~= nil then -- shunt/compat.yue:23
+              _with_0:close() -- shunt/compat.yue:24
+              _continue_0 = true -- shunt/compat.yue:25
+              break -- shunt/compat.yue:25
+            end -- shunt/compat.yue:23
+          end -- shunt/compat.yue:23
+          do -- shunt/compat.yue:26
+            return f -- shunt/compat.yue:26
+          end -- shunt/compat.yue:26
+          _continue_0 = true -- shunt/compat.yue:22
+        until true -- shunt/compat.yue:26
+        if not _continue_0 then -- shunt/compat.yue:26
+          break -- shunt/compat.yue:26
+        end -- shunt/compat.yue:26
+      end -- shunt/compat.yue:26
+    end -- shunt/compat.yue:20
+  end -- shunt/compat.yue:26
+  local _obj_3 = os -- shunt/compat.yue:28
+  if _obj_3.remove == nil then -- shunt/compat.yue:28
+    _obj_3.remove = function(path) -- shunt/compat.yue:28
+      return xpcall(function() -- shunt/compat.yue:29
+        fs.delete(path) -- shunt/compat.yue:30
+        return true -- shunt/compat.yue:31
+      end, function(_) -- shunt/compat.yue:31
+        return false -- shunt/compat.yue:33
+      end) -- shunt/compat.yue:33
+    end -- shunt/compat.yue:28
+  end -- shunt/compat.yue:33
+  local _obj_4 = os -- shunt/compat.yue:35
+  if _obj_4.rename == nil then -- shunt/compat.yue:35
+    _obj_4.rename = function(src, dest) -- shunt/compat.yue:35
+      return fs.move(src, dest) -- shunt/compat.yue:36
+    end -- shunt/compat.yue:35
+  end -- shunt/compat.yue:36
+  local _obj_5 = os -- shunt/compat.yue:38
+  if _obj_5.exit == nil then -- shunt/compat.yue:38
+    _obj_5.exit = function(code) -- shunt/compat.yue:38
+      return error("EXIT(" .. tostring(code) .. ")") -- shunt/compat.yue:39
+    end -- shunt/compat.yue:38
+  end -- shunt/compat.yue:39
+  if not (fs ~= nil) then -- shunt/compat.yue:41
+    fs = { } -- shunt/compat.yue:42
+  end -- shunt/compat.yue:41
+  local _obj_6 = fs -- shunt/compat.yue:44
+  if _obj_6.makeDir == nil then -- shunt/compat.yue:44
+    _obj_6.makeDir = function(path) -- shunt/compat.yue:44
+      return os.execute("mkdir -p '" .. tostring(path) .. "'") -- shunt/compat.yue:45
+    end -- shunt/compat.yue:44
+  end -- shunt/compat.yue:45
+  local _obj_7 = fs -- shunt/compat.yue:47
+  if _obj_7.getFreeSpace == nil then -- shunt/compat.yue:47
+    _obj_7.getFreeSpace = function(path) -- shunt/compat.yue:47
+      return 1000000 -- shunt/compat.yue:48
+    end -- shunt/compat.yue:47
+  end -- shunt/compat.yue:48
+  local _obj_8 = fs -- shunt/compat.yue:50
+  if _obj_8.getCapacity == nil then -- shunt/compat.yue:50
+    _obj_8.getCapacity = function(path) -- shunt/compat.yue:50
+      return 1000000 -- shunt/compat.yue:51
+    end -- shunt/compat.yue:50
+  end -- shunt/compat.yue:51
+  local _obj_9 = fs -- shunt/compat.yue:53
+  if _obj_9.list == nil then -- shunt/compat.yue:53
+    _obj_9.list = function(dir) -- shunt/compat.yue:53
+      assert((not dir:match("'")), "cannot list directory containing quote mark '" .. tostring(dir) .. "'") -- shunt/compat.yue:54
+      local _with_0 = { } -- shunt/compat.yue:55
+      local p = assert(io.popen("ls -1 '" .. tostring(dir) .. "'")) -- shunt/compat.yue:56
+      local line = p:read('*l') -- shunt/compat.yue:57
+      while (line ~= nil) do -- shunt/compat.yue:58
+        _with_0[#_with_0 + 1] = line -- shunt/compat.yue:59
+        line = p:read('*l') -- shunt/compat.yue:60
+      end -- shunt/compat.yue:60
+      p:close() -- shunt/compat.yue:61
+      return _with_0 -- shunt/compat.yue:55
+    end -- shunt/compat.yue:53
+  end -- shunt/compat.yue:61
+  if not (shell ~= nil) then -- shunt/compat.yue:63
+    shell = { } -- shunt/compat.yue:64
+  end -- shunt/compat.yue:63
+  local _obj_10 = shell -- shunt/compat.yue:66
+  if _obj_10.execute == nil then -- shunt/compat.yue:66
+    _obj_10.execute = function(...) -- shunt/compat.yue:66
+      for i = 1, select('#', ...) do -- shunt/compat.yue:67
+        assert('string' == type(select(i, ...))) -- shunt/compat.yue:68
+      end -- shunt/compat.yue:68
+      local args -- shunt/compat.yue:70
+      do -- shunt/compat.yue:70
+        local _accum_0 = { } -- shunt/compat.yue:70
+        local _len_0 = 1 -- shunt/compat.yue:70
+        local _list_0 = { -- shunt/compat.yue:70
+          LUA, -- shunt/compat.yue:70
+          ... -- shunt/compat.yue:70
+        } -- shunt/compat.yue:70
+        for _index_0 = 1, #_list_0 do -- shunt/compat.yue:70
+          local arg = _list_0[_index_0] -- shunt/compat.yue:70
+          _accum_0[_len_0] = "'" .. tostring(arg) .. "'" -- shunt/compat.yue:70
+          _len_0 = _len_0 + 1 -- shunt/compat.yue:70
+        end -- shunt/compat.yue:70
+        args = _accum_0 -- shunt/compat.yue:70
+      end -- shunt/compat.yue:70
+      local rc = os.execute(table.concat(args, ' ')) -- shunt/compat.yue:71
+      return rc == 0 -- shunt/compat.yue:72
+    end -- shunt/compat.yue:66
+  end -- shunt/compat.yue:72
+  local _obj_11 = bit -- shunt/compat.yue:74
+  if _obj_11.blshift == nil then -- shunt/compat.yue:74
+    _obj_11.blshift = bit.lshift -- shunt/compat.yue:74
+  end -- shunt/compat.yue:74
+  local _obj_12 = bit -- shunt/compat.yue:75
+  if _obj_12.brshift == nil then -- shunt/compat.yue:75
+    _obj_12.brshift = bit.rshift -- shunt/compat.yue:75
+  end -- shunt/compat.yue:75
+  if not (textutils ~= nil) then -- shunt/compat.yue:77
+    textutils = { } -- shunt/compat.yue:78
+  end -- shunt/compat.yue:77
+  local is_list -- shunt/compat.yue:80
+  is_list = function(t) -- shunt/compat.yue:80
+    local max_key = -1 -- shunt/compat.yue:81
+    for k, _ in pairs(t) do -- shunt/compat.yue:82
+      if 'number' ~= type(k) then -- shunt/compat.yue:83
+        return false -- shunt/compat.yue:84
+      end -- shunt/compat.yue:83
+      if k % 1 ~= 0 then -- shunt/compat.yue:85
+        return false -- shunt/compat.yue:86
+      end -- shunt/compat.yue:85
+      if k > max_key then -- shunt/compat.yue:87
+        max_key = k -- shunt/compat.yue:88
+      end -- shunt/compat.yue:87
+    end -- shunt/compat.yue:88
+    return #t == max_key -- shunt/compat.yue:89
+  end -- shunt/compat.yue:80
+  local _obj_13 = textutils -- shunt/compat.yue:91
+  if _obj_13.serialise == nil then -- shunt/compat.yue:91
+    _obj_13.serialise = function(value, opts) -- shunt/compat.yue:91
+      if not (opts ~= nil) then -- shunt/compat.yue:92
+        error('textutils.serialise must be called with compact:true') -- shunt/compat.yue:93
+      end -- shunt/compat.yue:92
+      if opts.compact ~= true then -- shunt/compat.yue:94
+        error('textutils.serialise must be called with compact:true') -- shunt/compat.yue:95
+      end -- shunt/compat.yue:94
+      if (opts.allow_repetitions ~= nil) then -- shunt/compat.yue:96
+        error('textutils.serialise must not be called with allow_repetitions') -- shunt/compat.yue:97
+      end -- shunt/compat.yue:96
+      return table.concat((function() -- shunt/compat.yue:99
+        local _with_0 = { } -- shunt/compat.yue:99
+        local serialise -- shunt/compat.yue:100
+        serialise = function(value) -- shunt/compat.yue:100
+          local _exp_0 = type(value) -- shunt/compat.yue:101
+          if 'nil' == _exp_0 then -- shunt/compat.yue:102
+            _with_0[#_with_0 + 1] = 'null' -- shunt/compat.yue:103
+          elseif 'boolean' == _exp_0 or 'number' == _exp_0 then -- shunt/compat.yue:104
+            _with_0[#_with_0 + 1] = tostring(value) -- shunt/compat.yue:105
+          elseif 'string' == _exp_0 then -- shunt/compat.yue:106
+            _with_0[#_with_0 + 1] = '"' -- shunt/compat.yue:107
+            _with_0[#_with_0 + 1] = value:gsub('"', '\\"') -- shunt/compat.yue:108
+            _with_0[#_with_0 + 1] = '"' -- shunt/compat.yue:109
+          elseif 'table' == _exp_0 then -- shunt/compat.yue:110
+            if is_list(value) then -- shunt/compat.yue:111
+              _with_0[#_with_0 + 1] = '[' -- shunt/compat.yue:112
+              local first = true -- shunt/compat.yue:113
+              for _index_0 = 1, #value do -- shunt/compat.yue:114
+                local e = value[_index_0] -- shunt/compat.yue:114
+                if first then -- shunt/compat.yue:115
+                  first = false -- shunt/compat.yue:116
+                else -- shunt/compat.yue:118
+                  _with_0[#_with_0 + 1] = ',' -- shunt/compat.yue:118
+                end -- shunt/compat.yue:115
+                serialise(e) -- shunt/compat.yue:119
+              end -- shunt/compat.yue:119
+              _with_0[#_with_0 + 1] = ']' -- shunt/compat.yue:120
+            else -- shunt/compat.yue:122
+              _with_0[#_with_0 + 1] = '{' -- shunt/compat.yue:122
+              local first = true -- shunt/compat.yue:123
+              for k, v in pairs(value) do -- shunt/compat.yue:124
+                if first then -- shunt/compat.yue:125
+                  first = false -- shunt/compat.yue:126
+                else -- shunt/compat.yue:128
+                  _with_0[#_with_0 + 1] = ',' -- shunt/compat.yue:128
+                end -- shunt/compat.yue:125
+                serialise(k) -- shunt/compat.yue:129
+                _with_0[#_with_0 + 1] = ':' -- shunt/compat.yue:130
+                serialise(v) -- shunt/compat.yue:131
+              end -- shunt/compat.yue:131
+              _with_0[#_with_0 + 1] = '}' -- shunt/compat.yue:132
+            end -- shunt/compat.yue:111
+          else -- shunt/compat.yue:134
+            return error("cannot serialise a " .. tostring(type(value)) .. " as json") -- shunt/compat.yue:134
+          end -- shunt/compat.yue:134
+        end -- shunt/compat.yue:100
+        serialise(value) -- shunt/compat.yue:135
+        return _with_0 -- shunt/compat.yue:99
+      end)()) -- shunt/compat.yue:135
+    end -- shunt/compat.yue:91
+  end -- shunt/compat.yue:135
+  local _obj_14 = textutils -- shunt/compat.yue:137
+  if _obj_14.deserialise == nil then -- shunt/compat.yue:137
+    _obj_14.deserialise = function(raw) -- shunt/compat.yue:137
+      local index = 1 -- shunt/compat.yue:138
+      local deserialise -- shunt/compat.yue:139
+      deserialise = function() -- shunt/compat.yue:139
+        do -- shunt/compat.yue:140
+          local token = raw:match('^null', index) -- shunt/compat.yue:140
+          if token then -- shunt/compat.yue:140
+            index = index + (#token) -- shunt/compat.yue:141
+            return nil -- shunt/compat.yue:142
+          else -- shunt/compat.yue:143
+            token = raw:match('^true', index) -- shunt/compat.yue:143
+            if token then -- shunt/compat.yue:143
+              index = index + (#token) -- shunt/compat.yue:144
+              return true -- shunt/compat.yue:145
+            else -- shunt/compat.yue:146
+              token = raw:match('^false', index) -- shunt/compat.yue:146
+              if token then -- shunt/compat.yue:146
+                index = index + (#token) -- shunt/compat.yue:147
+                return false -- shunt/compat.yue:148
+              else -- shunt/compat.yue:149
+                do -- shunt/compat.yue:149
+                  local number = raw:match('^[0-9]+%.[0-9]+', index) -- shunt/compat.yue:149
+                  if number then -- shunt/compat.yue:149
+                    index = index + (#number) -- shunt/compat.yue:150
+                    return tonumber(number) -- shunt/compat.yue:151
+                  else -- shunt/compat.yue:152
+                    number = raw:match('^[0-9]+', index) -- shunt/compat.yue:152
+                    if number then -- shunt/compat.yue:152
+                      index = index + (#number) -- shunt/compat.yue:153
+                      return tonumber(number) -- shunt/compat.yue:154
+                    else -- shunt/compat.yue:155
+                      do -- shunt/compat.yue:155
+                        local string = raw:match('^"([^"]*)"', index) -- shunt/compat.yue:155
+                        if string then -- shunt/compat.yue:155
+                          index = index + (2 + #string) -- shunt/compat.yue:156
+                          return string -- shunt/compat.yue:157
+                        else -- shunt/compat.yue:158
+                          token = raw:match('^%[', index) -- shunt/compat.yue:158
+                          if token then -- shunt/compat.yue:158
+                            index = index + 1 -- shunt/compat.yue:159
+                            local _with_0 = { } -- shunt/compat.yue:160
+                            local first = true -- shunt/compat.yue:161
+                            while not raw:match('^]', index) do -- shunt/compat.yue:162
+                              if first then -- shunt/compat.yue:163
+                                first = false -- shunt/compat.yue:164
+                              else -- shunt/compat.yue:165
+                                if raw:match('^,', index) then -- shunt/compat.yue:165
+                                  index = index + 1 -- shunt/compat.yue:166
+                                else -- shunt/compat.yue:168
+                                  error("expected `,` at position " .. tostring(index)) -- shunt/compat.yue:168
+                                end -- shunt/compat.yue:165
+                              end -- shunt/compat.yue:163
+                              _with_0[#_with_0 + 1] = deserialise() -- shunt/compat.yue:169
+                            end -- shunt/compat.yue:169
+                            index = index + 1 -- shunt/compat.yue:170
+                            return _with_0 -- shunt/compat.yue:160
+                          else -- shunt/compat.yue:171
+                            if raw:match('^{', index) then -- shunt/compat.yue:171
+                              local _with_0 = { } -- shunt/compat.yue:172
+                              index = index + 1 -- shunt/compat.yue:173
+                              local first = true -- shunt/compat.yue:174
+                              while not raw:match('^}', index) do -- shunt/compat.yue:175
+                                if first then -- shunt/compat.yue:176
+                                  first = false -- shunt/compat.yue:177
+                                else -- shunt/compat.yue:178
+                                  if raw:match('^,', index) then -- shunt/compat.yue:178
+                                    index = index + 1 -- shunt/compat.yue:179
+                                  else -- shunt/compat.yue:181
+                                    error("expected `,` at position " .. tostring(index)) -- shunt/compat.yue:181
+                                  end -- shunt/compat.yue:178
+                                end -- shunt/compat.yue:176
+                                local key = deserialise() -- shunt/compat.yue:183
+                                if raw:match('^:', index) then -- shunt/compat.yue:184
+                                  index = index + 1 -- shunt/compat.yue:185
+                                else -- shunt/compat.yue:187
+                                  error("expected `:` at position " .. tostring(index)) -- shunt/compat.yue:187
+                                end -- shunt/compat.yue:184
+                                _with_0[key] = deserialise() -- shunt/compat.yue:188
+                              end -- shunt/compat.yue:188
+                              index = index + 1 -- shunt/compat.yue:189
+                              return _with_0 -- shunt/compat.yue:172
+                            else -- shunt/compat.yue:191
+                              return error("unexpected character " .. tostring(raw:sub(index, index)) .. " at " .. tostring(index)) -- shunt/compat.yue:191
+                            end -- shunt/compat.yue:171
+                          end -- shunt/compat.yue:158
+                        end -- shunt/compat.yue:155
+                      end -- shunt/compat.yue:155
+                    end -- shunt/compat.yue:152
+                  end -- shunt/compat.yue:149
+                end -- shunt/compat.yue:149
+              end -- shunt/compat.yue:146
+            end -- shunt/compat.yue:143
+          end -- shunt/compat.yue:140
+        end -- shunt/compat.yue:140
+      end -- shunt/compat.yue:139
+      local ret = deserialise() -- shunt/compat.yue:192
+      if #raw ~= index - 1 then -- shunt/compat.yue:193
+        error("deserialisation ended early (parsed " .. tostring(index) .. " of " .. tostring(#raw) .. ")") -- shunt/compat.yue:194
+      end -- shunt/compat.yue:193
+      return ret -- shunt/compat.yue:195
+    end -- shunt/compat.yue:137
+  end -- shunt/compat.yue:195
+end -- shunt/compat.yue:12
+_module_0["apply_compat"] = apply_compat -- shunt/compat.yue:195
+test_compat = function() -- shunt/compat.yue:197
+  if not compat_applied then -- shunt/compat.yue:198
+    error('call apply_compat before testing compat') -- shunt/compat.yue:199
+  end -- shunt/compat.yue:198
+  local tests = { -- shunt/compat.yue:201
+    { -- shunt/compat.yue:201
+      name = 'os.tmpname returns a string', -- shunt/compat.yue:201
+      check = function() -- shunt/compat.yue:202
+        return assert('string' == type(os.tmpname())) -- shunt/compat.yue:203
+      end -- shunt/compat.yue:202
+    }, -- shunt/compat.yue:201
+    { -- shunt/compat.yue:204
+      name = 'os.remove removes files', -- shunt/compat.yue:204
+      check = function() -- shunt/compat.yue:205
+        local TEST_FILE = '.test_file_hj4k3h5jio' -- shunt/compat.yue:206
+        do -- shunt/compat.yue:207
+          local _with_0 = io.open(TEST_FILE, 'r') -- shunt/compat.yue:207
+          if _with_0 ~= nil then -- shunt/compat.yue:207
+            _with_0:close() -- shunt/compat.yue:208
+            error("test file '" .. tostring(TEST_FILE) .. "' already exists, please remove it") -- shunt/compat.yue:209
+          end -- shunt/compat.yue:207
+        end -- shunt/compat.yue:207
+        do -- shunt/compat.yue:210
+          local _with_0 = assert(io.open(TEST_FILE, 'w+')) -- shunt/compat.yue:210
+          _with_0:close() -- shunt/compat.yue:211
+        end -- shunt/compat.yue:210
+        do -- shunt/compat.yue:212
+          local _with_0 = assert(io.open(TEST_FILE, 'r')) -- shunt/compat.yue:212
+          _with_0:close() -- shunt/compat.yue:213
+        end -- shunt/compat.yue:212
+        os.remove(TEST_FILE) -- shunt/compat.yue:214
+        local _with_0 = io.open(TEST_FILE, 'r') -- shunt/compat.yue:215
+        if _with_0 ~= nil then -- shunt/compat.yue:215
+          _with_0:close() -- shunt/compat.yue:216
+          error("expected test file '" .. tostring(TEST_FILE) .. "' to have been removed after calling os.remove") -- shunt/compat.yue:217
+        end -- shunt/compat.yue:215
+        return _with_0 -- shunt/compat.yue:215
+      end -- shunt/compat.yue:205
+    }, -- shunt/compat.yue:204
+    { -- shunt/compat.yue:218
+      name = 'HOST is unchanged', -- shunt/compat.yue:218
+      check = function() -- shunt/compat.yue:219
+        local host = detect_host() -- shunt/compat.yue:220
+        if HOST ~= host then -- shunt/compat.yue:221
+          return error("host detection heuristic changed") -- shunt/compat.yue:222
+        end -- shunt/compat.yue:221
+      end -- shunt/compat.yue:219
+    }, -- shunt/compat.yue:218
+    { -- shunt/compat.yue:223
+      name = 'json roundtrip', -- shunt/compat.yue:223
+      check = function() -- shunt/compat.yue:224
+        local case -- shunt/compat.yue:225
+        case = function(value, check) -- shunt/compat.yue:225
+          if check == nil then -- shunt/compat.yue:226
+            check = function(v) -- shunt/compat.yue:226
+              return assert(v == value, "expected " .. tostring(value) .. " but got " .. tostring(v)) -- shunt/compat.yue:227
+            end -- shunt/compat.yue:226
+          end -- shunt/compat.yue:227
+          return check(textutils.deserialise(textutils.serialise(value, { -- shunt/compat.yue:228
+            compact = true -- shunt/compat.yue:228
+          }))) -- shunt/compat.yue:228
+        end -- shunt/compat.yue:225
+        case(nil) -- shunt/compat.yue:229
+        case({ -- shunt/compat.yue:230
+          '123', -- shunt/compat.yue:230
+          '321' -- shunt/compat.yue:230
+        }, function(v) -- shunt/compat.yue:230
+          assert(v[1] == '123', "v[1] incorrect: " .. tostring(v[1])) -- shunt/compat.yue:231
+          return assert(v[2] == '321', "v[2] incorrect: " .. tostring(v[2])) -- shunt/compat.yue:232
+        end) -- shunt/compat.yue:230
+        return case({ -- shunt/compat.yue:234
+          world = 'how', -- shunt/compat.yue:234
+          ['hell\\o'] = 123, -- shunt/compat.yue:235
+          are = true, -- shunt/compat.yue:236
+          you = false -- shunt/compat.yue:237
+        }, function(v) -- shunt/compat.yue:238
+          assert(v.world == 'how', "v.world incorrect: " .. tostring(v.world)) -- shunt/compat.yue:239
+          assert(v['hell\\o'] == 123, "v.hello incorrect: " .. tostring(v['hell\\o'])) -- shunt/compat.yue:240
+          assert(v.are == true, "v.are incorrect: " .. tostring(v.are)) -- shunt/compat.yue:241
+          return assert(v.you == false, "v.you incorrect: " .. tostring(v.you)) -- shunt/compat.yue:242
+        end) -- shunt/compat.yue:242
+      end -- shunt/compat.yue:224
+    } -- shunt/compat.yue:223
+  } -- shunt/compat.yue:200
+  local failed = false -- shunt/compat.yue:243
+  for _index_0 = 1, #tests do -- shunt/compat.yue:244
+    local test = tests[_index_0] -- shunt/compat.yue:244
+xpcall(function() -- shunt/compat.yue:245
+      return test.check() -- shunt/compat.yue:246
+    end, function(err) -- shunt/compat.yue:246
+      print("* test '" .. tostring(test.name) .. "' failed:\n  " .. tostring(err)) -- shunt/compat.yue:248
+      failed = true -- shunt/compat.yue:249
+    end) -- shunt/compat.yue:249
+  end -- shunt/compat.yue:249
+  if failed then -- shunt/compat.yue:250
+    return error('some compatibility checks failed') -- shunt/compat.yue:251
+  end -- shunt/compat.yue:250
+end -- shunt/compat.yue:197
+_module_0["test_compat"] = test_compat -- shunt/compat.yue:251
+return _module_0 -- shunt/compat.yue:251
+end
 -- [yue]: libshunt.yue
 local re_exports = { -- libshunt.yue:2
   ['libshunt.clap'] = function() -- libshunt.yue:2
@@ -8699,29 +12166,32 @@ local re_exports = { -- libshunt.yue:2
   ['libshunt.quicktype'] = function() -- libshunt.yue:4
     return require('shunt.quicktype') -- libshunt.yue:4
   end, -- libshunt.yue:4
-  ['libshunt.state'] = function() -- libshunt.yue:5
-    return require('shunt.state') -- libshunt.yue:5
+  ['libshunt.spec'] = function() -- libshunt.yue:5
+    return require('shunt.spec') -- libshunt.yue:5
   end, -- libshunt.yue:5
-  ['libshunt.spec'] = function() -- libshunt.yue:6
-    return require('shunt.spec') -- libshunt.yue:6
-  end -- libshunt.yue:6
+  ['libshunt.state'] = function() -- libshunt.yue:6
+    return require('shunt.state') -- libshunt.yue:6
+  end, -- libshunt.yue:6
+  ['libshunt.writelite'] = function() -- libshunt.yue:7
+    return require('shunt.writelite') -- libshunt.yue:7
+  end -- libshunt.yue:7
 } -- libshunt.yue:1
-for lib, src_fn in pairs(re_exports) do -- libshunt.yue:7
-  package.preload[lib] = src_fn -- libshunt.yue:8
-end -- libshunt.yue:8
-return setmetatable({ }, { -- libshunt.yue:10
-  __index = function(self) -- libshunt.yue:10
-    local lib_names -- libshunt.yue:11
-    do -- libshunt.yue:11
-      local _accum_0 = { } -- libshunt.yue:11
-      local _len_0 = 1 -- libshunt.yue:11
-      for lib_name, _ in pairs(re_exports) do -- libshunt.yue:11
-        _accum_0[_len_0] = lib_name -- libshunt.yue:11
-        _len_0 = _len_0 + 1 -- libshunt.yue:11
-      end -- libshunt.yue:11
-      lib_names = _accum_0 -- libshunt.yue:11
-    end -- libshunt.yue:11
-    table.sort(lib_names) -- libshunt.yue:12
-    return error("libshunt modules are accessed by calling `require'\navailable modules:\n  " .. tostring(table.concat(lib_names, '\n  '))) -- libshunt.yue:13
-  end -- libshunt.yue:10
-}) -- libshunt.yue:13
+for lib, src_fn in pairs(re_exports) do -- libshunt.yue:8
+  package.preload[lib] = src_fn -- libshunt.yue:9
+end -- libshunt.yue:9
+return setmetatable({ }, { -- libshunt.yue:11
+  __index = function(self) -- libshunt.yue:11
+    local lib_names -- libshunt.yue:12
+    do -- libshunt.yue:12
+      local _accum_0 = { } -- libshunt.yue:12
+      local _len_0 = 1 -- libshunt.yue:12
+      for lib_name, _ in pairs(re_exports) do -- libshunt.yue:12
+        _accum_0[_len_0] = lib_name -- libshunt.yue:12
+        _len_0 = _len_0 + 1 -- libshunt.yue:12
+      end -- libshunt.yue:12
+      lib_names = _accum_0 -- libshunt.yue:12
+    end -- libshunt.yue:12
+    table.sort(lib_names) -- libshunt.yue:13
+    return error("libshunt modules are accessed by calling `require'\navailable modules:\n  " .. tostring(table.concat(lib_names, '\n  '))) -- libshunt.yue:14
+  end -- libshunt.yue:11
+}) -- libshunt.yue:14
