@@ -8,7 +8,7 @@ FORMAT_VERSION = 1
 MIN_PAGE_SIZE = 1024
 
 injected_failures = nil
-failure_points_passed = nil
+activated_failure_points = nil
 macro failure_marker = -> "'FAILURE_MARKER'"
 macro failure_point = (tag) ->
   if not _G.failure_points?
@@ -20,8 +20,8 @@ macro failure_point = (tag) ->
   tag_content = tag\sub 2, #tag - 1
   lines =
     * "if injected_failures? and injected_failures[#{tag}]"
-    * "  failure_points_passed ??= {}"
-    * "  failure_points_passed[#{tag}] = true"
+    * "  activated_failure_points ??= {}"
+    * "  activated_failure_points[#{tag}] = true"
     * "  error '#{$failure_marker}-#{tag_content}'"
   table.concat lines, '\n'
 macro set_enabled_failure_points = (failure_points) ->
@@ -1595,12 +1595,16 @@ spec ->
             for check in *expect_after_run
               check fs
 
-        -- it 'is tested comprehensively', ->
-        --   known_failure_points = $known_failure_points!
-        --   table.sort known_failure_points
-        --   used_failure_points = { test.failure_point, true for test in *tests }
-        --   table.sort used_failure_points
-        --   $assert_that used_failure_points, deep_eq known_failure_points
+        it 'is tested comprehensively', ->
+          attempted_failure_points = with {}
+            for test in *clean_tests
+              for failure_point in *test.failure_points
+                [failure_point] = true
+            for test in *dirty_tests
+              for failure_point in *test.failure_points
+                [failure_point] = true
+          $expect_that attempted_failure_points, deep_eq $known_failure_points!
+          $expect_that attempted_failure_points, deep_eq activated_failure_points
 
   describe 'writelite.PageCache', ->
     describe '\\write', ->
