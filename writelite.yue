@@ -1031,7 +1031,7 @@ class Hasher
     @
 
   _add: F '(number) => <>', (num) =>
-    @_current *= num -- % MAX_HASH
+    @_current *= num
     @_current %= MAX_HASH
 
   finish: F '() => number', =>
