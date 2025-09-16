@@ -418,6 +418,8 @@ class PageCache
       error "cannot set max cached pages to #{max_cached_pages}: not an integer"
     @max_cached_pages = max_cached_pages
 
+MAX_KEY_LEN = T 'number', 64 - 5
+
 declare_type 'writelite.Transaction', [[{
   read: ("*a"|number) => <?string, ?string>,
   write: (string) => <>,
