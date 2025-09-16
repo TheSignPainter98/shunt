@@ -251,7 +251,7 @@ export class Writelite
     @@_open_transactions[@_path] = nil
 
     $failure_point 'mid-transaction'
-    err = txn\_close!
+    err2 = txn\_close!
     $failure_point 'post-transaction'
 
     if err?
@@ -1342,6 +1342,19 @@ spec ->
           ok, err = \close!
           $assert_that ok, eq false
           $assert_that err, eq 'cannot close writelite file database.db: not open'
+    describe '\\transaction', ->
+      it 'allows errors to pass through', ->
+        with Writelite 'database.db', TestFs!
+          \mode 'blob'
+          assert \open!
+          local err
+          try
+            \transaction (_) ->
+              error 'interloper'
+          catch err2
+            err = err2
+          $expect_that err, matches 'interloper'
+          assert \close!
 
     describe 'consistency', ->
       describe 'on golden-path', ->
