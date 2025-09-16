@@ -422,6 +422,8 @@ declare_type 'writelite.Transaction', [[{
   read: ("*a"|number) => <?string, ?string>,
   write: (string) => <>,
   seek: (Whence, ?number) => <?number, ?string>,
+  get: (string) => <any, boolean>,
+  set: (string, any) => <>,
   abort: () => <>,
 }]]
 declare_type 'Whence', '"set"|"cur"|"end"'
@@ -436,6 +438,20 @@ class Transaction
     @_aborted = T 'boolean', false
     @_page_size = @_parent._page_size
     @_mode = T 'writelite.Mode', @_parent._mode
+
+  get: F '(string) => <any, boolean>', (key) =>
+    if @_mode != 'key-value'
+      error "cannot use get method in #{@_mode} mode (must be in key-value mode)"
+    if #key > MAX_KEY_LEN
+      error "cannot use key '#{key}': keys must be at most #{MAX_KEY_LEN} bytes"
+    error 'todo'
+
+  set: F '(string, any) => <>', (key, value) =>
+    if @_mode != 'key-value'
+      error "cannot use set method in #{@_mode} mode (must be in key-value mode)"
+    if #key > MAX_KEY_LEN
+      error "cannot use key '#{key}': keys must be at most #{MAX_KEY_LEN} bytes"
+    error 'todo'
 
   read: F '("*a"|number) => <?string, ?string>', (amount) =>
     if @_mode != 'blob'
