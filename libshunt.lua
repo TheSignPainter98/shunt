@@ -9265,7 +9265,7 @@ xpcall(function() -- shunt/writelite.yue:245
         activated_failure_points['mid-transaction'] = true -- shunt/writelite.yue:253
         error('FAILURE_MARKER-mid-transaction') -- shunt/writelite.yue:253
       end -- shunt/writelite.yue:253
-      err = txn:_close(); -- shunt/writelite.yue:254
+      local err2 = txn:_close(); -- shunt/writelite.yue:254
       if (injected_failures ~= nil) and injected_failures['post-transaction'] then -- shunt/writelite.yue:255
         if activated_failure_points == nil then -- shunt/writelite.yue:255
           activated_failure_points = { } -- shunt/writelite.yue:255
@@ -10889,833 +10889,851 @@ spec(function() -- shunt/writelite.yue:1073
         return _with_0 -- shunt/writelite.yue:1332
       end) -- shunt/writelite.yue:1344
     end) -- shunt/writelite.yue:1330
-    return describe('consistency', function() -- shunt/writelite.yue:1346
-      describe('on golden-path', function() -- shunt/writelite.yue:1347
-        local PAGE_SIZE = 1024 -- shunt/writelite.yue:1348
-        local tests = { -- shunt/writelite.yue:1350
-          { -- shunt/writelite.yue:1350
-            name = 'no deltas', -- shunt/writelite.yue:1350
-            txn_fn = function(txn) end -- shunt/writelite.yue:1351
-          }, -- shunt/writelite.yue:1350
-          { -- shunt/writelite.yue:1352
-            name = 'single page deltas', -- shunt/writelite.yue:1352
-            txn_fn = function(txn) -- shunt/writelite.yue:1353
-              txn:seek('set', 0) -- shunt/writelite.yue:1354
-              txn:write('hello, world') -- shunt/writelite.yue:1355
-              txn:seek('set', 128) -- shunt/writelite.yue:1356
-              return txn:write('how are you?') -- shunt/writelite.yue:1357
-            end, -- shunt/writelite.yue:1353
-            assertion = function(content) -- shunt/writelite.yue:1358
-              local first_chunk_start_index = content:find('hello, world'); -- shunt/writelite.yue:1359
-              require('shunt.spec')._expect_that([=[first_chunk_start_index]=], first_chunk_start_index, (eq(PAGE_SIZE + 1)), tostring("shunt/writelite.yue") .. ":" .. tostring(1360)) -- shunt/writelite.yue:1360
-              local second_chunk_start_index = content:find('how are you?'); -- shunt/writelite.yue:1362
-              return require('shunt.spec')._expect_that([=[second_chunk_start_index]=], second_chunk_start_index, (eq(PAGE_SIZE + 1 + 128)), tostring("shunt/writelite.yue") .. ":" .. tostring(1363)) -- shunt/writelite.yue:1363
-            end -- shunt/writelite.yue:1358
-          }, -- shunt/writelite.yue:1352
-          { -- shunt/writelite.yue:1364
-            name = 'overlapping small deltas', -- shunt/writelite.yue:1364
-            txn_fn = function(txn) -- shunt/writelite.yue:1365
-              txn:seek('set', 128) -- shunt/writelite.yue:1366
-              txn:write('aaaaa.....ccccc') -- shunt/writelite.yue:1367
-              txn:seek('set', 128 + 5) -- shunt/writelite.yue:1368
-              return txn:write('bbbbb') -- shunt/writelite.yue:1369
-            end, -- shunt/writelite.yue:1365
-            assertion = function(content) -- shunt/writelite.yue:1370
-              local pattern_index = content:find('aaaaabbbbbccccc'); -- shunt/writelite.yue:1371
-              return require('shunt.spec')._expect_that([=[pattern_index]=], pattern_index, (eq(PAGE_SIZE + 1 + 128)), tostring("shunt/writelite.yue") .. ":" .. tostring(1372)) -- shunt/writelite.yue:1372
-            end -- shunt/writelite.yue:1370
-          }, -- shunt/writelite.yue:1364
-          { -- shunt/writelite.yue:1373
-            name = 'multi-page delta', -- shunt/writelite.yue:1373
-            txn_fn = function(txn) -- shunt/writelite.yue:1374
-              txn:seek('set', PAGE_SIZE / 4) -- shunt/writelite.yue:1375
-              return txn:write(('a'):rep(2 * PAGE_SIZE)) -- shunt/writelite.yue:1376
-            end, -- shunt/writelite.yue:1374
-            assertion = function(content) -- shunt/writelite.yue:1377
-              local pattern_index = content:find(('a'):rep(2 * PAGE_SIZE)); -- shunt/writelite.yue:1378
-              return require('shunt.spec')._expect_that([=[pattern_index]=], pattern_index, (eq(1 + PAGE_SIZE + PAGE_SIZE / 4)), tostring("shunt/writelite.yue") .. ":" .. tostring(1379)) -- shunt/writelite.yue:1379
-            end -- shunt/writelite.yue:1377
-          } -- shunt/writelite.yue:1373
-        } -- shunt/writelite.yue:1349
-        for _index_0 = 1, #tests do -- shunt/writelite.yue:1380
-          local test = tests[_index_0] -- shunt/writelite.yue:1380
-          local name, txn_fn, assertion = test.name, test.txn_fn, test.assertion -- shunt/writelite.yue:1381
-          it("functions with " .. tostring(name), function() -- shunt/writelite.yue:1382
-            local fs = TestFs() -- shunt/writelite.yue:1383
-            local FILE = 'database.db' -- shunt/writelite.yue:1384
-            local _with_0 = Writelite(FILE, fs) -- shunt/writelite.yue:1385
-            _with_0:mode('blob') -- shunt/writelite.yue:1386
-            _with_0:page_size(PAGE_SIZE) -- shunt/writelite.yue:1387
-            local ok, err = _with_0:open(); -- shunt/writelite.yue:1388
-            require('shunt.spec')._assert_that([=[ok]=], ok, (eq(true)), tostring("shunt/writelite.yue") .. ":" .. tostring(1389)); -- shunt/writelite.yue:1389
-            require('shunt.spec')._expect_that([=[err]=], err, (eq(nil)), tostring("shunt/writelite.yue") .. ":" .. tostring(1390)); -- shunt/writelite.yue:1390
-            require('shunt.spec')._expect_that([=[fs.files[FILE]?]=], (fs.files[FILE] ~= nil), (eq(true)), tostring("shunt/writelite.yue") .. ":" .. tostring(1392)) -- shunt/writelite.yue:1392
-            _with_0:transaction(txn_fn) -- shunt/writelite.yue:1394
-            local content = fs.files[FILE]:content(); -- shunt/writelite.yue:1396
-            require('shunt.spec')._expect_that([=[content]=], content, (matches('^#!writelite\0')), tostring("shunt/writelite.yue") .. ":" .. tostring(1397)) -- shunt/writelite.yue:1397
-            if (assertion ~= nil) then -- shunt/writelite.yue:1398
-              assertion(content) -- shunt/writelite.yue:1399
-            end -- shunt/writelite.yue:1398
-            ok, err = _with_0:close(); -- shunt/writelite.yue:1401
+    describe('\\transaction', function() -- shunt/writelite.yue:1345
+      return it('allows errors to pass through', function() -- shunt/writelite.yue:1346
+        local _with_0 = Writelite('database.db', TestFs()) -- shunt/writelite.yue:1347
+        _with_0:mode('blob') -- shunt/writelite.yue:1348
+        assert(_with_0:open()) -- shunt/writelite.yue:1349
+        local err -- shunt/writelite.yue:1350
+xpcall(function() -- shunt/writelite.yue:1351
+          return _with_0:transaction(function(_) -- shunt/writelite.yue:1352
+            return error('interloper') -- shunt/writelite.yue:1353
+          end) -- shunt/writelite.yue:1353
+        end, function(err2) -- shunt/writelite.yue:1353
+          err = err2 -- shunt/writelite.yue:1355
+        end); -- shunt/writelite.yue:1355
+        require('shunt.spec')._expect_that([=[err]=], err, (matches('interloper')), tostring("shunt/writelite.yue") .. ":" .. tostring(1356)) -- shunt/writelite.yue:1356
+        assert(_with_0:close()) -- shunt/writelite.yue:1357
+        return _with_0 -- shunt/writelite.yue:1347
+      end) -- shunt/writelite.yue:1357
+    end) -- shunt/writelite.yue:1345
+    return describe('consistency', function() -- shunt/writelite.yue:1359
+      describe('on golden-path', function() -- shunt/writelite.yue:1360
+        local PAGE_SIZE = 1024 -- shunt/writelite.yue:1361
+        local tests = { -- shunt/writelite.yue:1363
+          { -- shunt/writelite.yue:1363
+            name = 'no deltas', -- shunt/writelite.yue:1363
+            txn_fn = function(txn) end -- shunt/writelite.yue:1364
+          }, -- shunt/writelite.yue:1363
+          { -- shunt/writelite.yue:1365
+            name = 'single page deltas', -- shunt/writelite.yue:1365
+            txn_fn = function(txn) -- shunt/writelite.yue:1366
+              txn:seek('set', 0) -- shunt/writelite.yue:1367
+              txn:write('hello, world') -- shunt/writelite.yue:1368
+              txn:seek('set', 128) -- shunt/writelite.yue:1369
+              return txn:write('how are you?') -- shunt/writelite.yue:1370
+            end, -- shunt/writelite.yue:1366
+            assertion = function(content) -- shunt/writelite.yue:1371
+              local first_chunk_start_index = content:find('hello, world'); -- shunt/writelite.yue:1372
+              require('shunt.spec')._expect_that([=[first_chunk_start_index]=], first_chunk_start_index, (eq(PAGE_SIZE + 1)), tostring("shunt/writelite.yue") .. ":" .. tostring(1373)) -- shunt/writelite.yue:1373
+              local second_chunk_start_index = content:find('how are you?'); -- shunt/writelite.yue:1375
+              return require('shunt.spec')._expect_that([=[second_chunk_start_index]=], second_chunk_start_index, (eq(PAGE_SIZE + 1 + 128)), tostring("shunt/writelite.yue") .. ":" .. tostring(1376)) -- shunt/writelite.yue:1376
+            end -- shunt/writelite.yue:1371
+          }, -- shunt/writelite.yue:1365
+          { -- shunt/writelite.yue:1377
+            name = 'overlapping small deltas', -- shunt/writelite.yue:1377
+            txn_fn = function(txn) -- shunt/writelite.yue:1378
+              txn:seek('set', 128) -- shunt/writelite.yue:1379
+              txn:write('aaaaa.....ccccc') -- shunt/writelite.yue:1380
+              txn:seek('set', 128 + 5) -- shunt/writelite.yue:1381
+              return txn:write('bbbbb') -- shunt/writelite.yue:1382
+            end, -- shunt/writelite.yue:1378
+            assertion = function(content) -- shunt/writelite.yue:1383
+              local pattern_index = content:find('aaaaabbbbbccccc'); -- shunt/writelite.yue:1384
+              return require('shunt.spec')._expect_that([=[pattern_index]=], pattern_index, (eq(PAGE_SIZE + 1 + 128)), tostring("shunt/writelite.yue") .. ":" .. tostring(1385)) -- shunt/writelite.yue:1385
+            end -- shunt/writelite.yue:1383
+          }, -- shunt/writelite.yue:1377
+          { -- shunt/writelite.yue:1386
+            name = 'multi-page delta', -- shunt/writelite.yue:1386
+            txn_fn = function(txn) -- shunt/writelite.yue:1387
+              txn:seek('set', PAGE_SIZE / 4) -- shunt/writelite.yue:1388
+              return txn:write(('a'):rep(2 * PAGE_SIZE)) -- shunt/writelite.yue:1389
+            end, -- shunt/writelite.yue:1387
+            assertion = function(content) -- shunt/writelite.yue:1390
+              local pattern_index = content:find(('a'):rep(2 * PAGE_SIZE)); -- shunt/writelite.yue:1391
+              return require('shunt.spec')._expect_that([=[pattern_index]=], pattern_index, (eq(1 + PAGE_SIZE + PAGE_SIZE / 4)), tostring("shunt/writelite.yue") .. ":" .. tostring(1392)) -- shunt/writelite.yue:1392
+            end -- shunt/writelite.yue:1390
+          } -- shunt/writelite.yue:1386
+        } -- shunt/writelite.yue:1362
+        for _index_0 = 1, #tests do -- shunt/writelite.yue:1393
+          local test = tests[_index_0] -- shunt/writelite.yue:1393
+          local name, txn_fn, assertion = test.name, test.txn_fn, test.assertion -- shunt/writelite.yue:1394
+          it("functions with " .. tostring(name), function() -- shunt/writelite.yue:1395
+            local fs = TestFs() -- shunt/writelite.yue:1396
+            local FILE = 'database.db' -- shunt/writelite.yue:1397
+            local _with_0 = Writelite(FILE, fs) -- shunt/writelite.yue:1398
+            _with_0:mode('blob') -- shunt/writelite.yue:1399
+            _with_0:page_size(PAGE_SIZE) -- shunt/writelite.yue:1400
+            local ok, err = _with_0:open(); -- shunt/writelite.yue:1401
             require('shunt.spec')._assert_that([=[ok]=], ok, (eq(true)), tostring("shunt/writelite.yue") .. ":" .. tostring(1402)); -- shunt/writelite.yue:1402
-            require('shunt.spec')._assert_that([=[err]=], err, (eq(nil)), tostring("shunt/writelite.yue") .. ":" .. tostring(1403)) -- shunt/writelite.yue:1403
-            return _with_0 -- shunt/writelite.yue:1385
-          end) -- shunt/writelite.yue:1382
-        end -- shunt/writelite.yue:1403
-      end) -- shunt/writelite.yue:1347
-      return describe('with failures', function() -- shunt/writelite.yue:1405
-        local PAGE_SIZE = 1024 -- shunt/writelite.yue:1406
-        local clean_fs -- shunt/writelite.yue:1408
-        do -- shunt/writelite.yue:1408
-          clean_fs = TestFs() -- shunt/writelite.yue:1409
-          do -- shunt/writelite.yue:1411
-            local _with_0 = Writelite('database.db', clean_fs) -- shunt/writelite.yue:1411
-            _with_0:mode('blob') -- shunt/writelite.yue:1412
-            _with_0:page_size(PAGE_SIZE) -- shunt/writelite.yue:1413
-            assert(_with_0:open()) -- shunt/writelite.yue:1414
-            assert(_with_0:close()) -- shunt/writelite.yue:1415
-          end -- shunt/writelite.yue:1411
-          clean_fs = clean_fs -- shunt/writelite.yue:1416
+            require('shunt.spec')._expect_that([=[err]=], err, (eq(nil)), tostring("shunt/writelite.yue") .. ":" .. tostring(1403)); -- shunt/writelite.yue:1403
+            require('shunt.spec')._expect_that([=[fs.files[FILE]?]=], (fs.files[FILE] ~= nil), (eq(true)), tostring("shunt/writelite.yue") .. ":" .. tostring(1405)) -- shunt/writelite.yue:1405
+            _with_0:transaction(txn_fn) -- shunt/writelite.yue:1407
+            local content = fs.files[FILE]:content(); -- shunt/writelite.yue:1409
+            require('shunt.spec')._expect_that([=[content]=], content, (matches('^#!writelite\0')), tostring("shunt/writelite.yue") .. ":" .. tostring(1410)) -- shunt/writelite.yue:1410
+            if (assertion ~= nil) then -- shunt/writelite.yue:1411
+              assertion(content) -- shunt/writelite.yue:1412
+            end -- shunt/writelite.yue:1411
+            ok, err = _with_0:close(); -- shunt/writelite.yue:1414
+            require('shunt.spec')._assert_that([=[ok]=], ok, (eq(true)), tostring("shunt/writelite.yue") .. ":" .. tostring(1415)); -- shunt/writelite.yue:1415
+            require('shunt.spec')._assert_that([=[err]=], err, (eq(nil)), tostring("shunt/writelite.yue") .. ":" .. tostring(1416)) -- shunt/writelite.yue:1416
+            return _with_0 -- shunt/writelite.yue:1398
+          end) -- shunt/writelite.yue:1395
         end -- shunt/writelite.yue:1416
-        it('is tested with a clean file system', function() -- shunt/writelite.yue:1418
-          return require('shunt.spec')._assert_that([=[clean_fs.files]=], clean_fs.files, (has_fields({ -- shunt/writelite.yue:1419
-            ['database.db'] = not_(eq(nil)), -- shunt/writelite.yue:1419
-            ['database.db~'] = eq(nil) -- shunt/writelite.yue:1419
-          })), tostring("shunt/writelite.yue") .. ":" .. tostring(1419)) -- shunt/writelite.yue:1421
-        end) -- shunt/writelite.yue:1418
-        local clone_fs -- shunt/writelite.yue:1423
-        clone_fs = function(fs) -- shunt/writelite.yue:1423
-          local _with_0 = clone(fs) -- shunt/writelite.yue:1424
-          setmetatable(_with_0, getmetatable(fs)) -- shunt/writelite.yue:1425
-          local mt = getmetatable((TestFile(''))) -- shunt/writelite.yue:1426
-          for _, file in pairs(_with_0.files) do -- shunt/writelite.yue:1427
-            setmetatable(file, mt) -- shunt/writelite.yue:1428
-          end -- shunt/writelite.yue:1428
-          return _with_0 -- shunt/writelite.yue:1424
-        end -- shunt/writelite.yue:1423
-        local journal_present -- shunt/writelite.yue:1430
-        journal_present = function(fs) -- shunt/writelite.yue:1430
-          return require('shunt.spec')._expect_that([=[fs.files['database.db~']]=], fs.files['database.db~'], (not_(eq(nil))), tostring("shunt/writelite.yue") .. ":" .. tostring(1431)) -- shunt/writelite.yue:1431
-        end -- shunt/writelite.yue:1430
-        local journal_absent -- shunt/writelite.yue:1432
-        journal_absent = function(fs) -- shunt/writelite.yue:1432
-          return require('shunt.spec')._expect_that([=[fs.files['database.db~']]=], fs.files['database.db~'], (eq(nil)), tostring("shunt/writelite.yue") .. ":" .. tostring(1433)) -- shunt/writelite.yue:1433
-        end -- shunt/writelite.yue:1432
-        local main_unchanged -- shunt/writelite.yue:1434
-        main_unchanged = function(fs) -- shunt/writelite.yue:1434
-          return require('shunt.spec')._expect_that([=[fs.files['database.db']\content!]=], fs.files['database.db']:content(), (eq(clean_fs.files['database.db']:content())), tostring("shunt/writelite.yue") .. ":" .. tostring(1435)) -- shunt/writelite.yue:1435
-        end -- shunt/writelite.yue:1434
-        local main_advanced -- shunt/writelite.yue:1436
-        main_advanced = function(fs) -- shunt/writelite.yue:1436
-          return require('shunt.spec')._expect_that([=[fs.files['database.db']\content!]=], fs.files['database.db']:content(), (matches(('a'):rep(3 * PAGE_SIZE))), tostring("shunt/writelite.yue") .. ":" .. tostring(1437)) -- shunt/writelite.yue:1437
+      end) -- shunt/writelite.yue:1360
+      return describe('with failures', function() -- shunt/writelite.yue:1418
+        local PAGE_SIZE = 1024 -- shunt/writelite.yue:1419
+        local clean_fs -- shunt/writelite.yue:1421
+        do -- shunt/writelite.yue:1421
+          clean_fs = TestFs() -- shunt/writelite.yue:1422
+          do -- shunt/writelite.yue:1424
+            local _with_0 = Writelite('database.db', clean_fs) -- shunt/writelite.yue:1424
+            _with_0:mode('blob') -- shunt/writelite.yue:1425
+            _with_0:page_size(PAGE_SIZE) -- shunt/writelite.yue:1426
+            assert(_with_0:open()) -- shunt/writelite.yue:1427
+            assert(_with_0:close()) -- shunt/writelite.yue:1428
+          end -- shunt/writelite.yue:1424
+          clean_fs = clean_fs -- shunt/writelite.yue:1429
+        end -- shunt/writelite.yue:1429
+        it('is tested with a clean file system', function() -- shunt/writelite.yue:1431
+          return require('shunt.spec')._assert_that([=[clean_fs.files]=], clean_fs.files, (has_fields({ -- shunt/writelite.yue:1432
+            ['database.db'] = not_(eq(nil)), -- shunt/writelite.yue:1432
+            ['database.db~'] = eq(nil) -- shunt/writelite.yue:1432
+          })), tostring("shunt/writelite.yue") .. ":" .. tostring(1432)) -- shunt/writelite.yue:1434
+        end) -- shunt/writelite.yue:1431
+        local clone_fs -- shunt/writelite.yue:1436
+        clone_fs = function(fs) -- shunt/writelite.yue:1436
+          local _with_0 = clone(fs) -- shunt/writelite.yue:1437
+          setmetatable(_with_0, getmetatable(fs)) -- shunt/writelite.yue:1438
+          local mt = getmetatable((TestFile(''))) -- shunt/writelite.yue:1439
+          for _, file in pairs(_with_0.files) do -- shunt/writelite.yue:1440
+            setmetatable(file, mt) -- shunt/writelite.yue:1441
+          end -- shunt/writelite.yue:1441
+          return _with_0 -- shunt/writelite.yue:1437
         end -- shunt/writelite.yue:1436
-        local clean_tests = { -- shunt/writelite.yue:1440
-          { -- shunt/writelite.yue:1440
-            failure_points = { -- shunt/writelite.yue:1441
-              'pre-open' -- shunt/writelite.yue:1441
-            }, -- shunt/writelite.yue:1440
-            expect_after_first_run = { -- shunt/writelite.yue:1443
-              journal_absent -- shunt/writelite.yue:1443
-            }, -- shunt/writelite.yue:1442
-            expect_after_second_run = { -- shunt/writelite.yue:1445
-              journal_absent, -- shunt/writelite.yue:1445
-              main_unchanged -- shunt/writelite.yue:1446
-            } -- shunt/writelite.yue:1444
-          }, -- shunt/writelite.yue:1440
-          { -- shunt/writelite.yue:1447
-            failure_points = { -- shunt/writelite.yue:1448
-              'post-open' -- shunt/writelite.yue:1448
-            }, -- shunt/writelite.yue:1447
-            expect_after_first_run = { -- shunt/writelite.yue:1450
-              journal_absent -- shunt/writelite.yue:1450
-            }, -- shunt/writelite.yue:1449
-            expect_after_second_run = { -- shunt/writelite.yue:1452
-              journal_absent, -- shunt/writelite.yue:1452
-              main_unchanged -- shunt/writelite.yue:1453
-            } -- shunt/writelite.yue:1451
-          }, -- shunt/writelite.yue:1447
-          { -- shunt/writelite.yue:1454
-            failure_points = { -- shunt/writelite.yue:1455
-              'mid-transaction' -- shunt/writelite.yue:1455
-            }, -- shunt/writelite.yue:1454
-            expect_after_first_run = { -- shunt/writelite.yue:1457
-              journal_absent -- shunt/writelite.yue:1457
-            }, -- shunt/writelite.yue:1456
-            expect_after_second_run = { -- shunt/writelite.yue:1459
-              journal_absent, -- shunt/writelite.yue:1459
-              main_unchanged -- shunt/writelite.yue:1460
-            } -- shunt/writelite.yue:1458
-          }, -- shunt/writelite.yue:1454
-          { -- shunt/writelite.yue:1461
-            failure_points = { -- shunt/writelite.yue:1462
-              'post-transaction' -- shunt/writelite.yue:1462
-            }, -- shunt/writelite.yue:1461
-            expect_after_first_run = { -- shunt/writelite.yue:1464
-              journal_absent -- shunt/writelite.yue:1464
-            }, -- shunt/writelite.yue:1463
-            expect_after_second_run = { -- shunt/writelite.yue:1466
-              journal_absent, -- shunt/writelite.yue:1466
-              main_advanced -- shunt/writelite.yue:1467
-            } -- shunt/writelite.yue:1465
-          } -- shunt/writelite.yue:1461
-        } -- shunt/writelite.yue:1439
-        for _index_0 = 1, #clean_tests do -- shunt/writelite.yue:1468
-          local test = clean_tests[_index_0] -- shunt/writelite.yue:1468
-          local failure_points, expect_after_first_run, expect_after_second_run = test.failure_points, test.expect_after_first_run, test.expect_after_second_run -- shunt/writelite.yue:1469
-          it("is maintained with a clean file system at " .. tostring(table.concat(failure_points, '+')) .. " failures", function() -- shunt/writelite.yue:1474
-            print('first-run') -- shunt/writelite.yue:1475
-            local fs = clone_fs(clean_fs); -- shunt/writelite.yue:1476
-            do -- shunt/writelite.yue:1477
-              local _tbl_0 = { } -- shunt/writelite.yue:1477
-              for _index_1 = 1, #failure_points do -- shunt/writelite.yue:1477
-                local name = failure_points[_index_1] -- shunt/writelite.yue:1477
-                _tbl_0[name] = true -- shunt/writelite.yue:1477
-              end -- shunt/writelite.yue:1477
-              injected_failures = _tbl_0 -- shunt/writelite.yue:1477
-            end -- shunt/writelite.yue:1477
-            local err -- shunt/writelite.yue:1478
-xpcall(function() -- shunt/writelite.yue:1479
-              local _with_0 = Writelite('database.db', fs) -- shunt/writelite.yue:1480
-              _with_0:mode('blob') -- shunt/writelite.yue:1481
-              _with_0:page_size(PAGE_SIZE) -- shunt/writelite.yue:1482
-              assert(_with_0:open()) -- shunt/writelite.yue:1483
-              _with_0:transaction(function(txn) -- shunt/writelite.yue:1484
-                txn:seek('set', 256) -- shunt/writelite.yue:1486
-                txn:write(('a'):rep(3 * PAGE_SIZE)) -- shunt/writelite.yue:1487
-                return txn -- shunt/writelite.yue:1485
-              end) -- shunt/writelite.yue:1484
-              assert(_with_0:close()) -- shunt/writelite.yue:1488
-              return _with_0 -- shunt/writelite.yue:1480
-            end, function(err2) -- shunt/writelite.yue:1488
-              if not err2:match('FAILURE_MARKER') then -- shunt/writelite.yue:1490
-                err = err2 -- shunt/writelite.yue:1491
+        local journal_present -- shunt/writelite.yue:1443
+        journal_present = function(fs) -- shunt/writelite.yue:1443
+          return require('shunt.spec')._expect_that([=[fs.files['database.db~']]=], fs.files['database.db~'], (not_(eq(nil))), tostring("shunt/writelite.yue") .. ":" .. tostring(1444)) -- shunt/writelite.yue:1444
+        end -- shunt/writelite.yue:1443
+        local journal_absent -- shunt/writelite.yue:1445
+        journal_absent = function(fs) -- shunt/writelite.yue:1445
+          return require('shunt.spec')._expect_that([=[fs.files['database.db~']]=], fs.files['database.db~'], (eq(nil)), tostring("shunt/writelite.yue") .. ":" .. tostring(1446)) -- shunt/writelite.yue:1446
+        end -- shunt/writelite.yue:1445
+        local main_unchanged -- shunt/writelite.yue:1447
+        main_unchanged = function(fs) -- shunt/writelite.yue:1447
+          return require('shunt.spec')._expect_that([=[fs.files['database.db']\content!]=], fs.files['database.db']:content(), (eq(clean_fs.files['database.db']:content())), tostring("shunt/writelite.yue") .. ":" .. tostring(1448)) -- shunt/writelite.yue:1448
+        end -- shunt/writelite.yue:1447
+        local main_advanced -- shunt/writelite.yue:1449
+        main_advanced = function(fs) -- shunt/writelite.yue:1449
+          return require('shunt.spec')._expect_that([=[fs.files['database.db']\content!]=], fs.files['database.db']:content(), (matches(('a'):rep(3 * PAGE_SIZE))), tostring("shunt/writelite.yue") .. ":" .. tostring(1450)) -- shunt/writelite.yue:1450
+        end -- shunt/writelite.yue:1449
+        local clean_tests = { -- shunt/writelite.yue:1453
+          { -- shunt/writelite.yue:1453
+            failure_points = { -- shunt/writelite.yue:1454
+              'pre-open' -- shunt/writelite.yue:1454
+            }, -- shunt/writelite.yue:1453
+            expect_after_first_run = { -- shunt/writelite.yue:1456
+              journal_absent -- shunt/writelite.yue:1456
+            }, -- shunt/writelite.yue:1455
+            expect_after_second_run = { -- shunt/writelite.yue:1458
+              journal_absent, -- shunt/writelite.yue:1458
+              main_unchanged -- shunt/writelite.yue:1459
+            } -- shunt/writelite.yue:1457
+          }, -- shunt/writelite.yue:1453
+          { -- shunt/writelite.yue:1460
+            failure_points = { -- shunt/writelite.yue:1461
+              'post-open' -- shunt/writelite.yue:1461
+            }, -- shunt/writelite.yue:1460
+            expect_after_first_run = { -- shunt/writelite.yue:1463
+              journal_absent -- shunt/writelite.yue:1463
+            }, -- shunt/writelite.yue:1462
+            expect_after_second_run = { -- shunt/writelite.yue:1465
+              journal_absent, -- shunt/writelite.yue:1465
+              main_unchanged -- shunt/writelite.yue:1466
+            } -- shunt/writelite.yue:1464
+          }, -- shunt/writelite.yue:1460
+          { -- shunt/writelite.yue:1467
+            failure_points = { -- shunt/writelite.yue:1468
+              'mid-transaction' -- shunt/writelite.yue:1468
+            }, -- shunt/writelite.yue:1467
+            expect_after_first_run = { -- shunt/writelite.yue:1470
+              journal_absent -- shunt/writelite.yue:1470
+            }, -- shunt/writelite.yue:1469
+            expect_after_second_run = { -- shunt/writelite.yue:1472
+              journal_absent, -- shunt/writelite.yue:1472
+              main_unchanged -- shunt/writelite.yue:1473
+            } -- shunt/writelite.yue:1471
+          }, -- shunt/writelite.yue:1467
+          { -- shunt/writelite.yue:1474
+            failure_points = { -- shunt/writelite.yue:1475
+              'post-transaction' -- shunt/writelite.yue:1475
+            }, -- shunt/writelite.yue:1474
+            expect_after_first_run = { -- shunt/writelite.yue:1477
+              journal_absent -- shunt/writelite.yue:1477
+            }, -- shunt/writelite.yue:1476
+            expect_after_second_run = { -- shunt/writelite.yue:1479
+              journal_absent, -- shunt/writelite.yue:1479
+              main_advanced -- shunt/writelite.yue:1480
+            } -- shunt/writelite.yue:1478
+          } -- shunt/writelite.yue:1474
+        } -- shunt/writelite.yue:1452
+        for _index_0 = 1, #clean_tests do -- shunt/writelite.yue:1481
+          local test = clean_tests[_index_0] -- shunt/writelite.yue:1481
+          local failure_points, expect_after_first_run, expect_after_second_run = test.failure_points, test.expect_after_first_run, test.expect_after_second_run -- shunt/writelite.yue:1482
+          it("is maintained with a clean file system at " .. tostring(table.concat(failure_points, '+')) .. " failures", function() -- shunt/writelite.yue:1487
+            print('first-run') -- shunt/writelite.yue:1488
+            local fs = clone_fs(clean_fs); -- shunt/writelite.yue:1489
+            do -- shunt/writelite.yue:1490
+              local _tbl_0 = { } -- shunt/writelite.yue:1490
+              for _index_1 = 1, #failure_points do -- shunt/writelite.yue:1490
+                local name = failure_points[_index_1] -- shunt/writelite.yue:1490
+                _tbl_0[name] = true -- shunt/writelite.yue:1490
               end -- shunt/writelite.yue:1490
-            end); -- shunt/writelite.yue:1491
-            require('shunt.spec')._assert_that([=[err]=], err, (eq(nil)), tostring("shunt/writelite.yue") .. ":" .. tostring(1492)) -- shunt/writelite.yue:1492
-            for _index_1 = 1, #expect_after_first_run do -- shunt/writelite.yue:1494
-              local check = expect_after_first_run[_index_1] -- shunt/writelite.yue:1494
-              check(fs) -- shunt/writelite.yue:1495
-            end -- shunt/writelite.yue:1495
-            print('second-run'); -- shunt/writelite.yue:1497
-            injected_failures = nil -- shunt/writelite.yue:1498
-            local err -- shunt/writelite.yue:1499
-xpcall(function() -- shunt/writelite.yue:1500
-              local _with_0 = Writelite('database.db', fs) -- shunt/writelite.yue:1501
-              _with_0:mode('blob') -- shunt/writelite.yue:1502
-              _with_0:page_size(PAGE_SIZE) -- shunt/writelite.yue:1503
-              assert(_with_0:open()) -- shunt/writelite.yue:1504
-              assert(_with_0:close()) -- shunt/writelite.yue:1505
-              return _with_0 -- shunt/writelite.yue:1501
-            end, function(err2) -- shunt/writelite.yue:1505
-              err = err2 -- shunt/writelite.yue:1507
-            end); -- shunt/writelite.yue:1507
-            require('shunt.spec')._assert_that([=[err]=], err, (eq(nil)), tostring("shunt/writelite.yue") .. ":" .. tostring(1508)) -- shunt/writelite.yue:1508
-            for _index_1 = 1, #expect_after_second_run do -- shunt/writelite.yue:1510
-              local check = expect_after_second_run[_index_1] -- shunt/writelite.yue:1510
-              check(fs) -- shunt/writelite.yue:1511
-            end -- shunt/writelite.yue:1511
-          end) -- shunt/writelite.yue:1474
-        end -- shunt/writelite.yue:1511
-        local dirty_fs -- shunt/writelite.yue:1513
-        do -- shunt/writelite.yue:1513
-          dirty_fs = clone_fs(clean_fs) -- shunt/writelite.yue:1514
-          do -- shunt/writelite.yue:1515
-            local _with_0 = Writelite('database.db', dirty_fs) -- shunt/writelite.yue:1515
-            _with_0:mode('blob') -- shunt/writelite.yue:1516
-            _with_0:page_size(PAGE_SIZE) -- shunt/writelite.yue:1517
-            assert(_with_0:open()) -- shunt/writelite.yue:1518
-            local err -- shunt/writelite.yue:1519
-xpcall(function() -- shunt/writelite.yue:1520
-              return _with_0:transaction(function(txn) -- shunt/writelite.yue:1521
-                return txn:write(('a'):rep(3 * PAGE_SIZE)) -- shunt/writelite.yue:1522
-              end) -- shunt/writelite.yue:1522
-            end, function(err2) -- shunt/writelite.yue:1522
-              err = err2 -- shunt/writelite.yue:1524
-            end) -- shunt/writelite.yue:1524
-            if (err ~= nil) then -- shunt/writelite.yue:1525
-              error("unexpected error: " .. tostring(err)) -- shunt/writelite.yue:1526
-            end -- shunt/writelite.yue:1525
-            assert(_with_0:close()) -- shunt/writelite.yue:1527
-          end -- shunt/writelite.yue:1515
-          dirty_fs.files['database.db'] = clean_fs.files['database.db'] -- shunt/writelite.yue:1530
-          dirty_fs:reinstate('database.db~') -- shunt/writelite.yue:1531
-          dirty_fs = dirty_fs -- shunt/writelite.yue:1533
-        end -- shunt/writelite.yue:1533
-        it('is tested with a dirty file system', function() -- shunt/writelite.yue:1535
-          return require('shunt.spec')._assert_that([=[dirty_fs.files]=], dirty_fs.files, (has_fields({ -- shunt/writelite.yue:1536
-            ['database.db'] = not_(eq(nil)), -- shunt/writelite.yue:1536
-            ['database.db~'] = not_(eq(nil)) -- shunt/writelite.yue:1536
-          })), tostring("shunt/writelite.yue") .. ":" .. tostring(1536)) -- shunt/writelite.yue:1538
-        end) -- shunt/writelite.yue:1535
-        local dirty_tests = { -- shunt/writelite.yue:1541
-          { -- shunt/writelite.yue:1541
-            failure_points = { -- shunt/writelite.yue:1542
-              'pre-open' -- shunt/writelite.yue:1542
-            }, -- shunt/writelite.yue:1541
-            expect_after_run = { -- shunt/writelite.yue:1544
-              journal_present, -- shunt/writelite.yue:1544
-              main_unchanged -- shunt/writelite.yue:1545
-            } -- shunt/writelite.yue:1543
-          }, -- shunt/writelite.yue:1541
-          { -- shunt/writelite.yue:1546
-            failure_points = { -- shunt/writelite.yue:1547
-              'post-open' -- shunt/writelite.yue:1547
-            }, -- shunt/writelite.yue:1546
-            expect_after_run = { -- shunt/writelite.yue:1549
-              journal_present, -- shunt/writelite.yue:1549
-              main_unchanged -- shunt/writelite.yue:1550
-            } -- shunt/writelite.yue:1548
-          }, -- shunt/writelite.yue:1546
-          { -- shunt/writelite.yue:1551
-            failure_points = { -- shunt/writelite.yue:1552
-              'post-journal-read' -- shunt/writelite.yue:1552
-            }, -- shunt/writelite.yue:1551
-            expect_after_run = { -- shunt/writelite.yue:1554
-              journal_present, -- shunt/writelite.yue:1554
-              main_unchanged -- shunt/writelite.yue:1555
-            } -- shunt/writelite.yue:1553
-          }, -- shunt/writelite.yue:1551
-          { -- shunt/writelite.yue:1556
-            failure_points = { -- shunt/writelite.yue:1557
-              'post-journal-load' -- shunt/writelite.yue:1557
-            }, -- shunt/writelite.yue:1556
-            expect_after_run = { -- shunt/writelite.yue:1559
-              journal_present, -- shunt/writelite.yue:1559
-              main_unchanged -- shunt/writelite.yue:1560
-            } -- shunt/writelite.yue:1558
-          }, -- shunt/writelite.yue:1556
-          { -- shunt/writelite.yue:1561
-            failure_points = { -- shunt/writelite.yue:1562
-              'mid-journal-recovery' -- shunt/writelite.yue:1562
-            }, -- shunt/writelite.yue:1561
-            expect_after_run = { -- shunt/writelite.yue:1564
-              journal_present -- shunt/writelite.yue:1564
-            } -- shunt/writelite.yue:1563
-          }, -- shunt/writelite.yue:1561
-          { -- shunt/writelite.yue:1565
-            failure_points = { -- shunt/writelite.yue:1566
-              'pre-journal-removal' -- shunt/writelite.yue:1566
-            }, -- shunt/writelite.yue:1565
-            expect_after_run = { -- shunt/writelite.yue:1568
-              journal_present, -- shunt/writelite.yue:1568
-              main_advanced -- shunt/writelite.yue:1569
-            } -- shunt/writelite.yue:1567
-          }, -- shunt/writelite.yue:1565
-          { -- shunt/writelite.yue:1570
-            failure_points = { -- shunt/writelite.yue:1571
-              'post-journal-removal' -- shunt/writelite.yue:1571
-            }, -- shunt/writelite.yue:1570
-            expect_after_run = { -- shunt/writelite.yue:1573
-              journal_absent, -- shunt/writelite.yue:1573
-              main_advanced -- shunt/writelite.yue:1574
-            } -- shunt/writelite.yue:1572
-          } -- shunt/writelite.yue:1570
-        } -- shunt/writelite.yue:1540
-        for _index_0 = 1, #dirty_tests do -- shunt/writelite.yue:1575
-          local test = dirty_tests[_index_0] -- shunt/writelite.yue:1575
-          local failure_points, expect_after_run = test.failure_points, test.expect_after_run -- shunt/writelite.yue:1576
-          it("is maintained with a dirty file system at " .. tostring(table.concat(failure_points, '+')) .. " failures", function() -- shunt/writelite.yue:1580
-            local fs = clone_fs(dirty_fs); -- shunt/writelite.yue:1581
-            do -- shunt/writelite.yue:1582
-              local _tbl_0 = { } -- shunt/writelite.yue:1582
-              for _index_1 = 1, #failure_points do -- shunt/writelite.yue:1582
-                local name = failure_points[_index_1] -- shunt/writelite.yue:1582
-                _tbl_0[name] = true -- shunt/writelite.yue:1582
-              end -- shunt/writelite.yue:1582
-              injected_failures = _tbl_0 -- shunt/writelite.yue:1582
-            end -- shunt/writelite.yue:1582
-            local err -- shunt/writelite.yue:1583
-xpcall(function() -- shunt/writelite.yue:1584
-              local _with_0 = Writelite('database.db', fs) -- shunt/writelite.yue:1585
-              _with_0:mode('blob') -- shunt/writelite.yue:1586
-              _with_0:page_size(PAGE_SIZE) -- shunt/writelite.yue:1587
-              assert(_with_0:open()) -- shunt/writelite.yue:1588
-              assert(_with_0:close()) -- shunt/writelite.yue:1589
-              return _with_0 -- shunt/writelite.yue:1585
-            end, function(err2) -- shunt/writelite.yue:1589
-              if not err2:match('FAILURE_MARKER') then -- shunt/writelite.yue:1591
-                err = err2 -- shunt/writelite.yue:1592
-              end -- shunt/writelite.yue:1591
-            end); -- shunt/writelite.yue:1592
-            require('shunt.spec')._assert_that([=[err]=], err, (eq(nil)), tostring("shunt/writelite.yue") .. ":" .. tostring(1593)) -- shunt/writelite.yue:1593
-            for _index_1 = 1, #expect_after_run do -- shunt/writelite.yue:1595
-              local check = expect_after_run[_index_1] -- shunt/writelite.yue:1595
-              check(fs) -- shunt/writelite.yue:1596
-            end -- shunt/writelite.yue:1596
-          end) -- shunt/writelite.yue:1580
-        end -- shunt/writelite.yue:1596
-        return it('is tested comprehensively', function() -- shunt/writelite.yue:1598
-          local attempted_failure_points -- shunt/writelite.yue:1599
-          do -- shunt/writelite.yue:1599
-            local _with_0 = { } -- shunt/writelite.yue:1599
-            for _index_0 = 1, #clean_tests do -- shunt/writelite.yue:1600
-              local test = clean_tests[_index_0] -- shunt/writelite.yue:1600
-              local _list_0 = test.failure_points -- shunt/writelite.yue:1601
-              for _index_1 = 1, #_list_0 do -- shunt/writelite.yue:1601
-                local failure_point = _list_0[_index_1] -- shunt/writelite.yue:1601
-                _with_0[failure_point] = true -- shunt/writelite.yue:1602
-              end -- shunt/writelite.yue:1602
-            end -- shunt/writelite.yue:1602
-            for _index_0 = 1, #dirty_tests do -- shunt/writelite.yue:1603
-              local test = dirty_tests[_index_0] -- shunt/writelite.yue:1603
-              local _list_0 = test.failure_points -- shunt/writelite.yue:1604
-              for _index_1 = 1, #_list_0 do -- shunt/writelite.yue:1604
-                local failure_point = _list_0[_index_1] -- shunt/writelite.yue:1604
-                _with_0[failure_point] = true -- shunt/writelite.yue:1605
-              end -- shunt/writelite.yue:1605
-            end -- shunt/writelite.yue:1605
-            attempted_failure_points = _with_0 -- shunt/writelite.yue:1599
-          end -- shunt/writelite.yue:1599
-          require('shunt.spec')._expect_that([=[attempted_failure_points]=], attempted_failure_points, (deep_eq({ -- shunt/writelite.yue:1606
-            ['mid-journal-recovery'] = true, -- shunt/writelite.yue:1606
-            ['mid-transaction'] = true, -- shunt/writelite.yue:1606
-            ['post-journal-load'] = true, -- shunt/writelite.yue:1606
-            ['post-journal-read'] = true, -- shunt/writelite.yue:1606
-            ['post-journal-removal'] = true, -- shunt/writelite.yue:1606
-            ['post-open'] = true, -- shunt/writelite.yue:1606
-            ['post-transaction'] = true, -- shunt/writelite.yue:1606
-            ['pre-journal-removal'] = true, -- shunt/writelite.yue:1606
-            ['pre-open'] = true -- shunt/writelite.yue:1606
-          })), tostring("shunt/writelite.yue") .. ":" .. tostring(1606)); -- shunt/writelite.yue:1606
-          return require('shunt.spec')._expect_that([=[attempted_failure_points]=], attempted_failure_points, (deep_eq(activated_failure_points)), tostring("shunt/writelite.yue") .. ":" .. tostring(1607)) -- shunt/writelite.yue:1607
-        end) -- shunt/writelite.yue:1607
-      end) -- shunt/writelite.yue:1607
-    end) -- shunt/writelite.yue:1607
+              injected_failures = _tbl_0 -- shunt/writelite.yue:1490
+            end -- shunt/writelite.yue:1490
+            local err -- shunt/writelite.yue:1491
+xpcall(function() -- shunt/writelite.yue:1492
+              local _with_0 = Writelite('database.db', fs) -- shunt/writelite.yue:1493
+              _with_0:mode('blob') -- shunt/writelite.yue:1494
+              _with_0:page_size(PAGE_SIZE) -- shunt/writelite.yue:1495
+              assert(_with_0:open()) -- shunt/writelite.yue:1496
+              _with_0:transaction(function(txn) -- shunt/writelite.yue:1497
+                txn:seek('set', 256) -- shunt/writelite.yue:1499
+                txn:write(('a'):rep(3 * PAGE_SIZE)) -- shunt/writelite.yue:1500
+                return txn -- shunt/writelite.yue:1498
+              end) -- shunt/writelite.yue:1497
+              assert(_with_0:close()) -- shunt/writelite.yue:1501
+              return _with_0 -- shunt/writelite.yue:1493
+            end, function(err2) -- shunt/writelite.yue:1501
+              if not err2:match('FAILURE_MARKER') then -- shunt/writelite.yue:1503
+                err = err2 -- shunt/writelite.yue:1504
+              end -- shunt/writelite.yue:1503
+            end); -- shunt/writelite.yue:1504
+            require('shunt.spec')._assert_that([=[err]=], err, (eq(nil)), tostring("shunt/writelite.yue") .. ":" .. tostring(1505)) -- shunt/writelite.yue:1505
+            for _index_1 = 1, #expect_after_first_run do -- shunt/writelite.yue:1507
+              local check = expect_after_first_run[_index_1] -- shunt/writelite.yue:1507
+              check(fs) -- shunt/writelite.yue:1508
+            end -- shunt/writelite.yue:1508
+            print('second-run'); -- shunt/writelite.yue:1510
+            injected_failures = nil -- shunt/writelite.yue:1511
+            local err -- shunt/writelite.yue:1512
+xpcall(function() -- shunt/writelite.yue:1513
+              local _with_0 = Writelite('database.db', fs) -- shunt/writelite.yue:1514
+              _with_0:mode('blob') -- shunt/writelite.yue:1515
+              _with_0:page_size(PAGE_SIZE) -- shunt/writelite.yue:1516
+              assert(_with_0:open()) -- shunt/writelite.yue:1517
+              assert(_with_0:close()) -- shunt/writelite.yue:1518
+              return _with_0 -- shunt/writelite.yue:1514
+            end, function(err2) -- shunt/writelite.yue:1518
+              err = err2 -- shunt/writelite.yue:1520
+            end); -- shunt/writelite.yue:1520
+            require('shunt.spec')._assert_that([=[err]=], err, (eq(nil)), tostring("shunt/writelite.yue") .. ":" .. tostring(1521)) -- shunt/writelite.yue:1521
+            for _index_1 = 1, #expect_after_second_run do -- shunt/writelite.yue:1523
+              local check = expect_after_second_run[_index_1] -- shunt/writelite.yue:1523
+              check(fs) -- shunt/writelite.yue:1524
+            end -- shunt/writelite.yue:1524
+          end) -- shunt/writelite.yue:1487
+        end -- shunt/writelite.yue:1524
+        local dirty_fs -- shunt/writelite.yue:1526
+        do -- shunt/writelite.yue:1526
+          dirty_fs = clone_fs(clean_fs) -- shunt/writelite.yue:1527
+          do -- shunt/writelite.yue:1528
+            local _with_0 = Writelite('database.db', dirty_fs) -- shunt/writelite.yue:1528
+            _with_0:mode('blob') -- shunt/writelite.yue:1529
+            _with_0:page_size(PAGE_SIZE) -- shunt/writelite.yue:1530
+            assert(_with_0:open()) -- shunt/writelite.yue:1531
+            local err -- shunt/writelite.yue:1532
+xpcall(function() -- shunt/writelite.yue:1533
+              return _with_0:transaction(function(txn) -- shunt/writelite.yue:1534
+                return txn:write(('a'):rep(3 * PAGE_SIZE)) -- shunt/writelite.yue:1535
+              end) -- shunt/writelite.yue:1535
+            end, function(err2) -- shunt/writelite.yue:1535
+              err = err2 -- shunt/writelite.yue:1537
+            end) -- shunt/writelite.yue:1537
+            if (err ~= nil) then -- shunt/writelite.yue:1538
+              error("unexpected error: " .. tostring(err)) -- shunt/writelite.yue:1539
+            end -- shunt/writelite.yue:1538
+            assert(_with_0:close()) -- shunt/writelite.yue:1540
+          end -- shunt/writelite.yue:1528
+          dirty_fs.files['database.db'] = clean_fs.files['database.db'] -- shunt/writelite.yue:1543
+          dirty_fs:reinstate('database.db~') -- shunt/writelite.yue:1544
+          dirty_fs = dirty_fs -- shunt/writelite.yue:1546
+        end -- shunt/writelite.yue:1546
+        it('is tested with a dirty file system', function() -- shunt/writelite.yue:1548
+          return require('shunt.spec')._assert_that([=[dirty_fs.files]=], dirty_fs.files, (has_fields({ -- shunt/writelite.yue:1549
+            ['database.db'] = not_(eq(nil)), -- shunt/writelite.yue:1549
+            ['database.db~'] = not_(eq(nil)) -- shunt/writelite.yue:1549
+          })), tostring("shunt/writelite.yue") .. ":" .. tostring(1549)) -- shunt/writelite.yue:1551
+        end) -- shunt/writelite.yue:1548
+        local dirty_tests = { -- shunt/writelite.yue:1554
+          { -- shunt/writelite.yue:1554
+            failure_points = { -- shunt/writelite.yue:1555
+              'pre-open' -- shunt/writelite.yue:1555
+            }, -- shunt/writelite.yue:1554
+            expect_after_run = { -- shunt/writelite.yue:1557
+              journal_present, -- shunt/writelite.yue:1557
+              main_unchanged -- shunt/writelite.yue:1558
+            } -- shunt/writelite.yue:1556
+          }, -- shunt/writelite.yue:1554
+          { -- shunt/writelite.yue:1559
+            failure_points = { -- shunt/writelite.yue:1560
+              'post-open' -- shunt/writelite.yue:1560
+            }, -- shunt/writelite.yue:1559
+            expect_after_run = { -- shunt/writelite.yue:1562
+              journal_present, -- shunt/writelite.yue:1562
+              main_unchanged -- shunt/writelite.yue:1563
+            } -- shunt/writelite.yue:1561
+          }, -- shunt/writelite.yue:1559
+          { -- shunt/writelite.yue:1564
+            failure_points = { -- shunt/writelite.yue:1565
+              'post-journal-read' -- shunt/writelite.yue:1565
+            }, -- shunt/writelite.yue:1564
+            expect_after_run = { -- shunt/writelite.yue:1567
+              journal_present, -- shunt/writelite.yue:1567
+              main_unchanged -- shunt/writelite.yue:1568
+            } -- shunt/writelite.yue:1566
+          }, -- shunt/writelite.yue:1564
+          { -- shunt/writelite.yue:1569
+            failure_points = { -- shunt/writelite.yue:1570
+              'post-journal-load' -- shunt/writelite.yue:1570
+            }, -- shunt/writelite.yue:1569
+            expect_after_run = { -- shunt/writelite.yue:1572
+              journal_present, -- shunt/writelite.yue:1572
+              main_unchanged -- shunt/writelite.yue:1573
+            } -- shunt/writelite.yue:1571
+          }, -- shunt/writelite.yue:1569
+          { -- shunt/writelite.yue:1574
+            failure_points = { -- shunt/writelite.yue:1575
+              'mid-journal-recovery' -- shunt/writelite.yue:1575
+            }, -- shunt/writelite.yue:1574
+            expect_after_run = { -- shunt/writelite.yue:1577
+              journal_present -- shunt/writelite.yue:1577
+            } -- shunt/writelite.yue:1576
+          }, -- shunt/writelite.yue:1574
+          { -- shunt/writelite.yue:1578
+            failure_points = { -- shunt/writelite.yue:1579
+              'pre-journal-removal' -- shunt/writelite.yue:1579
+            }, -- shunt/writelite.yue:1578
+            expect_after_run = { -- shunt/writelite.yue:1581
+              journal_present, -- shunt/writelite.yue:1581
+              main_advanced -- shunt/writelite.yue:1582
+            } -- shunt/writelite.yue:1580
+          }, -- shunt/writelite.yue:1578
+          { -- shunt/writelite.yue:1583
+            failure_points = { -- shunt/writelite.yue:1584
+              'post-journal-removal' -- shunt/writelite.yue:1584
+            }, -- shunt/writelite.yue:1583
+            expect_after_run = { -- shunt/writelite.yue:1586
+              journal_absent, -- shunt/writelite.yue:1586
+              main_advanced -- shunt/writelite.yue:1587
+            } -- shunt/writelite.yue:1585
+          } -- shunt/writelite.yue:1583
+        } -- shunt/writelite.yue:1553
+        for _index_0 = 1, #dirty_tests do -- shunt/writelite.yue:1588
+          local test = dirty_tests[_index_0] -- shunt/writelite.yue:1588
+          local failure_points, expect_after_run = test.failure_points, test.expect_after_run -- shunt/writelite.yue:1589
+          it("is maintained with a dirty file system at " .. tostring(table.concat(failure_points, '+')) .. " failures", function() -- shunt/writelite.yue:1593
+            local fs = clone_fs(dirty_fs); -- shunt/writelite.yue:1594
+            do -- shunt/writelite.yue:1595
+              local _tbl_0 = { } -- shunt/writelite.yue:1595
+              for _index_1 = 1, #failure_points do -- shunt/writelite.yue:1595
+                local name = failure_points[_index_1] -- shunt/writelite.yue:1595
+                _tbl_0[name] = true -- shunt/writelite.yue:1595
+              end -- shunt/writelite.yue:1595
+              injected_failures = _tbl_0 -- shunt/writelite.yue:1595
+            end -- shunt/writelite.yue:1595
+            local err -- shunt/writelite.yue:1596
+xpcall(function() -- shunt/writelite.yue:1597
+              local _with_0 = Writelite('database.db', fs) -- shunt/writelite.yue:1598
+              _with_0:mode('blob') -- shunt/writelite.yue:1599
+              _with_0:page_size(PAGE_SIZE) -- shunt/writelite.yue:1600
+              assert(_with_0:open()) -- shunt/writelite.yue:1601
+              assert(_with_0:close()) -- shunt/writelite.yue:1602
+              return _with_0 -- shunt/writelite.yue:1598
+            end, function(err2) -- shunt/writelite.yue:1602
+              if not err2:match('FAILURE_MARKER') then -- shunt/writelite.yue:1604
+                err = err2 -- shunt/writelite.yue:1605
+              end -- shunt/writelite.yue:1604
+            end); -- shunt/writelite.yue:1605
+            require('shunt.spec')._assert_that([=[err]=], err, (eq(nil)), tostring("shunt/writelite.yue") .. ":" .. tostring(1606)) -- shunt/writelite.yue:1606
+            for _index_1 = 1, #expect_after_run do -- shunt/writelite.yue:1608
+              local check = expect_after_run[_index_1] -- shunt/writelite.yue:1608
+              check(fs) -- shunt/writelite.yue:1609
+            end -- shunt/writelite.yue:1609
+          end) -- shunt/writelite.yue:1593
+        end -- shunt/writelite.yue:1609
+        return it('is tested comprehensively', function() -- shunt/writelite.yue:1611
+          local attempted_failure_points -- shunt/writelite.yue:1612
+          do -- shunt/writelite.yue:1612
+            local _with_0 = { } -- shunt/writelite.yue:1612
+            for _index_0 = 1, #clean_tests do -- shunt/writelite.yue:1613
+              local test = clean_tests[_index_0] -- shunt/writelite.yue:1613
+              local _list_0 = test.failure_points -- shunt/writelite.yue:1614
+              for _index_1 = 1, #_list_0 do -- shunt/writelite.yue:1614
+                local failure_point = _list_0[_index_1] -- shunt/writelite.yue:1614
+                _with_0[failure_point] = true -- shunt/writelite.yue:1615
+              end -- shunt/writelite.yue:1615
+            end -- shunt/writelite.yue:1615
+            for _index_0 = 1, #dirty_tests do -- shunt/writelite.yue:1616
+              local test = dirty_tests[_index_0] -- shunt/writelite.yue:1616
+              local _list_0 = test.failure_points -- shunt/writelite.yue:1617
+              for _index_1 = 1, #_list_0 do -- shunt/writelite.yue:1617
+                local failure_point = _list_0[_index_1] -- shunt/writelite.yue:1617
+                _with_0[failure_point] = true -- shunt/writelite.yue:1618
+              end -- shunt/writelite.yue:1618
+            end -- shunt/writelite.yue:1618
+            attempted_failure_points = _with_0 -- shunt/writelite.yue:1612
+          end -- shunt/writelite.yue:1612
+          require('shunt.spec')._expect_that([=[attempted_failure_points]=], attempted_failure_points, (deep_eq({ -- shunt/writelite.yue:1619
+            ['mid-journal-recovery'] = true, -- shunt/writelite.yue:1619
+            ['mid-transaction'] = true, -- shunt/writelite.yue:1619
+            ['post-journal-load'] = true, -- shunt/writelite.yue:1619
+            ['post-journal-read'] = true, -- shunt/writelite.yue:1619
+            ['post-journal-removal'] = true, -- shunt/writelite.yue:1619
+            ['post-open'] = true, -- shunt/writelite.yue:1619
+            ['post-transaction'] = true, -- shunt/writelite.yue:1619
+            ['pre-journal-removal'] = true, -- shunt/writelite.yue:1619
+            ['pre-open'] = true -- shunt/writelite.yue:1619
+          })), tostring("shunt/writelite.yue") .. ":" .. tostring(1619)); -- shunt/writelite.yue:1619
+          return require('shunt.spec')._expect_that([=[attempted_failure_points]=], attempted_failure_points, (deep_eq(activated_failure_points)), tostring("shunt/writelite.yue") .. ":" .. tostring(1620)) -- shunt/writelite.yue:1620
+        end) -- shunt/writelite.yue:1620
+      end) -- shunt/writelite.yue:1620
+    end) -- shunt/writelite.yue:1620
   end) -- shunt/writelite.yue:1194
-  describe('writelite.PageCache', function() -- shunt/writelite.yue:1609
-    describe('\\write', function() -- shunt/writelite.yue:1610
-      it('accesses the filesystem', function() -- shunt/writelite.yue:1611
-        local page_size = 10 -- shunt/writelite.yue:1612
-        local main_file = TestFile(table.concat((function() -- shunt/writelite.yue:1614
-          local _with_0 = { } -- shunt/writelite.yue:1614
-          _with_0[#_with_0 + 1] = ('a'):rep(page_size) -- shunt/writelite.yue:1615
-          _with_0[#_with_0 + 1] = ('b'):rep(page_size) -- shunt/writelite.yue:1616
-          _with_0[#_with_0 + 1] = ('c'):rep(page_size / 2) -- shunt/writelite.yue:1617
-          return _with_0 -- shunt/writelite.yue:1614
-        end)())) -- shunt/writelite.yue:1614
-        main_file:open() -- shunt/writelite.yue:1618
-        local cache = PageCache({ -- shunt/writelite.yue:1621
-          _main_file = main_file, -- shunt/writelite.yue:1621
-          _page_size = page_size -- shunt/writelite.yue:1622
-        }); -- shunt/writelite.yue:1620
-        require('shunt.spec')._expect_that([=[(cache\get 0 * page_size)]=], (cache:get(0 * page_size)), (has_fields({ -- shunt/writelite.yue:1623
-          offset = eq(0), -- shunt/writelite.yue:1623
-          content = eq(('a'):rep(page_size)) -- shunt/writelite.yue:1623
-        })), tostring("shunt/writelite.yue") .. ":" .. tostring(1623)); -- shunt/writelite.yue:1623
-        require('shunt.spec')._expect_that([=[(cache\get 0 * page_size)]=], (cache:get(0 * page_size)), (has_fields({ -- shunt/writelite.yue:1626
-          offset = eq(0), -- shunt/writelite.yue:1626
-          content = eq(('a'):rep(page_size)) -- shunt/writelite.yue:1626
-        })), tostring("shunt/writelite.yue") .. ":" .. tostring(1626)); -- shunt/writelite.yue:1626
-        require('shunt.spec')._expect_that([=[(cache\get 1 * page_size)]=], (cache:get(1 * page_size)), (has_fields({ -- shunt/writelite.yue:1629
-          offset = eq(page_size), -- shunt/writelite.yue:1629
-          content = eq(('b'):rep(page_size)) -- shunt/writelite.yue:1629
-        })), tostring("shunt/writelite.yue") .. ":" .. tostring(1629)); -- shunt/writelite.yue:1629
-        require('shunt.spec')._expect_that([=[(cache\get 2 * page_size)]=], (cache:get(2 * page_size)), (has_fields({ -- shunt/writelite.yue:1632
-          offset = eq(2 * page_size), -- shunt/writelite.yue:1632
-          content = eq(table.concat({ -- shunt/writelite.yue:1632
-            ('c'):rep(page_size / 2), -- shunt/writelite.yue:1632
-            ('\0'):rep(page_size / 2) -- shunt/writelite.yue:1632
-          })) -- shunt/writelite.yue:1632
-        })), tostring("shunt/writelite.yue") .. ":" .. tostring(1632)); -- shunt/writelite.yue:1632
-        return require('shunt.spec')._expect_that([=[(cache\get 1 * page_size)]=], (cache:get(1 * page_size)), (has_fields({ -- shunt/writelite.yue:1637
-          offset = eq(page_size), -- shunt/writelite.yue:1637
-          content = eq(('b'):rep(page_size)) -- shunt/writelite.yue:1637
-        })), tostring("shunt/writelite.yue") .. ":" .. tostring(1637)) -- shunt/writelite.yue:1639
-      end) -- shunt/writelite.yue:1611
-      return it('caches appropriately', function() -- shunt/writelite.yue:1641
-        local PAGE_SIZE = 10 -- shunt/writelite.yue:1642
-        local main_file = TestFile(table.concat((function() -- shunt/writelite.yue:1644
-          local _with_0 = { } -- shunt/writelite.yue:1644
-          local a = ('a'):byte() -- shunt/writelite.yue:1645
-          for i = 0, 20 do -- shunt/writelite.yue:1646
-            _with_0[#_with_0 + 1] = (string.char(a + i)):rep(PAGE_SIZE) -- shunt/writelite.yue:1647
-          end -- shunt/writelite.yue:1647
-          return _with_0 -- shunt/writelite.yue:1644
-        end)())) -- shunt/writelite.yue:1644
-        main_file:open() -- shunt/writelite.yue:1648
-        local MAX_CACHED_PAGES = 10 -- shunt/writelite.yue:1650
-        local cache = PageCache({ -- shunt/writelite.yue:1652
-          _main_file = main_file, -- shunt/writelite.yue:1652
-          _page_size = PAGE_SIZE -- shunt/writelite.yue:1653
-        }) -- shunt/writelite.yue:1651
-        cache:set_max_cached_pages(MAX_CACHED_PAGES) -- shunt/writelite.yue:1654
-        for i = 0, MAX_CACHED_PAGES - 1 do -- shunt/writelite.yue:1657
-          cache:get(i * PAGE_SIZE) -- shunt/writelite.yue:1658
-        end -- shunt/writelite.yue:1658
-        main_file:seek('set', 0) -- shunt/writelite.yue:1661
-        local err = main_file:write(('0'):rep(20 * PAGE_SIZE)) -- shunt/writelite.yue:1662
-        assert(not (err ~= nil), err) -- shunt/writelite.yue:1663
-        local a = ('a'):byte() -- shunt/writelite.yue:1666
-        for i = 0, MAX_CACHED_PAGES - 1 do -- shunt/writelite.yue:1667
-          require('shunt.spec')._expect_that([=[(cache\get i * PAGE_SIZE)]=], (cache:get(i * PAGE_SIZE)), (has_fields({ -- shunt/writelite.yue:1668
-            offset = eq(i * PAGE_SIZE), -- shunt/writelite.yue:1668
-            content = eq((string.char(a + i)):rep(PAGE_SIZE)) -- shunt/writelite.yue:1668
-          })), tostring("shunt/writelite.yue") .. ":" .. tostring(1668)) -- shunt/writelite.yue:1668
-        end -- shunt/writelite.yue:1670
-        cache:get(MAX_CACHED_PAGES * PAGE_SIZE); -- shunt/writelite.yue:1673
-        return require('shunt.spec')._expect_that([=[(cache\get 0)]=], (cache:get(0)), (has_fields({ -- shunt/writelite.yue:1675
-          offset = eq(0), -- shunt/writelite.yue:1675
-          content = eq(('0'):rep(PAGE_SIZE)) -- shunt/writelite.yue:1675
-        })), tostring("shunt/writelite.yue") .. ":" .. tostring(1675)) -- shunt/writelite.yue:1677
-      end) -- shunt/writelite.yue:1677
-    end) -- shunt/writelite.yue:1610
-    return describe('\\set', function() -- shunt/writelite.yue:1679
-      it('shows changes immediately', function() -- shunt/writelite.yue:1680
-        local PAGE_SIZE = 10 -- shunt/writelite.yue:1681
-        local main_file = TestFile(table.concat((function() -- shunt/writelite.yue:1683
-          local _with_0 = { } -- shunt/writelite.yue:1683
-          local a = ('a'):byte() -- shunt/writelite.yue:1684
-          for i = 0, 20 do -- shunt/writelite.yue:1685
-            _with_0[#_with_0 + 1] = (string.char(a + i)):rep(PAGE_SIZE) -- shunt/writelite.yue:1686
-          end -- shunt/writelite.yue:1686
-          return _with_0 -- shunt/writelite.yue:1683
-        end)())) -- shunt/writelite.yue:1683
-        main_file:open() -- shunt/writelite.yue:1687
-        local MAX_CACHED_PAGES = 10 -- shunt/writelite.yue:1689
-        local cache = PageCache({ -- shunt/writelite.yue:1691
-          _main_file = main_file, -- shunt/writelite.yue:1691
-          _page_size = PAGE_SIZE -- shunt/writelite.yue:1692
-        }) -- shunt/writelite.yue:1690
-        return cache:set_max_cached_pages(MAX_CACHED_PAGES) -- shunt/writelite.yue:1693
-      end) -- shunt/writelite.yue:1680
-      it('rejects unaligned pages', function() -- shunt/writelite.yue:1695
-        local PAGE_SIZE = 32 -- shunt/writelite.yue:1696
-        local cache = PageCache({ -- shunt/writelite.yue:1698
-          _main_file = (function() -- shunt/writelite.yue:1698
-            local _with_0 = TestFile('') -- shunt/writelite.yue:1698
-            _with_0:open() -- shunt/writelite.yue:1699
-            return _with_0 -- shunt/writelite.yue:1698
-          end)(), -- shunt/writelite.yue:1698
-          _page_size = PAGE_SIZE -- shunt/writelite.yue:1700
-        }) -- shunt/writelite.yue:1697
-        local page = Page({ -- shunt/writelite.yue:1702
-          offset = 0, -- shunt/writelite.yue:1702
-          content = ('\0'):rep(PAGE_SIZE) -- shunt/writelite.yue:1703
-        }); -- shunt/writelite.yue:1701
-        return require('shunt.spec')._expect_that([=[(-> cache\set 12, page)]=], (function() -- shunt/writelite.yue:1704
-          return cache:set(12, page) -- shunt/writelite.yue:1704
-        end), (errors(matches('page%-cache offset must be a multiple of the page size'))), tostring("shunt/writelite.yue") .. ":" .. tostring(1704)) -- shunt/writelite.yue:1704
-      end) -- shunt/writelite.yue:1695
-      return it('rejects incorrect-size pages', function() -- shunt/writelite.yue:1706
-        local PAGE_SIZE = 32 -- shunt/writelite.yue:1707
-        local cache = PageCache({ -- shunt/writelite.yue:1709
-          _main_file = (function() -- shunt/writelite.yue:1709
-            local _with_0 = TestFile('') -- shunt/writelite.yue:1709
-            _with_0:open() -- shunt/writelite.yue:1710
-            return _with_0 -- shunt/writelite.yue:1709
-          end)(), -- shunt/writelite.yue:1709
-          _page_size = PAGE_SIZE -- shunt/writelite.yue:1711
-        }) -- shunt/writelite.yue:1708
-        local page = Page({ -- shunt/writelite.yue:1713
-          offset = 123 * PAGE_SIZE, -- shunt/writelite.yue:1713
-          content = '0123456789' -- shunt/writelite.yue:1714
-        }); -- shunt/writelite.yue:1712
-        return require('shunt.spec')._expect_that([=[(-> cache\set 123 * PAGE_SIZE, page)]=], (function() -- shunt/writelite.yue:1715
-          return cache:set(123 * PAGE_SIZE, page) -- shunt/writelite.yue:1715
-        end), (errors(matches("internal error: page has the wrong size %(10 != " .. tostring(PAGE_SIZE) .. "%)"))), tostring("shunt/writelite.yue") .. ":" .. tostring(1715)) -- shunt/writelite.yue:1715
-      end) -- shunt/writelite.yue:1715
-    end) -- shunt/writelite.yue:1715
-  end) -- shunt/writelite.yue:1609
-  describe('writelite.Hasher', function() -- shunt/writelite.yue:1717
-    it('avoids collisions', function() -- shunt/writelite.yue:1718
-      local collisions = { } -- shunt/writelite.yue:1719
-      local NUM_STRINGS = 10000 -- shunt/writelite.yue:1720
-      for i = 1, NUM_STRINGS do -- shunt/writelite.yue:1721
-        local hash = Hasher():write("some_string_" .. tostring(i) .. "_which_is_similar"):finish() -- shunt/writelite.yue:1722
-        if collisions[hash] == nil then -- shunt/writelite.yue:1725
-          collisions[hash] = 0 -- shunt/writelite.yue:1725
-        end -- shunt/writelite.yue:1725
-        collisions[hash] = collisions[hash] + 1 -- shunt/writelite.yue:1726
-      end -- shunt/writelite.yue:1726
-      local max_collisions = -1 -- shunt/writelite.yue:1728
-      for h, c in pairs(collisions) do -- shunt/writelite.yue:1729
-        if max_collisions < c then -- shunt/writelite.yue:1730
-          max_collisions = c -- shunt/writelite.yue:1731
-        end -- shunt/writelite.yue:1730
-      end -- shunt/writelite.yue:1731
-      return require('shunt.spec')._expect_that([=[max_collisions]=], max_collisions, (lt(NUM_STRINGS * 0.01)), tostring("shunt/writelite.yue") .. ":" .. tostring(1732)) -- shunt/writelite.yue:1732
-    end) -- shunt/writelite.yue:1718
-    return it('is stable for tables', function() -- shunt/writelite.yue:1734
-      local make_test_data -- shunt/writelite.yue:1735
-      make_test_data = function() -- shunt/writelite.yue:1735
-        local _with_0 = { } -- shunt/writelite.yue:1736
-        _with_0.k1 = { -- shunt/writelite.yue:1738
-          k11 = 'a', -- shunt/writelite.yue:1738
-          k12 = 'b' -- shunt/writelite.yue:1739
-        } -- shunt/writelite.yue:1737
-        _with_0.k2 = { -- shunt/writelite.yue:1741
-          k21 = 'c', -- shunt/writelite.yue:1741
-          k22 = 'd' -- shunt/writelite.yue:1742
-        } -- shunt/writelite.yue:1740
-        return _with_0 -- shunt/writelite.yue:1736
-      end -- shunt/writelite.yue:1735
-      local hash = nil -- shunt/writelite.yue:1743
-      for i = 1, 1000 do -- shunt/writelite.yue:1744
-        local h = Hasher():write(make_test_data()):finish() -- shunt/writelite.yue:1745
-        if (hash ~= nil) then -- shunt/writelite.yue:1748
-          require('shunt.spec')._assert_that([=[h]=], h, (eq(hash)), tostring("shunt/writelite.yue") .. ":" .. tostring(1749)) -- shunt/writelite.yue:1749
-        else -- shunt/writelite.yue:1751
-          hash = h -- shunt/writelite.yue:1751
-        end -- shunt/writelite.yue:1748
-      end -- shunt/writelite.yue:1751
-    end) -- shunt/writelite.yue:1751
-  end) -- shunt/writelite.yue:1717
-  return describe('writelite.Serialiser roundtrip', function() -- shunt/writelite.yue:1753
-    local tests = { -- shunt/writelite.yue:1755
-      { -- shunt/writelite.yue:1755
-        name = 'nil', -- shunt/writelite.yue:1755
-        value = nil -- shunt/writelite.yue:1756
-      }, -- shunt/writelite.yue:1755
-      { -- shunt/writelite.yue:1757
-        name = 'true', -- shunt/writelite.yue:1757
-        value = true -- shunt/writelite.yue:1758
-      }, -- shunt/writelite.yue:1757
-      { -- shunt/writelite.yue:1759
-        name = 'false', -- shunt/writelite.yue:1759
-        value = false -- shunt/writelite.yue:1760
-      }, -- shunt/writelite.yue:1759
-      { -- shunt/writelite.yue:1761
-        name = 'int (zero)', -- shunt/writelite.yue:1761
-        value = 0 -- shunt/writelite.yue:1762
-      }, -- shunt/writelite.yue:1761
-      { -- shunt/writelite.yue:1763
-        name = 'int (small, positive)', -- shunt/writelite.yue:1763
-        value = 10 -- shunt/writelite.yue:1764
-      }, -- shunt/writelite.yue:1763
-      { -- shunt/writelite.yue:1765
-        name = 'int (small, negative)', -- shunt/writelite.yue:1765
-        value = -10 -- shunt/writelite.yue:1766
-      }, -- shunt/writelite.yue:1765
-      { -- shunt/writelite.yue:1767
-        name = 'int (max int)', -- shunt/writelite.yue:1767
-        value = MAX_INT -- shunt/writelite.yue:1768
-      }, -- shunt/writelite.yue:1767
-      { -- shunt/writelite.yue:1769
-        name = 'int (min int)', -- shunt/writelite.yue:1769
-        value = MIN_INT -- shunt/writelite.yue:1770
-      }, -- shunt/writelite.yue:1769
-      { -- shunt/writelite.yue:1771
-        name = 'float (small positive)', -- shunt/writelite.yue:1771
-        value = 1.1, -- shunt/writelite.yue:1772
-        check = function(actual, value) -- shunt/writelite.yue:1773
-          return require('shunt.spec')._expect_that([=[actual]=], actual, (near(value)), tostring("shunt/writelite.yue") .. ":" .. tostring(1774)) -- shunt/writelite.yue:1774
-        end -- shunt/writelite.yue:1773
-      }, -- shunt/writelite.yue:1771
-      { -- shunt/writelite.yue:1775
-        name = 'float (small negative)', -- shunt/writelite.yue:1775
-        value = -1.1, -- shunt/writelite.yue:1776
-        check = function(actual, value) -- shunt/writelite.yue:1777
-          return require('shunt.spec')._expect_that([=[actual]=], actual, (near(value)), tostring("shunt/writelite.yue") .. ":" .. tostring(1778)) -- shunt/writelite.yue:1778
-        end -- shunt/writelite.yue:1777
-      }, -- shunt/writelite.yue:1775
-      { -- shunt/writelite.yue:1779
-        name = 'float (large positive)', -- shunt/writelite.yue:1779
-        value = 9999999999999 * 9999999 * 0.3, -- shunt/writelite.yue:1780
-        check = function(actual, value) -- shunt/writelite.yue:1781
-          return require('shunt.spec')._expect_that([=[actual]=], actual, (near(value)), tostring("shunt/writelite.yue") .. ":" .. tostring(1782)) -- shunt/writelite.yue:1782
-        end -- shunt/writelite.yue:1781
-      }, -- shunt/writelite.yue:1779
-      { -- shunt/writelite.yue:1783
-        name = 'float (large negative)', -- shunt/writelite.yue:1783
-        value = -9999999999999 * 9999999 * 0.3, -- shunt/writelite.yue:1784
-        check = function(actual, value) -- shunt/writelite.yue:1785
-          return require('shunt.spec')._expect_that([=[actual]=], actual, (near(value)), tostring("shunt/writelite.yue") .. ":" .. tostring(1786)) -- shunt/writelite.yue:1786
-        end -- shunt/writelite.yue:1785
-      }, -- shunt/writelite.yue:1783
-      { -- shunt/writelite.yue:1787
-        name = 'empty string', -- shunt/writelite.yue:1787
-        value = '' -- shunt/writelite.yue:1788
-      }, -- shunt/writelite.yue:1787
-      { -- shunt/writelite.yue:1789
-        name = 'short string', -- shunt/writelite.yue:1789
-        value = 'asdf' -- shunt/writelite.yue:1790
-      }, -- shunt/writelite.yue:1789
-      { -- shunt/writelite.yue:1791
-        name = 'long string', -- shunt/writelite.yue:1791
-        value = ('x'):rep(1000) -- shunt/writelite.yue:1792
-      }, -- shunt/writelite.yue:1791
-      { -- shunt/writelite.yue:1793
-        name = 'simple leaf table', -- shunt/writelite.yue:1793
-        value = { -- shunt/writelite.yue:1795
-          [false] = true -- shunt/writelite.yue:1795
-        } -- shunt/writelite.yue:1794
-      }, -- shunt/writelite.yue:1793
+  describe('writelite.PageCache', function() -- shunt/writelite.yue:1622
+    describe('\\write', function() -- shunt/writelite.yue:1623
+      it('accesses the filesystem', function() -- shunt/writelite.yue:1624
+        local page_size = 10 -- shunt/writelite.yue:1625
+        local main_file = TestFile(table.concat((function() -- shunt/writelite.yue:1627
+          local _with_0 = { } -- shunt/writelite.yue:1627
+          _with_0[#_with_0 + 1] = ('a'):rep(page_size) -- shunt/writelite.yue:1628
+          _with_0[#_with_0 + 1] = ('b'):rep(page_size) -- shunt/writelite.yue:1629
+          _with_0[#_with_0 + 1] = ('c'):rep(page_size / 2) -- shunt/writelite.yue:1630
+          return _with_0 -- shunt/writelite.yue:1627
+        end)())) -- shunt/writelite.yue:1627
+        main_file:open() -- shunt/writelite.yue:1631
+        local cache = PageCache({ -- shunt/writelite.yue:1634
+          _main_file = main_file, -- shunt/writelite.yue:1634
+          _page_size = page_size -- shunt/writelite.yue:1635
+        }); -- shunt/writelite.yue:1633
+        require('shunt.spec')._expect_that([=[(cache\get 0 * page_size)]=], (cache:get(0 * page_size)), (has_fields({ -- shunt/writelite.yue:1636
+          offset = eq(0), -- shunt/writelite.yue:1636
+          content = eq(('a'):rep(page_size)) -- shunt/writelite.yue:1636
+        })), tostring("shunt/writelite.yue") .. ":" .. tostring(1636)); -- shunt/writelite.yue:1636
+        require('shunt.spec')._expect_that([=[(cache\get 0 * page_size)]=], (cache:get(0 * page_size)), (has_fields({ -- shunt/writelite.yue:1639
+          offset = eq(0), -- shunt/writelite.yue:1639
+          content = eq(('a'):rep(page_size)) -- shunt/writelite.yue:1639
+        })), tostring("shunt/writelite.yue") .. ":" .. tostring(1639)); -- shunt/writelite.yue:1639
+        require('shunt.spec')._expect_that([=[(cache\get 1 * page_size)]=], (cache:get(1 * page_size)), (has_fields({ -- shunt/writelite.yue:1642
+          offset = eq(page_size), -- shunt/writelite.yue:1642
+          content = eq(('b'):rep(page_size)) -- shunt/writelite.yue:1642
+        })), tostring("shunt/writelite.yue") .. ":" .. tostring(1642)); -- shunt/writelite.yue:1642
+        require('shunt.spec')._expect_that([=[(cache\get 2 * page_size)]=], (cache:get(2 * page_size)), (has_fields({ -- shunt/writelite.yue:1645
+          offset = eq(2 * page_size), -- shunt/writelite.yue:1645
+          content = eq(table.concat({ -- shunt/writelite.yue:1645
+            ('c'):rep(page_size / 2), -- shunt/writelite.yue:1645
+            ('\0'):rep(page_size / 2) -- shunt/writelite.yue:1645
+          })) -- shunt/writelite.yue:1645
+        })), tostring("shunt/writelite.yue") .. ":" .. tostring(1645)); -- shunt/writelite.yue:1645
+        return require('shunt.spec')._expect_that([=[(cache\get 1 * page_size)]=], (cache:get(1 * page_size)), (has_fields({ -- shunt/writelite.yue:1650
+          offset = eq(page_size), -- shunt/writelite.yue:1650
+          content = eq(('b'):rep(page_size)) -- shunt/writelite.yue:1650
+        })), tostring("shunt/writelite.yue") .. ":" .. tostring(1650)) -- shunt/writelite.yue:1652
+      end) -- shunt/writelite.yue:1624
+      return it('caches appropriately', function() -- shunt/writelite.yue:1654
+        local PAGE_SIZE = 10 -- shunt/writelite.yue:1655
+        local main_file = TestFile(table.concat((function() -- shunt/writelite.yue:1657
+          local _with_0 = { } -- shunt/writelite.yue:1657
+          local a = ('a'):byte() -- shunt/writelite.yue:1658
+          for i = 0, 20 do -- shunt/writelite.yue:1659
+            _with_0[#_with_0 + 1] = (string.char(a + i)):rep(PAGE_SIZE) -- shunt/writelite.yue:1660
+          end -- shunt/writelite.yue:1660
+          return _with_0 -- shunt/writelite.yue:1657
+        end)())) -- shunt/writelite.yue:1657
+        main_file:open() -- shunt/writelite.yue:1661
+        local MAX_CACHED_PAGES = 10 -- shunt/writelite.yue:1663
+        local cache = PageCache({ -- shunt/writelite.yue:1665
+          _main_file = main_file, -- shunt/writelite.yue:1665
+          _page_size = PAGE_SIZE -- shunt/writelite.yue:1666
+        }) -- shunt/writelite.yue:1664
+        cache:set_max_cached_pages(MAX_CACHED_PAGES) -- shunt/writelite.yue:1667
+        for i = 0, MAX_CACHED_PAGES - 1 do -- shunt/writelite.yue:1670
+          cache:get(i * PAGE_SIZE) -- shunt/writelite.yue:1671
+        end -- shunt/writelite.yue:1671
+        main_file:seek('set', 0) -- shunt/writelite.yue:1674
+        local err = main_file:write(('0'):rep(20 * PAGE_SIZE)) -- shunt/writelite.yue:1675
+        assert(not (err ~= nil), err) -- shunt/writelite.yue:1676
+        local a = ('a'):byte() -- shunt/writelite.yue:1679
+        for i = 0, MAX_CACHED_PAGES - 1 do -- shunt/writelite.yue:1680
+          require('shunt.spec')._expect_that([=[(cache\get i * PAGE_SIZE)]=], (cache:get(i * PAGE_SIZE)), (has_fields({ -- shunt/writelite.yue:1681
+            offset = eq(i * PAGE_SIZE), -- shunt/writelite.yue:1681
+            content = eq((string.char(a + i)):rep(PAGE_SIZE)) -- shunt/writelite.yue:1681
+          })), tostring("shunt/writelite.yue") .. ":" .. tostring(1681)) -- shunt/writelite.yue:1681
+        end -- shunt/writelite.yue:1683
+        cache:get(MAX_CACHED_PAGES * PAGE_SIZE); -- shunt/writelite.yue:1686
+        return require('shunt.spec')._expect_that([=[(cache\get 0)]=], (cache:get(0)), (has_fields({ -- shunt/writelite.yue:1688
+          offset = eq(0), -- shunt/writelite.yue:1688
+          content = eq(('0'):rep(PAGE_SIZE)) -- shunt/writelite.yue:1688
+        })), tostring("shunt/writelite.yue") .. ":" .. tostring(1688)) -- shunt/writelite.yue:1690
+      end) -- shunt/writelite.yue:1690
+    end) -- shunt/writelite.yue:1623
+    return describe('\\set', function() -- shunt/writelite.yue:1692
+      it('shows changes immediately', function() -- shunt/writelite.yue:1693
+        local PAGE_SIZE = 10 -- shunt/writelite.yue:1694
+        local main_file = TestFile(table.concat((function() -- shunt/writelite.yue:1696
+          local _with_0 = { } -- shunt/writelite.yue:1696
+          local a = ('a'):byte() -- shunt/writelite.yue:1697
+          for i = 0, 20 do -- shunt/writelite.yue:1698
+            _with_0[#_with_0 + 1] = (string.char(a + i)):rep(PAGE_SIZE) -- shunt/writelite.yue:1699
+          end -- shunt/writelite.yue:1699
+          return _with_0 -- shunt/writelite.yue:1696
+        end)())) -- shunt/writelite.yue:1696
+        main_file:open() -- shunt/writelite.yue:1700
+        local MAX_CACHED_PAGES = 10 -- shunt/writelite.yue:1702
+        local cache = PageCache({ -- shunt/writelite.yue:1704
+          _main_file = main_file, -- shunt/writelite.yue:1704
+          _page_size = PAGE_SIZE -- shunt/writelite.yue:1705
+        }) -- shunt/writelite.yue:1703
+        return cache:set_max_cached_pages(MAX_CACHED_PAGES) -- shunt/writelite.yue:1706
+      end) -- shunt/writelite.yue:1693
+      it('rejects unaligned pages', function() -- shunt/writelite.yue:1708
+        local PAGE_SIZE = 32 -- shunt/writelite.yue:1709
+        local cache = PageCache({ -- shunt/writelite.yue:1711
+          _main_file = (function() -- shunt/writelite.yue:1711
+            local _with_0 = TestFile('') -- shunt/writelite.yue:1711
+            _with_0:open() -- shunt/writelite.yue:1712
+            return _with_0 -- shunt/writelite.yue:1711
+          end)(), -- shunt/writelite.yue:1711
+          _page_size = PAGE_SIZE -- shunt/writelite.yue:1713
+        }) -- shunt/writelite.yue:1710
+        local page = Page({ -- shunt/writelite.yue:1715
+          offset = 0, -- shunt/writelite.yue:1715
+          content = ('\0'):rep(PAGE_SIZE) -- shunt/writelite.yue:1716
+        }); -- shunt/writelite.yue:1714
+        return require('shunt.spec')._expect_that([=[(-> cache\set 12, page)]=], (function() -- shunt/writelite.yue:1717
+          return cache:set(12, page) -- shunt/writelite.yue:1717
+        end), (errors(matches('page%-cache offset must be a multiple of the page size'))), tostring("shunt/writelite.yue") .. ":" .. tostring(1717)) -- shunt/writelite.yue:1717
+      end) -- shunt/writelite.yue:1708
+      return it('rejects incorrect-size pages', function() -- shunt/writelite.yue:1719
+        local PAGE_SIZE = 32 -- shunt/writelite.yue:1720
+        local cache = PageCache({ -- shunt/writelite.yue:1722
+          _main_file = (function() -- shunt/writelite.yue:1722
+            local _with_0 = TestFile('') -- shunt/writelite.yue:1722
+            _with_0:open() -- shunt/writelite.yue:1723
+            return _with_0 -- shunt/writelite.yue:1722
+          end)(), -- shunt/writelite.yue:1722
+          _page_size = PAGE_SIZE -- shunt/writelite.yue:1724
+        }) -- shunt/writelite.yue:1721
+        local page = Page({ -- shunt/writelite.yue:1726
+          offset = 123 * PAGE_SIZE, -- shunt/writelite.yue:1726
+          content = '0123456789' -- shunt/writelite.yue:1727
+        }); -- shunt/writelite.yue:1725
+        return require('shunt.spec')._expect_that([=[(-> cache\set 123 * PAGE_SIZE, page)]=], (function() -- shunt/writelite.yue:1728
+          return cache:set(123 * PAGE_SIZE, page) -- shunt/writelite.yue:1728
+        end), (errors(matches("internal error: page has the wrong size %(10 != " .. tostring(PAGE_SIZE) .. "%)"))), tostring("shunt/writelite.yue") .. ":" .. tostring(1728)) -- shunt/writelite.yue:1728
+      end) -- shunt/writelite.yue:1728
+    end) -- shunt/writelite.yue:1728
+  end) -- shunt/writelite.yue:1622
+  describe('writelite.Hasher', function() -- shunt/writelite.yue:1730
+    it('avoids collisions', function() -- shunt/writelite.yue:1731
+      local collisions = { } -- shunt/writelite.yue:1732
+      local NUM_STRINGS = 10000 -- shunt/writelite.yue:1733
+      for i = 1, NUM_STRINGS do -- shunt/writelite.yue:1734
+        local hash = Hasher():write("some_string_" .. tostring(i) .. "_which_is_similar"):finish() -- shunt/writelite.yue:1735
+        if collisions[hash] == nil then -- shunt/writelite.yue:1738
+          collisions[hash] = 0 -- shunt/writelite.yue:1738
+        end -- shunt/writelite.yue:1738
+        collisions[hash] = collisions[hash] + 1 -- shunt/writelite.yue:1739
+      end -- shunt/writelite.yue:1739
+      local max_collisions = -1 -- shunt/writelite.yue:1741
+      for h, c in pairs(collisions) do -- shunt/writelite.yue:1742
+        if max_collisions < c then -- shunt/writelite.yue:1743
+          max_collisions = c -- shunt/writelite.yue:1744
+        end -- shunt/writelite.yue:1743
+      end -- shunt/writelite.yue:1744
+      return require('shunt.spec')._expect_that([=[max_collisions]=], max_collisions, (lt(NUM_STRINGS * 0.01)), tostring("shunt/writelite.yue") .. ":" .. tostring(1745)) -- shunt/writelite.yue:1745
+    end) -- shunt/writelite.yue:1731
+    return it('is stable for tables', function() -- shunt/writelite.yue:1747
+      local make_test_data -- shunt/writelite.yue:1748
+      make_test_data = function() -- shunt/writelite.yue:1748
+        local _with_0 = { } -- shunt/writelite.yue:1749
+        _with_0.k1 = { -- shunt/writelite.yue:1751
+          k11 = 'a', -- shunt/writelite.yue:1751
+          k12 = 'b' -- shunt/writelite.yue:1752
+        } -- shunt/writelite.yue:1750
+        _with_0.k2 = { -- shunt/writelite.yue:1754
+          k21 = 'c', -- shunt/writelite.yue:1754
+          k22 = 'd' -- shunt/writelite.yue:1755
+        } -- shunt/writelite.yue:1753
+        return _with_0 -- shunt/writelite.yue:1749
+      end -- shunt/writelite.yue:1748
+      local hash = nil -- shunt/writelite.yue:1756
+      for i = 1, 1000 do -- shunt/writelite.yue:1757
+        local h = Hasher():write(make_test_data()):finish() -- shunt/writelite.yue:1758
+        if (hash ~= nil) then -- shunt/writelite.yue:1761
+          require('shunt.spec')._assert_that([=[h]=], h, (eq(hash)), tostring("shunt/writelite.yue") .. ":" .. tostring(1762)) -- shunt/writelite.yue:1762
+        else -- shunt/writelite.yue:1764
+          hash = h -- shunt/writelite.yue:1764
+        end -- shunt/writelite.yue:1761
+      end -- shunt/writelite.yue:1764
+    end) -- shunt/writelite.yue:1764
+  end) -- shunt/writelite.yue:1730
+  return describe('writelite.Serialiser roundtrip', function() -- shunt/writelite.yue:1766
+    local tests = { -- shunt/writelite.yue:1768
+      { -- shunt/writelite.yue:1768
+        name = 'nil', -- shunt/writelite.yue:1768
+        value = nil -- shunt/writelite.yue:1769
+      }, -- shunt/writelite.yue:1768
+      { -- shunt/writelite.yue:1770
+        name = 'true', -- shunt/writelite.yue:1770
+        value = true -- shunt/writelite.yue:1771
+      }, -- shunt/writelite.yue:1770
+      { -- shunt/writelite.yue:1772
+        name = 'false', -- shunt/writelite.yue:1772
+        value = false -- shunt/writelite.yue:1773
+      }, -- shunt/writelite.yue:1772
+      { -- shunt/writelite.yue:1774
+        name = 'int (zero)', -- shunt/writelite.yue:1774
+        value = 0 -- shunt/writelite.yue:1775
+      }, -- shunt/writelite.yue:1774
+      { -- shunt/writelite.yue:1776
+        name = 'int (small, positive)', -- shunt/writelite.yue:1776
+        value = 10 -- shunt/writelite.yue:1777
+      }, -- shunt/writelite.yue:1776
+      { -- shunt/writelite.yue:1778
+        name = 'int (small, negative)', -- shunt/writelite.yue:1778
+        value = -10 -- shunt/writelite.yue:1779
+      }, -- shunt/writelite.yue:1778
+      { -- shunt/writelite.yue:1780
+        name = 'int (max int)', -- shunt/writelite.yue:1780
+        value = MAX_INT -- shunt/writelite.yue:1781
+      }, -- shunt/writelite.yue:1780
+      { -- shunt/writelite.yue:1782
+        name = 'int (min int)', -- shunt/writelite.yue:1782
+        value = MIN_INT -- shunt/writelite.yue:1783
+      }, -- shunt/writelite.yue:1782
+      { -- shunt/writelite.yue:1784
+        name = 'float (small positive)', -- shunt/writelite.yue:1784
+        value = 1.1, -- shunt/writelite.yue:1785
+        check = function(actual, value) -- shunt/writelite.yue:1786
+          return require('shunt.spec')._expect_that([=[actual]=], actual, (near(value)), tostring("shunt/writelite.yue") .. ":" .. tostring(1787)) -- shunt/writelite.yue:1787
+        end -- shunt/writelite.yue:1786
+      }, -- shunt/writelite.yue:1784
+      { -- shunt/writelite.yue:1788
+        name = 'float (small negative)', -- shunt/writelite.yue:1788
+        value = -1.1, -- shunt/writelite.yue:1789
+        check = function(actual, value) -- shunt/writelite.yue:1790
+          return require('shunt.spec')._expect_that([=[actual]=], actual, (near(value)), tostring("shunt/writelite.yue") .. ":" .. tostring(1791)) -- shunt/writelite.yue:1791
+        end -- shunt/writelite.yue:1790
+      }, -- shunt/writelite.yue:1788
+      { -- shunt/writelite.yue:1792
+        name = 'float (large positive)', -- shunt/writelite.yue:1792
+        value = 9999999999999 * 9999999 * 0.3, -- shunt/writelite.yue:1793
+        check = function(actual, value) -- shunt/writelite.yue:1794
+          return require('shunt.spec')._expect_that([=[actual]=], actual, (near(value)), tostring("shunt/writelite.yue") .. ":" .. tostring(1795)) -- shunt/writelite.yue:1795
+        end -- shunt/writelite.yue:1794
+      }, -- shunt/writelite.yue:1792
       { -- shunt/writelite.yue:1796
-        name = 'simple leaf table', -- shunt/writelite.yue:1796
-        value = { -- shunt/writelite.yue:1798
-          hello = true -- shunt/writelite.yue:1798
-        } -- shunt/writelite.yue:1797
+        name = 'float (large negative)', -- shunt/writelite.yue:1796
+        value = -9999999999999 * 9999999 * 0.3, -- shunt/writelite.yue:1797
+        check = function(actual, value) -- shunt/writelite.yue:1798
+          return require('shunt.spec')._expect_that([=[actual]=], actual, (near(value)), tostring("shunt/writelite.yue") .. ":" .. tostring(1799)) -- shunt/writelite.yue:1799
+        end -- shunt/writelite.yue:1798
       }, -- shunt/writelite.yue:1796
-      { -- shunt/writelite.yue:1799
-        name = 'simple leaf table', -- shunt/writelite.yue:1799
-        value = { -- shunt/writelite.yue:1801
-          [false] = 'world' -- shunt/writelite.yue:1801
-        } -- shunt/writelite.yue:1800
-      }, -- shunt/writelite.yue:1799
+      { -- shunt/writelite.yue:1800
+        name = 'empty string', -- shunt/writelite.yue:1800
+        value = '' -- shunt/writelite.yue:1801
+      }, -- shunt/writelite.yue:1800
       { -- shunt/writelite.yue:1802
-        name = 'complex leaf table', -- shunt/writelite.yue:1802
-        value = { -- shunt/writelite.yue:1804
-          hello = 'world' -- shunt/writelite.yue:1804
-        } -- shunt/writelite.yue:1803
+        name = 'short string', -- shunt/writelite.yue:1802
+        value = 'asdf' -- shunt/writelite.yue:1803
       }, -- shunt/writelite.yue:1802
-      { -- shunt/writelite.yue:1805
-        name = 'tree table', -- shunt/writelite.yue:1805
-        value = { -- shunt/writelite.yue:1807
-          hello = { -- shunt/writelite.yue:1808
-            world = { -- shunt/writelite.yue:1809
-              how = { -- shunt/writelite.yue:1810
-                are = 'you' -- shunt/writelite.yue:1810
-              } -- shunt/writelite.yue:1809
-            } -- shunt/writelite.yue:1808
-          } -- shunt/writelite.yue:1807
-        } -- shunt/writelite.yue:1806
-      }, -- shunt/writelite.yue:1805
-      { -- shunt/writelite.yue:1811
-        name = 'cyclic table', -- shunt/writelite.yue:1811
-        value = (function() -- shunt/writelite.yue:1812
-          local ret = { } -- shunt/writelite.yue:1813
-          ret.self = ret -- shunt/writelite.yue:1814
-          return ret -- shunt/writelite.yue:1815
-        end)() -- shunt/writelite.yue:1812
-      }, -- shunt/writelite.yue:1811
-      { -- shunt/writelite.yue:1816
-        name = 'indirectly cyclic table', -- shunt/writelite.yue:1816
-        value = (function() -- shunt/writelite.yue:1817
-          local ret = { -- shunt/writelite.yue:1818
-            child = { } -- shunt/writelite.yue:1818
-          } -- shunt/writelite.yue:1818
-          ret.child.parent = ret -- shunt/writelite.yue:1819
-          return ret -- shunt/writelite.yue:1820
-        end)() -- shunt/writelite.yue:1817
-      }, -- shunt/writelite.yue:1816
-      { -- shunt/writelite.yue:1821
-        name = 'key-tree-table', -- shunt/writelite.yue:1821
-        value = { -- shunt/writelite.yue:1823
-          [{ -- shunt/writelite.yue:1823
-            hello = 'there' -- shunt/writelite.yue:1823
-          }] = 'world' -- shunt/writelite.yue:1823
-        }, -- shunt/writelite.yue:1822
-        check = function(actual, value) -- shunt/writelite.yue:1824
-          local actual_structure -- shunt/writelite.yue:1825
-          do -- shunt/writelite.yue:1825
-            local _accum_0 = { } -- shunt/writelite.yue:1825
-            local _len_0 = 1 -- shunt/writelite.yue:1825
-            for key, value in pairs(actual) do -- shunt/writelite.yue:1825
-              _accum_0[_len_0] = { -- shunt/writelite.yue:1825
-                key = key, -- shunt/writelite.yue:1825
-                value = value -- shunt/writelite.yue:1825
-              } -- shunt/writelite.yue:1825
-              _len_0 = _len_0 + 1 -- shunt/writelite.yue:1825
-            end -- shunt/writelite.yue:1825
-            actual_structure = _accum_0 -- shunt/writelite.yue:1825
-          end -- shunt/writelite.yue:1825
-          for _index_0 = 1, #actual_structure do -- shunt/writelite.yue:1826
-            local kv = actual_structure[_index_0] -- shunt/writelite.yue:1826
-            do -- shunt/writelite.yue:1827
-              local _accum_0 = { } -- shunt/writelite.yue:1827
-              local _len_0 = 1 -- shunt/writelite.yue:1827
-              for key, value in pairs(kv.key) do -- shunt/writelite.yue:1827
-                _accum_0[_len_0] = { -- shunt/writelite.yue:1827
-                  key = key, -- shunt/writelite.yue:1827
-                  value = value -- shunt/writelite.yue:1827
-                } -- shunt/writelite.yue:1827
-                _len_0 = _len_0 + 1 -- shunt/writelite.yue:1827
-              end -- shunt/writelite.yue:1827
-              kv.key = _accum_0 -- shunt/writelite.yue:1827
-            end -- shunt/writelite.yue:1827
-          end -- shunt/writelite.yue:1827
-          return require('shunt.spec')._expect_that([=[actual_structure]=], actual_structure, (deep_eq({ -- shunt/writelite.yue:1828
-            { -- shunt/writelite.yue:1828
-              key = { -- shunt/writelite.yue:1828
-                { -- shunt/writelite.yue:1828
-                  key = 'hello', -- shunt/writelite.yue:1828
-                  value = 'there' -- shunt/writelite.yue:1828
-                } -- shunt/writelite.yue:1828
-              }, -- shunt/writelite.yue:1828
-              value = 'world' -- shunt/writelite.yue:1828
-            } -- shunt/writelite.yue:1828
-          })), tostring("shunt/writelite.yue") .. ":" .. tostring(1828)) -- shunt/writelite.yue:1833
-        end -- shunt/writelite.yue:1824
-      }, -- shunt/writelite.yue:1821
+      { -- shunt/writelite.yue:1804
+        name = 'long string', -- shunt/writelite.yue:1804
+        value = ('x'):rep(1000) -- shunt/writelite.yue:1805
+      }, -- shunt/writelite.yue:1804
+      { -- shunt/writelite.yue:1806
+        name = 'simple leaf table', -- shunt/writelite.yue:1806
+        value = { -- shunt/writelite.yue:1808
+          [false] = true -- shunt/writelite.yue:1808
+        } -- shunt/writelite.yue:1807
+      }, -- shunt/writelite.yue:1806
+      { -- shunt/writelite.yue:1809
+        name = 'simple leaf table', -- shunt/writelite.yue:1809
+        value = { -- shunt/writelite.yue:1811
+          hello = true -- shunt/writelite.yue:1811
+        } -- shunt/writelite.yue:1810
+      }, -- shunt/writelite.yue:1809
+      { -- shunt/writelite.yue:1812
+        name = 'simple leaf table', -- shunt/writelite.yue:1812
+        value = { -- shunt/writelite.yue:1814
+          [false] = 'world' -- shunt/writelite.yue:1814
+        } -- shunt/writelite.yue:1813
+      }, -- shunt/writelite.yue:1812
+      { -- shunt/writelite.yue:1815
+        name = 'complex leaf table', -- shunt/writelite.yue:1815
+        value = { -- shunt/writelite.yue:1817
+          hello = 'world' -- shunt/writelite.yue:1817
+        } -- shunt/writelite.yue:1816
+      }, -- shunt/writelite.yue:1815
+      { -- shunt/writelite.yue:1818
+        name = 'tree table', -- shunt/writelite.yue:1818
+        value = { -- shunt/writelite.yue:1820
+          hello = { -- shunt/writelite.yue:1821
+            world = { -- shunt/writelite.yue:1822
+              how = { -- shunt/writelite.yue:1823
+                are = 'you' -- shunt/writelite.yue:1823
+              } -- shunt/writelite.yue:1822
+            } -- shunt/writelite.yue:1821
+          } -- shunt/writelite.yue:1820
+        } -- shunt/writelite.yue:1819
+      }, -- shunt/writelite.yue:1818
+      { -- shunt/writelite.yue:1824
+        name = 'cyclic table', -- shunt/writelite.yue:1824
+        value = (function() -- shunt/writelite.yue:1825
+          local ret = { } -- shunt/writelite.yue:1826
+          ret.self = ret -- shunt/writelite.yue:1827
+          return ret -- shunt/writelite.yue:1828
+        end)() -- shunt/writelite.yue:1825
+      }, -- shunt/writelite.yue:1824
+      { -- shunt/writelite.yue:1829
+        name = 'indirectly cyclic table', -- shunt/writelite.yue:1829
+        value = (function() -- shunt/writelite.yue:1830
+          local ret = { -- shunt/writelite.yue:1831
+            child = { } -- shunt/writelite.yue:1831
+          } -- shunt/writelite.yue:1831
+          ret.child.parent = ret -- shunt/writelite.yue:1832
+          return ret -- shunt/writelite.yue:1833
+        end)() -- shunt/writelite.yue:1830
+      }, -- shunt/writelite.yue:1829
       { -- shunt/writelite.yue:1834
-        name = 'key-cyclic table', -- shunt/writelite.yue:1834
-        value = (function() -- shunt/writelite.yue:1835
-          local ret = { } -- shunt/writelite.yue:1836
-          ret[ret] = true -- shunt/writelite.yue:1837
-          return ret -- shunt/writelite.yue:1838
-        end)(), -- shunt/writelite.yue:1835
-        check = function(actual, value) -- shunt/writelite.yue:1839
-          local keys -- shunt/writelite.yue:1840
-          do -- shunt/writelite.yue:1840
-            local _accum_0 = { } -- shunt/writelite.yue:1840
-            local _len_0 = 1 -- shunt/writelite.yue:1840
-            for key, _ in pairs(actual) do -- shunt/writelite.yue:1840
-              _accum_0[_len_0] = { -- shunt/writelite.yue:1840
-                key = key -- shunt/writelite.yue:1840
-              } -- shunt/writelite.yue:1840
-              _len_0 = _len_0 + 1 -- shunt/writelite.yue:1840
+        name = 'key-tree-table', -- shunt/writelite.yue:1834
+        value = { -- shunt/writelite.yue:1836
+          [{ -- shunt/writelite.yue:1836
+            hello = 'there' -- shunt/writelite.yue:1836
+          }] = 'world' -- shunt/writelite.yue:1836
+        }, -- shunt/writelite.yue:1835
+        check = function(actual, value) -- shunt/writelite.yue:1837
+          local actual_structure -- shunt/writelite.yue:1838
+          do -- shunt/writelite.yue:1838
+            local _accum_0 = { } -- shunt/writelite.yue:1838
+            local _len_0 = 1 -- shunt/writelite.yue:1838
+            for key, value in pairs(actual) do -- shunt/writelite.yue:1838
+              _accum_0[_len_0] = { -- shunt/writelite.yue:1838
+                key = key, -- shunt/writelite.yue:1838
+                value = value -- shunt/writelite.yue:1838
+              } -- shunt/writelite.yue:1838
+              _len_0 = _len_0 + 1 -- shunt/writelite.yue:1838
+            end -- shunt/writelite.yue:1838
+            actual_structure = _accum_0 -- shunt/writelite.yue:1838
+          end -- shunt/writelite.yue:1838
+          for _index_0 = 1, #actual_structure do -- shunt/writelite.yue:1839
+            local kv = actual_structure[_index_0] -- shunt/writelite.yue:1839
+            do -- shunt/writelite.yue:1840
+              local _accum_0 = { } -- shunt/writelite.yue:1840
+              local _len_0 = 1 -- shunt/writelite.yue:1840
+              for key, value in pairs(kv.key) do -- shunt/writelite.yue:1840
+                _accum_0[_len_0] = { -- shunt/writelite.yue:1840
+                  key = key, -- shunt/writelite.yue:1840
+                  value = value -- shunt/writelite.yue:1840
+                } -- shunt/writelite.yue:1840
+                _len_0 = _len_0 + 1 -- shunt/writelite.yue:1840
+              end -- shunt/writelite.yue:1840
+              kv.key = _accum_0 -- shunt/writelite.yue:1840
             end -- shunt/writelite.yue:1840
-            keys = _accum_0 -- shunt/writelite.yue:1840
           end -- shunt/writelite.yue:1840
-          require('shunt.spec')._assert_that([=[keys]=], keys, (len(eq(1))), tostring("shunt/writelite.yue") .. ":" .. tostring(1841)) -- shunt/writelite.yue:1841
-          local key = keys[1].key; -- shunt/writelite.yue:1843
-          return require('shunt.spec')._expect_that([=[key[key]]=], key[key], (eq(true)), tostring("shunt/writelite.yue") .. ":" .. tostring(1844)) -- shunt/writelite.yue:1844
-        end -- shunt/writelite.yue:1839
-      } -- shunt/writelite.yue:1834
-    } -- shunt/writelite.yue:1754
-    for _index_0 = 1, #tests do -- shunt/writelite.yue:1847
-      local test = tests[_index_0] -- shunt/writelite.yue:1847
-      local name, value, matcher, check = test.name, test.value, test.matcher, test.check -- shunt/writelite.yue:1848
-      if matcher == nil then -- shunt/writelite.yue:1851
-        matcher = deep_eq -- shunt/writelite.yue:1851
-      end -- shunt/writelite.yue:1851
-      if check == nil then -- shunt/writelite.yue:1852
+          return require('shunt.spec')._expect_that([=[actual_structure]=], actual_structure, (deep_eq({ -- shunt/writelite.yue:1841
+            { -- shunt/writelite.yue:1841
+              key = { -- shunt/writelite.yue:1841
+                { -- shunt/writelite.yue:1841
+                  key = 'hello', -- shunt/writelite.yue:1841
+                  value = 'there' -- shunt/writelite.yue:1841
+                } -- shunt/writelite.yue:1841
+              }, -- shunt/writelite.yue:1841
+              value = 'world' -- shunt/writelite.yue:1841
+            } -- shunt/writelite.yue:1841
+          })), tostring("shunt/writelite.yue") .. ":" .. tostring(1841)) -- shunt/writelite.yue:1846
+        end -- shunt/writelite.yue:1837
+      }, -- shunt/writelite.yue:1834
+      { -- shunt/writelite.yue:1847
+        name = 'key-cyclic table', -- shunt/writelite.yue:1847
+        value = (function() -- shunt/writelite.yue:1848
+          local ret = { } -- shunt/writelite.yue:1849
+          ret[ret] = true -- shunt/writelite.yue:1850
+          return ret -- shunt/writelite.yue:1851
+        end)(), -- shunt/writelite.yue:1848
         check = function(actual, value) -- shunt/writelite.yue:1852
-          return require('shunt.spec')._expect_that([=[actual]=], actual, (deep_eq(value)), tostring("shunt/writelite.yue") .. ":" .. tostring(1853)) -- shunt/writelite.yue:1853
+          local keys -- shunt/writelite.yue:1853
+          do -- shunt/writelite.yue:1853
+            local _accum_0 = { } -- shunt/writelite.yue:1853
+            local _len_0 = 1 -- shunt/writelite.yue:1853
+            for key, _ in pairs(actual) do -- shunt/writelite.yue:1853
+              _accum_0[_len_0] = { -- shunt/writelite.yue:1853
+                key = key -- shunt/writelite.yue:1853
+              } -- shunt/writelite.yue:1853
+              _len_0 = _len_0 + 1 -- shunt/writelite.yue:1853
+            end -- shunt/writelite.yue:1853
+            keys = _accum_0 -- shunt/writelite.yue:1853
+          end -- shunt/writelite.yue:1853
+          require('shunt.spec')._assert_that([=[keys]=], keys, (len(eq(1))), tostring("shunt/writelite.yue") .. ":" .. tostring(1854)) -- shunt/writelite.yue:1854
+          local key = keys[1].key; -- shunt/writelite.yue:1856
+          return require('shunt.spec')._expect_that([=[key[key]]=], key[key], (eq(true)), tostring("shunt/writelite.yue") .. ":" .. tostring(1857)) -- shunt/writelite.yue:1857
         end -- shunt/writelite.yue:1852
-      end -- shunt/writelite.yue:1852
-      it("works for " .. tostring(name), function() -- shunt/writelite.yue:1855
-        local serialised = Serialiser():write(value):finish() -- shunt/writelite.yue:1856
-        local serialised_directly = Serialiser:serialise(value); -- shunt/writelite.yue:1860
-        require('shunt.spec')._expect_that([=[serialised_directly]=], serialised_directly, (eq(serialised)), tostring("shunt/writelite.yue") .. ":" .. tostring(1861)) -- shunt/writelite.yue:1861
-        print_serialised(serialised) -- shunt/writelite.yue:1863
-        local deserialised_from_string, eof = (Deserialiser(serialised)):parse() -- shunt/writelite.yue:1864
-        check(deserialised_from_string, value); -- shunt/writelite.yue:1866
-        require('shunt.spec')._expect_that([=[eof]=], eof, (eq(true)), tostring("shunt/writelite.yue") .. ":" .. tostring(1867)) -- shunt/writelite.yue:1867
-        local direct_deserialised_from_string = Deserialiser:deserialise(serialised) -- shunt/writelite.yue:1869
-        check(direct_deserialised_from_string, value) -- shunt/writelite.yue:1870
-        local path = os.tmpname() -- shunt/writelite.yue:1872
-        local file = assert(io.open(path, 'w+')) -- shunt/writelite.yue:1873
-        assert(file:write(serialised)) -- shunt/writelite.yue:1875
-        assert(file:flush()) -- shunt/writelite.yue:1876
-        assert(file:seek('set', 0)) -- shunt/writelite.yue:1877
-        local err -- shunt/writelite.yue:1879
-xpcall(function() -- shunt/writelite.yue:1881
-          local deserialised_from_file = (Deserialiser(file)):parse() -- shunt/writelite.yue:1882
-          return check(deserialised_from_file, value) -- shunt/writelite.yue:1884
-        end, function(err2) -- shunt/writelite.yue:1884
-          err = err2 -- shunt/writelite.yue:1886
-        end) -- shunt/writelite.yue:1886
-        if (err ~= nil) then -- shunt/writelite.yue:1887
-          error(err) -- shunt/writelite.yue:1888
-        end -- shunt/writelite.yue:1887
+      } -- shunt/writelite.yue:1847
+    } -- shunt/writelite.yue:1767
+    for _index_0 = 1, #tests do -- shunt/writelite.yue:1860
+      local test = tests[_index_0] -- shunt/writelite.yue:1860
+      local name, value, matcher, check = test.name, test.value, test.matcher, test.check -- shunt/writelite.yue:1861
+      if matcher == nil then -- shunt/writelite.yue:1864
+        matcher = deep_eq -- shunt/writelite.yue:1864
+      end -- shunt/writelite.yue:1864
+      if check == nil then -- shunt/writelite.yue:1865
+        check = function(actual, value) -- shunt/writelite.yue:1865
+          return require('shunt.spec')._expect_that([=[actual]=], actual, (deep_eq(value)), tostring("shunt/writelite.yue") .. ":" .. tostring(1866)) -- shunt/writelite.yue:1866
+        end -- shunt/writelite.yue:1865
+      end -- shunt/writelite.yue:1865
+      it("works for " .. tostring(name), function() -- shunt/writelite.yue:1868
+        local serialised = Serialiser():write(value):finish() -- shunt/writelite.yue:1869
+        local serialised_directly = Serialiser:serialise(value); -- shunt/writelite.yue:1873
+        require('shunt.spec')._expect_that([=[serialised_directly]=], serialised_directly, (eq(serialised)), tostring("shunt/writelite.yue") .. ":" .. tostring(1874)) -- shunt/writelite.yue:1874
+        print_serialised(serialised) -- shunt/writelite.yue:1876
+        local deserialised_from_string, eof = (Deserialiser(serialised)):parse() -- shunt/writelite.yue:1877
+        check(deserialised_from_string, value); -- shunt/writelite.yue:1879
+        require('shunt.spec')._expect_that([=[eof]=], eof, (eq(true)), tostring("shunt/writelite.yue") .. ":" .. tostring(1880)) -- shunt/writelite.yue:1880
+        local direct_deserialised_from_string = Deserialiser:deserialise(serialised) -- shunt/writelite.yue:1882
+        check(direct_deserialised_from_string, value) -- shunt/writelite.yue:1883
+        local path = os.tmpname() -- shunt/writelite.yue:1885
+        local file = assert(io.open(path, 'w+')) -- shunt/writelite.yue:1886
+        assert(file:write(serialised)) -- shunt/writelite.yue:1888
+        assert(file:flush()) -- shunt/writelite.yue:1889
         assert(file:seek('set', 0)) -- shunt/writelite.yue:1890
-xpcall(function() -- shunt/writelite.yue:1891
-          local direct_deserialised_from_file = Deserialiser:deserialise(file) -- shunt/writelite.yue:1892
-          return check(direct_deserialised_from_file, value) -- shunt/writelite.yue:1893
-        end, function(err2) -- shunt/writelite.yue:1893
-          err = err2 -- shunt/writelite.yue:1895
-        end) -- shunt/writelite.yue:1895
-        if (err ~= nil) then -- shunt/writelite.yue:1896
-          error(err) -- shunt/writelite.yue:1897
-        end -- shunt/writelite.yue:1896
-        assert(file:close()) -- shunt/writelite.yue:1899
-        return os.remove(path) -- shunt/writelite.yue:1900
-      end) -- shunt/writelite.yue:1855
-    end -- shunt/writelite.yue:1900
-  end) -- shunt/writelite.yue:1900
+        local err -- shunt/writelite.yue:1892
+xpcall(function() -- shunt/writelite.yue:1894
+          local deserialised_from_file = (Deserialiser(file)):parse() -- shunt/writelite.yue:1895
+          return check(deserialised_from_file, value) -- shunt/writelite.yue:1897
+        end, function(err2) -- shunt/writelite.yue:1897
+          err = err2 -- shunt/writelite.yue:1899
+        end) -- shunt/writelite.yue:1899
+        if (err ~= nil) then -- shunt/writelite.yue:1900
+          error(err) -- shunt/writelite.yue:1901
+        end -- shunt/writelite.yue:1900
+        assert(file:seek('set', 0)) -- shunt/writelite.yue:1903
+xpcall(function() -- shunt/writelite.yue:1904
+          local direct_deserialised_from_file = Deserialiser:deserialise(file) -- shunt/writelite.yue:1905
+          return check(direct_deserialised_from_file, value) -- shunt/writelite.yue:1906
+        end, function(err2) -- shunt/writelite.yue:1906
+          err = err2 -- shunt/writelite.yue:1908
+        end) -- shunt/writelite.yue:1908
+        if (err ~= nil) then -- shunt/writelite.yue:1909
+          error(err) -- shunt/writelite.yue:1910
+        end -- shunt/writelite.yue:1909
+        assert(file:close()) -- shunt/writelite.yue:1912
+        return os.remove(path) -- shunt/writelite.yue:1913
+      end) -- shunt/writelite.yue:1868
+    end -- shunt/writelite.yue:1913
+  end) -- shunt/writelite.yue:1913
 end) -- shunt/writelite.yue:1073
-return _module_0 -- shunt/writelite.yue:1900
+return _module_0 -- shunt/writelite.yue:1913
 end
 package.preload['shunt.compat'] = function(...)
 -- [yue]: shunt/compat.yue
