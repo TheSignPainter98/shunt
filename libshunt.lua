@@ -1,3 +1,1586 @@
+package.preload['shunt.spec'] = function(...)
+-- [yue]: shunt/spec.yue
+local _module_0 = { } -- shunt/spec.yue:1
+local spec_fns, verbose, set_log_verbosity, log, spec, root_spec, current_spec, current_spec_kind, describe, it, declare_spec_section, Spec, FATAL_TEST_ERROR_MARKER, Test, expect_that, _expect_that, assert_that, _assert_that, get_caller_location, Anything, Some, Not, Eq, Compare, Near, DeepEq, Type, Matches, Len, ToStringsAs, NoErrors, Errors, Contains, Each, Fields, visible_chars, repr, is_list, can_sort, clone, matchers, reflow, testing, running_tests, run_tests -- shunt/spec.yue:1
+spec_fns = nil -- shunt/spec.yue:3
+verbose = false -- shunt/spec.yue:5
+set_log_verbosity = function(v) -- shunt/spec.yue:6
+  if v == nil then -- shunt/spec.yue:6
+    v = true -- shunt/spec.yue:6
+  end -- shunt/spec.yue:6
+  verbose = v -- shunt/spec.yue:7
+end -- shunt/spec.yue:6
+_module_0["set_log_verbosity"] = set_log_verbosity -- shunt/spec.yue:7
+log = function(msg) -- shunt/spec.yue:8
+  if verbose then -- shunt/spec.yue:9
+    return print(msg()) -- shunt/spec.yue:10
+  end -- shunt/spec.yue:9
+end -- shunt/spec.yue:8
+spec = function(fn) -- shunt/spec.yue:12
+  if not (spec_fns ~= nil) then -- shunt/spec.yue:13
+    spec_fns = { } -- shunt/spec.yue:14
+  end -- shunt/spec.yue:13
+  spec_fns[#spec_fns + 1] = fn -- shunt/spec.yue:15
+end -- shunt/spec.yue:12
+_module_0["spec"] = spec -- shunt/spec.yue:15
+root_spec = nil -- shunt/spec.yue:17
+current_spec = nil -- shunt/spec.yue:18
+current_spec_kind = 'describe' -- shunt/spec.yue:19
+describe = function(what, fn) -- shunt/spec.yue:20
+  return declare_spec_section('describe', what, fn) -- shunt/spec.yue:21
+end -- shunt/spec.yue:20
+_module_0["describe"] = describe -- shunt/spec.yue:21
+it = function(what, fn) -- shunt/spec.yue:23
+  return declare_spec_section('it', what, fn) -- shunt/spec.yue:24
+end -- shunt/spec.yue:23
+_module_0["it"] = it -- shunt/spec.yue:24
+declare_spec_section = function(kind, what, fn) -- shunt/spec.yue:26
+  if not (root_spec ~= nil) then -- shunt/spec.yue:27
+    root_spec = Spec:root() -- shunt/spec.yue:28
+  end -- shunt/spec.yue:27
+  if not (current_spec ~= nil) then -- shunt/spec.yue:29
+    current_spec = root_spec -- shunt/spec.yue:30
+  end -- shunt/spec.yue:29
+  if current_spec.kind ~= 'describe' then -- shunt/spec.yue:32
+    error("cannot use `" .. tostring(kind) .. "` in `" .. tostring(current_spec.kind) .. "` spec") -- shunt/spec.yue:33
+  end -- shunt/spec.yue:32
+  if 'describe' == kind then -- shunt/spec.yue:36
+    local parent_spec = current_spec -- shunt/spec.yue:37
+    current_spec = Spec(kind, what, parent_spec) -- shunt/spec.yue:39
+    fn() -- shunt/spec.yue:40
+    parent_spec:add_child(current_spec) -- shunt/spec.yue:42
+    current_spec = parent_spec -- shunt/spec.yue:43
+  elseif 'it' == kind then -- shunt/spec.yue:44
+    return current_spec:add_child(Test(what, fn, current_spec)) -- shunt/spec.yue:45
+  else -- shunt/spec.yue:47
+    return error("internal error: unknown kind " .. tostring(repr(kind))) -- shunt/spec.yue:47
+  end -- shunt/spec.yue:47
+end -- shunt/spec.yue:26
+do -- shunt/spec.yue:49
+  local _class_0 -- shunt/spec.yue:49
+  local _base_0 = { -- shunt/spec.yue:49
+    add_child = function(self, child) -- shunt/spec.yue:56
+      do -- shunt/spec.yue:57
+        local _obj_0 = self.children -- shunt/spec.yue:57
+        _obj_0[#_obj_0 + 1] = child -- shunt/spec.yue:57
+      end -- shunt/spec.yue:57
+    end, -- shunt/spec.yue:59
+    desc = function(self) -- shunt/spec.yue:59
+      local rev_parts -- shunt/spec.yue:60
+      do -- shunt/spec.yue:60
+        local _with_0 = { -- shunt/spec.yue:60
+          self.name -- shunt/spec.yue:60
+        } -- shunt/spec.yue:60
+        spec = self.parent -- shunt/spec.yue:61
+        while (spec ~= nil) do -- shunt/spec.yue:62
+          _with_0[#_with_0 + 1] = spec.name -- shunt/spec.yue:63
+          spec = spec.parent -- shunt/spec.yue:64
+        end -- shunt/spec.yue:64
+        rev_parts = _with_0 -- shunt/spec.yue:60
+      end -- shunt/spec.yue:60
+      local parts -- shunt/spec.yue:65
+      do -- shunt/spec.yue:65
+        local _with_0 = { } -- shunt/spec.yue:65
+        local n = #rev_parts -- shunt/spec.yue:66
+        for i = 1, n do -- shunt/spec.yue:67
+          _with_0[i] = rev_parts[n - i + 1] -- shunt/spec.yue:68
+        end -- shunt/spec.yue:68
+        parts = _with_0 -- shunt/spec.yue:65
+      end -- shunt/spec.yue:65
+      return table.concat(parts, ' ') -- shunt/spec.yue:69
+    end, -- shunt/spec.yue:71
+    test = function(self, filter) -- shunt/spec.yue:71
+      if filter == nil then -- shunt/spec.yue:71
+        filter = nil -- shunt/spec.yue:71
+      end -- shunt/spec.yue:71
+      local _list_0 = self.children -- shunt/spec.yue:72
+      for _index_0 = 1, #_list_0 do -- shunt/spec.yue:72
+        local child = _list_0[_index_0] -- shunt/spec.yue:72
+        child:test(filter) -- shunt/spec.yue:73
+      end -- shunt/spec.yue:73
+    end -- shunt/spec.yue:49
+  } -- shunt/spec.yue:49
+  if _base_0.__index == nil then -- shunt/spec.yue:49
+    _base_0.__index = _base_0 -- shunt/spec.yue:49
+  end -- shunt/spec.yue:73
+  _class_0 = setmetatable({ -- shunt/spec.yue:49
+    __init = function(self, kind, name, parent) -- shunt/spec.yue:53
+      self.kind = kind -- shunt/spec.yue:53
+      self.name = name -- shunt/spec.yue:53
+      self.parent = parent -- shunt/spec.yue:53
+      self.children = { } -- shunt/spec.yue:54
+    end, -- shunt/spec.yue:49
+    __base = _base_0, -- shunt/spec.yue:49
+    __name = "Spec" -- shunt/spec.yue:49
+  }, { -- shunt/spec.yue:49
+    __index = _base_0, -- shunt/spec.yue:49
+    __call = function(cls, ...) -- shunt/spec.yue:49
+      local _self_0 = setmetatable({ }, _base_0) -- shunt/spec.yue:49
+      cls.__init(_self_0, ...) -- shunt/spec.yue:49
+      return _self_0 -- shunt/spec.yue:49
+    end -- shunt/spec.yue:49
+  }) -- shunt/spec.yue:49
+  _base_0.__class = _class_0 -- shunt/spec.yue:49
+  local self = _class_0; -- shunt/spec.yue:49
+  self.root = function(self) -- shunt/spec.yue:50
+    return Spec('describe', nil, nil) -- shunt/spec.yue:51
+  end -- shunt/spec.yue:50
+  Spec = _class_0 -- shunt/spec.yue:49
+end -- shunt/spec.yue:73
+FATAL_TEST_ERROR_MARKER = 'INTERNAL ERROR: FATAL TEST ERROR' -- shunt/spec.yue:75
+do -- shunt/spec.yue:77
+  local _class_0 -- shunt/spec.yue:77
+  local _base_0 = { -- shunt/spec.yue:77
+    test = function(self, filter) -- shunt/spec.yue:84
+      if filter == nil then -- shunt/spec.yue:84
+        filter = nil -- shunt/spec.yue:84
+      end -- shunt/spec.yue:84
+      if (filter ~= nil) then -- shunt/spec.yue:85
+        local desc = self:desc() -- shunt/spec.yue:86
+        if not desc:match(filter) then -- shunt/spec.yue:87
+          log(function() -- shunt/spec.yue:88
+            return "* skipping " .. tostring(desc) -- shunt/spec.yue:88
+          end) -- shunt/spec.yue:88
+          return -- shunt/spec.yue:89
+        end -- shunt/spec.yue:87
+      else -- shunt/spec.yue:91
+        log(function() -- shunt/spec.yue:91
+          return "* running " .. tostring(self:desc()) -- shunt/spec.yue:91
+        end) -- shunt/spec.yue:91
+      end -- shunt/spec.yue:85
+      self.__class.num_run = self.__class.num_run + 1 -- shunt/spec.yue:92
+      self.__class.current_run_failures = { } -- shunt/spec.yue:94
+      local print_calls = { } -- shunt/spec.yue:95
+      local old_print = print -- shunt/spec.yue:96
+      print = function(...) -- shunt/spec.yue:97
+        print_calls[#print_calls + 1] = { -- shunt/spec.yue:98
+          ... -- shunt/spec.yue:98
+        } -- shunt/spec.yue:98
+      end -- shunt/spec.yue:97
+xpcall(function() -- shunt/spec.yue:99
+        return self:assertions_fn() -- shunt/spec.yue:100
+      end, function(err) -- shunt/spec.yue:100
+        if not err:match(FATAL_TEST_ERROR_MARKER) then -- shunt/spec.yue:102
+          return Test:fail("caught error: " .. tostring(debug.traceback(err, 2))) -- shunt/spec.yue:103
+        end -- shunt/spec.yue:102
+      end) -- shunt/spec.yue:103
+      print = old_print -- shunt/spec.yue:104
+      local failures = self.__class.current_run_failures -- shunt/spec.yue:106
+      self.__class.current_run_failures = nil -- shunt/spec.yue:107
+      if #failures == 0 then -- shunt/spec.yue:109
+        return -- shunt/spec.yue:110
+      end -- shunt/spec.yue:109
+      if #print_calls > 0 then -- shunt/spec.yue:112
+        print('--- START of print output ---') -- shunt/spec.yue:113
+        print(table.concat((function() -- shunt/spec.yue:114
+          local _accum_0 = { } -- shunt/spec.yue:114
+          local _len_0 = 1 -- shunt/spec.yue:114
+          for _index_0 = 1, #print_calls do -- shunt/spec.yue:114
+            local print_call_parts = print_calls[_index_0] -- shunt/spec.yue:114
+            _accum_0[_len_0] = table.concat((function() -- shunt/spec.yue:114
+              local _accum_1 = { } -- shunt/spec.yue:114
+              local _len_1 = 1 -- shunt/spec.yue:114
+              for _index_1 = 1, #print_call_parts do -- shunt/spec.yue:114
+                local print_call_part = print_call_parts[_index_1] -- shunt/spec.yue:114
+                _accum_1[_len_1] = tostring(print_call_part) -- shunt/spec.yue:114
+                _len_1 = _len_1 + 1 -- shunt/spec.yue:114
+              end -- shunt/spec.yue:114
+              return _accum_1 -- shunt/spec.yue:114
+            end)(), '\t') -- shunt/spec.yue:114
+            _len_0 = _len_0 + 1 -- shunt/spec.yue:114
+          end -- shunt/spec.yue:114
+          return _accum_0 -- shunt/spec.yue:114
+        end)(), '\n')) -- shunt/spec.yue:114
+        print('--- END of print output ---') -- shunt/spec.yue:115
+      end -- shunt/spec.yue:112
+      print("* " .. tostring(self:desc()) .. ":") -- shunt/spec.yue:117
+      for _index_0 = 1, #failures do -- shunt/spec.yue:118
+        local failure = failures[_index_0] -- shunt/spec.yue:118
+        print("  * " .. tostring(reflow('    ', failure))) -- shunt/spec.yue:119
+      end -- shunt/spec.yue:119
+    end, -- shunt/spec.yue:121
+    desc = function(self) -- shunt/spec.yue:121
+      return tostring(self.spec:desc()) .. " " .. tostring(self.name) -- shunt/spec.yue:122
+    end -- shunt/spec.yue:77
+  } -- shunt/spec.yue:77
+  if _base_0.__index == nil then -- shunt/spec.yue:77
+    _base_0.__index = _base_0 -- shunt/spec.yue:77
+  end -- shunt/spec.yue:145
+  _class_0 = setmetatable({ -- shunt/spec.yue:77
+    __init = function(self, name, assertions_fn, spec) -- shunt/spec.yue:78
+      self.name = name -- shunt/spec.yue:78
+      self.assertions_fn = assertions_fn -- shunt/spec.yue:78
+      self.spec = spec -- shunt/spec.yue:78
+    end, -- shunt/spec.yue:77
+    __base = _base_0, -- shunt/spec.yue:77
+    __name = "Test" -- shunt/spec.yue:77
+  }, { -- shunt/spec.yue:77
+    __index = _base_0, -- shunt/spec.yue:77
+    __call = function(cls, ...) -- shunt/spec.yue:77
+      local _self_0 = setmetatable({ }, _base_0) -- shunt/spec.yue:77
+      cls.__init(_self_0, ...) -- shunt/spec.yue:77
+      return _self_0 -- shunt/spec.yue:77
+    end -- shunt/spec.yue:77
+  }) -- shunt/spec.yue:77
+  _base_0.__class = _class_0 -- shunt/spec.yue:77
+  local self = _class_0; -- shunt/spec.yue:77
+  self.num_run = 0 -- shunt/spec.yue:80
+  self.num_failures = 0 -- shunt/spec.yue:81
+  self.current_run_failures = nil -- shunt/spec.yue:82
+  self.fail = function(self, cause, message) -- shunt/spec.yue:124
+    self.__class.num_failures = self.__class.num_failures + 1 -- shunt/spec.yue:125
+    local cause_string -- shunt/spec.yue:126
+    do -- shunt/spec.yue:126
+      local _exp_0 = type(cause) -- shunt/spec.yue:126
+      if 'string' == _exp_0 then -- shunt/spec.yue:127
+        cause_string = cause -- shunt/spec.yue:128
+      elseif 'table' == _exp_0 then -- shunt/spec.yue:129
+        local value_label, location, expected, actual_repr, explanation = cause.value_label, cause.location, cause.expected, cause.actual_repr, cause.explanation -- shunt/spec.yue:130
+        local value_label_line = '' -- shunt/spec.yue:131
+        if (value_label ~= nil) then -- shunt/spec.yue:132
+          value_label_line = "value: " .. tostring(value_label) .. "\n" -- shunt/spec.yue:133
+        end -- shunt/spec.yue:132
+        cause_string = tostring(value_label_line) .. "expected: " .. tostring(reflow('    ', expected, 70)) .. "\nactual: " .. tostring(reflow('    ', actual_repr, 70)) .. ",\n  " .. tostring(reflow('  ', explanation, 70)) .. "\nat: " .. tostring(location) -- shunt/spec.yue:135
+      else -- shunt/spec.yue:137
+        cause_string = error("internal error: invalid matcher return: " .. tostring(repr(cause))) -- shunt/spec.yue:137
+      end -- shunt/spec.yue:137
+    end -- shunt/spec.yue:137
+    if (message ~= nil) then -- shunt/spec.yue:138
+      do -- shunt/spec.yue:139
+        local _obj_0 = self.__class.current_run_failures -- shunt/spec.yue:139
+        _obj_0[#_obj_0 + 1] = tostring(message) .. ": " .. tostring(cause_string) -- shunt/spec.yue:139
+      end -- shunt/spec.yue:139
+    else -- shunt/spec.yue:141
+      do -- shunt/spec.yue:141
+        local _obj_0 = self.__class.current_run_failures -- shunt/spec.yue:141
+        _obj_0[#_obj_0 + 1] = cause_string -- shunt/spec.yue:141
+      end -- shunt/spec.yue:141
+    end -- shunt/spec.yue:138
+  end -- shunt/spec.yue:124
+  self.fatal = function(self, cause, message) -- shunt/spec.yue:143
+    self.__class:fail(cause, message) -- shunt/spec.yue:144
+    return error(FATAL_TEST_ERROR_MARKER) -- shunt/spec.yue:145
+  end -- shunt/spec.yue:143
+  Test = _class_0 -- shunt/spec.yue:77
+end -- shunt/spec.yue:145
+expect_that = function(actual, matcher) -- shunt/spec.yue:147
+  return _expect_that(nil, actual, matcher, nil) -- shunt/spec.yue:148
+end -- shunt/spec.yue:147
+_module_0["expect_that"] = expect_that -- shunt/spec.yue:148
+_expect_that = function(value_label, actual, matcher, location) -- shunt/spec.yue:150
+  if not (Test.current_run_failures ~= nil) then -- shunt/spec.yue:151
+    error('internal error: expect_that call must be within an `it` call') -- shunt/spec.yue:152
+  end -- shunt/spec.yue:151
+  if matcher:matches(actual) then -- shunt/spec.yue:154
+    return -- shunt/spec.yue:155
+  end -- shunt/spec.yue:154
+  if location == nil then -- shunt/spec.yue:157
+    location = get_caller_location('expect_that') -- shunt/spec.yue:157
+  end -- shunt/spec.yue:157
+  return Test:fail({ -- shunt/spec.yue:159
+    value_label = value_label, -- shunt/spec.yue:159
+    location = location, -- shunt/spec.yue:160
+    expected = matcher:describe(), -- shunt/spec.yue:161
+    actual_repr = (function() -- shunt/spec.yue:162
+      local _exp_0 -- shunt/spec.yue:162
+      do -- shunt/spec.yue:162
+        local _obj_0 = matcher.actual_repr -- shunt/spec.yue:162
+        if _obj_0 ~= nil then -- shunt/spec.yue:162
+          _exp_0 = _obj_0(matcher) -- shunt/spec.yue:162
+        end -- shunt/spec.yue:162
+      end -- shunt/spec.yue:162
+      if _exp_0 ~= nil then -- shunt/spec.yue:162
+        return _exp_0 -- shunt/spec.yue:162
+      else -- shunt/spec.yue:162
+        return repr(actual) -- shunt/spec.yue:162
+      end -- shunt/spec.yue:162
+    end)(), -- shunt/spec.yue:162
+    explanation = matcher:explain_match(actual) -- shunt/spec.yue:163
+  }) -- shunt/spec.yue:163
+end -- shunt/spec.yue:150
+_module_0["_expect_that"] = _expect_that -- shunt/spec.yue:163
+assert_that = function(actual, matcher) -- shunt/spec.yue:165
+  return _assert_that(nil, actual, matcher, nil) -- shunt/spec.yue:166
+end -- shunt/spec.yue:165
+_module_0["assert_that"] = assert_that -- shunt/spec.yue:166
+_assert_that = function(value_label, actual, matcher, location) -- shunt/spec.yue:168
+  if not (Test.current_run_failures ~= nil) then -- shunt/spec.yue:169
+    error('internal error: assert_that call must be within an `it` call') -- shunt/spec.yue:170
+  end -- shunt/spec.yue:169
+  if matcher:matches(actual) then -- shunt/spec.yue:172
+    return -- shunt/spec.yue:173
+  end -- shunt/spec.yue:172
+  if location == nil then -- shunt/spec.yue:175
+    location = get_caller_location('assert_that') -- shunt/spec.yue:175
+  end -- shunt/spec.yue:175
+  return Test:fatal({ -- shunt/spec.yue:177
+    value_label = value_label, -- shunt/spec.yue:177
+    location = location, -- shunt/spec.yue:178
+    expected = matcher:describe(), -- shunt/spec.yue:179
+    actual_repr = (function() -- shunt/spec.yue:180
+      local _exp_0 -- shunt/spec.yue:180
+      do -- shunt/spec.yue:180
+        local _obj_0 = matcher.actual_repr -- shunt/spec.yue:180
+        if _obj_0 ~= nil then -- shunt/spec.yue:180
+          _exp_0 = _obj_0(matcher) -- shunt/spec.yue:180
+        end -- shunt/spec.yue:180
+      end -- shunt/spec.yue:180
+      if _exp_0 ~= nil then -- shunt/spec.yue:180
+        return _exp_0 -- shunt/spec.yue:180
+      else -- shunt/spec.yue:180
+        return repr(actual) -- shunt/spec.yue:180
+      end -- shunt/spec.yue:180
+    end)(), -- shunt/spec.yue:180
+    explanation = matcher:explain_match(actual) -- shunt/spec.yue:181
+  }) -- shunt/spec.yue:181
+end -- shunt/spec.yue:168
+_module_0["_assert_that"] = _assert_that -- shunt/spec.yue:181
+get_caller_location = function(kind) -- shunt/spec.yue:184
+  local currentline, short_src, what -- shunt/spec.yue:185
+  do -- shunt/spec.yue:185
+    local _obj_0 = debug.getinfo(3, 'Sl') -- shunt/spec.yue:185
+    currentline, short_src, what = _obj_0.currentline, _obj_0.short_src, _obj_0.what -- shunt/spec.yue:185
+  end -- shunt/spec.yue:185
+  if 'C' == what or 'tail' == what then -- shunt/spec.yue:187
+    return "last " .. tostring(kind) .. " call (debug info lost)" -- shunt/spec.yue:188
+  else -- shunt/spec.yue:190
+    return tostring(short_src) .. ":" .. tostring(currentline) -- shunt/spec.yue:190
+  end -- shunt/spec.yue:190
+end -- shunt/spec.yue:184
+do -- shunt/spec.yue:192
+  local _class_0 -- shunt/spec.yue:192
+  local _base_0 = { -- shunt/spec.yue:192
+    matches = function(self, actual) -- shunt/spec.yue:193
+      return true -- shunt/spec.yue:194
+    end, -- shunt/spec.yue:196
+    explain_match = function(self, actual) -- shunt/spec.yue:196
+      return "which " .. tostring(self:describe()) -- shunt/spec.yue:197
+    end, -- shunt/spec.yue:199
+    describe = function(self, is_match) -- shunt/spec.yue:199
+      if is_match == nil then -- shunt/spec.yue:199
+        is_match = true -- shunt/spec.yue:199
+      end -- shunt/spec.yue:199
+      return "is anything" -- shunt/spec.yue:200
+    end -- shunt/spec.yue:192
+  } -- shunt/spec.yue:192
+  if _base_0.__index == nil then -- shunt/spec.yue:192
+    _base_0.__index = _base_0 -- shunt/spec.yue:192
+  end -- shunt/spec.yue:200
+  _class_0 = setmetatable({ -- shunt/spec.yue:192
+    __init = function() end, -- shunt/spec.yue:192
+    __base = _base_0, -- shunt/spec.yue:192
+    __name = "Anything" -- shunt/spec.yue:192
+  }, { -- shunt/spec.yue:192
+    __index = _base_0, -- shunt/spec.yue:192
+    __call = function(cls, ...) -- shunt/spec.yue:192
+      local _self_0 = setmetatable({ }, _base_0) -- shunt/spec.yue:192
+      cls.__init(_self_0, ...) -- shunt/spec.yue:192
+      return _self_0 -- shunt/spec.yue:192
+    end -- shunt/spec.yue:192
+  }) -- shunt/spec.yue:192
+  _base_0.__class = _class_0 -- shunt/spec.yue:192
+  Anything = _class_0 -- shunt/spec.yue:192
+end -- shunt/spec.yue:200
+do -- shunt/spec.yue:202
+  local _class_0 -- shunt/spec.yue:202
+  local _base_0 = { -- shunt/spec.yue:202
+    matches = function(self, actual) -- shunt/spec.yue:203
+      return (actual ~= nil) -- shunt/spec.yue:204
+    end, -- shunt/spec.yue:206
+    explain_match = function(self, actual) -- shunt/spec.yue:206
+      return "which " .. tostring(self:describe()) -- shunt/spec.yue:207
+    end, -- shunt/spec.yue:209
+    describe = function(self, is_match) -- shunt/spec.yue:209
+      if is_match == nil then -- shunt/spec.yue:209
+        is_match = true -- shunt/spec.yue:209
+      end -- shunt/spec.yue:209
+      return "is non-nil" -- shunt/spec.yue:210
+    end -- shunt/spec.yue:202
+  } -- shunt/spec.yue:202
+  if _base_0.__index == nil then -- shunt/spec.yue:202
+    _base_0.__index = _base_0 -- shunt/spec.yue:202
+  end -- shunt/spec.yue:210
+  _class_0 = setmetatable({ -- shunt/spec.yue:202
+    __init = function() end, -- shunt/spec.yue:202
+    __base = _base_0, -- shunt/spec.yue:202
+    __name = "Some" -- shunt/spec.yue:202
+  }, { -- shunt/spec.yue:202
+    __index = _base_0, -- shunt/spec.yue:202
+    __call = function(cls, ...) -- shunt/spec.yue:202
+      local _self_0 = setmetatable({ }, _base_0) -- shunt/spec.yue:202
+      cls.__init(_self_0, ...) -- shunt/spec.yue:202
+      return _self_0 -- shunt/spec.yue:202
+    end -- shunt/spec.yue:202
+  }) -- shunt/spec.yue:202
+  _base_0.__class = _class_0 -- shunt/spec.yue:202
+  Some = _class_0 -- shunt/spec.yue:202
+end -- shunt/spec.yue:210
+do -- shunt/spec.yue:212
+  local _class_0 -- shunt/spec.yue:212
+  local _base_0 = { -- shunt/spec.yue:212
+    matches = function(self, actual) -- shunt/spec.yue:215
+      return not self.inner:matches(actual) -- shunt/spec.yue:216
+    end, -- shunt/spec.yue:218
+    explain_match = function(self, actual) -- shunt/spec.yue:218
+      return self.inner:explain_match(actual) -- shunt/spec.yue:219
+    end, -- shunt/spec.yue:221
+    describe = function(self, is_match) -- shunt/spec.yue:221
+      if is_match == nil then -- shunt/spec.yue:221
+        is_match = true -- shunt/spec.yue:221
+      end -- shunt/spec.yue:221
+      return self.inner:describe(not is_match) -- shunt/spec.yue:222
+    end -- shunt/spec.yue:212
+  } -- shunt/spec.yue:212
+  if _base_0.__index == nil then -- shunt/spec.yue:212
+    _base_0.__index = _base_0 -- shunt/spec.yue:212
+  end -- shunt/spec.yue:222
+  _class_0 = setmetatable({ -- shunt/spec.yue:212
+    __init = function(self, inner) -- shunt/spec.yue:213
+      self.inner = inner -- shunt/spec.yue:213
+    end, -- shunt/spec.yue:212
+    __base = _base_0, -- shunt/spec.yue:212
+    __name = "Not" -- shunt/spec.yue:212
+  }, { -- shunt/spec.yue:212
+    __index = _base_0, -- shunt/spec.yue:212
+    __call = function(cls, ...) -- shunt/spec.yue:212
+      local _self_0 = setmetatable({ }, _base_0) -- shunt/spec.yue:212
+      cls.__init(_self_0, ...) -- shunt/spec.yue:212
+      return _self_0 -- shunt/spec.yue:212
+    end -- shunt/spec.yue:212
+  }) -- shunt/spec.yue:212
+  _base_0.__class = _class_0 -- shunt/spec.yue:212
+  Not = _class_0 -- shunt/spec.yue:212
+end -- shunt/spec.yue:222
+do -- shunt/spec.yue:224
+  local _class_0 -- shunt/spec.yue:224
+  local _base_0 = { -- shunt/spec.yue:224
+    matches = function(self, actual) -- shunt/spec.yue:227
+      return self.expected == actual -- shunt/spec.yue:228
+    end, -- shunt/spec.yue:230
+    explain_match = function(self, actual) -- shunt/spec.yue:230
+      return "which " .. tostring(self:describe(self:matches(actual))) -- shunt/spec.yue:231
+    end, -- shunt/spec.yue:233
+    describe = function(self, is_match) -- shunt/spec.yue:233
+      if is_match == nil then -- shunt/spec.yue:233
+        is_match = true -- shunt/spec.yue:233
+      end -- shunt/spec.yue:233
+      if is_match then -- shunt/spec.yue:234
+        return "is equal to " .. tostring(repr(self.expected)) -- shunt/spec.yue:235
+      else -- shunt/spec.yue:237
+        return "isn't equal to " .. tostring(repr(self.expected)) -- shunt/spec.yue:237
+      end -- shunt/spec.yue:234
+    end -- shunt/spec.yue:224
+  } -- shunt/spec.yue:224
+  if _base_0.__index == nil then -- shunt/spec.yue:224
+    _base_0.__index = _base_0 -- shunt/spec.yue:224
+  end -- shunt/spec.yue:237
+  _class_0 = setmetatable({ -- shunt/spec.yue:224
+    __init = function(self, expected) -- shunt/spec.yue:225
+      self.expected = expected -- shunt/spec.yue:225
+    end, -- shunt/spec.yue:224
+    __base = _base_0, -- shunt/spec.yue:224
+    __name = "Eq" -- shunt/spec.yue:224
+  }, { -- shunt/spec.yue:224
+    __index = _base_0, -- shunt/spec.yue:224
+    __call = function(cls, ...) -- shunt/spec.yue:224
+      local _self_0 = setmetatable({ }, _base_0) -- shunt/spec.yue:224
+      cls.__init(_self_0, ...) -- shunt/spec.yue:224
+      return _self_0 -- shunt/spec.yue:224
+    end -- shunt/spec.yue:224
+  }) -- shunt/spec.yue:224
+  _base_0.__class = _class_0 -- shunt/spec.yue:224
+  Eq = _class_0 -- shunt/spec.yue:224
+end -- shunt/spec.yue:237
+do -- shunt/spec.yue:239
+  local _class_0 -- shunt/spec.yue:239
+  local _base_0 = { -- shunt/spec.yue:239
+    matches = function(self, actual) -- shunt/spec.yue:242
+      local _exp_0 = self.kind -- shunt/spec.yue:243
+      if '==' == _exp_0 then -- shunt/spec.yue:244
+        return actual == self.value -- shunt/spec.yue:245
+      elseif '<' == _exp_0 then -- shunt/spec.yue:246
+        return actual < self.value -- shunt/spec.yue:247
+      elseif '<=' == _exp_0 then -- shunt/spec.yue:248
+        return actual <= self.value -- shunt/spec.yue:249
+      elseif '>' == _exp_0 then -- shunt/spec.yue:250
+        return actual > self.value -- shunt/spec.yue:251
+      elseif '>=' == _exp_0 then -- shunt/spec.yue:252
+        return actual >= self.value -- shunt/spec.yue:253
+      else -- shunt/spec.yue:255
+        return error("internal error: unrecognised comparison: " .. tostring(repr(self.kind))) -- shunt/spec.yue:255
+      end -- shunt/spec.yue:255
+    end, -- shunt/spec.yue:257
+    explain_match = function(self, actual) -- shunt/spec.yue:257
+      return "which " .. tostring(self:describe(self:matches(actual))) -- shunt/spec.yue:258
+    end, -- shunt/spec.yue:260
+    describe = function(self, is_match) -- shunt/spec.yue:260
+      if is_match == nil then -- shunt/spec.yue:260
+        is_match = true -- shunt/spec.yue:260
+      end -- shunt/spec.yue:260
+      local comparison_name -- shunt/spec.yue:261
+      do -- shunt/spec.yue:261
+        local _exp_0 = self.kind -- shunt/spec.yue:261
+        if '==' == _exp_0 then -- shunt/spec.yue:262
+          comparison_name = "equal to" -- shunt/spec.yue:263
+        elseif '<' == _exp_0 then -- shunt/spec.yue:264
+          comparison_name = "less than" -- shunt/spec.yue:265
+        elseif '<=' == _exp_0 then -- shunt/spec.yue:266
+          comparison_name = "at most" -- shunt/spec.yue:267
+        elseif '>' == _exp_0 then -- shunt/spec.yue:268
+          comparison_name = "greater than" -- shunt/spec.yue:269
+        elseif '>=' == _exp_0 then -- shunt/spec.yue:270
+          comparison_name = "at least" -- shunt/spec.yue:271
+        else -- shunt/spec.yue:273
+          comparison_name = error("internal error: unrecognised comparison: " .. tostring(repr(self.kind))) -- shunt/spec.yue:273
+        end -- shunt/spec.yue:273
+      end -- shunt/spec.yue:273
+      if is_match then -- shunt/spec.yue:274
+        return "is " .. tostring(comparison_name) .. " " .. tostring(repr(self.value)) -- shunt/spec.yue:275
+      else -- shunt/spec.yue:277
+        return "isn't " .. tostring(comparison_name) .. " " .. tostring(repr(self.value)) -- shunt/spec.yue:277
+      end -- shunt/spec.yue:274
+    end -- shunt/spec.yue:239
+  } -- shunt/spec.yue:239
+  if _base_0.__index == nil then -- shunt/spec.yue:239
+    _base_0.__index = _base_0 -- shunt/spec.yue:239
+  end -- shunt/spec.yue:277
+  _class_0 = setmetatable({ -- shunt/spec.yue:239
+    __init = function(self, kind, value) -- shunt/spec.yue:240
+      self.kind = kind -- shunt/spec.yue:240
+      self.value = value -- shunt/spec.yue:240
+    end, -- shunt/spec.yue:239
+    __base = _base_0, -- shunt/spec.yue:239
+    __name = "Compare" -- shunt/spec.yue:239
+  }, { -- shunt/spec.yue:239
+    __index = _base_0, -- shunt/spec.yue:239
+    __call = function(cls, ...) -- shunt/spec.yue:239
+      local _self_0 = setmetatable({ }, _base_0) -- shunt/spec.yue:239
+      cls.__init(_self_0, ...) -- shunt/spec.yue:239
+      return _self_0 -- shunt/spec.yue:239
+    end -- shunt/spec.yue:239
+  }) -- shunt/spec.yue:239
+  _base_0.__class = _class_0 -- shunt/spec.yue:239
+  Compare = _class_0 -- shunt/spec.yue:239
+end -- shunt/spec.yue:277
+do -- shunt/spec.yue:279
+  local _class_0 -- shunt/spec.yue:279
+  local _base_0 = { -- shunt/spec.yue:279
+    matches = function(self, actual) -- shunt/spec.yue:282
+      if 'number' ~= type(actual) then -- shunt/spec.yue:283
+        return false -- shunt/spec.yue:284
+      end -- shunt/spec.yue:283
+      return (math.abs(actual - self.expected)) <= math.abs(self.delta * self.expected) -- shunt/spec.yue:285
+    end, -- shunt/spec.yue:287
+    explain_match = function(self, actual) -- shunt/spec.yue:287
+      return "which " .. tostring(self:describe(self:matches(actual))) -- shunt/spec.yue:288
+    end, -- shunt/spec.yue:290
+    describe = function(self, is_match) -- shunt/spec.yue:290
+      if is_match == nil then -- shunt/spec.yue:290
+        is_match = true -- shunt/spec.yue:290
+      end -- shunt/spec.yue:290
+      if is_match then -- shunt/spec.yue:291
+        return "is near " .. tostring(self.expected) .. " (Δ" .. tostring(self.delta) .. "x)" -- shunt/spec.yue:292
+      else -- shunt/spec.yue:294
+        return "isn't near " .. tostring(self.expected) .. " (Δ" .. tostring(self.delta) .. "x)" -- shunt/spec.yue:294
+      end -- shunt/spec.yue:291
+    end -- shunt/spec.yue:279
+  } -- shunt/spec.yue:279
+  if _base_0.__index == nil then -- shunt/spec.yue:279
+    _base_0.__index = _base_0 -- shunt/spec.yue:279
+  end -- shunt/spec.yue:294
+  _class_0 = setmetatable({ -- shunt/spec.yue:279
+    __init = function(self, expected, delta) -- shunt/spec.yue:280
+      if delta == nil then -- shunt/spec.yue:280
+        delta = 0.00001 -- shunt/spec.yue:280
+      end -- shunt/spec.yue:280
+      self.expected = expected -- shunt/spec.yue:280
+      self.delta = delta -- shunt/spec.yue:280
+    end, -- shunt/spec.yue:279
+    __base = _base_0, -- shunt/spec.yue:279
+    __name = "Near" -- shunt/spec.yue:279
+  }, { -- shunt/spec.yue:279
+    __index = _base_0, -- shunt/spec.yue:279
+    __call = function(cls, ...) -- shunt/spec.yue:279
+      local _self_0 = setmetatable({ }, _base_0) -- shunt/spec.yue:279
+      cls.__init(_self_0, ...) -- shunt/spec.yue:279
+      return _self_0 -- shunt/spec.yue:279
+    end -- shunt/spec.yue:279
+  }) -- shunt/spec.yue:279
+  _base_0.__class = _class_0 -- shunt/spec.yue:279
+  Near = _class_0 -- shunt/spec.yue:279
+end -- shunt/spec.yue:294
+do -- shunt/spec.yue:296
+  local _class_0 -- shunt/spec.yue:296
+  local _base_0 = { -- shunt/spec.yue:296
+    matches = function(self, actual) -- shunt/spec.yue:299
+      return self:deep_equal(self.expected, actual) -- shunt/spec.yue:300
+    end, -- shunt/spec.yue:302
+    deep_equal = function(self, a, b, a_stack_set, b_stack_set) -- shunt/spec.yue:302
+      if a_stack_set == nil then -- shunt/spec.yue:302
+        a_stack_set = { } -- shunt/spec.yue:302
+      end -- shunt/spec.yue:302
+      if b_stack_set == nil then -- shunt/spec.yue:302
+        b_stack_set = { } -- shunt/spec.yue:302
+      end -- shunt/spec.yue:302
+      if a == b then -- shunt/spec.yue:303
+        return true -- shunt/spec.yue:304
+      end -- shunt/spec.yue:303
+      local type_a = type(a) -- shunt/spec.yue:306
+      local type_b = type(b) -- shunt/spec.yue:307
+      if type_a ~= type_b then -- shunt/spec.yue:308
+        return false -- shunt/spec.yue:309
+      end -- shunt/spec.yue:308
+      if type_a ~= 'table' then -- shunt/spec.yue:311
+        return false -- shunt/spec.yue:312
+      end -- shunt/spec.yue:311
+      for ka, va in pairs(a) do -- shunt/spec.yue:313
+        local vb = b[ka] -- shunt/spec.yue:314
+        if a_stack_set[va] and b_stack_set[vb] then -- shunt/spec.yue:316
+          return true -- shunt/spec.yue:317
+        end -- shunt/spec.yue:316
+        a_stack_set[va] = true -- shunt/spec.yue:318
+        if (vb ~= nil) then -- shunt/spec.yue:319
+          b_stack_set[vb] = true -- shunt/spec.yue:320
+        end -- shunt/spec.yue:319
+        if not self:deep_equal(va, vb, a_stack_set, b_stack_set) then -- shunt/spec.yue:321
+          return false -- shunt/spec.yue:322
+        end -- shunt/spec.yue:321
+        a_stack_set[va] = nil -- shunt/spec.yue:323
+        b_stack_set[vb] = nil -- shunt/spec.yue:324
+      end -- shunt/spec.yue:324
+      for kb, _ in pairs(b) do -- shunt/spec.yue:325
+        if not (a[kb] ~= nil) then -- shunt/spec.yue:326
+          return false -- shunt/spec.yue:327
+        end -- shunt/spec.yue:326
+      end -- shunt/spec.yue:327
+      return true -- shunt/spec.yue:328
+    end, -- shunt/spec.yue:330
+    explain_match = function(self, actual) -- shunt/spec.yue:330
+      return "which " .. tostring(self:describe(self:matches(actual))) -- shunt/spec.yue:331
+    end, -- shunt/spec.yue:333
+    describe = function(self, is_match) -- shunt/spec.yue:333
+      if is_match == nil then -- shunt/spec.yue:333
+        is_match = true -- shunt/spec.yue:333
+      end -- shunt/spec.yue:333
+      if is_match then -- shunt/spec.yue:334
+        return "is deeply equal to " .. tostring(repr(self.expected)) -- shunt/spec.yue:335
+      else -- shunt/spec.yue:337
+        return "isn't deeply equal to " .. tostring(repr(self.expected)) -- shunt/spec.yue:337
+      end -- shunt/spec.yue:334
+    end -- shunt/spec.yue:296
+  } -- shunt/spec.yue:296
+  if _base_0.__index == nil then -- shunt/spec.yue:296
+    _base_0.__index = _base_0 -- shunt/spec.yue:296
+  end -- shunt/spec.yue:337
+  _class_0 = setmetatable({ -- shunt/spec.yue:296
+    __init = function(self, expected) -- shunt/spec.yue:297
+      self.expected = expected -- shunt/spec.yue:297
+    end, -- shunt/spec.yue:296
+    __base = _base_0, -- shunt/spec.yue:296
+    __name = "DeepEq" -- shunt/spec.yue:296
+  }, { -- shunt/spec.yue:296
+    __index = _base_0, -- shunt/spec.yue:296
+    __call = function(cls, ...) -- shunt/spec.yue:296
+      local _self_0 = setmetatable({ }, _base_0) -- shunt/spec.yue:296
+      cls.__init(_self_0, ...) -- shunt/spec.yue:296
+      return _self_0 -- shunt/spec.yue:296
+    end -- shunt/spec.yue:296
+  }) -- shunt/spec.yue:296
+  _base_0.__class = _class_0 -- shunt/spec.yue:296
+  DeepEq = _class_0 -- shunt/spec.yue:296
+end -- shunt/spec.yue:337
+do -- shunt/spec.yue:339
+  local _class_0 -- shunt/spec.yue:339
+  local _base_0 = { -- shunt/spec.yue:339
+    matches = function(self, actual) -- shunt/spec.yue:342
+      return self.type == type(actual) -- shunt/spec.yue:343
+    end, -- shunt/spec.yue:345
+    explain_match = function(self, actual) -- shunt/spec.yue:345
+      return "which " .. tostring(self:describe(self:matches(actual))) -- shunt/spec.yue:346
+    end, -- shunt/spec.yue:348
+    describe = function(self, is_match) -- shunt/spec.yue:348
+      if is_match == nil then -- shunt/spec.yue:348
+        is_match = true -- shunt/spec.yue:348
+      end -- shunt/spec.yue:348
+      if is_match then -- shunt/spec.yue:349
+        return "has type " .. tostring(self.type) -- shunt/spec.yue:350
+      else -- shunt/spec.yue:352
+        return "does not have type " .. tostring(self.type) -- shunt/spec.yue:352
+      end -- shunt/spec.yue:349
+    end -- shunt/spec.yue:339
+  } -- shunt/spec.yue:339
+  if _base_0.__index == nil then -- shunt/spec.yue:339
+    _base_0.__index = _base_0 -- shunt/spec.yue:339
+  end -- shunt/spec.yue:352
+  _class_0 = setmetatable({ -- shunt/spec.yue:339
+    __init = function(self, type) -- shunt/spec.yue:340
+      self.type = type -- shunt/spec.yue:340
+    end, -- shunt/spec.yue:339
+    __base = _base_0, -- shunt/spec.yue:339
+    __name = "Type" -- shunt/spec.yue:339
+  }, { -- shunt/spec.yue:339
+    __index = _base_0, -- shunt/spec.yue:339
+    __call = function(cls, ...) -- shunt/spec.yue:339
+      local _self_0 = setmetatable({ }, _base_0) -- shunt/spec.yue:339
+      cls.__init(_self_0, ...) -- shunt/spec.yue:339
+      return _self_0 -- shunt/spec.yue:339
+    end -- shunt/spec.yue:339
+  }) -- shunt/spec.yue:339
+  _base_0.__class = _class_0 -- shunt/spec.yue:339
+  Type = _class_0 -- shunt/spec.yue:339
+end -- shunt/spec.yue:352
+do -- shunt/spec.yue:354
+  local _class_0 -- shunt/spec.yue:354
+  local _base_0 = { -- shunt/spec.yue:354
+    matches = function(self, actual) -- shunt/spec.yue:357
+      return ('string' == type(actual)) and ((actual:match(self.pat)) ~= nil) -- shunt/spec.yue:359
+    end, -- shunt/spec.yue:361
+    explain_match = function(self, actual) -- shunt/spec.yue:361
+      if 'string' ~= type(actual) then -- shunt/spec.yue:362
+        return "which is a " .. tostring(type(actual)) -- shunt/spec.yue:363
+      end -- shunt/spec.yue:362
+      return "which " .. tostring(self:describe(self:matches(actual))) -- shunt/spec.yue:364
+    end, -- shunt/spec.yue:366
+    describe = function(self, is_match) -- shunt/spec.yue:366
+      if is_match == nil then -- shunt/spec.yue:366
+        is_match = true -- shunt/spec.yue:366
+      end -- shunt/spec.yue:366
+      if is_match then -- shunt/spec.yue:367
+        return "matches " .. tostring(repr(self.pat)) -- shunt/spec.yue:368
+      else -- shunt/spec.yue:370
+        return "doesn't match " .. tostring(repr(self.pat)) -- shunt/spec.yue:370
+      end -- shunt/spec.yue:367
+    end -- shunt/spec.yue:354
+  } -- shunt/spec.yue:354
+  if _base_0.__index == nil then -- shunt/spec.yue:354
+    _base_0.__index = _base_0 -- shunt/spec.yue:354
+  end -- shunt/spec.yue:370
+  _class_0 = setmetatable({ -- shunt/spec.yue:354
+    __init = function(self, pat) -- shunt/spec.yue:355
+      self.pat = pat -- shunt/spec.yue:355
+    end, -- shunt/spec.yue:354
+    __base = _base_0, -- shunt/spec.yue:354
+    __name = "Matches" -- shunt/spec.yue:354
+  }, { -- shunt/spec.yue:354
+    __index = _base_0, -- shunt/spec.yue:354
+    __call = function(cls, ...) -- shunt/spec.yue:354
+      local _self_0 = setmetatable({ }, _base_0) -- shunt/spec.yue:354
+      cls.__init(_self_0, ...) -- shunt/spec.yue:354
+      return _self_0 -- shunt/spec.yue:354
+    end -- shunt/spec.yue:354
+  }) -- shunt/spec.yue:354
+  _base_0.__class = _class_0 -- shunt/spec.yue:354
+  Matches = _class_0 -- shunt/spec.yue:354
+end -- shunt/spec.yue:370
+do -- shunt/spec.yue:372
+  local _class_0 -- shunt/spec.yue:372
+  local _base_0 = { -- shunt/spec.yue:372
+    matches = function(self, actual) -- shunt/spec.yue:375
+      local ty = type(actual) -- shunt/spec.yue:376
+      return (ty == 'string' or ty == 'table') and self.inner:matches(#actual) -- shunt/spec.yue:377
+    end, -- shunt/spec.yue:379
+    explain_match = function(self, actual) -- shunt/spec.yue:379
+      local _exp_0 = type(actual) -- shunt/spec.yue:380
+      if 'string' == _exp_0 or 'table' == _exp_0 then -- shunt/spec.yue:381
+        return "which has length " .. tostring(#actual) .. " " .. tostring(self.inner:explain_match(#actual)) -- shunt/spec.yue:382
+      else -- shunt/spec.yue:384
+        return "which is a " .. tostring(type(actual)) -- shunt/spec.yue:384
+      end -- shunt/spec.yue:384
+    end, -- shunt/spec.yue:386
+    describe = function(self, is_match) -- shunt/spec.yue:386
+      if is_match == nil then -- shunt/spec.yue:386
+        is_match = true -- shunt/spec.yue:386
+      end -- shunt/spec.yue:386
+      if is_match then -- shunt/spec.yue:387
+        return "has a length which " .. tostring(self.inner:describe()) -- shunt/spec.yue:388
+      else -- shunt/spec.yue:390
+        return "doesn't have a length which " .. tostring(self.inner:describe()) -- shunt/spec.yue:390
+      end -- shunt/spec.yue:387
+    end -- shunt/spec.yue:372
+  } -- shunt/spec.yue:372
+  if _base_0.__index == nil then -- shunt/spec.yue:372
+    _base_0.__index = _base_0 -- shunt/spec.yue:372
+  end -- shunt/spec.yue:390
+  _class_0 = setmetatable({ -- shunt/spec.yue:372
+    __init = function(self, inner) -- shunt/spec.yue:373
+      self.inner = inner -- shunt/spec.yue:373
+    end, -- shunt/spec.yue:372
+    __base = _base_0, -- shunt/spec.yue:372
+    __name = "Len" -- shunt/spec.yue:372
+  }, { -- shunt/spec.yue:372
+    __index = _base_0, -- shunt/spec.yue:372
+    __call = function(cls, ...) -- shunt/spec.yue:372
+      local _self_0 = setmetatable({ }, _base_0) -- shunt/spec.yue:372
+      cls.__init(_self_0, ...) -- shunt/spec.yue:372
+      return _self_0 -- shunt/spec.yue:372
+    end -- shunt/spec.yue:372
+  }) -- shunt/spec.yue:372
+  _base_0.__class = _class_0 -- shunt/spec.yue:372
+  Len = _class_0 -- shunt/spec.yue:372
+end -- shunt/spec.yue:390
+do -- shunt/spec.yue:392
+  local _class_0 -- shunt/spec.yue:392
+  local _base_0 = { -- shunt/spec.yue:392
+    matches = function(self, actual) -- shunt/spec.yue:395
+      return self.inner:matches(tostring(actual)) -- shunt/spec.yue:396
+    end, -- shunt/spec.yue:398
+    explain_match = function(self, actual) -- shunt/spec.yue:398
+      local tostring_actual = tostring(actual) -- shunt/spec.yue:399
+      return "which tostrings as '" .. tostring(tostring_actual) .. "' " .. tostring(self.inner:explain_match(tostring_actual)) -- shunt/spec.yue:400
+    end, -- shunt/spec.yue:402
+    describe = function(self, is_match) -- shunt/spec.yue:402
+      if is_match == nil then -- shunt/spec.yue:402
+        is_match = true -- shunt/spec.yue:402
+      end -- shunt/spec.yue:402
+      if is_match then -- shunt/spec.yue:403
+        return "tostrings as a string which " .. tostring(self.inner:describe(true)) -- shunt/spec.yue:404
+      else -- shunt/spec.yue:406
+        return "doesn't tostrings as a string which " .. tostring(self.inner:describe(false)) -- shunt/spec.yue:406
+      end -- shunt/spec.yue:403
+    end -- shunt/spec.yue:392
+  } -- shunt/spec.yue:392
+  if _base_0.__index == nil then -- shunt/spec.yue:392
+    _base_0.__index = _base_0 -- shunt/spec.yue:392
+  end -- shunt/spec.yue:406
+  _class_0 = setmetatable({ -- shunt/spec.yue:392
+    __init = function(self, inner) -- shunt/spec.yue:393
+      self.inner = inner -- shunt/spec.yue:393
+    end, -- shunt/spec.yue:392
+    __base = _base_0, -- shunt/spec.yue:392
+    __name = "ToStringsAs" -- shunt/spec.yue:392
+  }, { -- shunt/spec.yue:392
+    __index = _base_0, -- shunt/spec.yue:392
+    __call = function(cls, ...) -- shunt/spec.yue:392
+      local _self_0 = setmetatable({ }, _base_0) -- shunt/spec.yue:392
+      cls.__init(_self_0, ...) -- shunt/spec.yue:392
+      return _self_0 -- shunt/spec.yue:392
+    end -- shunt/spec.yue:392
+  }) -- shunt/spec.yue:392
+  _base_0.__class = _class_0 -- shunt/spec.yue:392
+  ToStringsAs = _class_0 -- shunt/spec.yue:392
+end -- shunt/spec.yue:406
+do -- shunt/spec.yue:408
+  local _class_0 -- shunt/spec.yue:408
+  local _base_0 = { -- shunt/spec.yue:408
+    actual_repr = function(self) -- shunt/spec.yue:413
+      return "-> " .. tostring(self:error_repr()) -- shunt/spec.yue:414
+    end, -- shunt/spec.yue:416
+    error_repr = function(self) -- shunt/spec.yue:416
+      if (self.error ~= nil) then -- shunt/spec.yue:417
+        return "error " .. tostring(repr(self.error)) -- shunt/spec.yue:418
+      else -- shunt/spec.yue:420
+        return "no error" -- shunt/spec.yue:420
+      end -- shunt/spec.yue:417
+    end, -- shunt/spec.yue:422
+    get_err = function(self, fn) -- shunt/spec.yue:422
+      if self.error_set then -- shunt/spec.yue:423
+        return self.error -- shunt/spec.yue:424
+      end -- shunt/spec.yue:423
+xpcall(function() -- shunt/spec.yue:426
+        return fn() -- shunt/spec.yue:427
+      end, function(err) -- shunt/spec.yue:427
+        self.error = err -- shunt/spec.yue:429
+      end) -- shunt/spec.yue:429
+      self.error_set = true -- shunt/spec.yue:430
+      return self.error -- shunt/spec.yue:431
+    end, -- shunt/spec.yue:433
+    matches = function(self, fn) -- shunt/spec.yue:433
+      return not ((self:get_err(fn)) ~= nil) -- shunt/spec.yue:434
+    end, -- shunt/spec.yue:436
+    explain_match = function(self, fn) -- shunt/spec.yue:436
+      return "which " .. tostring(self:describe(self:matches(fn))) -- shunt/spec.yue:437
+    end, -- shunt/spec.yue:439
+    describe = function(self, is_match) -- shunt/spec.yue:439
+      if is_match == nil then -- shunt/spec.yue:439
+        is_match = true -- shunt/spec.yue:439
+      end -- shunt/spec.yue:439
+      if is_match then -- shunt/spec.yue:440
+        return "doesn't throw an error" -- shunt/spec.yue:441
+      else -- shunt/spec.yue:443
+        return "throws an error" -- shunt/spec.yue:443
+      end -- shunt/spec.yue:440
+    end -- shunt/spec.yue:408
+  } -- shunt/spec.yue:408
+  if _base_0.__index == nil then -- shunt/spec.yue:408
+    _base_0.__index = _base_0 -- shunt/spec.yue:408
+  end -- shunt/spec.yue:443
+  _class_0 = setmetatable({ -- shunt/spec.yue:408
+    __init = function(self) -- shunt/spec.yue:409
+      self.error_set = false -- shunt/spec.yue:410
+      self.error = nil -- shunt/spec.yue:411
+    end, -- shunt/spec.yue:408
+    __base = _base_0, -- shunt/spec.yue:408
+    __name = "NoErrors" -- shunt/spec.yue:408
+  }, { -- shunt/spec.yue:408
+    __index = _base_0, -- shunt/spec.yue:408
+    __call = function(cls, ...) -- shunt/spec.yue:408
+      local _self_0 = setmetatable({ }, _base_0) -- shunt/spec.yue:408
+      cls.__init(_self_0, ...) -- shunt/spec.yue:408
+      return _self_0 -- shunt/spec.yue:408
+    end -- shunt/spec.yue:408
+  }) -- shunt/spec.yue:408
+  _base_0.__class = _class_0 -- shunt/spec.yue:408
+  NoErrors = _class_0 -- shunt/spec.yue:408
+end -- shunt/spec.yue:443
+do -- shunt/spec.yue:445
+  local _class_0 -- shunt/spec.yue:445
+  local _base_0 = { -- shunt/spec.yue:445
+    actual_repr = function(self) -- shunt/spec.yue:450
+      return "-> " .. tostring(self:error_repr()) -- shunt/spec.yue:451
+    end, -- shunt/spec.yue:453
+    error_repr = function(self) -- shunt/spec.yue:453
+      if (self.error ~= nil) then -- shunt/spec.yue:454
+        return "error " .. tostring(repr(self.error)) -- shunt/spec.yue:455
+      else -- shunt/spec.yue:457
+        return "no error" -- shunt/spec.yue:457
+      end -- shunt/spec.yue:454
+    end, -- shunt/spec.yue:459
+    get_err = function(self, fn) -- shunt/spec.yue:459
+      if self.error_set then -- shunt/spec.yue:460
+        return self.error -- shunt/spec.yue:461
+      end -- shunt/spec.yue:460
+xpcall(function() -- shunt/spec.yue:463
+        return fn() -- shunt/spec.yue:464
+      end, function(err) -- shunt/spec.yue:464
+        self.error = err -- shunt/spec.yue:466
+      end) -- shunt/spec.yue:466
+      self.error_set = true -- shunt/spec.yue:467
+      return self.error -- shunt/spec.yue:468
+    end, -- shunt/spec.yue:470
+    matches = function(self, fn) -- shunt/spec.yue:470
+      local err = self:get_err(fn) -- shunt/spec.yue:471
+      if not (err ~= nil) then -- shunt/spec.yue:472
+        return false -- shunt/spec.yue:473
+      end -- shunt/spec.yue:472
+      return self.inner:matches(err) -- shunt/spec.yue:474
+    end, -- shunt/spec.yue:476
+    explain_match = function(self, fn) -- shunt/spec.yue:476
+      local err = self:get_err(fn) -- shunt/spec.yue:477
+      if (err ~= nil) then -- shunt/spec.yue:478
+        return "which throws " .. tostring(self:error_repr()) .. " " .. tostring(self.inner:explain_match(err)) -- shunt/spec.yue:479
+      else -- shunt/spec.yue:481
+        return "which doesn't throw an error" -- shunt/spec.yue:481
+      end -- shunt/spec.yue:478
+    end, -- shunt/spec.yue:483
+    describe = function(self, is_match) -- shunt/spec.yue:483
+      if is_match == nil then -- shunt/spec.yue:483
+        is_match = true -- shunt/spec.yue:483
+      end -- shunt/spec.yue:483
+      if is_match then -- shunt/spec.yue:484
+        return "throws an error which " .. tostring(self.inner:describe()) -- shunt/spec.yue:485
+      else -- shunt/spec.yue:487
+        return "doesn't throw an error" -- shunt/spec.yue:487
+      end -- shunt/spec.yue:484
+    end -- shunt/spec.yue:445
+  } -- shunt/spec.yue:445
+  if _base_0.__index == nil then -- shunt/spec.yue:445
+    _base_0.__index = _base_0 -- shunt/spec.yue:445
+  end -- shunt/spec.yue:487
+  _class_0 = setmetatable({ -- shunt/spec.yue:445
+    __init = function(self, inner) -- shunt/spec.yue:446
+      self.inner = inner -- shunt/spec.yue:446
+      self.error_set = false -- shunt/spec.yue:447
+      self.error = nil -- shunt/spec.yue:448
+    end, -- shunt/spec.yue:445
+    __base = _base_0, -- shunt/spec.yue:445
+    __name = "Errors" -- shunt/spec.yue:445
+  }, { -- shunt/spec.yue:445
+    __index = _base_0, -- shunt/spec.yue:445
+    __call = function(cls, ...) -- shunt/spec.yue:445
+      local _self_0 = setmetatable({ }, _base_0) -- shunt/spec.yue:445
+      cls.__init(_self_0, ...) -- shunt/spec.yue:445
+      return _self_0 -- shunt/spec.yue:445
+    end -- shunt/spec.yue:445
+  }) -- shunt/spec.yue:445
+  _base_0.__class = _class_0 -- shunt/spec.yue:445
+  Errors = _class_0 -- shunt/spec.yue:445
+end -- shunt/spec.yue:487
+do -- shunt/spec.yue:489
+  local _class_0 -- shunt/spec.yue:489
+  local _base_0 = { -- shunt/spec.yue:489
+    matches = function(self, actual) -- shunt/spec.yue:496
+      return (actual ~= nil) and ((self:find_match(actual)) ~= nil) -- shunt/spec.yue:497
+    end, -- shunt/spec.yue:499
+    find_match = function(self, actual) -- shunt/spec.yue:499
+      for key, value in pairs(actual) do -- shunt/spec.yue:500
+        local to_check -- shunt/spec.yue:501
+        do -- shunt/spec.yue:501
+          local _exp_0 = self.kind -- shunt/spec.yue:501
+          if 'key' == _exp_0 then -- shunt/spec.yue:502
+            to_check = key -- shunt/spec.yue:503
+          elseif 'value' == _exp_0 then -- shunt/spec.yue:504
+            to_check = value -- shunt/spec.yue:505
+          elseif 'key-value' == _exp_0 then -- shunt/spec.yue:506
+            to_check = { -- shunt/spec.yue:507
+              key = key, -- shunt/spec.yue:507
+              value = value -- shunt/spec.yue:507
+            } -- shunt/spec.yue:507
+          else -- shunt/spec.yue:509
+            to_check = error("internal error: unknown kind " .. tostring(repr(self.kind))) -- shunt/spec.yue:509
+          end -- shunt/spec.yue:509
+        end -- shunt/spec.yue:509
+        if self.inner:matches(to_check) then -- shunt/spec.yue:510
+          return to_check -- shunt/spec.yue:511
+        end -- shunt/spec.yue:510
+      end -- shunt/spec.yue:511
+      return nil -- shunt/spec.yue:512
+    end, -- shunt/spec.yue:514
+    explain_match = function(self, actual) -- shunt/spec.yue:514
+      if 'table' ~= type(actual) then -- shunt/spec.yue:515
+        return "which is a " .. tostring(type(actual)) -- shunt/spec.yue:516
+      else -- shunt/spec.yue:517
+        do -- shunt/spec.yue:517
+          local match = self:find_match(actual) -- shunt/spec.yue:517
+          if match then -- shunt/spec.yue:517
+            return "which contains " .. tostring(repr(match)) .. " " .. tostring(self.inner:explain_match(match)) -- shunt/spec.yue:518
+          else -- shunt/spec.yue:520
+            return "which does not contain any " .. tostring(self.pretty_kind) .. " which " .. tostring(self.inner:describe()) -- shunt/spec.yue:520
+          end -- shunt/spec.yue:517
+        end -- shunt/spec.yue:517
+      end -- shunt/spec.yue:515
+    end, -- shunt/spec.yue:522
+    describe = function(self, is_match) -- shunt/spec.yue:522
+      if is_match == nil then -- shunt/spec.yue:522
+        is_match = true -- shunt/spec.yue:522
+      end -- shunt/spec.yue:522
+      if is_match then -- shunt/spec.yue:523
+        return "contains a value which " .. tostring(self.inner:describe()) -- shunt/spec.yue:524
+      else -- shunt/spec.yue:526
+        return "does not contain any " .. tostring(self.pretty_kind) .. " which " .. tostring(self.inner:describe()) -- shunt/spec.yue:526
+      end -- shunt/spec.yue:523
+    end -- shunt/spec.yue:489
+  } -- shunt/spec.yue:489
+  if _base_0.__index == nil then -- shunt/spec.yue:489
+    _base_0.__index = _base_0 -- shunt/spec.yue:489
+  end -- shunt/spec.yue:526
+  _class_0 = setmetatable({ -- shunt/spec.yue:489
+    __init = function(self, kind, inner) -- shunt/spec.yue:490
+      self.kind = kind -- shunt/spec.yue:490
+      self.inner = inner -- shunt/spec.yue:490
+      if self.kind == 'key-value' then -- shunt/spec.yue:491
+        self.pretty_kind = 'key-value pair' -- shunt/spec.yue:492
+      else -- shunt/spec.yue:494
+        self.pretty_kind = self.kind -- shunt/spec.yue:494
+      end -- shunt/spec.yue:491
+    end, -- shunt/spec.yue:489
+    __base = _base_0, -- shunt/spec.yue:489
+    __name = "Contains" -- shunt/spec.yue:489
+  }, { -- shunt/spec.yue:489
+    __index = _base_0, -- shunt/spec.yue:489
+    __call = function(cls, ...) -- shunt/spec.yue:489
+      local _self_0 = setmetatable({ }, _base_0) -- shunt/spec.yue:489
+      cls.__init(_self_0, ...) -- shunt/spec.yue:489
+      return _self_0 -- shunt/spec.yue:489
+    end -- shunt/spec.yue:489
+  }) -- shunt/spec.yue:489
+  _base_0.__class = _class_0 -- shunt/spec.yue:489
+  Contains = _class_0 -- shunt/spec.yue:489
+end -- shunt/spec.yue:526
+do -- shunt/spec.yue:528
+  local _class_0 -- shunt/spec.yue:528
+  local _base_0 = { -- shunt/spec.yue:528
+    matches = function(self, actual) -- shunt/spec.yue:535
+      return (actual ~= nil) and not ((self:find_non_match(actual)) ~= nil) -- shunt/spec.yue:536
+    end, -- shunt/spec.yue:538
+    find_non_match = function(self, actual) -- shunt/spec.yue:538
+      for key, value in pairs(actual) do -- shunt/spec.yue:539
+        local to_check -- shunt/spec.yue:540
+        do -- shunt/spec.yue:540
+          local _exp_0 = self.kind -- shunt/spec.yue:540
+          if 'key' == _exp_0 then -- shunt/spec.yue:541
+            to_check = key -- shunt/spec.yue:542
+          elseif 'value' == _exp_0 then -- shunt/spec.yue:543
+            to_check = value -- shunt/spec.yue:544
+          elseif 'key-value' == _exp_0 then -- shunt/spec.yue:545
+            to_check = { -- shunt/spec.yue:546
+              key = key, -- shunt/spec.yue:546
+              value = value -- shunt/spec.yue:546
+            } -- shunt/spec.yue:546
+          else -- shunt/spec.yue:548
+            to_check = error("internal error: unknown kind " .. tostring(repr(self.kind))) -- shunt/spec.yue:548
+          end -- shunt/spec.yue:548
+        end -- shunt/spec.yue:548
+        if not self.inner:matches(to_check) then -- shunt/spec.yue:549
+          return to_check -- shunt/spec.yue:550
+        end -- shunt/spec.yue:549
+      end -- shunt/spec.yue:550
+      return nil -- shunt/spec.yue:551
+    end, -- shunt/spec.yue:553
+    explain_match = function(self, actual) -- shunt/spec.yue:553
+      if 'table' ~= type(actual) then -- shunt/spec.yue:554
+        return "is a " .. tostring(actual) -- shunt/spec.yue:555
+      else -- shunt/spec.yue:556
+        do -- shunt/spec.yue:556
+          local non_match = self:find_non_match(actual) -- shunt/spec.yue:556
+          if non_match then -- shunt/spec.yue:556
+            return "in which some element " .. tostring(self.inner:describe(false)) -- shunt/spec.yue:557
+          else -- shunt/spec.yue:559
+            return "in which each element " .. tostring(self.inner:describe(true)) -- shunt/spec.yue:559
+          end -- shunt/spec.yue:556
+        end -- shunt/spec.yue:556
+      end -- shunt/spec.yue:554
+    end, -- shunt/spec.yue:561
+    describe = function(self, is_match) -- shunt/spec.yue:561
+      if is_match == nil then -- shunt/spec.yue:561
+        is_match = true -- shunt/spec.yue:561
+      end -- shunt/spec.yue:561
+      if is_match then -- shunt/spec.yue:562
+        return "consists of " .. tostring(self.pretty_kind) .. " which " .. tostring(self.inner:describe()) -- shunt/spec.yue:563
+      else -- shunt/spec.yue:565
+        return "contains a " .. tostring(self.pretty_kind) .. " which " .. tostring(self.inner:describe()) -- shunt/spec.yue:565
+      end -- shunt/spec.yue:562
+    end -- shunt/spec.yue:528
+  } -- shunt/spec.yue:528
+  if _base_0.__index == nil then -- shunt/spec.yue:528
+    _base_0.__index = _base_0 -- shunt/spec.yue:528
+  end -- shunt/spec.yue:565
+  _class_0 = setmetatable({ -- shunt/spec.yue:528
+    __init = function(self, kind, inner) -- shunt/spec.yue:529
+      self.kind = kind -- shunt/spec.yue:529
+      self.inner = inner -- shunt/spec.yue:529
+      if self.kind == 'key-value' then -- shunt/spec.yue:530
+        self.pretty_kind = 'key-value pair' -- shunt/spec.yue:531
+      else -- shunt/spec.yue:533
+        self.pretty_kind = self.kind -- shunt/spec.yue:533
+      end -- shunt/spec.yue:530
+    end, -- shunt/spec.yue:528
+    __base = _base_0, -- shunt/spec.yue:528
+    __name = "Each" -- shunt/spec.yue:528
+  }, { -- shunt/spec.yue:528
+    __index = _base_0, -- shunt/spec.yue:528
+    __call = function(cls, ...) -- shunt/spec.yue:528
+      local _self_0 = setmetatable({ }, _base_0) -- shunt/spec.yue:528
+      cls.__init(_self_0, ...) -- shunt/spec.yue:528
+      return _self_0 -- shunt/spec.yue:528
+    end -- shunt/spec.yue:528
+  }) -- shunt/spec.yue:528
+  _base_0.__class = _class_0 -- shunt/spec.yue:528
+  Each = _class_0 -- shunt/spec.yue:528
+end -- shunt/spec.yue:565
+do -- shunt/spec.yue:567
+  local _class_0 -- shunt/spec.yue:567
+  local _base_0 = { -- shunt/spec.yue:567
+    matches = function(self, actual) -- shunt/spec.yue:577
+      return (actual ~= nil) and not ((self:find_non_match(actual)) ~= nil) -- shunt/spec.yue:578
+    end, -- shunt/spec.yue:580
+    find_non_match = function(self, actual) -- shunt/spec.yue:580
+      local _list_0 = self.fields -- shunt/spec.yue:581
+      for _index_0 = 1, #_list_0 do -- shunt/spec.yue:581
+        local _des_0 = _list_0[_index_0] -- shunt/spec.yue:581
+        local field, matcher = _des_0.field, _des_0.matcher -- shunt/spec.yue:581
+        if not matcher:matches(actual[field]) then -- shunt/spec.yue:582
+          return field, matcher -- shunt/spec.yue:583
+        end -- shunt/spec.yue:582
+      end -- shunt/spec.yue:583
+      return nil -- shunt/spec.yue:584
+    end, -- shunt/spec.yue:586
+    explain_match = function(self, actual) -- shunt/spec.yue:586
+      if 'table' ~= type(actual) then -- shunt/spec.yue:587
+        return "is a " .. tostring(type(actual)) -- shunt/spec.yue:588
+      end -- shunt/spec.yue:587
+      local non_match_field, non_match_matcher = self:find_non_match(actual) -- shunt/spec.yue:590
+      if not (non_match_field ~= nil) then -- shunt/spec.yue:591
+        local field_descriptions -- shunt/spec.yue:592
+        do -- shunt/spec.yue:592
+          local _accum_0 = { } -- shunt/spec.yue:592
+          local _len_0 = 1 -- shunt/spec.yue:592
+          local _list_0 = self.fields -- shunt/spec.yue:592
+          for _index_0 = 1, #_list_0 do -- shunt/spec.yue:592
+            local _des_0 = _list_0[_index_0] -- shunt/spec.yue:592
+            local field, matcher = _des_0.field, _des_0.matcher -- shunt/spec.yue:592
+            _accum_0[_len_0] = "there is a field '" .. tostring(field) .. "' " .. tostring(matcher:explain_match(actual[field])) -- shunt/spec.yue:592
+            _len_0 = _len_0 + 1 -- shunt/spec.yue:592
+          end -- shunt/spec.yue:592
+          field_descriptions = _accum_0 -- shunt/spec.yue:592
+        end -- shunt/spec.yue:592
+        return "in which:\n  " .. tostring(table.concat(field_descriptions, '\n  ')) -- shunt/spec.yue:593
+      else -- shunt/spec.yue:595
+        return "in which field " .. tostring(repr(non_match_field)) .. " " .. tostring(non_match_matcher:explain_match(actual[non_match_field])) -- shunt/spec.yue:595
+      end -- shunt/spec.yue:591
+    end, -- shunt/spec.yue:597
+    describe = function(self, is_match) -- shunt/spec.yue:597
+      if is_match == nil then -- shunt/spec.yue:597
+        is_match = true -- shunt/spec.yue:597
+      end -- shunt/spec.yue:597
+      local field_descriptions -- shunt/spec.yue:598
+      do -- shunt/spec.yue:598
+        local _accum_0 = { } -- shunt/spec.yue:598
+        local _len_0 = 1 -- shunt/spec.yue:598
+        local _list_0 = self.fields -- shunt/spec.yue:598
+        for _index_0 = 1, #_list_0 do -- shunt/spec.yue:598
+          local _des_0 = _list_0[_index_0] -- shunt/spec.yue:598
+          local field, matcher = _des_0.field, _des_0.matcher -- shunt/spec.yue:598
+          _accum_0[_len_0] = "there is a field '" .. tostring(field) .. "' which " .. tostring(matcher:describe()) -- shunt/spec.yue:598
+          _len_0 = _len_0 + 1 -- shunt/spec.yue:598
+        end -- shunt/spec.yue:598
+        field_descriptions = _accum_0 -- shunt/spec.yue:598
+      end -- shunt/spec.yue:598
+      if is_match then -- shunt/spec.yue:599
+        return "is a table in which:\n  " .. tostring(table.concat(field_descriptions, '\n  ')) -- shunt/spec.yue:600
+      else -- shunt/spec.yue:602
+        return "isn't a table in which:\n  " .. tostring(table.concat(field_descriptions, '\n  ')) -- shunt/spec.yue:602
+      end -- shunt/spec.yue:599
+    end -- shunt/spec.yue:567
+  } -- shunt/spec.yue:567
+  if _base_0.__index == nil then -- shunt/spec.yue:567
+    _base_0.__index = _base_0 -- shunt/spec.yue:567
+  end -- shunt/spec.yue:602
+  _class_0 = setmetatable({ -- shunt/spec.yue:567
+    __init = function(self, fields) -- shunt/spec.yue:568
+      do -- shunt/spec.yue:569
+        local _accum_0 = { } -- shunt/spec.yue:569
+        local _len_0 = 1 -- shunt/spec.yue:569
+        for field, matcher in pairs(fields) do -- shunt/spec.yue:569
+          _accum_0[_len_0] = { -- shunt/spec.yue:569
+            field = field, -- shunt/spec.yue:569
+            matcher = matcher -- shunt/spec.yue:569
+          } -- shunt/spec.yue:569
+          _len_0 = _len_0 + 1 -- shunt/spec.yue:569
+        end -- shunt/spec.yue:569
+        self.fields = _accum_0 -- shunt/spec.yue:569
+      end -- shunt/spec.yue:569
+      return table.sort(self.fields, function(a, b) -- shunt/spec.yue:570
+        local taf = type(a.field) -- shunt/spec.yue:571
+        local tbf = type(b.field) -- shunt/spec.yue:572
+        if taf ~= tbf or taf == 'number' then -- shunt/spec.yue:573
+          return false -- shunt/spec.yue:574
+        end -- shunt/spec.yue:573
+        return a.field < b.field -- shunt/spec.yue:575
+      end) -- shunt/spec.yue:575
+    end, -- shunt/spec.yue:567
+    __base = _base_0, -- shunt/spec.yue:567
+    __name = "Fields" -- shunt/spec.yue:567
+  }, { -- shunt/spec.yue:567
+    __index = _base_0, -- shunt/spec.yue:567
+    __call = function(cls, ...) -- shunt/spec.yue:567
+      local _self_0 = setmetatable({ }, _base_0) -- shunt/spec.yue:567
+      cls.__init(_self_0, ...) -- shunt/spec.yue:567
+      return _self_0 -- shunt/spec.yue:567
+    end -- shunt/spec.yue:567
+  }) -- shunt/spec.yue:567
+  _base_0.__class = _class_0 -- shunt/spec.yue:567
+  Fields = _class_0 -- shunt/spec.yue:567
+end -- shunt/spec.yue:602
+do -- shunt/spec.yue:604
+  local _with_0 = { } -- shunt/spec.yue:604
+  _with_0['('] = true -- shunt/spec.yue:605
+  _with_0[')'] = true -- shunt/spec.yue:606
+  _with_0['['] = true -- shunt/spec.yue:607
+  _with_0[']'] = true -- shunt/spec.yue:608
+  _with_0['{'] = true -- shunt/spec.yue:609
+  _with_0['}'] = true -- shunt/spec.yue:610
+  _with_0['!'] = true -- shunt/spec.yue:611
+  _with_0['"'] = true -- shunt/spec.yue:612
+  _with_0["'"] = true -- shunt/spec.yue:613
+  _with_0['$'] = true -- shunt/spec.yue:614
+  _with_0['%'] = true -- shunt/spec.yue:615
+  _with_0['^'] = true -- shunt/spec.yue:616
+  _with_0['&'] = true -- shunt/spec.yue:617
+  _with_0['*'] = true -- shunt/spec.yue:618
+  _with_0['-'] = true -- shunt/spec.yue:619
+  _with_0['_'] = true -- shunt/spec.yue:620
+  _with_0['+'] = true -- shunt/spec.yue:621
+  _with_0['='] = true -- shunt/spec.yue:622
+  _with_0[':'] = true -- shunt/spec.yue:623
+  _with_0[' '] = true -- shunt/spec.yue:624
+  _with_0['\t'] = true -- shunt/spec.yue:625
+  _with_0['.'] = true -- shunt/spec.yue:626
+  _with_0[','] = true -- shunt/spec.yue:627
+  _with_0['/'] = true -- shunt/spec.yue:628
+  _with_0['\\'] = true -- shunt/spec.yue:629
+  _with_0['>'] = true -- shunt/spec.yue:630
+  _with_0['<'] = true -- shunt/spec.yue:631
+  _with_0['!'] = true -- shunt/spec.yue:632
+  _with_0['?'] = true -- shunt/spec.yue:633
+  _with_0['#'] = true -- shunt/spec.yue:634
+  _with_0['|'] = true -- shunt/spec.yue:635
+  _with_0['~'] = true -- shunt/spec.yue:636
+  local a = string.byte('a') -- shunt/spec.yue:637
+  for i = 0, 25 do -- shunt/spec.yue:638
+    _with_0[string.char(a + i)] = true -- shunt/spec.yue:639
+  end -- shunt/spec.yue:639
+  local A = string.byte('A') -- shunt/spec.yue:640
+  for i = 0, 25 do -- shunt/spec.yue:641
+    _with_0[string.char(A + i)] = true -- shunt/spec.yue:642
+  end -- shunt/spec.yue:642
+  local zero = string.byte('0') -- shunt/spec.yue:643
+  for i = 0, 9 do -- shunt/spec.yue:644
+    _with_0[string.char(zero + i)] = true -- shunt/spec.yue:645
+  end -- shunt/spec.yue:645
+  visible_chars = _with_0 -- shunt/spec.yue:604
+end -- shunt/spec.yue:604
+repr = function(self) -- shunt/spec.yue:646
+  return table.concat((function() -- shunt/spec.yue:647
+    local _with_0 = { } -- shunt/spec.yue:647
+    local stack = { } -- shunt/spec.yue:648
+    local repr_impl -- shunt/spec.yue:649
+    repr_impl = function(self) -- shunt/spec.yue:649
+      for _index_0 = 1, #stack do -- shunt/spec.yue:650
+        local elem = stack[_index_0] -- shunt/spec.yue:650
+        if rawequal(self, elem) then -- shunt/spec.yue:651
+          _with_0[#_with_0 + 1] = '...' -- shunt/spec.yue:652
+          return -- shunt/spec.yue:653
+        end -- shunt/spec.yue:651
+      end -- shunt/spec.yue:653
+      stack[#stack + 1] = self -- shunt/spec.yue:654
+      do -- shunt/spec.yue:656
+        local _exp_0 = type(self) -- shunt/spec.yue:656
+        if 'string' == _exp_0 then -- shunt/spec.yue:657
+          _with_0[#_with_0 + 1] = "'" -- shunt/spec.yue:658
+          for i = 1, #self do -- shunt/spec.yue:659
+            local c = self:sub(i, i) -- shunt/spec.yue:660
+            if visible_chars[c] then -- shunt/spec.yue:661
+              _with_0[#_with_0 + 1] = c -- shunt/spec.yue:662
+            else -- shunt/spec.yue:664
+              _with_0[#_with_0 + 1] = ("\\x%02x"):format(string.byte(self, i)) -- shunt/spec.yue:664
+            end -- shunt/spec.yue:661
+          end -- shunt/spec.yue:664
+          _with_0[#_with_0 + 1] = "'" -- shunt/spec.yue:665
+        elseif 'table' == _exp_0 then -- shunt/spec.yue:666
+          if (getmetatable(self) ~= nil) and (getmetatable(self).__tostring ~= nil) then -- shunt/spec.yue:667
+            _with_0[#_with_0 + 1] = tostring(self) -- shunt/spec.yue:668
+          else -- shunt/spec.yue:669
+            if is_list(self) then -- shunt/spec.yue:669
+              _with_0[#_with_0 + 1] = '[' -- shunt/spec.yue:670
+              local first = true -- shunt/spec.yue:671
+              for _index_0 = 1, #self do -- shunt/spec.yue:672
+                local elem = self[_index_0] -- shunt/spec.yue:672
+                if not first then -- shunt/spec.yue:673
+                  _with_0[#_with_0 + 1] = ', ' -- shunt/spec.yue:674
+                end -- shunt/spec.yue:673
+                first = false -- shunt/spec.yue:675
+                repr_impl(elem) -- shunt/spec.yue:677
+              end -- shunt/spec.yue:677
+              _with_0[#_with_0 + 1] = ']' -- shunt/spec.yue:678
+            else -- shunt/spec.yue:680
+              _with_0[#_with_0 + 1] = '{' -- shunt/spec.yue:680
+              local first = true -- shunt/spec.yue:681
+              local keys -- shunt/spec.yue:682
+              do -- shunt/spec.yue:682
+                local _accum_0 = { } -- shunt/spec.yue:682
+                local _len_0 = 1 -- shunt/spec.yue:682
+                for key, _ in pairs(self) do -- shunt/spec.yue:682
+                  _accum_0[_len_0] = key -- shunt/spec.yue:682
+                  _len_0 = _len_0 + 1 -- shunt/spec.yue:682
+                end -- shunt/spec.yue:682
+                keys = _accum_0 -- shunt/spec.yue:682
+              end -- shunt/spec.yue:682
+              if can_sort(keys) then -- shunt/spec.yue:683
+                table.sort(keys, function(a, b) -- shunt/spec.yue:684
+                  local ta = type(a) -- shunt/spec.yue:685
+                  local tb = type(b) -- shunt/spec.yue:686
+                  if ta ~= tb or ta == 'number' then -- shunt/spec.yue:687
+                    return false -- shunt/spec.yue:688
+                  end -- shunt/spec.yue:687
+                  return a < b -- shunt/spec.yue:689
+                end) -- shunt/spec.yue:684
+              end -- shunt/spec.yue:683
+              for _index_0 = 1, #keys do -- shunt/spec.yue:690
+                local key = keys[_index_0] -- shunt/spec.yue:690
+                local value = self[key] -- shunt/spec.yue:691
+                if not first then -- shunt/spec.yue:692
+                  _with_0[#_with_0 + 1] = ', ' -- shunt/spec.yue:693
+                end -- shunt/spec.yue:692
+                first = false -- shunt/spec.yue:694
+                repr_impl(key) -- shunt/spec.yue:696
+                _with_0[#_with_0 + 1] = ': ' -- shunt/spec.yue:697
+                repr_impl(value) -- shunt/spec.yue:698
+              end -- shunt/spec.yue:698
+              _with_0[#_with_0 + 1] = '}' -- shunt/spec.yue:699
+            end -- shunt/spec.yue:669
+          end -- shunt/spec.yue:667
+        else -- shunt/spec.yue:701
+          _with_0[#_with_0 + 1] = tostring(self) -- shunt/spec.yue:701
+        end -- shunt/spec.yue:701
+      end -- shunt/spec.yue:701
+      stack[#stack] = nil -- shunt/spec.yue:703
+    end -- shunt/spec.yue:649
+    repr_impl(self) -- shunt/spec.yue:704
+    return _with_0 -- shunt/spec.yue:647
+  end)()) -- shunt/spec.yue:704
+end -- shunt/spec.yue:646
+_module_0["repr"] = repr -- shunt/spec.yue:704
+is_list = function(table) -- shunt/spec.yue:706
+  local max_key = 0 -- shunt/spec.yue:707
+  local num_keys = 0 -- shunt/spec.yue:708
+  for k, _ in pairs(table) do -- shunt/spec.yue:709
+    num_keys = num_keys + 1 -- shunt/spec.yue:710
+    if 'number' ~= type(k) then -- shunt/spec.yue:711
+      return false -- shunt/spec.yue:712
+    end -- shunt/spec.yue:711
+    if max_key < k then -- shunt/spec.yue:713
+      max_key = k -- shunt/spec.yue:714
+    end -- shunt/spec.yue:713
+  end -- shunt/spec.yue:714
+  return max_key == num_keys and num_keys > 0 -- shunt/spec.yue:715
+end -- shunt/spec.yue:706
+can_sort = function(list) -- shunt/spec.yue:717
+  for _index_0 = 1, #list do -- shunt/spec.yue:718
+    local elem = list[_index_0] -- shunt/spec.yue:718
+    local _continue_0 = false -- shunt/spec.yue:719
+    repeat -- shunt/spec.yue:719
+      do -- shunt/spec.yue:719
+        local _exp_0 = type(elem) -- shunt/spec.yue:719
+        if 'boolean' == _exp_0 or 'string' == _exp_0 or 'number' == _exp_0 then -- shunt/spec.yue:720
+          _continue_0 = true -- shunt/spec.yue:721
+          break -- shunt/spec.yue:721
+        elseif 'table' == _exp_0 then -- shunt/spec.yue:722
+          if not (getmetatable(table) ~= nil) or not (getmetatable(table).__lt ~= nil) then -- shunt/spec.yue:723
+            return false -- shunt/spec.yue:724
+          end -- shunt/spec.yue:723
+        else -- shunt/spec.yue:726
+          return false -- shunt/spec.yue:726
+        end -- shunt/spec.yue:726
+      end -- shunt/spec.yue:726
+      _continue_0 = true -- shunt/spec.yue:719
+    until true -- shunt/spec.yue:726
+    if not _continue_0 then -- shunt/spec.yue:726
+      break -- shunt/spec.yue:726
+    end -- shunt/spec.yue:726
+  end -- shunt/spec.yue:726
+  return true -- shunt/spec.yue:727
+end -- shunt/spec.yue:717
+clone = function(value) -- shunt/spec.yue:729
+  local _exp_0 = type(value) -- shunt/spec.yue:730
+  if 'nil' == _exp_0 or 'boolean' == _exp_0 or 'number' == _exp_0 or 'string' == _exp_0 then -- shunt/spec.yue:731
+    return value -- shunt/spec.yue:732
+  elseif 'table' == _exp_0 then -- shunt/spec.yue:733
+    local _with_0 = { } -- shunt/spec.yue:734
+    for k, v in pairs(value) do -- shunt/spec.yue:735
+      _with_0[clone(k)] = clone(v) -- shunt/spec.yue:736
+    end -- shunt/spec.yue:736
+    return _with_0 -- shunt/spec.yue:734
+  else -- shunt/spec.yue:738
+    return error("cannot clone a " .. tostring(type(value)) .. " (" .. tostring(value) .. ")") -- shunt/spec.yue:738
+  end -- shunt/spec.yue:738
+end -- shunt/spec.yue:729
+_module_0["clone"] = clone -- shunt/spec.yue:738
+matchers = { -- shunt/spec.yue:741
+  anything = function() -- shunt/spec.yue:741
+    return Anything() -- shunt/spec.yue:741
+  end, -- shunt/spec.yue:741
+  some = function() -- shunt/spec.yue:742
+    return Some() -- shunt/spec.yue:742
+  end, -- shunt/spec.yue:742
+  not_ = function(matcher) -- shunt/spec.yue:743
+    return Not(matcher) -- shunt/spec.yue:743
+  end, -- shunt/spec.yue:743
+  eq = function(value) -- shunt/spec.yue:744
+    return Compare('==', value) -- shunt/spec.yue:744
+  end, -- shunt/spec.yue:744
+  deep_eq = function(value) -- shunt/spec.yue:745
+    return DeepEq(value) -- shunt/spec.yue:745
+  end, -- shunt/spec.yue:745
+  lt = function(value) -- shunt/spec.yue:746
+    return Compare('<', value) -- shunt/spec.yue:746
+  end, -- shunt/spec.yue:746
+  le = function(value) -- shunt/spec.yue:747
+    return Compare('<=', value) -- shunt/spec.yue:747
+  end, -- shunt/spec.yue:747
+  gt = function(value) -- shunt/spec.yue:748
+    return Compare('>', value) -- shunt/spec.yue:748
+  end, -- shunt/spec.yue:748
+  ge = function(value) -- shunt/spec.yue:749
+    return Compare('>=', value) -- shunt/spec.yue:749
+  end, -- shunt/spec.yue:749
+  len = function(matcher) -- shunt/spec.yue:750
+    return Len(matcher) -- shunt/spec.yue:750
+  end, -- shunt/spec.yue:750
+  matches = function(pattern) -- shunt/spec.yue:751
+    return Matches(pattern) -- shunt/spec.yue:751
+  end, -- shunt/spec.yue:751
+  near = function(value, delta) -- shunt/spec.yue:752
+    return Near(value, delta) -- shunt/spec.yue:752
+  end, -- shunt/spec.yue:752
+  tostrings_as = function(matcher) -- shunt/spec.yue:753
+    return ToStringsAs(matcher) -- shunt/spec.yue:753
+  end, -- shunt/spec.yue:753
+  contains_key = function(matcher) -- shunt/spec.yue:754
+    return Contains('key', matcher) -- shunt/spec.yue:754
+  end, -- shunt/spec.yue:754
+  contains_value = function(matcher) -- shunt/spec.yue:755
+    return Contains('value', matcher) -- shunt/spec.yue:755
+  end, -- shunt/spec.yue:755
+  contains_pair = function(matcher) -- shunt/spec.yue:756
+    return Contains('key-value', matcher) -- shunt/spec.yue:756
+  end, -- shunt/spec.yue:756
+  each_key = function(matcher) -- shunt/spec.yue:757
+    return Each('key', matcher) -- shunt/spec.yue:757
+  end, -- shunt/spec.yue:757
+  each_value = function(matcher) -- shunt/spec.yue:758
+    return Each('value', matcher) -- shunt/spec.yue:758
+  end, -- shunt/spec.yue:758
+  each_pair = function(matcher) -- shunt/spec.yue:759
+    return Each('key-value', matcher) -- shunt/spec.yue:759
+  end, -- shunt/spec.yue:759
+  no_errors = function() -- shunt/spec.yue:760
+    return NoErrors() -- shunt/spec.yue:760
+  end, -- shunt/spec.yue:760
+  errors = function(matcher) -- shunt/spec.yue:761
+    return Errors(matcher) -- shunt/spec.yue:761
+  end, -- shunt/spec.yue:761
+  has_type = function(typ) -- shunt/spec.yue:762
+    return Type(typ) -- shunt/spec.yue:762
+  end, -- shunt/spec.yue:762
+  has_fields = function(fields) -- shunt/spec.yue:763
+    return Fields(fields) -- shunt/spec.yue:763
+  end -- shunt/spec.yue:763
+} -- shunt/spec.yue:740
+_module_0["matchers"] = matchers -- shunt/spec.yue:763
+reflow = function(prefix, string, width) -- shunt/spec.yue:765
+  if width == nil then -- shunt/spec.yue:765
+    width = 80 -- shunt/spec.yue:765
+  end -- shunt/spec.yue:765
+  local lines -- shunt/spec.yue:766
+  do -- shunt/spec.yue:766
+    local _with_0 = { } -- shunt/spec.yue:766
+    local chunk_len = width - #prefix -- shunt/spec.yue:767
+    local first_line = true -- shunt/spec.yue:768
+    for line in string:gmatch('[^\r\n]*') do -- shunt/spec.yue:769
+      for i = 1, #line, chunk_len do -- shunt/spec.yue:770
+        local chunk = line:sub(i, i + chunk_len - 1) -- shunt/spec.yue:771
+        if first_line then -- shunt/spec.yue:772
+          _with_0[#_with_0 + 1] = chunk -- shunt/spec.yue:773
+        else -- shunt/spec.yue:775
+          _with_0[#_with_0 + 1] = prefix .. chunk -- shunt/spec.yue:775
+        end -- shunt/spec.yue:772
+        first_line = false -- shunt/spec.yue:776
+      end -- shunt/spec.yue:776
+    end -- shunt/spec.yue:776
+    lines = _with_0 -- shunt/spec.yue:766
+  end -- shunt/spec.yue:766
+  return table.concat(lines, '\n') -- shunt/spec.yue:777
+end -- shunt/spec.yue:765
+testing = false -- shunt/spec.yue:779
+running_tests = function() -- shunt/spec.yue:780
+  return testing -- shunt/spec.yue:780
+end -- shunt/spec.yue:780
+_module_0["running_tests"] = running_tests -- shunt/spec.yue:780
+run_tests = function(filter) -- shunt/spec.yue:782
+  if not (spec_fns ~= nil) then -- shunt/spec.yue:784
+    return -- shunt/spec.yue:785
+  end -- shunt/spec.yue:784
+  for _index_0 = 1, #spec_fns do -- shunt/spec.yue:786
+    local spec_fn = spec_fns[_index_0] -- shunt/spec.yue:786
+    spec_fn() -- shunt/spec.yue:787
+  end -- shunt/spec.yue:787
+  testing = true -- shunt/spec.yue:789
+  if root_spec ~= nil then -- shunt/spec.yue:790
+    root_spec:test(filter) -- shunt/spec.yue:790
+  end -- shunt/spec.yue:790
+  testing = false -- shunt/spec.yue:791
+  log(function() -- shunt/spec.yue:793
+    return tostring(Test.num_run) .. " checks run" -- shunt/spec.yue:794
+  end) -- shunt/spec.yue:793
+  local ok = Test.num_failures == 0 -- shunt/spec.yue:795
+  if not ok then -- shunt/spec.yue:796
+    print(tostring(Test.num_failures) .. " checks failed!") -- shunt/spec.yue:797
+  end -- shunt/spec.yue:796
+  return ok -- shunt/spec.yue:798
+end -- shunt/spec.yue:782
+_module_0["run_tests"] = run_tests -- shunt/spec.yue:798
+return _module_0 -- shunt/spec.yue:798
+end
 package.preload['shunt.clap'] = function(...)
 -- [yue]: shunt/clap.yue
 local _module_0 = { } -- shunt/clap.yue:1
@@ -6030,1589 +7613,6 @@ spec(function() -- shunt/quicktype.yue:1394
 end) -- shunt/quicktype.yue:1394
 return _module_0 -- shunt/quicktype.yue:2030
 end
-package.preload['shunt.spec'] = function(...)
--- [yue]: shunt/spec.yue
-local _module_0 = { } -- shunt/spec.yue:1
-local spec_fns, verbose, set_log_verbosity, log, spec, root_spec, current_spec, current_spec_kind, describe, it, declare_spec_section, Spec, FATAL_TEST_ERROR_MARKER, Test, expect_that, _expect_that, assert_that, _assert_that, get_caller_location, Anything, Some, Not, Eq, Compare, Near, DeepEq, Type, Matches, Len, ToStringsAs, NoErrors, Errors, Contains, Each, Fields, visible_chars, repr, is_list, can_sort, clone, matchers, reflow, testing, running_tests, run_tests -- shunt/spec.yue:1
-spec_fns = nil -- shunt/spec.yue:3
-verbose = false -- shunt/spec.yue:5
-set_log_verbosity = function(v) -- shunt/spec.yue:6
-  if v == nil then -- shunt/spec.yue:6
-    v = true -- shunt/spec.yue:6
-  end -- shunt/spec.yue:6
-  verbose = v -- shunt/spec.yue:7
-end -- shunt/spec.yue:6
-_module_0["set_log_verbosity"] = set_log_verbosity -- shunt/spec.yue:7
-log = function(msg) -- shunt/spec.yue:8
-  if verbose then -- shunt/spec.yue:9
-    return print(msg()) -- shunt/spec.yue:10
-  end -- shunt/spec.yue:9
-end -- shunt/spec.yue:8
-spec = function(fn) -- shunt/spec.yue:12
-  if not (spec_fns ~= nil) then -- shunt/spec.yue:13
-    spec_fns = { } -- shunt/spec.yue:14
-  end -- shunt/spec.yue:13
-  spec_fns[#spec_fns + 1] = fn -- shunt/spec.yue:15
-end -- shunt/spec.yue:12
-_module_0["spec"] = spec -- shunt/spec.yue:15
-root_spec = nil -- shunt/spec.yue:17
-current_spec = nil -- shunt/spec.yue:18
-current_spec_kind = 'describe' -- shunt/spec.yue:19
-describe = function(what, fn) -- shunt/spec.yue:20
-  return declare_spec_section('describe', what, fn) -- shunt/spec.yue:21
-end -- shunt/spec.yue:20
-_module_0["describe"] = describe -- shunt/spec.yue:21
-it = function(what, fn) -- shunt/spec.yue:23
-  return declare_spec_section('it', what, fn) -- shunt/spec.yue:24
-end -- shunt/spec.yue:23
-_module_0["it"] = it -- shunt/spec.yue:24
-declare_spec_section = function(kind, what, fn) -- shunt/spec.yue:26
-  if not (root_spec ~= nil) then -- shunt/spec.yue:27
-    root_spec = Spec:root() -- shunt/spec.yue:28
-  end -- shunt/spec.yue:27
-  if not (current_spec ~= nil) then -- shunt/spec.yue:29
-    current_spec = root_spec -- shunt/spec.yue:30
-  end -- shunt/spec.yue:29
-  if current_spec.kind ~= 'describe' then -- shunt/spec.yue:32
-    error("cannot use `" .. tostring(kind) .. "` in `" .. tostring(current_spec.kind) .. "` spec") -- shunt/spec.yue:33
-  end -- shunt/spec.yue:32
-  if 'describe' == kind then -- shunt/spec.yue:36
-    local parent_spec = current_spec -- shunt/spec.yue:37
-    current_spec = Spec(kind, what, parent_spec) -- shunt/spec.yue:39
-    fn() -- shunt/spec.yue:40
-    parent_spec:add_child(current_spec) -- shunt/spec.yue:42
-    current_spec = parent_spec -- shunt/spec.yue:43
-  elseif 'it' == kind then -- shunt/spec.yue:44
-    return current_spec:add_child(Test(what, fn, current_spec)) -- shunt/spec.yue:45
-  else -- shunt/spec.yue:47
-    return error("internal error: unknown kind " .. tostring(repr(kind))) -- shunt/spec.yue:47
-  end -- shunt/spec.yue:47
-end -- shunt/spec.yue:26
-do -- shunt/spec.yue:49
-  local _class_0 -- shunt/spec.yue:49
-  local _base_0 = { -- shunt/spec.yue:49
-    add_child = function(self, child) -- shunt/spec.yue:56
-      do -- shunt/spec.yue:57
-        local _obj_0 = self.children -- shunt/spec.yue:57
-        _obj_0[#_obj_0 + 1] = child -- shunt/spec.yue:57
-      end -- shunt/spec.yue:57
-    end, -- shunt/spec.yue:59
-    desc = function(self) -- shunt/spec.yue:59
-      local rev_parts -- shunt/spec.yue:60
-      do -- shunt/spec.yue:60
-        local _with_0 = { -- shunt/spec.yue:60
-          self.name -- shunt/spec.yue:60
-        } -- shunt/spec.yue:60
-        spec = self.parent -- shunt/spec.yue:61
-        while (spec ~= nil) do -- shunt/spec.yue:62
-          _with_0[#_with_0 + 1] = spec.name -- shunt/spec.yue:63
-          spec = spec.parent -- shunt/spec.yue:64
-        end -- shunt/spec.yue:64
-        rev_parts = _with_0 -- shunt/spec.yue:60
-      end -- shunt/spec.yue:60
-      local parts -- shunt/spec.yue:65
-      do -- shunt/spec.yue:65
-        local _with_0 = { } -- shunt/spec.yue:65
-        local n = #rev_parts -- shunt/spec.yue:66
-        for i = 1, n do -- shunt/spec.yue:67
-          _with_0[i] = rev_parts[n - i + 1] -- shunt/spec.yue:68
-        end -- shunt/spec.yue:68
-        parts = _with_0 -- shunt/spec.yue:65
-      end -- shunt/spec.yue:65
-      return table.concat(parts, ' ') -- shunt/spec.yue:69
-    end, -- shunt/spec.yue:71
-    test = function(self, filter) -- shunt/spec.yue:71
-      if filter == nil then -- shunt/spec.yue:71
-        filter = nil -- shunt/spec.yue:71
-      end -- shunt/spec.yue:71
-      local _list_0 = self.children -- shunt/spec.yue:72
-      for _index_0 = 1, #_list_0 do -- shunt/spec.yue:72
-        local child = _list_0[_index_0] -- shunt/spec.yue:72
-        child:test(filter) -- shunt/spec.yue:73
-      end -- shunt/spec.yue:73
-    end -- shunt/spec.yue:49
-  } -- shunt/spec.yue:49
-  if _base_0.__index == nil then -- shunt/spec.yue:49
-    _base_0.__index = _base_0 -- shunt/spec.yue:49
-  end -- shunt/spec.yue:73
-  _class_0 = setmetatable({ -- shunt/spec.yue:49
-    __init = function(self, kind, name, parent) -- shunt/spec.yue:53
-      self.kind = kind -- shunt/spec.yue:53
-      self.name = name -- shunt/spec.yue:53
-      self.parent = parent -- shunt/spec.yue:53
-      self.children = { } -- shunt/spec.yue:54
-    end, -- shunt/spec.yue:49
-    __base = _base_0, -- shunt/spec.yue:49
-    __name = "Spec" -- shunt/spec.yue:49
-  }, { -- shunt/spec.yue:49
-    __index = _base_0, -- shunt/spec.yue:49
-    __call = function(cls, ...) -- shunt/spec.yue:49
-      local _self_0 = setmetatable({ }, _base_0) -- shunt/spec.yue:49
-      cls.__init(_self_0, ...) -- shunt/spec.yue:49
-      return _self_0 -- shunt/spec.yue:49
-    end -- shunt/spec.yue:49
-  }) -- shunt/spec.yue:49
-  _base_0.__class = _class_0 -- shunt/spec.yue:49
-  local self = _class_0; -- shunt/spec.yue:49
-  self.root = function(self) -- shunt/spec.yue:50
-    return Spec('describe', nil, nil) -- shunt/spec.yue:51
-  end -- shunt/spec.yue:50
-  Spec = _class_0 -- shunt/spec.yue:49
-end -- shunt/spec.yue:73
-FATAL_TEST_ERROR_MARKER = 'INTERNAL ERROR: FATAL TEST ERROR' -- shunt/spec.yue:75
-do -- shunt/spec.yue:77
-  local _class_0 -- shunt/spec.yue:77
-  local _base_0 = { -- shunt/spec.yue:77
-    test = function(self, filter) -- shunt/spec.yue:84
-      if filter == nil then -- shunt/spec.yue:84
-        filter = nil -- shunt/spec.yue:84
-      end -- shunt/spec.yue:84
-      if (filter ~= nil) then -- shunt/spec.yue:85
-        local desc = self:desc() -- shunt/spec.yue:86
-        if not desc:match(filter) then -- shunt/spec.yue:87
-          log(function() -- shunt/spec.yue:88
-            return "* skipping " .. tostring(desc) -- shunt/spec.yue:88
-          end) -- shunt/spec.yue:88
-          return -- shunt/spec.yue:89
-        end -- shunt/spec.yue:87
-      else -- shunt/spec.yue:91
-        log(function() -- shunt/spec.yue:91
-          return "* running " .. tostring(self:desc()) -- shunt/spec.yue:91
-        end) -- shunt/spec.yue:91
-      end -- shunt/spec.yue:85
-      self.__class.num_run = self.__class.num_run + 1 -- shunt/spec.yue:92
-      self.__class.current_run_failures = { } -- shunt/spec.yue:94
-      local print_calls = { } -- shunt/spec.yue:95
-      local old_print = print -- shunt/spec.yue:96
-      print = function(...) -- shunt/spec.yue:97
-        print_calls[#print_calls + 1] = { -- shunt/spec.yue:98
-          ... -- shunt/spec.yue:98
-        } -- shunt/spec.yue:98
-      end -- shunt/spec.yue:97
-xpcall(function() -- shunt/spec.yue:99
-        return self:assertions_fn() -- shunt/spec.yue:100
-      end, function(err) -- shunt/spec.yue:100
-        if not err:match(FATAL_TEST_ERROR_MARKER) then -- shunt/spec.yue:102
-          return Test:fail("caught error: " .. tostring(debug.traceback(err, 2))) -- shunt/spec.yue:103
-        end -- shunt/spec.yue:102
-      end) -- shunt/spec.yue:103
-      print = old_print -- shunt/spec.yue:104
-      local failures = self.__class.current_run_failures -- shunt/spec.yue:106
-      self.__class.current_run_failures = nil -- shunt/spec.yue:107
-      if #failures == 0 then -- shunt/spec.yue:109
-        return -- shunt/spec.yue:110
-      end -- shunt/spec.yue:109
-      if #print_calls > 0 then -- shunt/spec.yue:112
-        print('--- START of print output ---') -- shunt/spec.yue:113
-        print(table.concat((function() -- shunt/spec.yue:114
-          local _accum_0 = { } -- shunt/spec.yue:114
-          local _len_0 = 1 -- shunt/spec.yue:114
-          for _index_0 = 1, #print_calls do -- shunt/spec.yue:114
-            local print_call_parts = print_calls[_index_0] -- shunt/spec.yue:114
-            _accum_0[_len_0] = table.concat((function() -- shunt/spec.yue:114
-              local _accum_1 = { } -- shunt/spec.yue:114
-              local _len_1 = 1 -- shunt/spec.yue:114
-              for _index_1 = 1, #print_call_parts do -- shunt/spec.yue:114
-                local print_call_part = print_call_parts[_index_1] -- shunt/spec.yue:114
-                _accum_1[_len_1] = tostring(print_call_part) -- shunt/spec.yue:114
-                _len_1 = _len_1 + 1 -- shunt/spec.yue:114
-              end -- shunt/spec.yue:114
-              return _accum_1 -- shunt/spec.yue:114
-            end)(), '\t') -- shunt/spec.yue:114
-            _len_0 = _len_0 + 1 -- shunt/spec.yue:114
-          end -- shunt/spec.yue:114
-          return _accum_0 -- shunt/spec.yue:114
-        end)(), '\n')) -- shunt/spec.yue:114
-        print('--- END of print output ---') -- shunt/spec.yue:115
-      end -- shunt/spec.yue:112
-      print("* " .. tostring(self:desc()) .. ":") -- shunt/spec.yue:117
-      for _index_0 = 1, #failures do -- shunt/spec.yue:118
-        local failure = failures[_index_0] -- shunt/spec.yue:118
-        print("  * " .. tostring(reflow('    ', failure))) -- shunt/spec.yue:119
-      end -- shunt/spec.yue:119
-    end, -- shunt/spec.yue:121
-    desc = function(self) -- shunt/spec.yue:121
-      return tostring(self.spec:desc()) .. " " .. tostring(self.name) -- shunt/spec.yue:122
-    end -- shunt/spec.yue:77
-  } -- shunt/spec.yue:77
-  if _base_0.__index == nil then -- shunt/spec.yue:77
-    _base_0.__index = _base_0 -- shunt/spec.yue:77
-  end -- shunt/spec.yue:145
-  _class_0 = setmetatable({ -- shunt/spec.yue:77
-    __init = function(self, name, assertions_fn, spec) -- shunt/spec.yue:78
-      self.name = name -- shunt/spec.yue:78
-      self.assertions_fn = assertions_fn -- shunt/spec.yue:78
-      self.spec = spec -- shunt/spec.yue:78
-    end, -- shunt/spec.yue:77
-    __base = _base_0, -- shunt/spec.yue:77
-    __name = "Test" -- shunt/spec.yue:77
-  }, { -- shunt/spec.yue:77
-    __index = _base_0, -- shunt/spec.yue:77
-    __call = function(cls, ...) -- shunt/spec.yue:77
-      local _self_0 = setmetatable({ }, _base_0) -- shunt/spec.yue:77
-      cls.__init(_self_0, ...) -- shunt/spec.yue:77
-      return _self_0 -- shunt/spec.yue:77
-    end -- shunt/spec.yue:77
-  }) -- shunt/spec.yue:77
-  _base_0.__class = _class_0 -- shunt/spec.yue:77
-  local self = _class_0; -- shunt/spec.yue:77
-  self.num_run = 0 -- shunt/spec.yue:80
-  self.num_failures = 0 -- shunt/spec.yue:81
-  self.current_run_failures = nil -- shunt/spec.yue:82
-  self.fail = function(self, cause, message) -- shunt/spec.yue:124
-    self.__class.num_failures = self.__class.num_failures + 1 -- shunt/spec.yue:125
-    local cause_string -- shunt/spec.yue:126
-    do -- shunt/spec.yue:126
-      local _exp_0 = type(cause) -- shunt/spec.yue:126
-      if 'string' == _exp_0 then -- shunt/spec.yue:127
-        cause_string = cause -- shunt/spec.yue:128
-      elseif 'table' == _exp_0 then -- shunt/spec.yue:129
-        local value_label, location, expected, actual_repr, explanation = cause.value_label, cause.location, cause.expected, cause.actual_repr, cause.explanation -- shunt/spec.yue:130
-        local value_label_line = '' -- shunt/spec.yue:131
-        if (value_label ~= nil) then -- shunt/spec.yue:132
-          value_label_line = "value: " .. tostring(value_label) .. "\n" -- shunt/spec.yue:133
-        end -- shunt/spec.yue:132
-        cause_string = tostring(value_label_line) .. "expected: " .. tostring(reflow('    ', expected, 70)) .. "\nactual: " .. tostring(reflow('    ', actual_repr, 70)) .. ",\n  " .. tostring(reflow('  ', explanation, 70)) .. "\nat: " .. tostring(location) -- shunt/spec.yue:135
-      else -- shunt/spec.yue:137
-        cause_string = error("internal error: invalid matcher return: " .. tostring(repr(cause))) -- shunt/spec.yue:137
-      end -- shunt/spec.yue:137
-    end -- shunt/spec.yue:137
-    if (message ~= nil) then -- shunt/spec.yue:138
-      do -- shunt/spec.yue:139
-        local _obj_0 = self.__class.current_run_failures -- shunt/spec.yue:139
-        _obj_0[#_obj_0 + 1] = tostring(message) .. ": " .. tostring(cause_string) -- shunt/spec.yue:139
-      end -- shunt/spec.yue:139
-    else -- shunt/spec.yue:141
-      do -- shunt/spec.yue:141
-        local _obj_0 = self.__class.current_run_failures -- shunt/spec.yue:141
-        _obj_0[#_obj_0 + 1] = cause_string -- shunt/spec.yue:141
-      end -- shunt/spec.yue:141
-    end -- shunt/spec.yue:138
-  end -- shunt/spec.yue:124
-  self.fatal = function(self, cause, message) -- shunt/spec.yue:143
-    self.__class:fail(cause, message) -- shunt/spec.yue:144
-    return error(FATAL_TEST_ERROR_MARKER) -- shunt/spec.yue:145
-  end -- shunt/spec.yue:143
-  Test = _class_0 -- shunt/spec.yue:77
-end -- shunt/spec.yue:145
-expect_that = function(actual, matcher) -- shunt/spec.yue:147
-  return _expect_that(nil, actual, matcher, nil) -- shunt/spec.yue:148
-end -- shunt/spec.yue:147
-_module_0["expect_that"] = expect_that -- shunt/spec.yue:148
-_expect_that = function(value_label, actual, matcher, location) -- shunt/spec.yue:150
-  if not (Test.current_run_failures ~= nil) then -- shunt/spec.yue:151
-    error('internal error: expect_that call must be within an `it` call') -- shunt/spec.yue:152
-  end -- shunt/spec.yue:151
-  if matcher:matches(actual) then -- shunt/spec.yue:154
-    return -- shunt/spec.yue:155
-  end -- shunt/spec.yue:154
-  if location == nil then -- shunt/spec.yue:157
-    location = get_caller_location('expect_that') -- shunt/spec.yue:157
-  end -- shunt/spec.yue:157
-  return Test:fail({ -- shunt/spec.yue:159
-    value_label = value_label, -- shunt/spec.yue:159
-    location = location, -- shunt/spec.yue:160
-    expected = matcher:describe(), -- shunt/spec.yue:161
-    actual_repr = (function() -- shunt/spec.yue:162
-      local _exp_0 -- shunt/spec.yue:162
-      do -- shunt/spec.yue:162
-        local _obj_0 = matcher.actual_repr -- shunt/spec.yue:162
-        if _obj_0 ~= nil then -- shunt/spec.yue:162
-          _exp_0 = _obj_0(matcher) -- shunt/spec.yue:162
-        end -- shunt/spec.yue:162
-      end -- shunt/spec.yue:162
-      if _exp_0 ~= nil then -- shunt/spec.yue:162
-        return _exp_0 -- shunt/spec.yue:162
-      else -- shunt/spec.yue:162
-        return repr(actual) -- shunt/spec.yue:162
-      end -- shunt/spec.yue:162
-    end)(), -- shunt/spec.yue:162
-    explanation = matcher:explain_match(actual) -- shunt/spec.yue:163
-  }) -- shunt/spec.yue:163
-end -- shunt/spec.yue:150
-_module_0["_expect_that"] = _expect_that -- shunt/spec.yue:163
-assert_that = function(actual, matcher) -- shunt/spec.yue:165
-  return _assert_that(nil, actual, matcher, nil) -- shunt/spec.yue:166
-end -- shunt/spec.yue:165
-_module_0["assert_that"] = assert_that -- shunt/spec.yue:166
-_assert_that = function(value_label, actual, matcher, location) -- shunt/spec.yue:168
-  if not (Test.current_run_failures ~= nil) then -- shunt/spec.yue:169
-    error('internal error: assert_that call must be within an `it` call') -- shunt/spec.yue:170
-  end -- shunt/spec.yue:169
-  if matcher:matches(actual) then -- shunt/spec.yue:172
-    return -- shunt/spec.yue:173
-  end -- shunt/spec.yue:172
-  if location == nil then -- shunt/spec.yue:175
-    location = get_caller_location('assert_that') -- shunt/spec.yue:175
-  end -- shunt/spec.yue:175
-  return Test:fatal({ -- shunt/spec.yue:177
-    value_label = value_label, -- shunt/spec.yue:177
-    location = location, -- shunt/spec.yue:178
-    expected = matcher:describe(), -- shunt/spec.yue:179
-    actual_repr = (function() -- shunt/spec.yue:180
-      local _exp_0 -- shunt/spec.yue:180
-      do -- shunt/spec.yue:180
-        local _obj_0 = matcher.actual_repr -- shunt/spec.yue:180
-        if _obj_0 ~= nil then -- shunt/spec.yue:180
-          _exp_0 = _obj_0(matcher) -- shunt/spec.yue:180
-        end -- shunt/spec.yue:180
-      end -- shunt/spec.yue:180
-      if _exp_0 ~= nil then -- shunt/spec.yue:180
-        return _exp_0 -- shunt/spec.yue:180
-      else -- shunt/spec.yue:180
-        return repr(actual) -- shunt/spec.yue:180
-      end -- shunt/spec.yue:180
-    end)(), -- shunt/spec.yue:180
-    explanation = matcher:explain_match(actual) -- shunt/spec.yue:181
-  }) -- shunt/spec.yue:181
-end -- shunt/spec.yue:168
-_module_0["_assert_that"] = _assert_that -- shunt/spec.yue:181
-get_caller_location = function(kind) -- shunt/spec.yue:184
-  local currentline, short_src, what -- shunt/spec.yue:185
-  do -- shunt/spec.yue:185
-    local _obj_0 = debug.getinfo(3, 'Sl') -- shunt/spec.yue:185
-    currentline, short_src, what = _obj_0.currentline, _obj_0.short_src, _obj_0.what -- shunt/spec.yue:185
-  end -- shunt/spec.yue:185
-  if 'C' == what or 'tail' == what then -- shunt/spec.yue:187
-    return "last " .. tostring(kind) .. " call (debug info lost)" -- shunt/spec.yue:188
-  else -- shunt/spec.yue:190
-    return tostring(short_src) .. ":" .. tostring(currentline) -- shunt/spec.yue:190
-  end -- shunt/spec.yue:190
-end -- shunt/spec.yue:184
-do -- shunt/spec.yue:192
-  local _class_0 -- shunt/spec.yue:192
-  local _base_0 = { -- shunt/spec.yue:192
-    matches = function(self, actual) -- shunt/spec.yue:193
-      return true -- shunt/spec.yue:194
-    end, -- shunt/spec.yue:196
-    explain_match = function(self, actual) -- shunt/spec.yue:196
-      return "which " .. tostring(self:describe()) -- shunt/spec.yue:197
-    end, -- shunt/spec.yue:199
-    describe = function(self, is_match) -- shunt/spec.yue:199
-      if is_match == nil then -- shunt/spec.yue:199
-        is_match = true -- shunt/spec.yue:199
-      end -- shunt/spec.yue:199
-      return "is anything" -- shunt/spec.yue:200
-    end -- shunt/spec.yue:192
-  } -- shunt/spec.yue:192
-  if _base_0.__index == nil then -- shunt/spec.yue:192
-    _base_0.__index = _base_0 -- shunt/spec.yue:192
-  end -- shunt/spec.yue:200
-  _class_0 = setmetatable({ -- shunt/spec.yue:192
-    __init = function() end, -- shunt/spec.yue:192
-    __base = _base_0, -- shunt/spec.yue:192
-    __name = "Anything" -- shunt/spec.yue:192
-  }, { -- shunt/spec.yue:192
-    __index = _base_0, -- shunt/spec.yue:192
-    __call = function(cls, ...) -- shunt/spec.yue:192
-      local _self_0 = setmetatable({ }, _base_0) -- shunt/spec.yue:192
-      cls.__init(_self_0, ...) -- shunt/spec.yue:192
-      return _self_0 -- shunt/spec.yue:192
-    end -- shunt/spec.yue:192
-  }) -- shunt/spec.yue:192
-  _base_0.__class = _class_0 -- shunt/spec.yue:192
-  Anything = _class_0 -- shunt/spec.yue:192
-end -- shunt/spec.yue:200
-do -- shunt/spec.yue:202
-  local _class_0 -- shunt/spec.yue:202
-  local _base_0 = { -- shunt/spec.yue:202
-    matches = function(self, actual) -- shunt/spec.yue:203
-      return (actual ~= nil) -- shunt/spec.yue:204
-    end, -- shunt/spec.yue:206
-    explain_match = function(self, actual) -- shunt/spec.yue:206
-      return "which " .. tostring(self:describe()) -- shunt/spec.yue:207
-    end, -- shunt/spec.yue:209
-    describe = function(self, is_match) -- shunt/spec.yue:209
-      if is_match == nil then -- shunt/spec.yue:209
-        is_match = true -- shunt/spec.yue:209
-      end -- shunt/spec.yue:209
-      return "is non-nil" -- shunt/spec.yue:210
-    end -- shunt/spec.yue:202
-  } -- shunt/spec.yue:202
-  if _base_0.__index == nil then -- shunt/spec.yue:202
-    _base_0.__index = _base_0 -- shunt/spec.yue:202
-  end -- shunt/spec.yue:210
-  _class_0 = setmetatable({ -- shunt/spec.yue:202
-    __init = function() end, -- shunt/spec.yue:202
-    __base = _base_0, -- shunt/spec.yue:202
-    __name = "Some" -- shunt/spec.yue:202
-  }, { -- shunt/spec.yue:202
-    __index = _base_0, -- shunt/spec.yue:202
-    __call = function(cls, ...) -- shunt/spec.yue:202
-      local _self_0 = setmetatable({ }, _base_0) -- shunt/spec.yue:202
-      cls.__init(_self_0, ...) -- shunt/spec.yue:202
-      return _self_0 -- shunt/spec.yue:202
-    end -- shunt/spec.yue:202
-  }) -- shunt/spec.yue:202
-  _base_0.__class = _class_0 -- shunt/spec.yue:202
-  Some = _class_0 -- shunt/spec.yue:202
-end -- shunt/spec.yue:210
-do -- shunt/spec.yue:212
-  local _class_0 -- shunt/spec.yue:212
-  local _base_0 = { -- shunt/spec.yue:212
-    matches = function(self, actual) -- shunt/spec.yue:215
-      return not self.inner:matches(actual) -- shunt/spec.yue:216
-    end, -- shunt/spec.yue:218
-    explain_match = function(self, actual) -- shunt/spec.yue:218
-      return self.inner:explain_match(actual) -- shunt/spec.yue:219
-    end, -- shunt/spec.yue:221
-    describe = function(self, is_match) -- shunt/spec.yue:221
-      if is_match == nil then -- shunt/spec.yue:221
-        is_match = true -- shunt/spec.yue:221
-      end -- shunt/spec.yue:221
-      return self.inner:describe(not is_match) -- shunt/spec.yue:222
-    end -- shunt/spec.yue:212
-  } -- shunt/spec.yue:212
-  if _base_0.__index == nil then -- shunt/spec.yue:212
-    _base_0.__index = _base_0 -- shunt/spec.yue:212
-  end -- shunt/spec.yue:222
-  _class_0 = setmetatable({ -- shunt/spec.yue:212
-    __init = function(self, inner) -- shunt/spec.yue:213
-      self.inner = inner -- shunt/spec.yue:213
-    end, -- shunt/spec.yue:212
-    __base = _base_0, -- shunt/spec.yue:212
-    __name = "Not" -- shunt/spec.yue:212
-  }, { -- shunt/spec.yue:212
-    __index = _base_0, -- shunt/spec.yue:212
-    __call = function(cls, ...) -- shunt/spec.yue:212
-      local _self_0 = setmetatable({ }, _base_0) -- shunt/spec.yue:212
-      cls.__init(_self_0, ...) -- shunt/spec.yue:212
-      return _self_0 -- shunt/spec.yue:212
-    end -- shunt/spec.yue:212
-  }) -- shunt/spec.yue:212
-  _base_0.__class = _class_0 -- shunt/spec.yue:212
-  Not = _class_0 -- shunt/spec.yue:212
-end -- shunt/spec.yue:222
-do -- shunt/spec.yue:224
-  local _class_0 -- shunt/spec.yue:224
-  local _base_0 = { -- shunt/spec.yue:224
-    matches = function(self, actual) -- shunt/spec.yue:227
-      return self.expected == actual -- shunt/spec.yue:228
-    end, -- shunt/spec.yue:230
-    explain_match = function(self, actual) -- shunt/spec.yue:230
-      return "which " .. tostring(self:describe(self:matches(actual))) -- shunt/spec.yue:231
-    end, -- shunt/spec.yue:233
-    describe = function(self, is_match) -- shunt/spec.yue:233
-      if is_match == nil then -- shunt/spec.yue:233
-        is_match = true -- shunt/spec.yue:233
-      end -- shunt/spec.yue:233
-      if is_match then -- shunt/spec.yue:234
-        return "is equal to " .. tostring(repr(self.expected)) -- shunt/spec.yue:235
-      else -- shunt/spec.yue:237
-        return "isn't equal to " .. tostring(repr(self.expected)) -- shunt/spec.yue:237
-      end -- shunt/spec.yue:234
-    end -- shunt/spec.yue:224
-  } -- shunt/spec.yue:224
-  if _base_0.__index == nil then -- shunt/spec.yue:224
-    _base_0.__index = _base_0 -- shunt/spec.yue:224
-  end -- shunt/spec.yue:237
-  _class_0 = setmetatable({ -- shunt/spec.yue:224
-    __init = function(self, expected) -- shunt/spec.yue:225
-      self.expected = expected -- shunt/spec.yue:225
-    end, -- shunt/spec.yue:224
-    __base = _base_0, -- shunt/spec.yue:224
-    __name = "Eq" -- shunt/spec.yue:224
-  }, { -- shunt/spec.yue:224
-    __index = _base_0, -- shunt/spec.yue:224
-    __call = function(cls, ...) -- shunt/spec.yue:224
-      local _self_0 = setmetatable({ }, _base_0) -- shunt/spec.yue:224
-      cls.__init(_self_0, ...) -- shunt/spec.yue:224
-      return _self_0 -- shunt/spec.yue:224
-    end -- shunt/spec.yue:224
-  }) -- shunt/spec.yue:224
-  _base_0.__class = _class_0 -- shunt/spec.yue:224
-  Eq = _class_0 -- shunt/spec.yue:224
-end -- shunt/spec.yue:237
-do -- shunt/spec.yue:239
-  local _class_0 -- shunt/spec.yue:239
-  local _base_0 = { -- shunt/spec.yue:239
-    matches = function(self, actual) -- shunt/spec.yue:242
-      local _exp_0 = self.kind -- shunt/spec.yue:243
-      if '==' == _exp_0 then -- shunt/spec.yue:244
-        return actual == self.value -- shunt/spec.yue:245
-      elseif '<' == _exp_0 then -- shunt/spec.yue:246
-        return actual < self.value -- shunt/spec.yue:247
-      elseif '<=' == _exp_0 then -- shunt/spec.yue:248
-        return actual <= self.value -- shunt/spec.yue:249
-      elseif '>' == _exp_0 then -- shunt/spec.yue:250
-        return actual > self.value -- shunt/spec.yue:251
-      elseif '>=' == _exp_0 then -- shunt/spec.yue:252
-        return actual >= self.value -- shunt/spec.yue:253
-      else -- shunt/spec.yue:255
-        return error("internal error: unrecognised comparison: " .. tostring(repr(self.kind))) -- shunt/spec.yue:255
-      end -- shunt/spec.yue:255
-    end, -- shunt/spec.yue:257
-    explain_match = function(self, actual) -- shunt/spec.yue:257
-      return "which " .. tostring(self:describe(self:matches(actual))) -- shunt/spec.yue:258
-    end, -- shunt/spec.yue:260
-    describe = function(self, is_match) -- shunt/spec.yue:260
-      if is_match == nil then -- shunt/spec.yue:260
-        is_match = true -- shunt/spec.yue:260
-      end -- shunt/spec.yue:260
-      local comparison_name -- shunt/spec.yue:261
-      do -- shunt/spec.yue:261
-        local _exp_0 = self.kind -- shunt/spec.yue:261
-        if '==' == _exp_0 then -- shunt/spec.yue:262
-          comparison_name = "equal to" -- shunt/spec.yue:263
-        elseif '<' == _exp_0 then -- shunt/spec.yue:264
-          comparison_name = "less than" -- shunt/spec.yue:265
-        elseif '<=' == _exp_0 then -- shunt/spec.yue:266
-          comparison_name = "at most" -- shunt/spec.yue:267
-        elseif '>' == _exp_0 then -- shunt/spec.yue:268
-          comparison_name = "greater than" -- shunt/spec.yue:269
-        elseif '>=' == _exp_0 then -- shunt/spec.yue:270
-          comparison_name = "at least" -- shunt/spec.yue:271
-        else -- shunt/spec.yue:273
-          comparison_name = error("internal error: unrecognised comparison: " .. tostring(repr(self.kind))) -- shunt/spec.yue:273
-        end -- shunt/spec.yue:273
-      end -- shunt/spec.yue:273
-      if is_match then -- shunt/spec.yue:274
-        return "is " .. tostring(comparison_name) .. " " .. tostring(repr(self.value)) -- shunt/spec.yue:275
-      else -- shunt/spec.yue:277
-        return "isn't " .. tostring(comparison_name) .. " " .. tostring(repr(self.value)) -- shunt/spec.yue:277
-      end -- shunt/spec.yue:274
-    end -- shunt/spec.yue:239
-  } -- shunt/spec.yue:239
-  if _base_0.__index == nil then -- shunt/spec.yue:239
-    _base_0.__index = _base_0 -- shunt/spec.yue:239
-  end -- shunt/spec.yue:277
-  _class_0 = setmetatable({ -- shunt/spec.yue:239
-    __init = function(self, kind, value) -- shunt/spec.yue:240
-      self.kind = kind -- shunt/spec.yue:240
-      self.value = value -- shunt/spec.yue:240
-    end, -- shunt/spec.yue:239
-    __base = _base_0, -- shunt/spec.yue:239
-    __name = "Compare" -- shunt/spec.yue:239
-  }, { -- shunt/spec.yue:239
-    __index = _base_0, -- shunt/spec.yue:239
-    __call = function(cls, ...) -- shunt/spec.yue:239
-      local _self_0 = setmetatable({ }, _base_0) -- shunt/spec.yue:239
-      cls.__init(_self_0, ...) -- shunt/spec.yue:239
-      return _self_0 -- shunt/spec.yue:239
-    end -- shunt/spec.yue:239
-  }) -- shunt/spec.yue:239
-  _base_0.__class = _class_0 -- shunt/spec.yue:239
-  Compare = _class_0 -- shunt/spec.yue:239
-end -- shunt/spec.yue:277
-do -- shunt/spec.yue:279
-  local _class_0 -- shunt/spec.yue:279
-  local _base_0 = { -- shunt/spec.yue:279
-    matches = function(self, actual) -- shunt/spec.yue:282
-      if 'number' ~= type(actual) then -- shunt/spec.yue:283
-        return false -- shunt/spec.yue:284
-      end -- shunt/spec.yue:283
-      return (math.abs(actual - self.expected)) <= math.abs(self.delta * self.expected) -- shunt/spec.yue:285
-    end, -- shunt/spec.yue:287
-    explain_match = function(self, actual) -- shunt/spec.yue:287
-      return "which " .. tostring(self:describe(self:matches(actual))) -- shunt/spec.yue:288
-    end, -- shunt/spec.yue:290
-    describe = function(self, is_match) -- shunt/spec.yue:290
-      if is_match == nil then -- shunt/spec.yue:290
-        is_match = true -- shunt/spec.yue:290
-      end -- shunt/spec.yue:290
-      if is_match then -- shunt/spec.yue:291
-        return "is near " .. tostring(self.expected) .. " (Δ" .. tostring(self.delta) .. "x)" -- shunt/spec.yue:292
-      else -- shunt/spec.yue:294
-        return "isn't near " .. tostring(self.expected) .. " (Δ" .. tostring(self.delta) .. "x)" -- shunt/spec.yue:294
-      end -- shunt/spec.yue:291
-    end -- shunt/spec.yue:279
-  } -- shunt/spec.yue:279
-  if _base_0.__index == nil then -- shunt/spec.yue:279
-    _base_0.__index = _base_0 -- shunt/spec.yue:279
-  end -- shunt/spec.yue:294
-  _class_0 = setmetatable({ -- shunt/spec.yue:279
-    __init = function(self, expected, delta) -- shunt/spec.yue:280
-      if delta == nil then -- shunt/spec.yue:280
-        delta = 0.00001 -- shunt/spec.yue:280
-      end -- shunt/spec.yue:280
-      self.expected = expected -- shunt/spec.yue:280
-      self.delta = delta -- shunt/spec.yue:280
-    end, -- shunt/spec.yue:279
-    __base = _base_0, -- shunt/spec.yue:279
-    __name = "Near" -- shunt/spec.yue:279
-  }, { -- shunt/spec.yue:279
-    __index = _base_0, -- shunt/spec.yue:279
-    __call = function(cls, ...) -- shunt/spec.yue:279
-      local _self_0 = setmetatable({ }, _base_0) -- shunt/spec.yue:279
-      cls.__init(_self_0, ...) -- shunt/spec.yue:279
-      return _self_0 -- shunt/spec.yue:279
-    end -- shunt/spec.yue:279
-  }) -- shunt/spec.yue:279
-  _base_0.__class = _class_0 -- shunt/spec.yue:279
-  Near = _class_0 -- shunt/spec.yue:279
-end -- shunt/spec.yue:294
-do -- shunt/spec.yue:296
-  local _class_0 -- shunt/spec.yue:296
-  local _base_0 = { -- shunt/spec.yue:296
-    matches = function(self, actual) -- shunt/spec.yue:299
-      return self:deep_equal(self.expected, actual) -- shunt/spec.yue:300
-    end, -- shunt/spec.yue:302
-    deep_equal = function(self, a, b, a_stack_set, b_stack_set) -- shunt/spec.yue:302
-      if a_stack_set == nil then -- shunt/spec.yue:302
-        a_stack_set = { } -- shunt/spec.yue:302
-      end -- shunt/spec.yue:302
-      if b_stack_set == nil then -- shunt/spec.yue:302
-        b_stack_set = { } -- shunt/spec.yue:302
-      end -- shunt/spec.yue:302
-      if a == b then -- shunt/spec.yue:303
-        return true -- shunt/spec.yue:304
-      end -- shunt/spec.yue:303
-      local type_a = type(a) -- shunt/spec.yue:306
-      local type_b = type(b) -- shunt/spec.yue:307
-      if type_a ~= type_b then -- shunt/spec.yue:308
-        return false -- shunt/spec.yue:309
-      end -- shunt/spec.yue:308
-      if type_a ~= 'table' then -- shunt/spec.yue:311
-        return false -- shunt/spec.yue:312
-      end -- shunt/spec.yue:311
-      for ka, va in pairs(a) do -- shunt/spec.yue:313
-        local vb = b[ka] -- shunt/spec.yue:314
-        if a_stack_set[va] and b_stack_set[vb] then -- shunt/spec.yue:316
-          return true -- shunt/spec.yue:317
-        end -- shunt/spec.yue:316
-        a_stack_set[va] = true -- shunt/spec.yue:318
-        if (vb ~= nil) then -- shunt/spec.yue:319
-          b_stack_set[vb] = true -- shunt/spec.yue:320
-        end -- shunt/spec.yue:319
-        if not self:deep_equal(va, vb, a_stack_set, b_stack_set) then -- shunt/spec.yue:321
-          return false -- shunt/spec.yue:322
-        end -- shunt/spec.yue:321
-        a_stack_set[va] = nil -- shunt/spec.yue:323
-        b_stack_set[vb] = nil -- shunt/spec.yue:324
-      end -- shunt/spec.yue:324
-      for kb, _ in pairs(b) do -- shunt/spec.yue:325
-        if not (a[kb] ~= nil) then -- shunt/spec.yue:326
-          return false -- shunt/spec.yue:327
-        end -- shunt/spec.yue:326
-      end -- shunt/spec.yue:327
-      return true -- shunt/spec.yue:328
-    end, -- shunt/spec.yue:330
-    explain_match = function(self, actual) -- shunt/spec.yue:330
-      return "which " .. tostring(self:describe(self:matches(actual))) -- shunt/spec.yue:331
-    end, -- shunt/spec.yue:333
-    describe = function(self, is_match) -- shunt/spec.yue:333
-      if is_match == nil then -- shunt/spec.yue:333
-        is_match = true -- shunt/spec.yue:333
-      end -- shunt/spec.yue:333
-      if is_match then -- shunt/spec.yue:334
-        return "is deeply equal to " .. tostring(repr(self.expected)) -- shunt/spec.yue:335
-      else -- shunt/spec.yue:337
-        return "isn't deeply equal to " .. tostring(repr(self.expected)) -- shunt/spec.yue:337
-      end -- shunt/spec.yue:334
-    end -- shunt/spec.yue:296
-  } -- shunt/spec.yue:296
-  if _base_0.__index == nil then -- shunt/spec.yue:296
-    _base_0.__index = _base_0 -- shunt/spec.yue:296
-  end -- shunt/spec.yue:337
-  _class_0 = setmetatable({ -- shunt/spec.yue:296
-    __init = function(self, expected) -- shunt/spec.yue:297
-      self.expected = expected -- shunt/spec.yue:297
-    end, -- shunt/spec.yue:296
-    __base = _base_0, -- shunt/spec.yue:296
-    __name = "DeepEq" -- shunt/spec.yue:296
-  }, { -- shunt/spec.yue:296
-    __index = _base_0, -- shunt/spec.yue:296
-    __call = function(cls, ...) -- shunt/spec.yue:296
-      local _self_0 = setmetatable({ }, _base_0) -- shunt/spec.yue:296
-      cls.__init(_self_0, ...) -- shunt/spec.yue:296
-      return _self_0 -- shunt/spec.yue:296
-    end -- shunt/spec.yue:296
-  }) -- shunt/spec.yue:296
-  _base_0.__class = _class_0 -- shunt/spec.yue:296
-  DeepEq = _class_0 -- shunt/spec.yue:296
-end -- shunt/spec.yue:337
-do -- shunt/spec.yue:339
-  local _class_0 -- shunt/spec.yue:339
-  local _base_0 = { -- shunt/spec.yue:339
-    matches = function(self, actual) -- shunt/spec.yue:342
-      return self.type == type(actual) -- shunt/spec.yue:343
-    end, -- shunt/spec.yue:345
-    explain_match = function(self, actual) -- shunt/spec.yue:345
-      return "which " .. tostring(self:describe(self:matches(actual))) -- shunt/spec.yue:346
-    end, -- shunt/spec.yue:348
-    describe = function(self, is_match) -- shunt/spec.yue:348
-      if is_match == nil then -- shunt/spec.yue:348
-        is_match = true -- shunt/spec.yue:348
-      end -- shunt/spec.yue:348
-      if is_match then -- shunt/spec.yue:349
-        return "has type " .. tostring(self.type) -- shunt/spec.yue:350
-      else -- shunt/spec.yue:352
-        return "does not have type " .. tostring(self.type) -- shunt/spec.yue:352
-      end -- shunt/spec.yue:349
-    end -- shunt/spec.yue:339
-  } -- shunt/spec.yue:339
-  if _base_0.__index == nil then -- shunt/spec.yue:339
-    _base_0.__index = _base_0 -- shunt/spec.yue:339
-  end -- shunt/spec.yue:352
-  _class_0 = setmetatable({ -- shunt/spec.yue:339
-    __init = function(self, type) -- shunt/spec.yue:340
-      self.type = type -- shunt/spec.yue:340
-    end, -- shunt/spec.yue:339
-    __base = _base_0, -- shunt/spec.yue:339
-    __name = "Type" -- shunt/spec.yue:339
-  }, { -- shunt/spec.yue:339
-    __index = _base_0, -- shunt/spec.yue:339
-    __call = function(cls, ...) -- shunt/spec.yue:339
-      local _self_0 = setmetatable({ }, _base_0) -- shunt/spec.yue:339
-      cls.__init(_self_0, ...) -- shunt/spec.yue:339
-      return _self_0 -- shunt/spec.yue:339
-    end -- shunt/spec.yue:339
-  }) -- shunt/spec.yue:339
-  _base_0.__class = _class_0 -- shunt/spec.yue:339
-  Type = _class_0 -- shunt/spec.yue:339
-end -- shunt/spec.yue:352
-do -- shunt/spec.yue:354
-  local _class_0 -- shunt/spec.yue:354
-  local _base_0 = { -- shunt/spec.yue:354
-    matches = function(self, actual) -- shunt/spec.yue:357
-      return ('string' == type(actual)) and ((actual:match(self.pat)) ~= nil) -- shunt/spec.yue:359
-    end, -- shunt/spec.yue:361
-    explain_match = function(self, actual) -- shunt/spec.yue:361
-      if 'string' ~= type(actual) then -- shunt/spec.yue:362
-        return "which is a " .. tostring(type(actual)) -- shunt/spec.yue:363
-      end -- shunt/spec.yue:362
-      return "which " .. tostring(self:describe(self:matches(actual))) -- shunt/spec.yue:364
-    end, -- shunt/spec.yue:366
-    describe = function(self, is_match) -- shunt/spec.yue:366
-      if is_match == nil then -- shunt/spec.yue:366
-        is_match = true -- shunt/spec.yue:366
-      end -- shunt/spec.yue:366
-      if is_match then -- shunt/spec.yue:367
-        return "matches " .. tostring(repr(self.pat)) -- shunt/spec.yue:368
-      else -- shunt/spec.yue:370
-        return "doesn't match " .. tostring(repr(self.pat)) -- shunt/spec.yue:370
-      end -- shunt/spec.yue:367
-    end -- shunt/spec.yue:354
-  } -- shunt/spec.yue:354
-  if _base_0.__index == nil then -- shunt/spec.yue:354
-    _base_0.__index = _base_0 -- shunt/spec.yue:354
-  end -- shunt/spec.yue:370
-  _class_0 = setmetatable({ -- shunt/spec.yue:354
-    __init = function(self, pat) -- shunt/spec.yue:355
-      self.pat = pat -- shunt/spec.yue:355
-    end, -- shunt/spec.yue:354
-    __base = _base_0, -- shunt/spec.yue:354
-    __name = "Matches" -- shunt/spec.yue:354
-  }, { -- shunt/spec.yue:354
-    __index = _base_0, -- shunt/spec.yue:354
-    __call = function(cls, ...) -- shunt/spec.yue:354
-      local _self_0 = setmetatable({ }, _base_0) -- shunt/spec.yue:354
-      cls.__init(_self_0, ...) -- shunt/spec.yue:354
-      return _self_0 -- shunt/spec.yue:354
-    end -- shunt/spec.yue:354
-  }) -- shunt/spec.yue:354
-  _base_0.__class = _class_0 -- shunt/spec.yue:354
-  Matches = _class_0 -- shunt/spec.yue:354
-end -- shunt/spec.yue:370
-do -- shunt/spec.yue:372
-  local _class_0 -- shunt/spec.yue:372
-  local _base_0 = { -- shunt/spec.yue:372
-    matches = function(self, actual) -- shunt/spec.yue:375
-      local ty = type(actual) -- shunt/spec.yue:376
-      return (ty == 'string' or ty == 'table') and self.inner:matches(#actual) -- shunt/spec.yue:377
-    end, -- shunt/spec.yue:379
-    explain_match = function(self, actual) -- shunt/spec.yue:379
-      local _exp_0 = type(actual) -- shunt/spec.yue:380
-      if 'string' == _exp_0 or 'table' == _exp_0 then -- shunt/spec.yue:381
-        return "which has length " .. tostring(#actual) .. " " .. tostring(self.inner:explain_match(#actual)) -- shunt/spec.yue:382
-      else -- shunt/spec.yue:384
-        return "which is a " .. tostring(type(actual)) -- shunt/spec.yue:384
-      end -- shunt/spec.yue:384
-    end, -- shunt/spec.yue:386
-    describe = function(self, is_match) -- shunt/spec.yue:386
-      if is_match == nil then -- shunt/spec.yue:386
-        is_match = true -- shunt/spec.yue:386
-      end -- shunt/spec.yue:386
-      if is_match then -- shunt/spec.yue:387
-        return "has a length which " .. tostring(self.inner:describe()) -- shunt/spec.yue:388
-      else -- shunt/spec.yue:390
-        return "doesn't have a length which " .. tostring(self.inner:describe()) -- shunt/spec.yue:390
-      end -- shunt/spec.yue:387
-    end -- shunt/spec.yue:372
-  } -- shunt/spec.yue:372
-  if _base_0.__index == nil then -- shunt/spec.yue:372
-    _base_0.__index = _base_0 -- shunt/spec.yue:372
-  end -- shunt/spec.yue:390
-  _class_0 = setmetatable({ -- shunt/spec.yue:372
-    __init = function(self, inner) -- shunt/spec.yue:373
-      self.inner = inner -- shunt/spec.yue:373
-    end, -- shunt/spec.yue:372
-    __base = _base_0, -- shunt/spec.yue:372
-    __name = "Len" -- shunt/spec.yue:372
-  }, { -- shunt/spec.yue:372
-    __index = _base_0, -- shunt/spec.yue:372
-    __call = function(cls, ...) -- shunt/spec.yue:372
-      local _self_0 = setmetatable({ }, _base_0) -- shunt/spec.yue:372
-      cls.__init(_self_0, ...) -- shunt/spec.yue:372
-      return _self_0 -- shunt/spec.yue:372
-    end -- shunt/spec.yue:372
-  }) -- shunt/spec.yue:372
-  _base_0.__class = _class_0 -- shunt/spec.yue:372
-  Len = _class_0 -- shunt/spec.yue:372
-end -- shunt/spec.yue:390
-do -- shunt/spec.yue:392
-  local _class_0 -- shunt/spec.yue:392
-  local _base_0 = { -- shunt/spec.yue:392
-    matches = function(self, actual) -- shunt/spec.yue:395
-      return self.inner:matches(tostring(actual)) -- shunt/spec.yue:396
-    end, -- shunt/spec.yue:398
-    explain_match = function(self, actual) -- shunt/spec.yue:398
-      local tostring_actual = tostring(actual) -- shunt/spec.yue:399
-      return "which tostrings as '" .. tostring(tostring_actual) .. "' " .. tostring(self.inner:explain_match(tostring_actual)) -- shunt/spec.yue:400
-    end, -- shunt/spec.yue:402
-    describe = function(self, is_match) -- shunt/spec.yue:402
-      if is_match == nil then -- shunt/spec.yue:402
-        is_match = true -- shunt/spec.yue:402
-      end -- shunt/spec.yue:402
-      if is_match then -- shunt/spec.yue:403
-        return "tostrings as a string which " .. tostring(self.inner:describe(true)) -- shunt/spec.yue:404
-      else -- shunt/spec.yue:406
-        return "doesn't tostrings as a string which " .. tostring(self.inner:describe(false)) -- shunt/spec.yue:406
-      end -- shunt/spec.yue:403
-    end -- shunt/spec.yue:392
-  } -- shunt/spec.yue:392
-  if _base_0.__index == nil then -- shunt/spec.yue:392
-    _base_0.__index = _base_0 -- shunt/spec.yue:392
-  end -- shunt/spec.yue:406
-  _class_0 = setmetatable({ -- shunt/spec.yue:392
-    __init = function(self, inner) -- shunt/spec.yue:393
-      self.inner = inner -- shunt/spec.yue:393
-    end, -- shunt/spec.yue:392
-    __base = _base_0, -- shunt/spec.yue:392
-    __name = "ToStringsAs" -- shunt/spec.yue:392
-  }, { -- shunt/spec.yue:392
-    __index = _base_0, -- shunt/spec.yue:392
-    __call = function(cls, ...) -- shunt/spec.yue:392
-      local _self_0 = setmetatable({ }, _base_0) -- shunt/spec.yue:392
-      cls.__init(_self_0, ...) -- shunt/spec.yue:392
-      return _self_0 -- shunt/spec.yue:392
-    end -- shunt/spec.yue:392
-  }) -- shunt/spec.yue:392
-  _base_0.__class = _class_0 -- shunt/spec.yue:392
-  ToStringsAs = _class_0 -- shunt/spec.yue:392
-end -- shunt/spec.yue:406
-do -- shunt/spec.yue:408
-  local _class_0 -- shunt/spec.yue:408
-  local _base_0 = { -- shunt/spec.yue:408
-    actual_repr = function(self) -- shunt/spec.yue:413
-      return "-> " .. tostring(self:error_repr()) -- shunt/spec.yue:414
-    end, -- shunt/spec.yue:416
-    error_repr = function(self) -- shunt/spec.yue:416
-      if (self.error ~= nil) then -- shunt/spec.yue:417
-        return "error " .. tostring(repr(self.error)) -- shunt/spec.yue:418
-      else -- shunt/spec.yue:420
-        return "no error" -- shunt/spec.yue:420
-      end -- shunt/spec.yue:417
-    end, -- shunt/spec.yue:422
-    get_err = function(self, fn) -- shunt/spec.yue:422
-      if self.error_set then -- shunt/spec.yue:423
-        return self.error -- shunt/spec.yue:424
-      end -- shunt/spec.yue:423
-xpcall(function() -- shunt/spec.yue:426
-        return fn() -- shunt/spec.yue:427
-      end, function(err) -- shunt/spec.yue:427
-        self.error = err -- shunt/spec.yue:429
-      end) -- shunt/spec.yue:429
-      self.error_set = true -- shunt/spec.yue:430
-      return self.error -- shunt/spec.yue:431
-    end, -- shunt/spec.yue:433
-    matches = function(self, fn) -- shunt/spec.yue:433
-      return not ((self:get_err(fn)) ~= nil) -- shunt/spec.yue:434
-    end, -- shunt/spec.yue:436
-    explain_match = function(self, fn) -- shunt/spec.yue:436
-      return "which " .. tostring(self:describe(self:matches(fn))) -- shunt/spec.yue:437
-    end, -- shunt/spec.yue:439
-    describe = function(self, is_match) -- shunt/spec.yue:439
-      if is_match == nil then -- shunt/spec.yue:439
-        is_match = true -- shunt/spec.yue:439
-      end -- shunt/spec.yue:439
-      if is_match then -- shunt/spec.yue:440
-        return "doesn't throw an error" -- shunt/spec.yue:441
-      else -- shunt/spec.yue:443
-        return "throws an error" -- shunt/spec.yue:443
-      end -- shunt/spec.yue:440
-    end -- shunt/spec.yue:408
-  } -- shunt/spec.yue:408
-  if _base_0.__index == nil then -- shunt/spec.yue:408
-    _base_0.__index = _base_0 -- shunt/spec.yue:408
-  end -- shunt/spec.yue:443
-  _class_0 = setmetatable({ -- shunt/spec.yue:408
-    __init = function(self) -- shunt/spec.yue:409
-      self.error_set = false -- shunt/spec.yue:410
-      self.error = nil -- shunt/spec.yue:411
-    end, -- shunt/spec.yue:408
-    __base = _base_0, -- shunt/spec.yue:408
-    __name = "NoErrors" -- shunt/spec.yue:408
-  }, { -- shunt/spec.yue:408
-    __index = _base_0, -- shunt/spec.yue:408
-    __call = function(cls, ...) -- shunt/spec.yue:408
-      local _self_0 = setmetatable({ }, _base_0) -- shunt/spec.yue:408
-      cls.__init(_self_0, ...) -- shunt/spec.yue:408
-      return _self_0 -- shunt/spec.yue:408
-    end -- shunt/spec.yue:408
-  }) -- shunt/spec.yue:408
-  _base_0.__class = _class_0 -- shunt/spec.yue:408
-  NoErrors = _class_0 -- shunt/spec.yue:408
-end -- shunt/spec.yue:443
-do -- shunt/spec.yue:445
-  local _class_0 -- shunt/spec.yue:445
-  local _base_0 = { -- shunt/spec.yue:445
-    actual_repr = function(self) -- shunt/spec.yue:450
-      return "-> " .. tostring(self:error_repr()) -- shunt/spec.yue:451
-    end, -- shunt/spec.yue:453
-    error_repr = function(self) -- shunt/spec.yue:453
-      if (self.error ~= nil) then -- shunt/spec.yue:454
-        return "error " .. tostring(repr(self.error)) -- shunt/spec.yue:455
-      else -- shunt/spec.yue:457
-        return "no error" -- shunt/spec.yue:457
-      end -- shunt/spec.yue:454
-    end, -- shunt/spec.yue:459
-    get_err = function(self, fn) -- shunt/spec.yue:459
-      if self.error_set then -- shunt/spec.yue:460
-        return self.error -- shunt/spec.yue:461
-      end -- shunt/spec.yue:460
-xpcall(function() -- shunt/spec.yue:463
-        return fn() -- shunt/spec.yue:464
-      end, function(err) -- shunt/spec.yue:464
-        self.error = err -- shunt/spec.yue:466
-      end) -- shunt/spec.yue:466
-      self.error_set = true -- shunt/spec.yue:467
-      return self.error -- shunt/spec.yue:468
-    end, -- shunt/spec.yue:470
-    matches = function(self, fn) -- shunt/spec.yue:470
-      local err = self:get_err(fn) -- shunt/spec.yue:471
-      if not (err ~= nil) then -- shunt/spec.yue:472
-        return false -- shunt/spec.yue:473
-      end -- shunt/spec.yue:472
-      return self.inner:matches(err) -- shunt/spec.yue:474
-    end, -- shunt/spec.yue:476
-    explain_match = function(self, fn) -- shunt/spec.yue:476
-      local err = self:get_err(fn) -- shunt/spec.yue:477
-      if (err ~= nil) then -- shunt/spec.yue:478
-        return "which throws " .. tostring(self:error_repr()) .. " " .. tostring(self.inner:explain_match(err)) -- shunt/spec.yue:479
-      else -- shunt/spec.yue:481
-        return "which doesn't throw an error" -- shunt/spec.yue:481
-      end -- shunt/spec.yue:478
-    end, -- shunt/spec.yue:483
-    describe = function(self, is_match) -- shunt/spec.yue:483
-      if is_match == nil then -- shunt/spec.yue:483
-        is_match = true -- shunt/spec.yue:483
-      end -- shunt/spec.yue:483
-      if is_match then -- shunt/spec.yue:484
-        return "throws an error which " .. tostring(self.inner:describe()) -- shunt/spec.yue:485
-      else -- shunt/spec.yue:487
-        return "doesn't throw an error" -- shunt/spec.yue:487
-      end -- shunt/spec.yue:484
-    end -- shunt/spec.yue:445
-  } -- shunt/spec.yue:445
-  if _base_0.__index == nil then -- shunt/spec.yue:445
-    _base_0.__index = _base_0 -- shunt/spec.yue:445
-  end -- shunt/spec.yue:487
-  _class_0 = setmetatable({ -- shunt/spec.yue:445
-    __init = function(self, inner) -- shunt/spec.yue:446
-      self.inner = inner -- shunt/spec.yue:446
-      self.error_set = false -- shunt/spec.yue:447
-      self.error = nil -- shunt/spec.yue:448
-    end, -- shunt/spec.yue:445
-    __base = _base_0, -- shunt/spec.yue:445
-    __name = "Errors" -- shunt/spec.yue:445
-  }, { -- shunt/spec.yue:445
-    __index = _base_0, -- shunt/spec.yue:445
-    __call = function(cls, ...) -- shunt/spec.yue:445
-      local _self_0 = setmetatable({ }, _base_0) -- shunt/spec.yue:445
-      cls.__init(_self_0, ...) -- shunt/spec.yue:445
-      return _self_0 -- shunt/spec.yue:445
-    end -- shunt/spec.yue:445
-  }) -- shunt/spec.yue:445
-  _base_0.__class = _class_0 -- shunt/spec.yue:445
-  Errors = _class_0 -- shunt/spec.yue:445
-end -- shunt/spec.yue:487
-do -- shunt/spec.yue:489
-  local _class_0 -- shunt/spec.yue:489
-  local _base_0 = { -- shunt/spec.yue:489
-    matches = function(self, actual) -- shunt/spec.yue:496
-      return (actual ~= nil) and ((self:find_match(actual)) ~= nil) -- shunt/spec.yue:497
-    end, -- shunt/spec.yue:499
-    find_match = function(self, actual) -- shunt/spec.yue:499
-      for key, value in pairs(actual) do -- shunt/spec.yue:500
-        local to_check -- shunt/spec.yue:501
-        do -- shunt/spec.yue:501
-          local _exp_0 = self.kind -- shunt/spec.yue:501
-          if 'key' == _exp_0 then -- shunt/spec.yue:502
-            to_check = key -- shunt/spec.yue:503
-          elseif 'value' == _exp_0 then -- shunt/spec.yue:504
-            to_check = value -- shunt/spec.yue:505
-          elseif 'key-value' == _exp_0 then -- shunt/spec.yue:506
-            to_check = { -- shunt/spec.yue:507
-              key = key, -- shunt/spec.yue:507
-              value = value -- shunt/spec.yue:507
-            } -- shunt/spec.yue:507
-          else -- shunt/spec.yue:509
-            to_check = error("internal error: unknown kind " .. tostring(repr(self.kind))) -- shunt/spec.yue:509
-          end -- shunt/spec.yue:509
-        end -- shunt/spec.yue:509
-        if self.inner:matches(to_check) then -- shunt/spec.yue:510
-          return to_check -- shunt/spec.yue:511
-        end -- shunt/spec.yue:510
-      end -- shunt/spec.yue:511
-      return nil -- shunt/spec.yue:512
-    end, -- shunt/spec.yue:514
-    explain_match = function(self, actual) -- shunt/spec.yue:514
-      if 'table' ~= type(actual) then -- shunt/spec.yue:515
-        return "which is a " .. tostring(type(actual)) -- shunt/spec.yue:516
-      else -- shunt/spec.yue:517
-        do -- shunt/spec.yue:517
-          local match = self:find_match(actual) -- shunt/spec.yue:517
-          if match then -- shunt/spec.yue:517
-            return "which contains " .. tostring(repr(match)) .. " " .. tostring(self.inner:explain_match(match)) -- shunt/spec.yue:518
-          else -- shunt/spec.yue:520
-            return "which does not contain any " .. tostring(self.pretty_kind) .. " which " .. tostring(self.inner:describe()) -- shunt/spec.yue:520
-          end -- shunt/spec.yue:517
-        end -- shunt/spec.yue:517
-      end -- shunt/spec.yue:515
-    end, -- shunt/spec.yue:522
-    describe = function(self, is_match) -- shunt/spec.yue:522
-      if is_match == nil then -- shunt/spec.yue:522
-        is_match = true -- shunt/spec.yue:522
-      end -- shunt/spec.yue:522
-      if is_match then -- shunt/spec.yue:523
-        return "contains a value which " .. tostring(self.inner:describe()) -- shunt/spec.yue:524
-      else -- shunt/spec.yue:526
-        return "does not contain any " .. tostring(self.pretty_kind) .. " which " .. tostring(self.inner:describe()) -- shunt/spec.yue:526
-      end -- shunt/spec.yue:523
-    end -- shunt/spec.yue:489
-  } -- shunt/spec.yue:489
-  if _base_0.__index == nil then -- shunt/spec.yue:489
-    _base_0.__index = _base_0 -- shunt/spec.yue:489
-  end -- shunt/spec.yue:526
-  _class_0 = setmetatable({ -- shunt/spec.yue:489
-    __init = function(self, kind, inner) -- shunt/spec.yue:490
-      self.kind = kind -- shunt/spec.yue:490
-      self.inner = inner -- shunt/spec.yue:490
-      if self.kind == 'key-value' then -- shunt/spec.yue:491
-        self.pretty_kind = 'key-value pair' -- shunt/spec.yue:492
-      else -- shunt/spec.yue:494
-        self.pretty_kind = self.kind -- shunt/spec.yue:494
-      end -- shunt/spec.yue:491
-    end, -- shunt/spec.yue:489
-    __base = _base_0, -- shunt/spec.yue:489
-    __name = "Contains" -- shunt/spec.yue:489
-  }, { -- shunt/spec.yue:489
-    __index = _base_0, -- shunt/spec.yue:489
-    __call = function(cls, ...) -- shunt/spec.yue:489
-      local _self_0 = setmetatable({ }, _base_0) -- shunt/spec.yue:489
-      cls.__init(_self_0, ...) -- shunt/spec.yue:489
-      return _self_0 -- shunt/spec.yue:489
-    end -- shunt/spec.yue:489
-  }) -- shunt/spec.yue:489
-  _base_0.__class = _class_0 -- shunt/spec.yue:489
-  Contains = _class_0 -- shunt/spec.yue:489
-end -- shunt/spec.yue:526
-do -- shunt/spec.yue:528
-  local _class_0 -- shunt/spec.yue:528
-  local _base_0 = { -- shunt/spec.yue:528
-    matches = function(self, actual) -- shunt/spec.yue:535
-      return (actual ~= nil) and not ((self:find_non_match(actual)) ~= nil) -- shunt/spec.yue:536
-    end, -- shunt/spec.yue:538
-    find_non_match = function(self, actual) -- shunt/spec.yue:538
-      for key, value in pairs(actual) do -- shunt/spec.yue:539
-        local to_check -- shunt/spec.yue:540
-        do -- shunt/spec.yue:540
-          local _exp_0 = self.kind -- shunt/spec.yue:540
-          if 'key' == _exp_0 then -- shunt/spec.yue:541
-            to_check = key -- shunt/spec.yue:542
-          elseif 'value' == _exp_0 then -- shunt/spec.yue:543
-            to_check = value -- shunt/spec.yue:544
-          elseif 'key-value' == _exp_0 then -- shunt/spec.yue:545
-            to_check = { -- shunt/spec.yue:546
-              key = key, -- shunt/spec.yue:546
-              value = value -- shunt/spec.yue:546
-            } -- shunt/spec.yue:546
-          else -- shunt/spec.yue:548
-            to_check = error("internal error: unknown kind " .. tostring(repr(self.kind))) -- shunt/spec.yue:548
-          end -- shunt/spec.yue:548
-        end -- shunt/spec.yue:548
-        if not self.inner:matches(to_check) then -- shunt/spec.yue:549
-          return to_check -- shunt/spec.yue:550
-        end -- shunt/spec.yue:549
-      end -- shunt/spec.yue:550
-      return nil -- shunt/spec.yue:551
-    end, -- shunt/spec.yue:553
-    explain_match = function(self, actual) -- shunt/spec.yue:553
-      if 'table' ~= type(actual) then -- shunt/spec.yue:554
-        return "is a " .. tostring(actual) -- shunt/spec.yue:555
-      else -- shunt/spec.yue:556
-        do -- shunt/spec.yue:556
-          local non_match = self:find_non_match(actual) -- shunt/spec.yue:556
-          if non_match then -- shunt/spec.yue:556
-            return "in which some element " .. tostring(self.inner:describe(false)) -- shunt/spec.yue:557
-          else -- shunt/spec.yue:559
-            return "in which each element " .. tostring(self.inner:describe(true)) -- shunt/spec.yue:559
-          end -- shunt/spec.yue:556
-        end -- shunt/spec.yue:556
-      end -- shunt/spec.yue:554
-    end, -- shunt/spec.yue:561
-    describe = function(self, is_match) -- shunt/spec.yue:561
-      if is_match == nil then -- shunt/spec.yue:561
-        is_match = true -- shunt/spec.yue:561
-      end -- shunt/spec.yue:561
-      if is_match then -- shunt/spec.yue:562
-        return "consists of " .. tostring(self.pretty_kind) .. " which " .. tostring(self.inner:describe()) -- shunt/spec.yue:563
-      else -- shunt/spec.yue:565
-        return "contains a " .. tostring(self.pretty_kind) .. " which " .. tostring(self.inner:describe()) -- shunt/spec.yue:565
-      end -- shunt/spec.yue:562
-    end -- shunt/spec.yue:528
-  } -- shunt/spec.yue:528
-  if _base_0.__index == nil then -- shunt/spec.yue:528
-    _base_0.__index = _base_0 -- shunt/spec.yue:528
-  end -- shunt/spec.yue:565
-  _class_0 = setmetatable({ -- shunt/spec.yue:528
-    __init = function(self, kind, inner) -- shunt/spec.yue:529
-      self.kind = kind -- shunt/spec.yue:529
-      self.inner = inner -- shunt/spec.yue:529
-      if self.kind == 'key-value' then -- shunt/spec.yue:530
-        self.pretty_kind = 'key-value pair' -- shunt/spec.yue:531
-      else -- shunt/spec.yue:533
-        self.pretty_kind = self.kind -- shunt/spec.yue:533
-      end -- shunt/spec.yue:530
-    end, -- shunt/spec.yue:528
-    __base = _base_0, -- shunt/spec.yue:528
-    __name = "Each" -- shunt/spec.yue:528
-  }, { -- shunt/spec.yue:528
-    __index = _base_0, -- shunt/spec.yue:528
-    __call = function(cls, ...) -- shunt/spec.yue:528
-      local _self_0 = setmetatable({ }, _base_0) -- shunt/spec.yue:528
-      cls.__init(_self_0, ...) -- shunt/spec.yue:528
-      return _self_0 -- shunt/spec.yue:528
-    end -- shunt/spec.yue:528
-  }) -- shunt/spec.yue:528
-  _base_0.__class = _class_0 -- shunt/spec.yue:528
-  Each = _class_0 -- shunt/spec.yue:528
-end -- shunt/spec.yue:565
-do -- shunt/spec.yue:567
-  local _class_0 -- shunt/spec.yue:567
-  local _base_0 = { -- shunt/spec.yue:567
-    matches = function(self, actual) -- shunt/spec.yue:577
-      return (actual ~= nil) and not ((self:find_non_match(actual)) ~= nil) -- shunt/spec.yue:578
-    end, -- shunt/spec.yue:580
-    find_non_match = function(self, actual) -- shunt/spec.yue:580
-      local _list_0 = self.fields -- shunt/spec.yue:581
-      for _index_0 = 1, #_list_0 do -- shunt/spec.yue:581
-        local _des_0 = _list_0[_index_0] -- shunt/spec.yue:581
-        local field, matcher = _des_0.field, _des_0.matcher -- shunt/spec.yue:581
-        if not matcher:matches(actual[field]) then -- shunt/spec.yue:582
-          return field, matcher -- shunt/spec.yue:583
-        end -- shunt/spec.yue:582
-      end -- shunt/spec.yue:583
-      return nil -- shunt/spec.yue:584
-    end, -- shunt/spec.yue:586
-    explain_match = function(self, actual) -- shunt/spec.yue:586
-      if 'table' ~= type(actual) then -- shunt/spec.yue:587
-        return "is a " .. tostring(type(actual)) -- shunt/spec.yue:588
-      end -- shunt/spec.yue:587
-      local non_match_field, non_match_matcher = self:find_non_match(actual) -- shunt/spec.yue:590
-      if not (non_match_field ~= nil) then -- shunt/spec.yue:591
-        local field_descriptions -- shunt/spec.yue:592
-        do -- shunt/spec.yue:592
-          local _accum_0 = { } -- shunt/spec.yue:592
-          local _len_0 = 1 -- shunt/spec.yue:592
-          local _list_0 = self.fields -- shunt/spec.yue:592
-          for _index_0 = 1, #_list_0 do -- shunt/spec.yue:592
-            local _des_0 = _list_0[_index_0] -- shunt/spec.yue:592
-            local field, matcher = _des_0.field, _des_0.matcher -- shunt/spec.yue:592
-            _accum_0[_len_0] = "there is a field '" .. tostring(field) .. "' " .. tostring(matcher:explain_match(actual[field])) -- shunt/spec.yue:592
-            _len_0 = _len_0 + 1 -- shunt/spec.yue:592
-          end -- shunt/spec.yue:592
-          field_descriptions = _accum_0 -- shunt/spec.yue:592
-        end -- shunt/spec.yue:592
-        return "in which:\n  " .. tostring(table.concat(field_descriptions, '\n  ')) -- shunt/spec.yue:593
-      else -- shunt/spec.yue:595
-        return "in which field " .. tostring(repr(non_match_field)) .. " " .. tostring(non_match_matcher:explain_match(actual[non_match_field])) -- shunt/spec.yue:595
-      end -- shunt/spec.yue:591
-    end, -- shunt/spec.yue:597
-    describe = function(self, is_match) -- shunt/spec.yue:597
-      if is_match == nil then -- shunt/spec.yue:597
-        is_match = true -- shunt/spec.yue:597
-      end -- shunt/spec.yue:597
-      local field_descriptions -- shunt/spec.yue:598
-      do -- shunt/spec.yue:598
-        local _accum_0 = { } -- shunt/spec.yue:598
-        local _len_0 = 1 -- shunt/spec.yue:598
-        local _list_0 = self.fields -- shunt/spec.yue:598
-        for _index_0 = 1, #_list_0 do -- shunt/spec.yue:598
-          local _des_0 = _list_0[_index_0] -- shunt/spec.yue:598
-          local field, matcher = _des_0.field, _des_0.matcher -- shunt/spec.yue:598
-          _accum_0[_len_0] = "there is a field '" .. tostring(field) .. "' which " .. tostring(matcher:describe()) -- shunt/spec.yue:598
-          _len_0 = _len_0 + 1 -- shunt/spec.yue:598
-        end -- shunt/spec.yue:598
-        field_descriptions = _accum_0 -- shunt/spec.yue:598
-      end -- shunt/spec.yue:598
-      if is_match then -- shunt/spec.yue:599
-        return "is a table in which:\n  " .. tostring(table.concat(field_descriptions, '\n  ')) -- shunt/spec.yue:600
-      else -- shunt/spec.yue:602
-        return "isn't a table in which:\n  " .. tostring(table.concat(field_descriptions, '\n  ')) -- shunt/spec.yue:602
-      end -- shunt/spec.yue:599
-    end -- shunt/spec.yue:567
-  } -- shunt/spec.yue:567
-  if _base_0.__index == nil then -- shunt/spec.yue:567
-    _base_0.__index = _base_0 -- shunt/spec.yue:567
-  end -- shunt/spec.yue:602
-  _class_0 = setmetatable({ -- shunt/spec.yue:567
-    __init = function(self, fields) -- shunt/spec.yue:568
-      do -- shunt/spec.yue:569
-        local _accum_0 = { } -- shunt/spec.yue:569
-        local _len_0 = 1 -- shunt/spec.yue:569
-        for field, matcher in pairs(fields) do -- shunt/spec.yue:569
-          _accum_0[_len_0] = { -- shunt/spec.yue:569
-            field = field, -- shunt/spec.yue:569
-            matcher = matcher -- shunt/spec.yue:569
-          } -- shunt/spec.yue:569
-          _len_0 = _len_0 + 1 -- shunt/spec.yue:569
-        end -- shunt/spec.yue:569
-        self.fields = _accum_0 -- shunt/spec.yue:569
-      end -- shunt/spec.yue:569
-      return table.sort(self.fields, function(a, b) -- shunt/spec.yue:570
-        local taf = type(a.field) -- shunt/spec.yue:571
-        local tbf = type(b.field) -- shunt/spec.yue:572
-        if taf ~= tbf or taf == 'number' then -- shunt/spec.yue:573
-          return false -- shunt/spec.yue:574
-        end -- shunt/spec.yue:573
-        return a.field < b.field -- shunt/spec.yue:575
-      end) -- shunt/spec.yue:575
-    end, -- shunt/spec.yue:567
-    __base = _base_0, -- shunt/spec.yue:567
-    __name = "Fields" -- shunt/spec.yue:567
-  }, { -- shunt/spec.yue:567
-    __index = _base_0, -- shunt/spec.yue:567
-    __call = function(cls, ...) -- shunt/spec.yue:567
-      local _self_0 = setmetatable({ }, _base_0) -- shunt/spec.yue:567
-      cls.__init(_self_0, ...) -- shunt/spec.yue:567
-      return _self_0 -- shunt/spec.yue:567
-    end -- shunt/spec.yue:567
-  }) -- shunt/spec.yue:567
-  _base_0.__class = _class_0 -- shunt/spec.yue:567
-  Fields = _class_0 -- shunt/spec.yue:567
-end -- shunt/spec.yue:602
-do -- shunt/spec.yue:604
-  local _with_0 = { } -- shunt/spec.yue:604
-  _with_0['('] = true -- shunt/spec.yue:605
-  _with_0[')'] = true -- shunt/spec.yue:606
-  _with_0['['] = true -- shunt/spec.yue:607
-  _with_0[']'] = true -- shunt/spec.yue:608
-  _with_0['{'] = true -- shunt/spec.yue:609
-  _with_0['}'] = true -- shunt/spec.yue:610
-  _with_0['!'] = true -- shunt/spec.yue:611
-  _with_0['"'] = true -- shunt/spec.yue:612
-  _with_0["'"] = true -- shunt/spec.yue:613
-  _with_0['$'] = true -- shunt/spec.yue:614
-  _with_0['%'] = true -- shunt/spec.yue:615
-  _with_0['^'] = true -- shunt/spec.yue:616
-  _with_0['&'] = true -- shunt/spec.yue:617
-  _with_0['*'] = true -- shunt/spec.yue:618
-  _with_0['-'] = true -- shunt/spec.yue:619
-  _with_0['_'] = true -- shunt/spec.yue:620
-  _with_0['+'] = true -- shunt/spec.yue:621
-  _with_0['='] = true -- shunt/spec.yue:622
-  _with_0[':'] = true -- shunt/spec.yue:623
-  _with_0[' '] = true -- shunt/spec.yue:624
-  _with_0['\t'] = true -- shunt/spec.yue:625
-  _with_0['.'] = true -- shunt/spec.yue:626
-  _with_0[','] = true -- shunt/spec.yue:627
-  _with_0['/'] = true -- shunt/spec.yue:628
-  _with_0['\\'] = true -- shunt/spec.yue:629
-  _with_0['>'] = true -- shunt/spec.yue:630
-  _with_0['<'] = true -- shunt/spec.yue:631
-  _with_0['!'] = true -- shunt/spec.yue:632
-  _with_0['?'] = true -- shunt/spec.yue:633
-  _with_0['#'] = true -- shunt/spec.yue:634
-  _with_0['|'] = true -- shunt/spec.yue:635
-  _with_0['~'] = true -- shunt/spec.yue:636
-  local a = string.byte('a') -- shunt/spec.yue:637
-  for i = 0, 25 do -- shunt/spec.yue:638
-    _with_0[string.char(a + i)] = true -- shunt/spec.yue:639
-  end -- shunt/spec.yue:639
-  local A = string.byte('A') -- shunt/spec.yue:640
-  for i = 0, 25 do -- shunt/spec.yue:641
-    _with_0[string.char(A + i)] = true -- shunt/spec.yue:642
-  end -- shunt/spec.yue:642
-  local zero = string.byte('0') -- shunt/spec.yue:643
-  for i = 0, 9 do -- shunt/spec.yue:644
-    _with_0[string.char(zero + i)] = true -- shunt/spec.yue:645
-  end -- shunt/spec.yue:645
-  visible_chars = _with_0 -- shunt/spec.yue:604
-end -- shunt/spec.yue:604
-repr = function(self) -- shunt/spec.yue:646
-  return table.concat((function() -- shunt/spec.yue:647
-    local _with_0 = { } -- shunt/spec.yue:647
-    local stack = { } -- shunt/spec.yue:648
-    local repr_impl -- shunt/spec.yue:649
-    repr_impl = function(self) -- shunt/spec.yue:649
-      for _index_0 = 1, #stack do -- shunt/spec.yue:650
-        local elem = stack[_index_0] -- shunt/spec.yue:650
-        if rawequal(self, elem) then -- shunt/spec.yue:651
-          _with_0[#_with_0 + 1] = '...' -- shunt/spec.yue:652
-          return -- shunt/spec.yue:653
-        end -- shunt/spec.yue:651
-      end -- shunt/spec.yue:653
-      stack[#stack + 1] = self -- shunt/spec.yue:654
-      do -- shunt/spec.yue:656
-        local _exp_0 = type(self) -- shunt/spec.yue:656
-        if 'string' == _exp_0 then -- shunt/spec.yue:657
-          _with_0[#_with_0 + 1] = "'" -- shunt/spec.yue:658
-          for i = 1, #self do -- shunt/spec.yue:659
-            local c = self:sub(i, i) -- shunt/spec.yue:660
-            if visible_chars[c] then -- shunt/spec.yue:661
-              _with_0[#_with_0 + 1] = c -- shunt/spec.yue:662
-            else -- shunt/spec.yue:664
-              _with_0[#_with_0 + 1] = ("\\x%02x"):format(string.byte(self, i)) -- shunt/spec.yue:664
-            end -- shunt/spec.yue:661
-          end -- shunt/spec.yue:664
-          _with_0[#_with_0 + 1] = "'" -- shunt/spec.yue:665
-        elseif 'table' == _exp_0 then -- shunt/spec.yue:666
-          if (getmetatable(self) ~= nil) and (getmetatable(self).__tostring ~= nil) then -- shunt/spec.yue:667
-            _with_0[#_with_0 + 1] = tostring(self) -- shunt/spec.yue:668
-          else -- shunt/spec.yue:669
-            if is_list(self) then -- shunt/spec.yue:669
-              _with_0[#_with_0 + 1] = '[' -- shunt/spec.yue:670
-              local first = true -- shunt/spec.yue:671
-              for _index_0 = 1, #self do -- shunt/spec.yue:672
-                local elem = self[_index_0] -- shunt/spec.yue:672
-                if not first then -- shunt/spec.yue:673
-                  _with_0[#_with_0 + 1] = ', ' -- shunt/spec.yue:674
-                end -- shunt/spec.yue:673
-                first = false -- shunt/spec.yue:675
-                repr_impl(elem) -- shunt/spec.yue:677
-              end -- shunt/spec.yue:677
-              _with_0[#_with_0 + 1] = ']' -- shunt/spec.yue:678
-            else -- shunt/spec.yue:680
-              _with_0[#_with_0 + 1] = '{' -- shunt/spec.yue:680
-              local first = true -- shunt/spec.yue:681
-              local keys -- shunt/spec.yue:682
-              do -- shunt/spec.yue:682
-                local _accum_0 = { } -- shunt/spec.yue:682
-                local _len_0 = 1 -- shunt/spec.yue:682
-                for key, _ in pairs(self) do -- shunt/spec.yue:682
-                  _accum_0[_len_0] = key -- shunt/spec.yue:682
-                  _len_0 = _len_0 + 1 -- shunt/spec.yue:682
-                end -- shunt/spec.yue:682
-                keys = _accum_0 -- shunt/spec.yue:682
-              end -- shunt/spec.yue:682
-              if can_sort(keys) then -- shunt/spec.yue:683
-                table.sort(keys, function(a, b) -- shunt/spec.yue:684
-                  local ta = type(a) -- shunt/spec.yue:685
-                  local tb = type(b) -- shunt/spec.yue:686
-                  if ta ~= tb or ta == 'number' then -- shunt/spec.yue:687
-                    return false -- shunt/spec.yue:688
-                  end -- shunt/spec.yue:687
-                  return a < b -- shunt/spec.yue:689
-                end) -- shunt/spec.yue:684
-              end -- shunt/spec.yue:683
-              for _index_0 = 1, #keys do -- shunt/spec.yue:690
-                local key = keys[_index_0] -- shunt/spec.yue:690
-                local value = self[key] -- shunt/spec.yue:691
-                if not first then -- shunt/spec.yue:692
-                  _with_0[#_with_0 + 1] = ', ' -- shunt/spec.yue:693
-                end -- shunt/spec.yue:692
-                first = false -- shunt/spec.yue:694
-                repr_impl(key) -- shunt/spec.yue:696
-                _with_0[#_with_0 + 1] = ': ' -- shunt/spec.yue:697
-                repr_impl(value) -- shunt/spec.yue:698
-              end -- shunt/spec.yue:698
-              _with_0[#_with_0 + 1] = '}' -- shunt/spec.yue:699
-            end -- shunt/spec.yue:669
-          end -- shunt/spec.yue:667
-        else -- shunt/spec.yue:701
-          _with_0[#_with_0 + 1] = tostring(self) -- shunt/spec.yue:701
-        end -- shunt/spec.yue:701
-      end -- shunt/spec.yue:701
-      stack[#stack] = nil -- shunt/spec.yue:703
-    end -- shunt/spec.yue:649
-    repr_impl(self) -- shunt/spec.yue:704
-    return _with_0 -- shunt/spec.yue:647
-  end)()) -- shunt/spec.yue:704
-end -- shunt/spec.yue:646
-_module_0["repr"] = repr -- shunt/spec.yue:704
-is_list = function(table) -- shunt/spec.yue:706
-  local max_key = 0 -- shunt/spec.yue:707
-  local num_keys = 0 -- shunt/spec.yue:708
-  for k, _ in pairs(table) do -- shunt/spec.yue:709
-    num_keys = num_keys + 1 -- shunt/spec.yue:710
-    if 'number' ~= type(k) then -- shunt/spec.yue:711
-      return false -- shunt/spec.yue:712
-    end -- shunt/spec.yue:711
-    if max_key < k then -- shunt/spec.yue:713
-      max_key = k -- shunt/spec.yue:714
-    end -- shunt/spec.yue:713
-  end -- shunt/spec.yue:714
-  return max_key == num_keys and num_keys > 0 -- shunt/spec.yue:715
-end -- shunt/spec.yue:706
-can_sort = function(list) -- shunt/spec.yue:717
-  for _index_0 = 1, #list do -- shunt/spec.yue:718
-    local elem = list[_index_0] -- shunt/spec.yue:718
-    local _continue_0 = false -- shunt/spec.yue:719
-    repeat -- shunt/spec.yue:719
-      do -- shunt/spec.yue:719
-        local _exp_0 = type(elem) -- shunt/spec.yue:719
-        if 'boolean' == _exp_0 or 'string' == _exp_0 or 'number' == _exp_0 then -- shunt/spec.yue:720
-          _continue_0 = true -- shunt/spec.yue:721
-          break -- shunt/spec.yue:721
-        elseif 'table' == _exp_0 then -- shunt/spec.yue:722
-          if not (getmetatable(table) ~= nil) or not (getmetatable(table).__lt ~= nil) then -- shunt/spec.yue:723
-            return false -- shunt/spec.yue:724
-          end -- shunt/spec.yue:723
-        else -- shunt/spec.yue:726
-          return false -- shunt/spec.yue:726
-        end -- shunt/spec.yue:726
-      end -- shunt/spec.yue:726
-      _continue_0 = true -- shunt/spec.yue:719
-    until true -- shunt/spec.yue:726
-    if not _continue_0 then -- shunt/spec.yue:726
-      break -- shunt/spec.yue:726
-    end -- shunt/spec.yue:726
-  end -- shunt/spec.yue:726
-  return true -- shunt/spec.yue:727
-end -- shunt/spec.yue:717
-clone = function(value) -- shunt/spec.yue:729
-  local _exp_0 = type(value) -- shunt/spec.yue:730
-  if 'nil' == _exp_0 or 'boolean' == _exp_0 or 'number' == _exp_0 or 'string' == _exp_0 then -- shunt/spec.yue:731
-    return value -- shunt/spec.yue:732
-  elseif 'table' == _exp_0 then -- shunt/spec.yue:733
-    local _with_0 = { } -- shunt/spec.yue:734
-    for k, v in pairs(value) do -- shunt/spec.yue:735
-      _with_0[clone(k)] = clone(v) -- shunt/spec.yue:736
-    end -- shunt/spec.yue:736
-    return _with_0 -- shunt/spec.yue:734
-  else -- shunt/spec.yue:738
-    return error("cannot clone a " .. tostring(type(value)) .. " (" .. tostring(value) .. ")") -- shunt/spec.yue:738
-  end -- shunt/spec.yue:738
-end -- shunt/spec.yue:729
-_module_0["clone"] = clone -- shunt/spec.yue:738
-matchers = { -- shunt/spec.yue:741
-  anything = function() -- shunt/spec.yue:741
-    return Anything() -- shunt/spec.yue:741
-  end, -- shunt/spec.yue:741
-  some = function() -- shunt/spec.yue:742
-    return Some() -- shunt/spec.yue:742
-  end, -- shunt/spec.yue:742
-  not_ = function(matcher) -- shunt/spec.yue:743
-    return Not(matcher) -- shunt/spec.yue:743
-  end, -- shunt/spec.yue:743
-  eq = function(value) -- shunt/spec.yue:744
-    return Compare('==', value) -- shunt/spec.yue:744
-  end, -- shunt/spec.yue:744
-  deep_eq = function(value) -- shunt/spec.yue:745
-    return DeepEq(value) -- shunt/spec.yue:745
-  end, -- shunt/spec.yue:745
-  lt = function(value) -- shunt/spec.yue:746
-    return Compare('<', value) -- shunt/spec.yue:746
-  end, -- shunt/spec.yue:746
-  le = function(value) -- shunt/spec.yue:747
-    return Compare('<=', value) -- shunt/spec.yue:747
-  end, -- shunt/spec.yue:747
-  gt = function(value) -- shunt/spec.yue:748
-    return Compare('>', value) -- shunt/spec.yue:748
-  end, -- shunt/spec.yue:748
-  ge = function(value) -- shunt/spec.yue:749
-    return Compare('>=', value) -- shunt/spec.yue:749
-  end, -- shunt/spec.yue:749
-  len = function(matcher) -- shunt/spec.yue:750
-    return Len(matcher) -- shunt/spec.yue:750
-  end, -- shunt/spec.yue:750
-  matches = function(pattern) -- shunt/spec.yue:751
-    return Matches(pattern) -- shunt/spec.yue:751
-  end, -- shunt/spec.yue:751
-  near = function(value, delta) -- shunt/spec.yue:752
-    return Near(value, delta) -- shunt/spec.yue:752
-  end, -- shunt/spec.yue:752
-  tostrings_as = function(matcher) -- shunt/spec.yue:753
-    return ToStringsAs(matcher) -- shunt/spec.yue:753
-  end, -- shunt/spec.yue:753
-  contains_key = function(matcher) -- shunt/spec.yue:754
-    return Contains('key', matcher) -- shunt/spec.yue:754
-  end, -- shunt/spec.yue:754
-  contains_value = function(matcher) -- shunt/spec.yue:755
-    return Contains('value', matcher) -- shunt/spec.yue:755
-  end, -- shunt/spec.yue:755
-  contains_pair = function(matcher) -- shunt/spec.yue:756
-    return Contains('key-value', matcher) -- shunt/spec.yue:756
-  end, -- shunt/spec.yue:756
-  each_key = function(matcher) -- shunt/spec.yue:757
-    return Each('key', matcher) -- shunt/spec.yue:757
-  end, -- shunt/spec.yue:757
-  each_value = function(matcher) -- shunt/spec.yue:758
-    return Each('value', matcher) -- shunt/spec.yue:758
-  end, -- shunt/spec.yue:758
-  each_pair = function(matcher) -- shunt/spec.yue:759
-    return Each('key-value', matcher) -- shunt/spec.yue:759
-  end, -- shunt/spec.yue:759
-  no_errors = function() -- shunt/spec.yue:760
-    return NoErrors() -- shunt/spec.yue:760
-  end, -- shunt/spec.yue:760
-  errors = function(matcher) -- shunt/spec.yue:761
-    return Errors(matcher) -- shunt/spec.yue:761
-  end, -- shunt/spec.yue:761
-  has_type = function(typ) -- shunt/spec.yue:762
-    return Type(typ) -- shunt/spec.yue:762
-  end, -- shunt/spec.yue:762
-  has_fields = function(fields) -- shunt/spec.yue:763
-    return Fields(fields) -- shunt/spec.yue:763
-  end -- shunt/spec.yue:763
-} -- shunt/spec.yue:740
-_module_0["matchers"] = matchers -- shunt/spec.yue:763
-reflow = function(prefix, string, width) -- shunt/spec.yue:765
-  if width == nil then -- shunt/spec.yue:765
-    width = 80 -- shunt/spec.yue:765
-  end -- shunt/spec.yue:765
-  local lines -- shunt/spec.yue:766
-  do -- shunt/spec.yue:766
-    local _with_0 = { } -- shunt/spec.yue:766
-    local chunk_len = width - #prefix -- shunt/spec.yue:767
-    local first_line = true -- shunt/spec.yue:768
-    for line in string:gmatch('[^\r\n]*') do -- shunt/spec.yue:769
-      for i = 1, #line, chunk_len do -- shunt/spec.yue:770
-        local chunk = line:sub(i, i + chunk_len - 1) -- shunt/spec.yue:771
-        if first_line then -- shunt/spec.yue:772
-          _with_0[#_with_0 + 1] = chunk -- shunt/spec.yue:773
-        else -- shunt/spec.yue:775
-          _with_0[#_with_0 + 1] = prefix .. chunk -- shunt/spec.yue:775
-        end -- shunt/spec.yue:772
-        first_line = false -- shunt/spec.yue:776
-      end -- shunt/spec.yue:776
-    end -- shunt/spec.yue:776
-    lines = _with_0 -- shunt/spec.yue:766
-  end -- shunt/spec.yue:766
-  return table.concat(lines, '\n') -- shunt/spec.yue:777
-end -- shunt/spec.yue:765
-testing = false -- shunt/spec.yue:779
-running_tests = function() -- shunt/spec.yue:780
-  return testing -- shunt/spec.yue:780
-end -- shunt/spec.yue:780
-_module_0["running_tests"] = running_tests -- shunt/spec.yue:780
-run_tests = function(filter) -- shunt/spec.yue:782
-  if not (spec_fns ~= nil) then -- shunt/spec.yue:784
-    return -- shunt/spec.yue:785
-  end -- shunt/spec.yue:784
-  for _index_0 = 1, #spec_fns do -- shunt/spec.yue:786
-    local spec_fn = spec_fns[_index_0] -- shunt/spec.yue:786
-    spec_fn() -- shunt/spec.yue:787
-  end -- shunt/spec.yue:787
-  testing = true -- shunt/spec.yue:789
-  if root_spec ~= nil then -- shunt/spec.yue:790
-    root_spec:test(filter) -- shunt/spec.yue:790
-  end -- shunt/spec.yue:790
-  testing = false -- shunt/spec.yue:791
-  log(function() -- shunt/spec.yue:793
-    return tostring(Test.num_run) .. " checks run" -- shunt/spec.yue:794
-  end) -- shunt/spec.yue:793
-  local ok = Test.num_failures == 0 -- shunt/spec.yue:795
-  if not ok then -- shunt/spec.yue:796
-    print(tostring(Test.num_failures) .. " checks failed!") -- shunt/spec.yue:797
-  end -- shunt/spec.yue:796
-  return ok -- shunt/spec.yue:798
-end -- shunt/spec.yue:782
-_module_0["run_tests"] = run_tests -- shunt/spec.yue:798
-return _module_0 -- shunt/spec.yue:798
-end
 package.preload['shunt.state'] = function(...)
 -- [yue]: shunt/state.yue
 local _module_0 = { } -- shunt/state.yue:1
@@ -12174,42 +12174,52 @@ _module_0["test_compat"] = test_compat -- shunt/compat.yue:251
 return _module_0 -- shunt/compat.yue:251
 end
 -- [yue]: libshunt.yue
-local re_exports = { -- libshunt.yue:2
-  ['libshunt.clap'] = function() -- libshunt.yue:2
-    return require('shunt.clap') -- libshunt.yue:2
-  end, -- libshunt.yue:2
-  ['libshunt.logger'] = function() -- libshunt.yue:3
-    return require('shunt.logger') -- libshunt.yue:3
-  end, -- libshunt.yue:3
-  ['libshunt.quicktype'] = function() -- libshunt.yue:4
-    return require('shunt.quicktype') -- libshunt.yue:4
-  end, -- libshunt.yue:4
-  ['libshunt.spec'] = function() -- libshunt.yue:5
-    return require('shunt.spec') -- libshunt.yue:5
-  end, -- libshunt.yue:5
-  ['libshunt.state'] = function() -- libshunt.yue:6
-    return require('shunt.state') -- libshunt.yue:6
-  end, -- libshunt.yue:6
-  ['libshunt.writelite'] = function() -- libshunt.yue:7
-    return require('shunt.writelite') -- libshunt.yue:7
-  end -- libshunt.yue:7
-} -- libshunt.yue:1
-for lib, src_fn in pairs(re_exports) do -- libshunt.yue:8
-  package.preload[lib] = src_fn -- libshunt.yue:9
-end -- libshunt.yue:9
-return setmetatable({ }, { -- libshunt.yue:11
-  __index = function(self) -- libshunt.yue:11
-    local lib_names -- libshunt.yue:12
-    do -- libshunt.yue:12
-      local _accum_0 = { } -- libshunt.yue:12
-      local _len_0 = 1 -- libshunt.yue:12
-      for lib_name, _ in pairs(re_exports) do -- libshunt.yue:12
-        _accum_0[_len_0] = lib_name -- libshunt.yue:12
-        _len_0 = _len_0 + 1 -- libshunt.yue:12
-      end -- libshunt.yue:12
-      lib_names = _accum_0 -- libshunt.yue:12
-    end -- libshunt.yue:12
-    table.sort(lib_names) -- libshunt.yue:13
-    return error("libshunt modules are accessed by calling `require'\navailable modules:\n  " .. tostring(table.concat(lib_names, '\n  '))) -- libshunt.yue:14
-  end -- libshunt.yue:11
-}) -- libshunt.yue:14
+local _module_0 = { } -- libshunt.yue:1
+local Lazy -- libshunt.yue:1
+Lazy = function(fn) -- libshunt.yue:1
+  local _with_0 = setmetatable({ }, { }) -- libshunt.yue:1
+  getmetatable(_with_0).__index = function(self, key) -- libshunt.yue:2
+    return self()[key] -- libshunt.yue:3
+  end -- libshunt.yue:2
+  getmetatable(_with_0).__newindex = function() -- libshunt.yue:4
+    return error("cannot assign field") -- libshunt.yue:5
+  end -- libshunt.yue:4
+  getmetatable(_with_0).__call = function(self) -- libshunt.yue:6
+    local t = fn() -- libshunt.yue:7
+    if 'table' ~= type(t) then -- libshunt.yue:8
+      error('internal error: loader function did not return table') -- libshunt.yue:9
+    end -- libshunt.yue:8
+    local repr = require('shunt.spec').repr -- libshunt.yue:0
+    setmetatable(self, getmetatable(t)) -- libshunt.yue:11
+    for k, v in pairs(t) do -- libshunt.yue:12
+      self[k] = v -- libshunt.yue:13
+    end -- libshunt.yue:13
+    return self -- libshunt.yue:14
+  end -- libshunt.yue:6
+  return _with_0 -- libshunt.yue:1
+end -- libshunt.yue:1
+local clap = Lazy(function() -- libshunt.yue:16
+  return require('shunt.clap') -- libshunt.yue:16
+end) -- libshunt.yue:16
+_module_0["clap"] = clap -- libshunt.yue:16
+local logger = Lazy(function() -- libshunt.yue:17
+  return require('shunt.logger') -- libshunt.yue:17
+end) -- libshunt.yue:17
+_module_0["logger"] = logger -- libshunt.yue:17
+local quicktype = Lazy(function() -- libshunt.yue:18
+  return require('shunt.quicktype') -- libshunt.yue:18
+end) -- libshunt.yue:18
+_module_0["quicktype"] = quicktype -- libshunt.yue:18
+local spec = Lazy(function() -- libshunt.yue:19
+  return require('shunt.spec') -- libshunt.yue:19
+end) -- libshunt.yue:19
+_module_0["spec"] = spec -- libshunt.yue:19
+local state = Lazy(function() -- libshunt.yue:20
+  return require('shunt.state') -- libshunt.yue:20
+end) -- libshunt.yue:20
+_module_0["state"] = state -- libshunt.yue:20
+local writelite = Lazy(function() -- libshunt.yue:21
+  return require('shunt.writelite') -- libshunt.yue:21
+end) -- libshunt.yue:21
+_module_0["writelite"] = writelite -- libshunt.yue:21
+return _module_0 -- libshunt.yue:21
