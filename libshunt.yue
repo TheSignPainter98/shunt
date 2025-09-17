@@ -1,14 +1,21 @@
-re_exports =
-  ['libshunt.clap']: -> require 'shunt.clap'
-  ['libshunt.logger']: -> require 'shunt.logger'
-  ['libshunt.quicktype']: -> require 'shunt.quicktype'
-  ['libshunt.spec']: -> require 'shunt.spec'
-  ['libshunt.state']: -> require 'shunt.state'
-  ['libshunt.writelite']: -> require 'shunt.writelite'
-for lib, src_fn in pairs re_exports
-  package.preload[lib] = src_fn
+Lazy = (fn) -> with <>: {}
+  .<index> = (key) =>
+    @![key]
+  .<newindex> = ->
+    error "cannot assign field"
+  .<call> = =>
+    t = fn!
+    if 'table' != type t
+      error 'internal error: loader function did not return table'
+    import 'shunt.spec' as :repr
+    @.<> = t.<>
+    for k, v in pairs t
+      @[k] = v
+    @
 
-<index>: =>
-  lib_names = [ lib_name for lib_name, _ in pairs re_exports]
-  table.sort lib_names
-  error "libshunt modules are accessed by calling `require'\navailable modules:\n  #{table.concat lib_names, '\n  '}"
+export clap = Lazy -> require 'shunt.clap'
+export logger = Lazy -> require 'shunt.logger'
+export quicktype = Lazy -> require 'shunt.quicktype'
+export spec = Lazy -> require 'shunt.spec'
+export state = Lazy -> require 'shunt.state'
+export writelite = Lazy -> require 'shunt.writelite'
