@@ -294,8 +294,8 @@ CORRUPTION_WARNING = T 'string', '
 |                                              |
 +----------------------------------------------+
 '
-MAIN_PRELUDE = "#!writelite\0\0\0\0\0#{CORRUPTION_WARNING}"
-JOURNAL_PRELUDE = "#!writelitejrnl\0#{CORRUPTION_WARNING}"
+MAIN_PRELUDE = "writelitemain\0\0\0#{CORRUPTION_WARNING}"
+JOURNAL_PRELUDE = "writelitejrnl\0\0\0#{CORRUPTION_WARNING}"
 
 declare_type 'writelite.Fs', [[{
   open: (string, writelite.FileMode) => <?writelite.File, ?string, ?number>,
@@ -1407,7 +1407,7 @@ spec ->
               \transaction txn_fn
 
               content = fs.files[FILE]\content!
-              $expect_that content, matches '^#!writelite\0'
+              $expect_that content, matches '^writelitemain\0'
               if assertion?
                 assertion content
 
@@ -1441,7 +1441,10 @@ spec ->
               file.<> = mt
 
         journal_present = (fs) ->
-          $expect_that fs.files['database.db~'], not_ eq nil
+          content = fs.files['database.db~']?\content!
+          $expect_that content, not_ eq nil
+          if content?
+            $expect_that content, matches '^writelitejrnl\0'
         journal_absent = (fs) ->
           $expect_that fs.files['database.db~'], eq nil
         main_unchanged = (fs) ->
