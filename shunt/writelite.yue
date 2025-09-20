@@ -157,7 +157,7 @@ export class Writelite
     local main_header
     if main_end_index == 0
       main_header = @_make_main_header!
-      err = @_format_main main_header
+      err = @_write_main_header main_header
       if err?
         return false, err
     else
@@ -215,7 +215,7 @@ export class Writelite
 
     header
 
-  _format_main: F '(writelite.MainHeader) => ?string', (header) =>
+  _write_main_header: F '(writelite.MainHeader) => ?string', (header) =>
     fragments =
       * MAIN_PRELUDE
       * Serialiser::serialise header
@@ -419,6 +419,7 @@ class PageCache
     @max_cached_pages = max_cached_pages
 
 declare_type 'writelite.Transaction', [[{
+  read: ("*a"|number) => <?string, ?string>,
   write: (string) => <>,
   seek: (Whence, ?number) => <?number, ?string>,
   abort: () => <>,
@@ -435,6 +436,50 @@ class Transaction
     @_aborted = T 'boolean', false
     @_page_size = @_parent._page_size
     @_mode = T 'writelite.Mode', @_parent._mode
+
+  read: F '("*a"|number) => <?string, ?string>', (amount) =>
+    if @_mode != 'blob'
+      error "cannot use write method in #{@_mode} mode (must be in blob mode)"
+    switch amount
+      when '*a'
+        @_read_all!
+      else
+        @_read_amount amount
+
+  _read_all: F '() => <?string, ?string>', =>
+    if #@_deltas == 0
+      -- Fast path.
+      main_file = @_parent._main_file
+
+      _, err = main_file\seek 'set', @_cursor + @_page_size
+      if err?
+        return nil, err
+
+      -- TODO(kcza): track end of file
+      content, err = main_file\read '*a'
+      if err?
+        return nil, err
+      @_cursor += #content
+      return content, nil
+
+    error 'reading from dirty transactions is not yet supported'
+
+  _read_amount: F '(number) => <?string, ?string>', (amount) =>
+    if #@_deltas == 0
+      -- Fast path.
+      main_file = @_parent._main_file
+
+      _, err = main_file\seek 'set', @_cursor + @_page_size
+      if err?
+        return nil, err
+
+      content, err = main_file\read amount
+      if err?
+        return nil, err
+      @_cursor += #content
+      return content, nil
+
+    error 'reading from dirty transactions is not yet supported'
 
   write: F '(string) => <>', (bytes) =>
     if @_mode != 'blob'
@@ -939,7 +984,6 @@ class Deserialiser
           error "internal error: ref #{ref} invalid at #{index}"
         return table
       else
-        print_serialised @raw
         error "unrecognised tag %02x at index %d"\format (bit.band head, TAG_MASK),
           @index - 1
     error 'unreachable'
@@ -1158,6 +1202,9 @@ spec ->
     write: F '(string) => ?string', (to_write) =>
       if @closed
         return 'closed'
+      if #@content_bytes < @cursor
+        for i = #@content_bytes + 1, @cursor - 1
+          @content_bytes[i] = 0
       for i = 1, #to_write
         @content_bytes[@cursor] = to_write\byte i
         @cursor += 1
@@ -1621,6 +1668,49 @@ spec ->
                 [failure_point] = true
           $expect_that attempted_failure_points, deep_eq $known_failure_points!
           $expect_that attempted_failure_points, deep_eq activated_failure_points
+
+    describe '\\read', ->
+      it 'functions on clean transactions', ->
+        fs = TestFs!
+        with Writelite 'database.db', fs
+          \mode 'blob'
+          assert \open!
+          \transaction (txn) ->
+            txn\write 'a'\rep 10
+            txn\write 'b'\rep 10
+          \transaction (txn) ->
+            x, err = txn\read 10
+            $expect_that err, eq nil
+            $assert_that x, eq 'a'\rep 10
+
+            x, err = txn\read 10
+            $expect_that err, eq nil
+            $assert_that x, eq 'b'\rep 10
+
+            x, err = txn\read 10
+            $expect_that err, eq nil
+            $assert_that x, eq '\0'\rep 10
+
+            txn\seek 'set', 10
+            x, err = txn\read 10
+            $expect_that err, eq nil
+            $assert_that x, eq 'b'\rep 10
+
+            txn\seek 'set', 0
+            x, err = txn\read 20
+            $expect_that err, eq nil
+            $assert_that x, eq "#{'a'\rep 10}#{'b'\rep 10}"
+
+            txn\seek 'set', 10
+            x, err = txn\read '*a'
+            $expect_that err, eq nil
+            $assert_that x, matches "^#{'b'\rep 10}"
+
+            txn\seek 'set', 0
+            x, err = txn\read '*a'
+            $expect_that err, eq nil
+            $assert_that x, matches "^#{'a'\rep 10}#{'b'\rep 10}"
+          assert \close!
 
   describe 'writelite.PageCache', ->
     describe '\\write', ->
