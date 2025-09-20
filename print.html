@@ -1934,18 +1934,18 @@ In such environments, all struct types are subtypes of all array types.</p>
 }
 </code></pre>
 <h2 id="whence"><a class="header" href="#whence"><code>Whence</code></a></h2>
-<p><a href="https://github.com/TheSignPainter98/shunt/blob/master/shunt/writelite.yue#L426">Definition</a></p>
+<p><a href="https://github.com/TheSignPainter98/shunt/blob/master/shunt/writelite.yue#L427">Definition</a></p>
 <pre><code class="language-moonscript">"set"|"cur"|"end"
 </code></pre>
 <h2 id="writelitedelta"><a class="header" href="#writelitedelta"><code>writelite.Delta</code></a></h2>
-<p><a href="https://github.com/TheSignPainter98/shunt/blob/master/shunt/writelite.yue#L427">Definition</a></p>
+<p><a href="https://github.com/TheSignPainter98/shunt/blob/master/shunt/writelite.yue#L428">Definition</a></p>
 <pre><code class="language-moonscript">{
   offset: number,
   content: string,
 }
 </code></pre>
 <h2 id="writelitedeserialisersource"><a class="header" href="#writelitedeserialisersource"><code>writelite.DeserialiserSource</code></a></h2>
-<p><a href="https://github.com/TheSignPainter98/shunt/blob/master/shunt/writelite.yue#L830">Definition</a></p>
+<p><a href="https://github.com/TheSignPainter98/shunt/blob/master/shunt/writelite.yue#L875">Definition</a></p>
 <pre><code class="language-moonscript">string|writelite.File
 </code></pre>
 <h2 id="writelitefile"><a class="header" href="#writelitefile"><code>writelite.File</code></a></h2>
@@ -1973,7 +1973,7 @@ close: () =&gt; &lt;boolean, ?string&gt;,
 }
 </code></pre>
 <h2 id="writelitehasher"><a class="header" href="#writelitehasher"><code>writelite.Hasher</code></a></h2>
-<p><a href="https://github.com/TheSignPainter98/shunt/blob/master/shunt/writelite.yue#L988">Definition</a></p>
+<p><a href="https://github.com/TheSignPainter98/shunt/blob/master/shunt/writelite.yue#L1032">Definition</a></p>
 <pre><code class="language-moonscript">{
   hash: (any) =&gt; number,
   write: (string) =&gt; &lt;&gt;,
@@ -1981,7 +1981,7 @@ close: () =&gt; &lt;boolean, ?string&gt;,
 }
 </code></pre>
 <h2 id="writelitejournal"><a class="header" href="#writelitejournal"><code>writelite.Journal</code></a></h2>
-<p><a href="https://github.com/TheSignPainter98/shunt/blob/master/shunt/writelite.yue#L607">Definition</a></p>
+<p><a href="https://github.com/TheSignPainter98/shunt/blob/master/shunt/writelite.yue#L652">Definition</a></p>
 <pre><code class="language-moonscript">{
   pages: () =&gt; [writelite.Page],
   add: (writelite.Page) =&gt; &lt;&gt;,
@@ -1989,7 +1989,7 @@ close: () =&gt; &lt;boolean, ?string&gt;,
 }
 </code></pre>
 <h2 id="writelitejournalheader"><a class="header" href="#writelitejournalheader"><code>writelite.JournalHeader</code></a></h2>
-<p><a href="https://github.com/TheSignPainter98/shunt/blob/master/shunt/writelite.yue#L612">Definition</a></p>
+<p><a href="https://github.com/TheSignPainter98/shunt/blob/master/shunt/writelite.yue#L657">Definition</a></p>
 <pre><code class="language-moonscript">{
   format_version: 1,
   page_size: number,
@@ -1998,7 +1998,7 @@ close: () =&gt; &lt;boolean, ?string&gt;,
 }
 </code></pre>
 <h2 id="writelitejournalmode"><a class="header" href="#writelitejournalmode"><code>writelite.JournalMode</code></a></h2>
-<p><a href="https://github.com/TheSignPainter98/shunt/blob/master/shunt/writelite.yue#L618">Definition</a></p>
+<p><a href="https://github.com/TheSignPainter98/shunt/blob/master/shunt/writelite.yue#L663">Definition</a></p>
 <pre><code class="language-moonscript">"delete"
 </code></pre>
 <h2 id="writelitemainheader"><a class="header" href="#writelitemainheader"><code>writelite.MainHeader</code></a></h2>
@@ -2014,7 +2014,7 @@ close: () =&gt; &lt;boolean, ?string&gt;,
 <pre><code class="language-moonscript">"blob"
 </code></pre>
 <h2 id="writelitepage"><a class="header" href="#writelitepage"><code>writelite.Page</code></a></h2>
-<p><a href="https://github.com/TheSignPainter98/shunt/blob/master/shunt/writelite.yue#L970">Definition</a></p>
+<p><a href="https://github.com/TheSignPainter98/shunt/blob/master/shunt/writelite.yue#L1014">Definition</a></p>
 <pre><code class="language-moonscript">{
   offset: number,
   content: string,
@@ -2037,7 +2037,7 @@ close: () =&gt; &lt;boolean, ?string&gt;,
 }
 </code></pre>
 <h2 id="writelitepageopts"><a class="header" href="#writelitepageopts"><code>writelite.PageOpts</code></a></h2>
-<p><a href="https://github.com/TheSignPainter98/shunt/blob/master/shunt/writelite.yue#L966">Definition</a></p>
+<p><a href="https://github.com/TheSignPainter98/shunt/blob/master/shunt/writelite.yue#L1010">Definition</a></p>
 <pre><code class="language-moonscript">{
   offset: number,
   content: string,
@@ -2046,6 +2046,7 @@ close: () =&gt; &lt;boolean, ?string&gt;,
 <h2 id="writelitetransaction"><a class="header" href="#writelitetransaction"><code>writelite.Transaction</code></a></h2>
 <p><a href="https://github.com/TheSignPainter98/shunt/blob/master/shunt/writelite.yue#L421">Definition</a></p>
 <pre><code class="language-moonscript">{
+  read: ("*a"|number) =&gt; &lt;?string, ?string&gt;,
   write: (string) =&gt; &lt;&gt;,
   seek: (Whence, ?number) =&gt; &lt;?number, ?string&gt;,
   abort: () =&gt; &lt;&gt;,
