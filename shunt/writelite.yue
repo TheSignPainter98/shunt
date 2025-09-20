@@ -1709,29 +1709,6 @@ spec ->
             $assert_that x, matches "^#{'a'\rep 10}#{'b'\rep 10}"
           assert \close!
 
-      -- it 'functions on dirty transactions', ->
-      --   with Writelite 'database.db', TestFs!
-      --     \mode 'blob'
-      --     assert \open!
-      --     \transaction (txn) ->
-      --       assert txn\write 'a'\rep 10
-      --       assert txn\write 'b'\rep 10
-      --       assert txn\write 'c'\rep 10
-      --     \transaction (txn) ->
-      --       txn\seek 'set', 10
-      --       assert txn\write 'd'\rep 10
-      --
-      --       txn\seek 'set', 0
-      --       content, err = txn\read '*a'
-      --       $expect_that err, eq nil
-      --       $expect_that content, eq "#{'a'\rep 10}#{'d'\rep 10}#{'c'\rep 10}"
-      --
-      --       txn\seek 'set', 5
-      --       content, err = txn\read 20
-      --       $expect_that err, eq nil
-      --       $expect_that content, eq "#{'a'\rep 5}#{'d'\rep 10}#{'c'\rep 5}"
-      --     assert \close!
-
   describe 'writelite.PageCache', ->
     describe '\\write', ->
       it 'accesses the filesystem', ->
